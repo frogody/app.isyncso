@@ -91,7 +91,7 @@ export default function FinanceExpenses({ embedded = false }) {
   const loadExpenses = async () => {
     try {
       setLoading(true);
-      const data = await db.entities.Expense?.list?.({ limit: 500 }).catch(() => []) || [];
+      const data = await db.entities.Expense?.list?.({ limit: 200 }).catch(() => []) || [];
       setExpenses(data);
     } catch (error) {
       console.error('Error loading expenses:', error);

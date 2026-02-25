@@ -204,7 +204,7 @@ export default function Dashboard() {
         db.entities.Investor?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([]),
         // B2B Commerce data (direct queries for reliability)
         supabase.from('b2b_orders').select('id, order_number, status, total, payment_status, created_at').eq('organization_id', user.organization_id).order('created_at', { ascending: false }).limit(20).then(r => r.data || []).catch(() => []),
-        supabase.from('products').select('id, status').eq('company_id', user.company_id).limit(5000).then(r => r.data || []).catch(() => []),
+        supabase.from('products').select('id, status').eq('company_id', user.company_id).limit(200).then(r => r.data || []).catch(() => []),
       ]);
 
       // Process Learn data
@@ -376,7 +376,7 @@ export default function Dashboard() {
         db.entities.Invoice?.list?.({ limit: 100 }).catch(() => []),
         db.entities.Expense?.list?.({ limit: 100 }).catch(() => []),
         supabase.from('b2b_orders').select('id, total, status, payment_status').eq('organization_id', user.organization_id).limit(100).then(r => r.data || []).catch(() => []),
-        supabase.from('products').select('id, status').eq('company_id', user.company_id).limit(5000).then(r => r.data || []).catch(() => []),
+        supabase.from('products').select('id, status').eq('company_id', user.company_id).limit(200).then(r => r.data || []).catch(() => []),
       ]);
 
       const allUsers = usersResult.status === 'fulfilled' ? usersResult.value : [];
@@ -502,8 +502,10 @@ export default function Dashboard() {
     return () => window.removeEventListener('dashboard-config-updated', handleConfigUpdate);
   }, [loadDashboardData]);
 
-  const loading = userLoading || dataLoading || permLoading;
-  
+  const loading = userLoading || permLoading;
+  const widgetsLoading = dataLoading;
+
+  // Minimal skeleton while user/permissions load (auth gate)
   if (loading) {
     return (
       <div className="min-h-screen bg-black p-3 sm:p-4">
@@ -511,9 +513,6 @@ export default function Dashboard() {
           <Skeleton className="h-14 sm:h-16 w-full bg-zinc-800 rounded-xl sm:rounded-2xl" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 sm:h-24 bg-zinc-800 rounded-xl sm:rounded-2xl" />)}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-48 sm:h-56 bg-zinc-800 rounded-xl sm:rounded-2xl" />)}
           </div>
         </div>
       </div>
@@ -1002,6 +1001,16 @@ export default function Dashboard() {
                 <p className="text-zinc-500">Team analytics will appear once your team starts using the platform</p>
               </div>
             )}
+          </div>
+        ) : widgetsLoading ? (
+          /* Progressive loading — show skeleton grid while data fetches */
+          <div className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+              {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 sm:h-24 bg-zinc-800 rounded-xl sm:rounded-2xl" />)}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {[1,2,3].map(i => <Skeleton key={i} className="h-48 sm:h-56 bg-zinc-800 rounded-xl sm:rounded-2xl" />)}
+            </div>
           </div>
         ) : hasWidgets ? (
           <>

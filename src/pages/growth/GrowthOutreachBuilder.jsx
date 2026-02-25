@@ -713,7 +713,7 @@ export default function GrowthOutreachBuilder() {
           .select(`*, enrich_cells(*)`)
           .eq('workspace_id', wsId)
           .order('order_index')
-          .limit(1000);
+          .limit(200);
 
         if (rowsError) throw rowsError;
 

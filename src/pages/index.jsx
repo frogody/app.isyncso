@@ -1,463 +1,285 @@
+import { lazy, Suspense } from 'react';
 import Layout from "./Layout.jsx";
-import { CalendarBookingPage } from "@/components/inbox/booking";
-import JoinCallPage from "./JoinCallPage";
 import FinanceErrorWrapper from "@/components/finance/FinanceErrorWrapper";
-
-import AIAssistant from "./AIAssistant";
-
-import AISystemInventory from "./AISystemInventory";
-
-import AuthCallback from "./AuthCallback";
-import DesktopAuth from "./DesktopAuth";
-
-import Login from "./Login";
-
-import Actions from "./Actions";
-
-import ActivityTimeline from "./ActivityTimeline";
-
-import AdminDashboard from "./AdminDashboard";
-
-import AdminMigration from "./AdminMigration";
-
-
-import AnalyticsDashboard from "./AnalyticsDashboard";
-
-import Assignments from "./Assignments";
-
-import BackendSetup from "./BackendSetup";
-
-import BackendStatus from "./BackendStatus";
-
-import CRMContacts from "./CRMContacts";
-
-import CRMCompanyProfile from "./CRMCompanyProfile";
-
-import CRMContactProfile from "./CRMContactProfile";
-
-import CRMDashboard from "./CRMDashboard";
-
-import CRMPipeline from "./CRMPipeline";
-
-import CRMCampaigns from "./CRMCampaigns";
-
-import Certificates from "./Certificates";
-
-import CompanyDashboard from "./CompanyDashboard";
-
-import Credits from "./Credits";
-
-import CompanyInvite from "./CompanyInvite";
-
-import CompanyProfile from "./CompanyProfile";
-
-import ComplianceCenter from "./ComplianceCenter";
-
-import ComplianceControls from "./ComplianceControls";
-
-import ComplianceEvidence from "./ComplianceEvidence";
-
-import ComplianceFrameworks from "./ComplianceFrameworks";
-
-import CompliancePolicies from "./CompliancePolicies";
-
-import ComplianceRoadmap from "./ComplianceRoadmap";
-
-
-import ComposioIntegrations from "./ComposioIntegrations";
-
-// Contacts.jsx deprecated - redirects to CRMContacts
-
-import CourseDetail from "./CourseDetail";
-
-import CourseUpgrader from "./CourseUpgrader";
-
-import Courses from "./Courses";
-
-import Dashboard from "./Dashboard";
-
-// Deals.jsx deprecated - redirects to CRMPipeline
-
-import DesktopActivity from "./DesktopActivity";
-
-import DailyJournal from "./DailyJournal";
-
-import PrivacyAIAct from "./PrivacyAIAct";
-
-import DocumentGenerator from "./DocumentGenerator";
-
-import DownloadApp from "./DownloadApp";
-
-import Glossary from "./Glossary";
-
-import Growth from "./Growth";
-
-import GrowthAssistant from "./GrowthAssistant";
-
-import GrowthCampaigns from "./GrowthCampaigns";
-
-import GrowthPipeline from "./GrowthPipeline";
-
-import GrowthProspects from "./GrowthProspects";
-
-import FinanceProposals from "./FinanceProposals";
-
-import FinanceProposalBuilder from "./FinanceProposalBuilder";
-
-import GrowthResearch from "./GrowthResearch";
-
-import GrowthSignals from "./GrowthSignals";
-
-import GrowthTemplates from "./GrowthTemplates";
-
-import GrowthEnrich from "./growth/GrowthEnrich";
-
-import GrowthDashboard from "./growth/GrowthDashboard";
-
-import GrowthCampaignWizard from "./growth/GrowthCampaignWizard";
-
-import GrowthNestRecommendations from "./growth/GrowthNestRecommendations";
-
-import GrowthWorkspaceSetup from "./growth/GrowthWorkspaceSetup";
-
-import GrowthResearchWorkspace from "./growth/GrowthResearchWorkspace";
-
-import GrowthOutreachBuilder from "./growth/GrowthOutreachBuilder";
-
-import FlowBuilder from "./FlowBuilder";
-import Flows from "./growth/Flows";
-import ExecutionMonitor from "./growth/ExecutionMonitor";
-
-import GrowthCustomerSignals from "./growth/GrowthCustomerSignals";
-
-import GrowthCampaignNests from "./growth/GrowthCampaignNests";
-
-import GrowthCampaignReview from "./growth/GrowthCampaignReview";
-
-import GrowthOpportunities from "./growth/GrowthOpportunities";
-
-import Home from "./Home";
-
-import Inbox from "./Inbox";
-
-
-import Leaderboard from "./Leaderboard";
-
-// Leads.jsx deprecated - redirects to CRMContacts?tab=lead
-
-import Learn from "./Learn";
-
-import LearnAITools from "./LearnAITools";
-
-import LearnAssistant from "./LearnAssistant";
-
-import LearnDashboard from "./LearnDashboard";
-
-import LearningPaths from "./LearningPaths";
-
-import LessonViewer from "./LessonViewer";
-
-import PracticeChallenges from "./PracticeChallenges";
-
-import TeamLearningDashboard from "./TeamLearningDashboard";
-
-// Marketplace pages
-import NestsMarketplace from "./marketplace/NestsMarketplace";
-import PurchasedNests from "./marketplace/PurchasedNests";
-
-import ManageCourses from "./ManageCourses";
-
-import ManagerDashboard from "./ManagerDashboard";
-
-import Onboarding from "./Onboarding";
-
-import Projects from "./Projects";
-
-import RecommendationsFeed from "./RecommendationsFeed";
-
-import ReachDashboard from "./ReachDashboard";
-import ReachCampaigns from "./ReachCampaigns";
-import ReachCampaignBuilder from "./ReachCampaignBuilder";
-import ReachCampaignDetail from "./ReachCampaignDetail";
-import ReachSEO from "./ReachSEO";
-import ReachCalendar from "./ReachCalendar";
-import ReachCopyStudio from "./ReachCopyStudio";
-import ReachBrandVoice from "./ReachBrandVoice";
-import ReachSettings from "./ReachSettings";
-
-import RiskAssessment from "./RiskAssessment";
-
-import Sentinel from "./Sentinel";
-
-import SentinelDashboard from "./SentinelDashboard";
-
-import TrustCenter from "./TrustCenter";
-
-import VendorRisk from "./VendorRisk";
-
-import Sequences from "./Sequences";
-
-import Settings from "./Settings";
-
-import ShopifyCallback from "./ShopifyCallback";
-
-import ShareView from "./ShareView";
-
-import SkillFrameworks from "./SkillFrameworks";
-
-import SkillMap from "./SkillMap";
-
-import SkillsOverview from "./SkillsOverview";
-
-import StudentDashboard from "./StudentDashboard";
-
-import Support from "./Support";
-
-import SystemWorkflow from "./SystemWorkflow";
-
-import Tasks from "./Tasks";
-
-import Templates from "./Templates";
-
-import UserAnalytics from "./UserAnalytics";
-
-import VerifyCertificate from "./VerifyCertificate";
-
-import VisionTest from "./VisionTest";
-
-import WorkflowEditor from "./WorkflowEditor";
-
-import MCPIntegrations from "./MCPIntegrations";
-
-import OAuthCallback from "./OAuthCallback";
-
-// Finance.jsx removed — /Finance route redirects to FinanceDashboard
-
-// FinanceOverview.jsx is legacy — /FinanceOverview route redirects to FinanceDashboard
-
-import FinanceDashboard from "./FinanceDashboard";
-
-import FinanceInvoices from "./FinanceInvoices";
-
-import FinanceExpenses from "./FinanceExpenses";
-
-import FinanceSubscriptions from "./FinanceSubscriptions";
-import FinanceExpensesConsolidated from "./FinanceExpensesConsolidated";
-
-import FinanceAccounts from "./FinanceAccounts";
-
-import FinanceJournalEntries from "./FinanceJournalEntries";
-
-import FinanceGeneralLedger from "./FinanceGeneralLedger";
-import FinanceLedger from "./FinanceLedger";
-
-import FinanceVendors from "./FinanceVendors";
-
-import FinanceBills from "./FinanceBills";
-
-import FinanceBillPayments from "./FinanceBillPayments";
-import FinancePayables from "./FinancePayables";
-
-import FinanceReportPL from "./FinanceReportPL";
-
-import FinanceReportBS from "./FinanceReportBS";
-
-import FinanceReportTB from "./FinanceReportTB";
-
-import FinanceReportAging from "./FinanceReportAging";
-import FinanceReportCashFlow from "./FinanceReportCashFlow";
-import FinanceReports from "./FinanceReports";
-import FinanceTaxRates from "./FinanceTaxRates";
-import FinanceBTWAangifte from "./FinanceBTWAangifte";
-import FinanceRecurringInvoices from "./FinanceRecurringInvoices";
-import FinanceCreditNotes from "./FinanceCreditNotes";
-import FinanceBankAccounts from "./FinanceBankAccounts";
-import FinanceBankReconciliation from "./FinanceBankReconciliation";
-import FinanceBolcomPayouts from "./FinanceBolcomPayouts";
-import FinanceSmartImport from "./FinanceSmartImport";
-
-import Raise from "./Raise";
-
-import RaiseInvestors from "./RaiseInvestors";
-
-import RaisePitchDecks from "./RaisePitchDecks";
-
-import RaiseDataRoom from "./RaiseDataRoom";
-
-import RaiseCampaigns from "./RaiseCampaigns";
-
-import RaiseEnrich from "./RaiseEnrich";
-
-import TeamManagement from "./TeamManagement";
-
-import AgentDetail from "./AgentDetail";
-
-import Products from "./Products";
-
-import ProductsDigital from "./ProductsDigital";
-
-import ProductsPhysical from "./ProductsPhysical";
-
-import ProductsServices from "./ProductsServices";
-
-import ProductDetail from "./ProductDetail";
-
-import ProductDataHealth from "./ProductDataHealth";
-
-import Create from "./Create";
-
-import CreateBranding from "./CreateBranding";
-
-import BrandBuilderWizard from "@/features/brand-builder/BrandBuilderWizard";
-
-import CreateImages from "./CreateImages";
-
-import CreateVideos from "./CreateVideos";
-
-import CreateLibrary from "./CreateLibrary";
-
-import ContentCalendar from "./ContentCalendar";
-
-import SyncStudioHome from "./SyncStudioHome";
-
-import SyncStudioImport from "./SyncStudioImport";
-
-import SyncStudioDashboard from "./SyncStudioDashboard";
-
-import SyncStudioPhotoshoot from "./SyncStudioPhotoshoot";
-
-import SyncStudioResults from "./SyncStudioResults";
-
-import SyncStudioReturn from "./SyncStudioReturn";
-
-import Studio from "./Studio";
-import StudioImage from "./StudioImage";
-import StudioVideo from "./StudioVideo";
-import StudioPhotoshoot from "./StudioPhotoshoot";
-import StudioClipshoot from "./StudioClipshoot";
-import StudioTemplates from "./StudioTemplates";
-import StudioLibrary from "./StudioLibrary";
-import StudioPodcast from "./StudioPodcast";
-import StudioVoice from "./StudioVoice";
-import StudioFashionBooth from "./StudioFashionBooth";
-import StudioAvatar from "./StudioAvatar";
-
-import InventoryReceiving from "./InventoryReceiving";
-
-import InventoryShipping from "./InventoryShipping";
-import PalletBuilder from "./PalletBuilder";
-import ShipmentVerification from "./ShipmentVerification";
-import Warehouse from "./Warehouse";
-
-import InventoryExpenses from "./InventoryExpenses";
-import InventoryReturns from "./InventoryReturns";
-import StockPurchases from "./StockPurchases";
-import EmailPoolSettings from "./EmailPoolSettings";
-
-import SyncAgent from "./SyncAgent";
-
-import SyncPhone from "./SyncPhone";
-
-import InventoryImport from "./InventoryImport";
-
-import ContactsImport from "./ContactsImport";
-
-import Integrations from "./Integrations";
-
-import TalentDashboard from "./TalentDashboard";
-
-import TalentDeals from "./TalentDeals";
-
-import TalentCandidates from "./TalentCandidates";
-
-import TalentCandidateProfile from "./TalentCandidateProfile";
-
-import TalentCampaigns from "./TalentCampaigns";
-
-import TalentCampaignDetail from "./TalentCampaignDetail";
-
-import TalentProjects from "./TalentProjects";
-
-import TalentAnalytics from "./TalentAnalytics";
-
-import TalentClients from "./TalentClients";
-
-import TalentNestDetail from "./TalentNestDetail";
-
-import TalentSMSOutreach from "./TalentSMSOutreach";
-
-// Admin Panel Pages
-import AdminLayout from "@/components/admin/AdminLayout";
-import PlatformAdminDashboard from "./admin/AdminDashboard";
-import PlatformAdminSettings from "./admin/AdminSettings";
-import PlatformAdminFeatureFlags from "./admin/AdminFeatureFlags";
-import PlatformAdminAuditLogs from "./admin/AdminAuditLogs";
-import PlatformAdminUsers from "./admin/AdminUsers";
-import PlatformAdminOrganizations from "./admin/AdminOrganizations";
-import PlatformAdminMarketplace from "./admin/AdminMarketplace";
-import PlatformAdminNests from "./admin/AdminNests";
-import PlatformAdminApps from "./admin/AdminApps";
-import PlatformAdminAnalytics from "./admin/AdminAnalytics";
-import PlatformAdminSystem from "./admin/AdminSystem";
-import PlatformAdminIntegrations from "./admin/AdminIntegrations";
-import PlatformAdminBilling from "./admin/AdminBilling";
-import PlatformAdminContent from "./admin/AdminContent";
-import PlatformAdminSupport from "./admin/AdminSupport";
-import PlatformAdminAI from "./admin/AdminAI";
-import PlatformAdminCredits from "./admin/AdminCredits";
-import PlatformAdminGrowthNests from "./admin/AdminGrowthNests";
-import PlatformAdminDemos from "./admin/AdminDemos";
-import PlatformAdminRoadmap from "./admin/AdminRoadmap";
-import PlatformAdminStructuralTests from "./admin/AdminStructuralTests";
-
-import DemoExperience from "./DemoExperience";
-import RequestDemo from "./RequestDemo";
-
-import B2BStoreBuilder from "./B2BStoreBuilder";
-import StoreDashboard from "./StoreDashboard";
-import ProductSalesAnalytics from "./ProductSalesAnalytics";
 import NotFound from "./NotFound";
-
-// Providers needed for admin routes (since they don't use main Layout)
+import Dashboard from "./Dashboard";
 import { UserProvider } from "@/components/context/UserContext";
 import { PermissionProvider } from "@/components/context/PermissionContext";
-
-// Client Portal imports
 import ClientProvider from "@/components/portal/ClientProvider";
 import ClientLayout from "@/components/portal/ClientLayout";
-import ClientLogin from "./portal/ClientLogin";
-import ClientAuthCallback from "./portal/ClientAuthCallback";
-import ClientDashboard from "./portal/ClientDashboard";
-import ClientProjectDetail from "./portal/ClientProjectDetail";
-import ClientProjects from "./portal/ClientProjects";
-import ClientApprovals from "./portal/ClientApprovals";
-import ClientActivity from "./portal/ClientActivity";
-import WholesaleHome from "./portal/WholesaleHome";
-import WholesaleCatalog from "./portal/WholesaleCatalog";
-import WholesaleProduct from "./portal/WholesaleProduct";
-import WholesaleCart from "./portal/WholesaleCart";
-import WholesaleCheckout from "./portal/WholesaleCheckout";
-import WholesaleOrders from "./portal/WholesaleOrders";
-import WholesaleOrderDetail from "./portal/WholesaleOrderDetail";
-import WholesaleInquiries from "./portal/WholesaleInquiries";
-import WholesaleAccount from "./portal/WholesaleAccount";
-import WholesaleTemplates from "./portal/WholesaleTemplates";
-import WholesaleDashboard from "./portal/WholesaleDashboard";
-
-import B2BOrderDetail from "@/components/b2b-admin/B2BOrderDetail";
-import B2BCatalogManager from "@/components/b2b-admin/B2BCatalogManager";
-import B2BInquiryManager from "@/components/b2b-admin/B2BInquiryManager";
-import B2BStoreAccess from "./B2BStoreAccess";
-import B2BDashboard from "@/components/b2b-admin/B2BDashboard";
-import PriceListManager from "@/components/b2b-admin/PriceListManager";
-import B2BOrdersManager from "@/components/b2b-admin/B2BOrdersManager";
-import PriceListEditor from "@/components/b2b-admin/PriceListEditor";
-import ClientGroupManager from "@/components/b2b-admin/ClientGroupManager";
-import StorePreview from "./StorePreview";
-import PublicStorefront from "./PublicStorefront";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { getStoreSubdomain } from '@/lib/subdomain';
-
 import { BrowserRouter as Router, Route, Routes, useLocation, useParams, Navigate } from 'react-router-dom';
+
+// Lazy-loaded page components
+const CalendarBookingPage = lazy(() => import("@/components/inbox/booking").then(m => ({ default: m.CalendarBookingPage })));
+const JoinCallPage = lazy(() => import("./JoinCallPage"));
+const AIAssistant = lazy(() => import("./AIAssistant"));
+const AISystemInventory = lazy(() => import("./AISystemInventory"));
+const AuthCallback = lazy(() => import("./AuthCallback"));
+const DesktopAuth = lazy(() => import("./DesktopAuth"));
+const Login = lazy(() => import("./Login"));
+const Actions = lazy(() => import("./Actions"));
+const ActivityTimeline = lazy(() => import("./ActivityTimeline"));
+const AdminDashboard = lazy(() => import("./AdminDashboard"));
+const AdminMigration = lazy(() => import("./AdminMigration"));
+const AnalyticsDashboard = lazy(() => import("./AnalyticsDashboard"));
+const Assignments = lazy(() => import("./Assignments"));
+const BackendSetup = lazy(() => import("./BackendSetup"));
+const BackendStatus = lazy(() => import("./BackendStatus"));
+const CRMContacts = lazy(() => import("./CRMContacts"));
+const CRMCompanyProfile = lazy(() => import("./CRMCompanyProfile"));
+const CRMContactProfile = lazy(() => import("./CRMContactProfile"));
+const CRMDashboard = lazy(() => import("./CRMDashboard"));
+const CRMPipeline = lazy(() => import("./CRMPipeline"));
+const CRMCampaigns = lazy(() => import("./CRMCampaigns"));
+const Certificates = lazy(() => import("./Certificates"));
+const CompanyDashboard = lazy(() => import("./CompanyDashboard"));
+const Credits = lazy(() => import("./Credits"));
+const CompanyInvite = lazy(() => import("./CompanyInvite"));
+const CompanyProfile = lazy(() => import("./CompanyProfile"));
+const ComplianceCenter = lazy(() => import("./ComplianceCenter"));
+const ComplianceControls = lazy(() => import("./ComplianceControls"));
+const ComplianceEvidence = lazy(() => import("./ComplianceEvidence"));
+const ComplianceFrameworks = lazy(() => import("./ComplianceFrameworks"));
+const CompliancePolicies = lazy(() => import("./CompliancePolicies"));
+const ComplianceRoadmap = lazy(() => import("./ComplianceRoadmap"));
+const ComposioIntegrations = lazy(() => import("./ComposioIntegrations"));
+const CourseDetail = lazy(() => import("./CourseDetail"));
+const CourseUpgrader = lazy(() => import("./CourseUpgrader"));
+const Courses = lazy(() => import("./Courses"));
+const DesktopActivity = lazy(() => import("./DesktopActivity"));
+const DailyJournal = lazy(() => import("./DailyJournal"));
+const PrivacyAIAct = lazy(() => import("./PrivacyAIAct"));
+const DocumentGenerator = lazy(() => import("./DocumentGenerator"));
+const DownloadApp = lazy(() => import("./DownloadApp"));
+const Glossary = lazy(() => import("./Glossary"));
+const Growth = lazy(() => import("./Growth"));
+const GrowthAssistant = lazy(() => import("./GrowthAssistant"));
+const GrowthCampaigns = lazy(() => import("./GrowthCampaigns"));
+const GrowthPipeline = lazy(() => import("./GrowthPipeline"));
+const GrowthProspects = lazy(() => import("./GrowthProspects"));
+const FinanceProposals = lazy(() => import("./FinanceProposals"));
+const FinanceProposalBuilder = lazy(() => import("./FinanceProposalBuilder"));
+const GrowthResearch = lazy(() => import("./GrowthResearch"));
+const GrowthSignals = lazy(() => import("./GrowthSignals"));
+const GrowthTemplates = lazy(() => import("./GrowthTemplates"));
+const GrowthEnrich = lazy(() => import("./growth/GrowthEnrich"));
+const GrowthDashboard = lazy(() => import("./growth/GrowthDashboard"));
+const GrowthCampaignWizard = lazy(() => import("./growth/GrowthCampaignWizard"));
+const GrowthNestRecommendations = lazy(() => import("./growth/GrowthNestRecommendations"));
+const GrowthWorkspaceSetup = lazy(() => import("./growth/GrowthWorkspaceSetup"));
+const GrowthResearchWorkspace = lazy(() => import("./growth/GrowthResearchWorkspace"));
+const GrowthOutreachBuilder = lazy(() => import("./growth/GrowthOutreachBuilder"));
+const FlowBuilder = lazy(() => import("./FlowBuilder"));
+const Flows = lazy(() => import("./growth/Flows"));
+const ExecutionMonitor = lazy(() => import("./growth/ExecutionMonitor"));
+const GrowthCustomerSignals = lazy(() => import("./growth/GrowthCustomerSignals"));
+const GrowthCampaignNests = lazy(() => import("./growth/GrowthCampaignNests"));
+const GrowthCampaignReview = lazy(() => import("./growth/GrowthCampaignReview"));
+const GrowthOpportunities = lazy(() => import("./growth/GrowthOpportunities"));
+const Home = lazy(() => import("./Home"));
+const Inbox = lazy(() => import("./Inbox"));
+const Leaderboard = lazy(() => import("./Leaderboard"));
+const Learn = lazy(() => import("./Learn"));
+const LearnAITools = lazy(() => import("./LearnAITools"));
+const LearnAssistant = lazy(() => import("./LearnAssistant"));
+const LearnDashboard = lazy(() => import("./LearnDashboard"));
+const LearningPaths = lazy(() => import("./LearningPaths"));
+const LessonViewer = lazy(() => import("./LessonViewer"));
+const PracticeChallenges = lazy(() => import("./PracticeChallenges"));
+const TeamLearningDashboard = lazy(() => import("./TeamLearningDashboard"));
+const NestsMarketplace = lazy(() => import("./marketplace/NestsMarketplace"));
+const PurchasedNests = lazy(() => import("./marketplace/PurchasedNests"));
+const ManageCourses = lazy(() => import("./ManageCourses"));
+const ManagerDashboard = lazy(() => import("./ManagerDashboard"));
+const Onboarding = lazy(() => import("./Onboarding"));
+const Projects = lazy(() => import("./Projects"));
+const RecommendationsFeed = lazy(() => import("./RecommendationsFeed"));
+const ReachDashboard = lazy(() => import("./ReachDashboard"));
+const ReachCampaigns = lazy(() => import("./ReachCampaigns"));
+const ReachCampaignBuilder = lazy(() => import("./ReachCampaignBuilder"));
+const ReachCampaignDetail = lazy(() => import("./ReachCampaignDetail"));
+const ReachSEO = lazy(() => import("./ReachSEO"));
+const ReachCalendar = lazy(() => import("./ReachCalendar"));
+const ReachCopyStudio = lazy(() => import("./ReachCopyStudio"));
+const ReachBrandVoice = lazy(() => import("./ReachBrandVoice"));
+const ReachSettings = lazy(() => import("./ReachSettings"));
+const RiskAssessment = lazy(() => import("./RiskAssessment"));
+const Sentinel = lazy(() => import("./Sentinel"));
+const SentinelDashboard = lazy(() => import("./SentinelDashboard"));
+const TrustCenter = lazy(() => import("./TrustCenter"));
+const VendorRisk = lazy(() => import("./VendorRisk"));
+const Sequences = lazy(() => import("./Sequences"));
+const Settings = lazy(() => import("./Settings"));
+const ShopifyCallback = lazy(() => import("./ShopifyCallback"));
+const ShareView = lazy(() => import("./ShareView"));
+const SkillFrameworks = lazy(() => import("./SkillFrameworks"));
+const SkillMap = lazy(() => import("./SkillMap"));
+const SkillsOverview = lazy(() => import("./SkillsOverview"));
+const StudentDashboard = lazy(() => import("./StudentDashboard"));
+const Support = lazy(() => import("./Support"));
+const SystemWorkflow = lazy(() => import("./SystemWorkflow"));
+const Tasks = lazy(() => import("./Tasks"));
+const Templates = lazy(() => import("./Templates"));
+const UserAnalytics = lazy(() => import("./UserAnalytics"));
+const VerifyCertificate = lazy(() => import("./VerifyCertificate"));
+const VisionTest = lazy(() => import("./VisionTest"));
+const WorkflowEditor = lazy(() => import("./WorkflowEditor"));
+const MCPIntegrations = lazy(() => import("./MCPIntegrations"));
+const OAuthCallback = lazy(() => import("./OAuthCallback"));
+const FinanceDashboard = lazy(() => import("./FinanceDashboard"));
+const FinanceInvoices = lazy(() => import("./FinanceInvoices"));
+const FinanceExpenses = lazy(() => import("./FinanceExpenses"));
+const FinanceSubscriptions = lazy(() => import("./FinanceSubscriptions"));
+const FinanceExpensesConsolidated = lazy(() => import("./FinanceExpensesConsolidated"));
+const FinanceAccounts = lazy(() => import("./FinanceAccounts"));
+const FinanceJournalEntries = lazy(() => import("./FinanceJournalEntries"));
+const FinanceGeneralLedger = lazy(() => import("./FinanceGeneralLedger"));
+const FinanceLedger = lazy(() => import("./FinanceLedger"));
+const FinanceVendors = lazy(() => import("./FinanceVendors"));
+const FinanceBills = lazy(() => import("./FinanceBills"));
+const FinanceBillPayments = lazy(() => import("./FinanceBillPayments"));
+const FinancePayables = lazy(() => import("./FinancePayables"));
+const FinanceReportPL = lazy(() => import("./FinanceReportPL"));
+const FinanceReportBS = lazy(() => import("./FinanceReportBS"));
+const FinanceReportTB = lazy(() => import("./FinanceReportTB"));
+const FinanceReportAging = lazy(() => import("./FinanceReportAging"));
+const FinanceReportCashFlow = lazy(() => import("./FinanceReportCashFlow"));
+const FinanceReports = lazy(() => import("./FinanceReports"));
+const FinanceTaxRates = lazy(() => import("./FinanceTaxRates"));
+const FinanceBTWAangifte = lazy(() => import("./FinanceBTWAangifte"));
+const FinanceRecurringInvoices = lazy(() => import("./FinanceRecurringInvoices"));
+const FinanceCreditNotes = lazy(() => import("./FinanceCreditNotes"));
+const FinanceBankAccounts = lazy(() => import("./FinanceBankAccounts"));
+const FinanceBankReconciliation = lazy(() => import("./FinanceBankReconciliation"));
+const FinanceBolcomPayouts = lazy(() => import("./FinanceBolcomPayouts"));
+const FinanceSmartImport = lazy(() => import("./FinanceSmartImport"));
+const Raise = lazy(() => import("./Raise"));
+const RaiseInvestors = lazy(() => import("./RaiseInvestors"));
+const RaisePitchDecks = lazy(() => import("./RaisePitchDecks"));
+const RaiseDataRoom = lazy(() => import("./RaiseDataRoom"));
+const RaiseCampaigns = lazy(() => import("./RaiseCampaigns"));
+const RaiseEnrich = lazy(() => import("./RaiseEnrich"));
+const TeamManagement = lazy(() => import("./TeamManagement"));
+const AgentDetail = lazy(() => import("./AgentDetail"));
+const Products = lazy(() => import("./Products"));
+const ProductsDigital = lazy(() => import("./ProductsDigital"));
+const ProductsPhysical = lazy(() => import("./ProductsPhysical"));
+const ProductsServices = lazy(() => import("./ProductsServices"));
+const ProductDetail = lazy(() => import("./ProductDetail"));
+const ProductDataHealth = lazy(() => import("./ProductDataHealth"));
+const Create = lazy(() => import("./Create"));
+const CreateBranding = lazy(() => import("./CreateBranding"));
+const BrandBuilderWizard = lazy(() => import("@/features/brand-builder/BrandBuilderWizard"));
+const CreateImages = lazy(() => import("./CreateImages"));
+const CreateVideos = lazy(() => import("./CreateVideos"));
+const CreateLibrary = lazy(() => import("./CreateLibrary"));
+const ContentCalendar = lazy(() => import("./ContentCalendar"));
+const SyncStudioHome = lazy(() => import("./SyncStudioHome"));
+const SyncStudioImport = lazy(() => import("./SyncStudioImport"));
+const SyncStudioDashboard = lazy(() => import("./SyncStudioDashboard"));
+const SyncStudioPhotoshoot = lazy(() => import("./SyncStudioPhotoshoot"));
+const SyncStudioResults = lazy(() => import("./SyncStudioResults"));
+const SyncStudioReturn = lazy(() => import("./SyncStudioReturn"));
+const Studio = lazy(() => import("./Studio"));
+const StudioImage = lazy(() => import("./StudioImage"));
+const StudioVideo = lazy(() => import("./StudioVideo"));
+const StudioPhotoshoot = lazy(() => import("./StudioPhotoshoot"));
+const StudioClipshoot = lazy(() => import("./StudioClipshoot"));
+const StudioTemplates = lazy(() => import("./StudioTemplates"));
+const StudioLibrary = lazy(() => import("./StudioLibrary"));
+const StudioPodcast = lazy(() => import("./StudioPodcast"));
+const StudioVoice = lazy(() => import("./StudioVoice"));
+const StudioFashionBooth = lazy(() => import("./StudioFashionBooth"));
+const StudioAvatar = lazy(() => import("./StudioAvatar"));
+const InventoryReceiving = lazy(() => import("./InventoryReceiving"));
+const InventoryShipping = lazy(() => import("./InventoryShipping"));
+const PalletBuilder = lazy(() => import("./PalletBuilder"));
+const ShipmentVerification = lazy(() => import("./ShipmentVerification"));
+const Warehouse = lazy(() => import("./Warehouse"));
+const InventoryExpenses = lazy(() => import("./InventoryExpenses"));
+const InventoryReturns = lazy(() => import("./InventoryReturns"));
+const StockPurchases = lazy(() => import("./StockPurchases"));
+const EmailPoolSettings = lazy(() => import("./EmailPoolSettings"));
+const SyncAgent = lazy(() => import("./SyncAgent"));
+const SyncPhone = lazy(() => import("./SyncPhone"));
+const InventoryImport = lazy(() => import("./InventoryImport"));
+const ContactsImport = lazy(() => import("./ContactsImport"));
+const Integrations = lazy(() => import("./Integrations"));
+const TalentDashboard = lazy(() => import("./TalentDashboard"));
+const TalentDeals = lazy(() => import("./TalentDeals"));
+const TalentCandidates = lazy(() => import("./TalentCandidates"));
+const TalentCandidateProfile = lazy(() => import("./TalentCandidateProfile"));
+const TalentCampaigns = lazy(() => import("./TalentCampaigns"));
+const TalentCampaignDetail = lazy(() => import("./TalentCampaignDetail"));
+const TalentProjects = lazy(() => import("./TalentProjects"));
+const TalentAnalytics = lazy(() => import("./TalentAnalytics"));
+const TalentClients = lazy(() => import("./TalentClients"));
+const TalentNestDetail = lazy(() => import("./TalentNestDetail"));
+const TalentSMSOutreach = lazy(() => import("./TalentSMSOutreach"));
+
+// Admin Panel Pages (lazy)
+const PlatformAdminDashboard = lazy(() => import("./admin/AdminDashboard"));
+const PlatformAdminSettings = lazy(() => import("./admin/AdminSettings"));
+const PlatformAdminFeatureFlags = lazy(() => import("./admin/AdminFeatureFlags"));
+const PlatformAdminAuditLogs = lazy(() => import("./admin/AdminAuditLogs"));
+const PlatformAdminUsers = lazy(() => import("./admin/AdminUsers"));
+const PlatformAdminOrganizations = lazy(() => import("./admin/AdminOrganizations"));
+const PlatformAdminMarketplace = lazy(() => import("./admin/AdminMarketplace"));
+const PlatformAdminNests = lazy(() => import("./admin/AdminNests"));
+const PlatformAdminApps = lazy(() => import("./admin/AdminApps"));
+const PlatformAdminAnalytics = lazy(() => import("./admin/AdminAnalytics"));
+const PlatformAdminSystem = lazy(() => import("./admin/AdminSystem"));
+const PlatformAdminIntegrations = lazy(() => import("./admin/AdminIntegrations"));
+const PlatformAdminBilling = lazy(() => import("./admin/AdminBilling"));
+const PlatformAdminContent = lazy(() => import("./admin/AdminContent"));
+const PlatformAdminSupport = lazy(() => import("./admin/AdminSupport"));
+const PlatformAdminAI = lazy(() => import("./admin/AdminAI"));
+const PlatformAdminCredits = lazy(() => import("./admin/AdminCredits"));
+const PlatformAdminGrowthNests = lazy(() => import("./admin/AdminGrowthNests"));
+const PlatformAdminDemos = lazy(() => import("./admin/AdminDemos"));
+const PlatformAdminRoadmap = lazy(() => import("./admin/AdminRoadmap"));
+const PlatformAdminStructuralTests = lazy(() => import("./admin/AdminStructuralTests"));
+
+const DemoExperience = lazy(() => import("./DemoExperience"));
+const RequestDemo = lazy(() => import("./RequestDemo"));
+const B2BStoreBuilder = lazy(() => import("./B2BStoreBuilder"));
+const StoreDashboard = lazy(() => import("./StoreDashboard"));
+const ProductSalesAnalytics = lazy(() => import("./ProductSalesAnalytics"));
+
+// Client Portal pages (lazy)
+const ClientLogin = lazy(() => import("./portal/ClientLogin"));
+const ClientAuthCallback = lazy(() => import("./portal/ClientAuthCallback"));
+const ClientDashboard = lazy(() => import("./portal/ClientDashboard"));
+const ClientProjectDetail = lazy(() => import("./portal/ClientProjectDetail"));
+const ClientProjects = lazy(() => import("./portal/ClientProjects"));
+const ClientApprovals = lazy(() => import("./portal/ClientApprovals"));
+const ClientActivity = lazy(() => import("./portal/ClientActivity"));
+const WholesaleHome = lazy(() => import("./portal/WholesaleHome"));
+const WholesaleCatalog = lazy(() => import("./portal/WholesaleCatalog"));
+const WholesaleProduct = lazy(() => import("./portal/WholesaleProduct"));
+const WholesaleCart = lazy(() => import("./portal/WholesaleCart"));
+const WholesaleCheckout = lazy(() => import("./portal/WholesaleCheckout"));
+const WholesaleOrders = lazy(() => import("./portal/WholesaleOrders"));
+const WholesaleOrderDetail = lazy(() => import("./portal/WholesaleOrderDetail"));
+const WholesaleInquiries = lazy(() => import("./portal/WholesaleInquiries"));
+const WholesaleAccount = lazy(() => import("./portal/WholesaleAccount"));
+const WholesaleTemplates = lazy(() => import("./portal/WholesaleTemplates"));
+const WholesaleDashboard = lazy(() => import("./portal/WholesaleDashboard"));
+
+// B2B Admin components (lazy)
+const B2BOrderDetail = lazy(() => import("@/components/b2b-admin/B2BOrderDetail"));
+const B2BCatalogManager = lazy(() => import("@/components/b2b-admin/B2BCatalogManager"));
+const B2BInquiryManager = lazy(() => import("@/components/b2b-admin/B2BInquiryManager"));
+const B2BStoreAccess = lazy(() => import("./B2BStoreAccess"));
+const B2BDashboard = lazy(() => import("@/components/b2b-admin/B2BDashboard"));
+const PriceListManager = lazy(() => import("@/components/b2b-admin/PriceListManager"));
+const B2BOrdersManager = lazy(() => import("@/components/b2b-admin/B2BOrdersManager"));
+const PriceListEditor = lazy(() => import("@/components/b2b-admin/PriceListEditor"));
+const ClientGroupManager = lazy(() => import("@/components/b2b-admin/ClientGroupManager"));
+const StorePreview = lazy(() => import("./StorePreview"));
+const PublicStorefront = lazy(() => import("./PublicStorefront"));
 
 // Redirect /marketplace/nests/:nestId to /TalentNestDetail?id=:nestId
 function NestDetailRedirect() {
@@ -476,23 +298,23 @@ const PAGES = {
     AuthCallback: AuthCallback,
 
     Login: Login,
-    
+
     Actions: Actions,
 
     ActivityTimeline: ActivityTimeline,
-    
+
     AdminDashboard: AdminDashboard,
-    
+
     AdminMigration: AdminMigration,
-    
+
     AnalyticsDashboard: AnalyticsDashboard,
-    
+
     Assignments: Assignments,
-    
+
     BackendSetup: BackendSetup,
-    
+
     BackendStatus: BackendStatus,
-    
+
     CRMContacts: CRMContacts,
 
     CRMCompanyProfile: CRMCompanyProfile,
@@ -506,13 +328,13 @@ const PAGES = {
     CRMCampaigns: CRMCampaigns,
 
     Certificates: Certificates,
-    
+
     CompanyDashboard: CompanyDashboard,
-    
+
     CompanyInvite: CompanyInvite,
-    
+
     CompanyProfile: CompanyProfile,
-    
+
     ComplianceCenter: ComplianceCenter,
 
     ComplianceControls: ComplianceControls,
@@ -524,33 +346,33 @@ const PAGES = {
     CompliancePolicies: CompliancePolicies,
 
     ComplianceRoadmap: ComplianceRoadmap,
-    
+
 
     ComposioIntegrations: ComposioIntegrations,
 
     CourseDetail: CourseDetail,
-    
+
     CourseUpgrader: CourseUpgrader,
-    
+
     Courses: Courses,
-    
+
     Dashboard: Dashboard,
     DailyJournal: DailyJournal,
 
     DocumentGenerator: DocumentGenerator,
-    
+
     DownloadApp: DownloadApp,
-    
+
     Glossary: Glossary,
-    
+
     Growth: Growth,
-    
+
     GrowthAssistant: GrowthAssistant,
-    
+
     GrowthCampaigns: GrowthCampaigns,
-    
+
     GrowthPipeline: GrowthPipeline,
-    
+
     GrowthProspects: GrowthProspects,
 
     FinanceProposals: FinanceProposals,
@@ -558,9 +380,9 @@ const PAGES = {
     FinanceProposalBuilder: FinanceProposalBuilder,
 
     GrowthResearch: GrowthResearch,
-    
+
     GrowthSignals: GrowthSignals,
-    
+
     GrowthTemplates: GrowthTemplates,
 
     GrowthEnrich: GrowthEnrich,
@@ -587,13 +409,13 @@ const PAGES = {
     GrowthOpportunities: GrowthOpportunities,
 
     Home: Home,
-    
+
     Inbox: Inbox,
-    
+
     Leaderboard: Leaderboard,
 
     Learn: Learn,
-    
+
     LearnAITools: LearnAITools,
 
     LearnAssistant: LearnAssistant,
@@ -609,19 +431,19 @@ const PAGES = {
     ManageCourses: ManageCourses,
 
     TeamLearningDashboard: TeamLearningDashboard,
-    
+
     ManagerDashboard: ManagerDashboard,
-    
+
     Onboarding: Onboarding,
-    
+
     Projects: Projects,
-    
+
     RecommendationsFeed: RecommendationsFeed,
-    
+
     RiskAssessment: RiskAssessment,
-    
+
     Sentinel: Sentinel,
-    
+
     SentinelDashboard: SentinelDashboard,
 
     TrustCenter: TrustCenter,
@@ -629,39 +451,39 @@ const PAGES = {
     VendorRisk: VendorRisk,
 
     Sequences: Sequences,
-    
+
     Settings: Settings,
 
     ShopifyCallback: ShopifyCallback,
 
     ShareView: ShareView,
-    
+
     SkillFrameworks: SkillFrameworks,
-    
+
     SkillMap: SkillMap,
-    
+
     SkillsOverview: SkillsOverview,
-    
+
     StudentDashboard: StudentDashboard,
-    
+
     Support: Support,
-    
+
     SystemWorkflow: SystemWorkflow,
-    
+
     Tasks: Tasks,
-    
+
     Templates: Templates,
-    
+
     UserAnalytics: UserAnalytics,
-    
+
     VerifyCertificate: VerifyCertificate,
-    
+
     VisionTest: VisionTest,
-    
+
     WorkflowEditor: WorkflowEditor,
-    
+
     MCPIntegrations: MCPIntegrations,
-    
+
     OAuthCallback: OAuthCallback,
 
     Finance: FinanceDashboard,
@@ -846,11 +668,21 @@ function _getCurrentPage(url) {
 // Detect store subdomain once at module level (hostname doesn't change)
 const _storeSubdomain = getStoreSubdomain();
 
+const PageLoadingFallback = () => (
+  <div className="min-h-screen bg-black flex items-center justify-center">
+    <div className="w-8 h-8 border-2 border-zinc-700 border-t-cyan-400 rounded-full animate-spin" />
+  </div>
+);
+
 // Create a wrapper component that uses useLocation inside the Router context
 function PagesContent() {
     // Public B2B Store — subdomain routing (MUST be first, before all other routes)
     if (_storeSubdomain) {
-        return <PublicStorefront subdomain={_storeSubdomain} />;
+        return (
+            <Suspense fallback={<PageLoadingFallback />}>
+                <PublicStorefront subdomain={_storeSubdomain} />
+            </Suspense>
+        );
     }
 
     const location = useLocation();
@@ -862,9 +694,11 @@ function PagesContent() {
     // Share routes render without the main Layout (no sidebar for public views)
     if (isShareRoute) {
         return (
-            <Routes>
-                <Route path="/share/:type/:shareId" element={<ShareView />} />
-            </Routes>
+            <Suspense fallback={<PageLoadingFallback />}>
+                <Routes>
+                    <Route path="/share/:type/:shareId" element={<ShareView />} />
+                </Routes>
+            </Suspense>
         );
     }
 
@@ -872,10 +706,12 @@ function PagesContent() {
     const isDemoRoute = location.pathname.startsWith('/demo') || location.pathname === '/request-demo';
     if (isDemoRoute) {
         return (
-            <Routes>
-                <Route path="/demo" element={<DemoExperience />} />
-                <Route path="/request-demo" element={<RequestDemo />} />
-            </Routes>
+            <Suspense fallback={<PageLoadingFallback />}>
+                <Routes>
+                    <Route path="/demo" element={<DemoExperience />} />
+                    <Route path="/request-demo" element={<RequestDemo />} />
+                </Routes>
+            </Suspense>
         );
     }
 
@@ -883,9 +719,11 @@ function PagesContent() {
     const isBookingRoute = location.pathname.startsWith('/book');
     if (isBookingRoute) {
         return (
-            <Routes>
-                <Route path="/book/:username" element={<CalendarBookingPage />} />
-            </Routes>
+            <Suspense fallback={<PageLoadingFallback />}>
+                <Routes>
+                    <Route path="/book/:username" element={<CalendarBookingPage />} />
+                </Routes>
+            </Suspense>
         );
     }
 
@@ -894,9 +732,11 @@ function PagesContent() {
     if (isCallRoute) {
         return (
             <UserProvider>
-                <Routes>
-                    <Route path="/call/:joinCode" element={<JoinCallPage />} />
-                </Routes>
+                <Suspense fallback={<PageLoadingFallback />}>
+                    <Routes>
+                        <Route path="/call/:joinCode" element={<JoinCallPage />} />
+                    </Routes>
+                </Suspense>
             </UserProvider>
         );
     }
@@ -905,12 +745,14 @@ function PagesContent() {
     const isStorePreviewRoute = location.pathname.startsWith('/store-preview');
     if (isStorePreviewRoute) {
         return (
-            <Routes>
-                <Route path="/store-preview/:orgId/*" element={<StorePreview />} />
-                <Route path="/store-preview/*" element={<StorePreview />} />
-                <Route path="/store-preview/:orgId" element={<StorePreview />} />
-                <Route path="/store-preview" element={<StorePreview />} />
-            </Routes>
+            <Suspense fallback={<PageLoadingFallback />}>
+                <Routes>
+                    <Route path="/store-preview/:orgId/*" element={<StorePreview />} />
+                    <Route path="/store-preview/*" element={<StorePreview />} />
+                    <Route path="/store-preview/:orgId" element={<StorePreview />} />
+                    <Route path="/store-preview" element={<StorePreview />} />
+                </Routes>
+            </Suspense>
         );
     }
 
@@ -920,9 +762,11 @@ function PagesContent() {
         return (
             <UserProvider>
                 <PermissionProvider>
-                    <Routes>
-                        <Route path="/b2bstorebuilder" element={<B2BStoreBuilder />} />
-                    </Routes>
+                    <Suspense fallback={<PageLoadingFallback />}>
+                        <Routes>
+                            <Route path="/b2bstorebuilder" element={<B2BStoreBuilder />} />
+                        </Routes>
+                    </Suspense>
                 </PermissionProvider>
             </UserProvider>
         );
@@ -934,39 +778,41 @@ function PagesContent() {
     if (isPortalRoute) {
         return (
             <ClientProvider>
-                <Routes>
-                    {/* Auth callback - org-scoped (preferred) and org-agnostic (fallback) */}
-                    <Route path="/portal/:org/auth/callback" element={<ClientAuthCallback />} />
-                    <Route path="/portal/auth/callback" element={<ClientAuthCallback />} />
+                <Suspense fallback={<PageLoadingFallback />}>
+                    <Routes>
+                        {/* Auth callback - org-scoped (preferred) and org-agnostic (fallback) */}
+                        <Route path="/portal/:org/auth/callback" element={<ClientAuthCallback />} />
+                        <Route path="/portal/auth/callback" element={<ClientAuthCallback />} />
 
-                    {/* Wholesale store routes */}
-                    <Route path="/portal/:org/shop" element={<WholesaleHome />} />
-                    <Route path="/portal/:org/shop/catalog" element={<WholesaleCatalog />} />
-                    <Route path="/portal/:org/shop/product/:productId" element={<WholesaleProduct />} />
-                    <Route path="/portal/:org/shop/cart" element={<WholesaleCart />} />
-                    <Route path="/portal/:org/shop/checkout" element={<WholesaleCheckout />} />
-                    <Route path="/portal/:org/shop/orders" element={<WholesaleOrders />} />
-                    <Route path="/portal/:org/shop/orders/:orderId" element={<WholesaleOrderDetail />} />
-                    <Route path="/portal/:org/shop/inquiries" element={<WholesaleInquiries />} />
-                    <Route path="/portal/:org/shop/account" element={<WholesaleAccount />} />
-                    <Route path="/portal/:org/shop/templates" element={<WholesaleTemplates />} />
-                    <Route path="/portal/:org/shop/dashboard" element={<WholesaleDashboard />} />
+                        {/* Wholesale store routes */}
+                        <Route path="/portal/:org/shop" element={<WholesaleHome />} />
+                        <Route path="/portal/:org/shop/catalog" element={<WholesaleCatalog />} />
+                        <Route path="/portal/:org/shop/product/:productId" element={<WholesaleProduct />} />
+                        <Route path="/portal/:org/shop/cart" element={<WholesaleCart />} />
+                        <Route path="/portal/:org/shop/checkout" element={<WholesaleCheckout />} />
+                        <Route path="/portal/:org/shop/orders" element={<WholesaleOrders />} />
+                        <Route path="/portal/:org/shop/orders/:orderId" element={<WholesaleOrderDetail />} />
+                        <Route path="/portal/:org/shop/inquiries" element={<WholesaleInquiries />} />
+                        <Route path="/portal/:org/shop/account" element={<WholesaleAccount />} />
+                        <Route path="/portal/:org/shop/templates" element={<WholesaleTemplates />} />
+                        <Route path="/portal/:org/shop/dashboard" element={<WholesaleDashboard />} />
 
-                    {/* Organization-scoped routes */}
-                    <Route path="/portal/:org/login" element={<ClientLogin />} />
-                    <Route element={<ClientLayout />}>
-                        <Route path="/portal/:org" element={<ClientDashboard />} />
-                        <Route path="/portal/:org/projects" element={<ClientProjects />} />
-                        <Route path="/portal/:org/project/:id" element={<ClientProjectDetail />} />
-                        <Route path="/portal/:org/approvals" element={<ClientApprovals />} />
-                        <Route path="/portal/:org/activity" element={<ClientActivity />} />
-                        <Route path="/portal/:org/settings" element={<ClientDashboard />} />
-                    </Route>
+                        {/* Organization-scoped routes */}
+                        <Route path="/portal/:org/login" element={<ClientLogin />} />
+                        <Route element={<ClientLayout />}>
+                            <Route path="/portal/:org" element={<ClientDashboard />} />
+                            <Route path="/portal/:org/projects" element={<ClientProjects />} />
+                            <Route path="/portal/:org/project/:id" element={<ClientProjectDetail />} />
+                            <Route path="/portal/:org/approvals" element={<ClientApprovals />} />
+                            <Route path="/portal/:org/activity" element={<ClientActivity />} />
+                            <Route path="/portal/:org/settings" element={<ClientDashboard />} />
+                        </Route>
 
-                    {/* Legacy/fallback routes */}
-                    <Route path="/portal/login" element={<ClientLogin />} />
-                    <Route path="/portal" element={<ClientLogin />} />
-                </Routes>
+                        {/* Legacy/fallback routes */}
+                        <Route path="/portal/login" element={<ClientLogin />} />
+                        <Route path="/portal" element={<ClientLogin />} />
+                    </Routes>
+                </Suspense>
             </ClientProvider>
         );
     }
@@ -977,31 +823,33 @@ function PagesContent() {
         return (
             <UserProvider>
                 <PermissionProvider>
-                    <Routes>
-                        <Route path="/admin" element={<AdminLayout />}>
-                            <Route index element={<PlatformAdminDashboard />} />
-                            <Route path="settings" element={<PlatformAdminSettings />} />
-                            <Route path="feature-flags" element={<PlatformAdminFeatureFlags />} />
-                            <Route path="audit-logs" element={<PlatformAdminAuditLogs />} />
-                            <Route path="users" element={<PlatformAdminUsers />} />
-                            <Route path="organizations" element={<PlatformAdminOrganizations />} />
-                            <Route path="marketplace" element={<PlatformAdminMarketplace />} />
-                            <Route path="nests" element={<PlatformAdminNests />} />
-                            <Route path="apps" element={<PlatformAdminApps />} />
-                            <Route path="analytics" element={<PlatformAdminAnalytics />} />
-                            <Route path="system" element={<PlatformAdminSystem />} />
-                            <Route path="integrations" element={<PlatformAdminIntegrations />} />
-                            <Route path="billing" element={<PlatformAdminBilling />} />
-                            <Route path="content" element={<PlatformAdminContent />} />
-                            <Route path="support" element={<PlatformAdminSupport />} />
-                            <Route path="ai" element={<PlatformAdminAI />} />
-                            <Route path="credits" element={<PlatformAdminCredits />} />
-                            <Route path="growth-nests" element={<PlatformAdminGrowthNests />} />
-                            <Route path="demos" element={<PlatformAdminDemos />} />
-                            <Route path="roadmap" element={<PlatformAdminRoadmap />} />
-                            <Route path="structural-tests" element={<PlatformAdminStructuralTests />} />
-                        </Route>
-                    </Routes>
+                    <Suspense fallback={<PageLoadingFallback />}>
+                        <Routes>
+                            <Route path="/admin" element={<AdminLayout />}>
+                                <Route index element={<PlatformAdminDashboard />} />
+                                <Route path="settings" element={<PlatformAdminSettings />} />
+                                <Route path="feature-flags" element={<PlatformAdminFeatureFlags />} />
+                                <Route path="audit-logs" element={<PlatformAdminAuditLogs />} />
+                                <Route path="users" element={<PlatformAdminUsers />} />
+                                <Route path="organizations" element={<PlatformAdminOrganizations />} />
+                                <Route path="marketplace" element={<PlatformAdminMarketplace />} />
+                                <Route path="nests" element={<PlatformAdminNests />} />
+                                <Route path="apps" element={<PlatformAdminApps />} />
+                                <Route path="analytics" element={<PlatformAdminAnalytics />} />
+                                <Route path="system" element={<PlatformAdminSystem />} />
+                                <Route path="integrations" element={<PlatformAdminIntegrations />} />
+                                <Route path="billing" element={<PlatformAdminBilling />} />
+                                <Route path="content" element={<PlatformAdminContent />} />
+                                <Route path="support" element={<PlatformAdminSupport />} />
+                                <Route path="ai" element={<PlatformAdminAI />} />
+                                <Route path="credits" element={<PlatformAdminCredits />} />
+                                <Route path="growth-nests" element={<PlatformAdminGrowthNests />} />
+                                <Route path="demos" element={<PlatformAdminDemos />} />
+                                <Route path="roadmap" element={<PlatformAdminRoadmap />} />
+                                <Route path="structural-tests" element={<PlatformAdminStructuralTests />} />
+                            </Route>
+                        </Routes>
+                    </Suspense>
                 </PermissionProvider>
             </UserProvider>
         );
@@ -1071,15 +919,16 @@ function PagesContent() {
 
     return (
         <Layout currentPageName={currentPage}>
-            <Routes>
+            <Suspense fallback={<PageLoadingFallback />}>
+                <Routes>
 
                     <Route path="/" element={<Dashboard />} />
-                
-                
+
+
                 <Route path="/AIAssistant" element={<AIAssistant />} />
 
                 <Route path="/Sync" element={<AIAssistant />} />
-                
+
                 <Route path="/AISystemInventory" element={<AISystemInventory />} />
 
                 <Route path="/AuthCallback" element={<AuthCallback />} />
@@ -1091,19 +940,19 @@ function PagesContent() {
                 <Route path="/Actions" element={<Actions />} />
 
                 <Route path="/ActivityTimeline" element={<ActivityTimeline />} />
-                
+
                 <Route path="/AdminDashboard" element={<AdminDashboard />} />
-                
+
                 <Route path="/AdminMigration" element={<AdminMigration />} />
-                
+
                 <Route path="/AnalyticsDashboard" element={<AnalyticsDashboard />} />
-                
+
                 <Route path="/Assignments" element={<Assignments />} />
-                
+
                 <Route path="/BackendSetup" element={<BackendSetup />} />
-                
+
                 <Route path="/BackendStatus" element={<BackendStatus />} />
-                
+
                 <Route path="/CRMDashboard" element={<CRMDashboard />} />
 
                 <Route path="/CRMContacts" element={<CRMContacts />} />
@@ -1121,11 +970,11 @@ function PagesContent() {
                 <Route path="/Credits" element={<Credits />} />
 
                 <Route path="/CompanyDashboard" element={<CompanyDashboard />} />
-                
+
                 <Route path="/CompanyInvite" element={<CompanyInvite />} />
-                
+
                 <Route path="/CompanyProfile" element={<CompanyProfile />} />
-                
+
                 <Route path="/ComplianceCenter" element={<ComplianceCenter />} />
 
                 <Route path="/ComplianceControls" element={<ComplianceControls />} />
@@ -1137,23 +986,23 @@ function PagesContent() {
                 <Route path="/CompliancePolicies" element={<CompliancePolicies />} />
 
                 <Route path="/ComplianceRoadmap" element={<ComplianceRoadmap />} />
-                
+
 
                 <Route path="/ComposioIntegrations" element={<Navigate to="/Integrations" replace />} />
                 <Route path="/settings/integrations" element={<Navigate to="/Integrations" replace />} />
 
                 <Route path="/Contacts" element={<Navigate to="/CRMContacts" replace />} />
-                
+
                 <Route path="/CourseDetail" element={<CourseDetail />} />
-                
+
                 <Route path="/CourseUpgrader" element={<CourseUpgrader />} />
-                
+
                 <Route path="/Courses" element={<Courses />} />
-                
+
                 <Route path="/Dashboard" element={<Dashboard />} />
-                
+
                 <Route path="/Deals" element={<Navigate to="/CRMPipeline" replace />} />
-                
+
                 <Route path="/DocumentGenerator" element={<DocumentGenerator />} />
 
                 <Route path="/DesktopActivity" element={<DesktopActivity />} />
@@ -1163,18 +1012,18 @@ function PagesContent() {
                 <Route path="/PrivacyAIAct" element={<PrivacyAIAct />} />
 
                 <Route path="/DownloadApp" element={<DownloadApp />} />
-                
+
                 <Route path="/Glossary" element={<Glossary />} />
-                
+
                 <Route path="/Growth" element={<Growth />} />
-                
+
                 <Route path="/GrowthAssistant" element={<GrowthAssistant />} />
-                
+
                 <Route path="/GrowthCampaigns" element={<GrowthCampaigns />} />
                 <Route path="/growth/campaigns" element={<GrowthCampaigns />} />
 
                 <Route path="/GrowthPipeline" element={<GrowthPipeline />} />
-                
+
                 <Route path="/GrowthProspects" element={<GrowthProspects />} />
 
                 <Route path="/FinanceProposals" element={<FinanceProposals />} />
@@ -1182,9 +1031,9 @@ function PagesContent() {
                 <Route path="/FinanceProposalBuilder" element={<FinanceProposalBuilder />} />
 
                 <Route path="/GrowthResearch" element={<GrowthResearch />} />
-                
+
                 <Route path="/GrowthSignals" element={<GrowthSignals />} />
-                
+
                 <Route path="/GrowthTemplates" element={<GrowthTemplates />} />
 
                 <Route path="/GrowthNestsMarketplace" element={<Navigate to="/marketplace/nests" replace />} />
@@ -1236,80 +1085,80 @@ function PagesContent() {
                 <Route path="/growth/opportunities" element={<GrowthOpportunities />} />
 
                 <Route path="/Home" element={<Home />} />
-                
+
                 <Route path="/Inbox" element={<Inbox />} />
-                
+
                 <Route path="/Leaderboard" element={<Leaderboard />} />
-                
+
                 <Route path="/Leads" element={<Navigate to="/CRMContacts?tab=lead" replace />} />
-                
+
                 <Route path="/Learn" element={<Learn />} />
-                
+
                 <Route path="/LearnAITools" element={<LearnAITools />} />
 
                 <Route path="/LearnAssistant" element={<LearnAssistant />} />
 
                 <Route path="/LearnDashboard" element={<LearnDashboard />} />
-                
+
                 <Route path="/LessonViewer" element={<LessonViewer />} />
 
                 {/* Marketplace Routes */}
                 <Route path="/marketplace/nests" element={<NestsMarketplace />} />
                 <Route path="/marketplace/nests/purchased" element={<PurchasedNests />} />
                 <Route path="/marketplace/nests/:nestId" element={<NestDetailRedirect />} />
-                
+
                 <Route path="/ManageCourses" element={<ManageCourses />} />
-                
+
                 <Route path="/ManagerDashboard" element={<ManagerDashboard />} />
-                
+
                 <Route path="/Onboarding" element={<Onboarding />} />
-                
+
                 <Route path="/Projects" element={<Projects />} />
-                
+
                 <Route path="/RecommendationsFeed" element={<RecommendationsFeed />} />
-                
+
                 <Route path="/RiskAssessment" element={<RiskAssessment />} />
-                
+
                 <Route path="/Sentinel" element={<Sentinel />} />
-                
+
                 <Route path="/SentinelDashboard" element={<SentinelDashboard />} />
 
                 <Route path="/TrustCenter" element={<TrustCenter />} />
 
                 <Route path="/VendorRisk" element={<VendorRisk />} />
-                
+
                 <Route path="/Sequences" element={<Sequences />} />
-                
+
                 <Route path="/Settings" element={<Settings />} />
 
                 <Route path="/shopifycallback" element={<ShopifyCallback />} />
 
                 <Route path="/SkillFrameworks" element={<SkillFrameworks />} />
-                
+
                 <Route path="/SkillMap" element={<SkillMap />} />
-                
+
                 <Route path="/SkillsOverview" element={<SkillsOverview />} />
-                
+
                 <Route path="/StudentDashboard" element={<StudentDashboard />} />
-                
+
                 <Route path="/Support" element={<Support />} />
-                
+
                 <Route path="/SystemWorkflow" element={<SystemWorkflow />} />
-                
+
                 <Route path="/Tasks" element={<Tasks />} />
-                
+
                 <Route path="/Templates" element={<Templates />} />
-                
+
                 <Route path="/UserAnalytics" element={<UserAnalytics />} />
-                
+
                 <Route path="/VerifyCertificate" element={<VerifyCertificate />} />
-                
+
                 <Route path="/VisionTest" element={<VisionTest />} />
-                
+
                 <Route path="/WorkflowEditor" element={<WorkflowEditor />} />
-                
+
                 <Route path="/MCPIntegrations" element={<Navigate to="/Integrations" replace />} />
-                
+
                 <Route path="/OAuthCallback" element={<OAuthCallback />} />
 
                 <Route path="/Finance" element={<FinanceErrorWrapper><FinanceDashboard /></FinanceErrorWrapper>} />
@@ -1507,6 +1356,7 @@ function PagesContent() {
                 <Route path="*" element={<NotFound />} />
 
             </Routes>
+            </Suspense>
         </Layout>
     );
 }

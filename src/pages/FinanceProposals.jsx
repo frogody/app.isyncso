@@ -71,8 +71,8 @@ export default function FinanceProposals() {
     try {
       setLoading(true);
       const [proposalData, prospectData] = await Promise.all([
-        Proposal.list?.({ limit: 500 }).catch(() => []) || [],
-        Prospect.list?.({ limit: 500 }).catch(() => []) || []
+        Proposal.list?.({ limit: 200 }).catch(() => []) || [],
+        Prospect.list?.({ limit: 200 }).catch(() => []) || []
       ]);
       setProposals(proposalData);
       setProspects(prospectData);

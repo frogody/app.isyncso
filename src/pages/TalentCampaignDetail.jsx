@@ -2019,41 +2019,45 @@ export default function TalentCampaignDetail() {
           {/* Overview Tab */}
           {!isNew && (
             <TabsContent value="overview" className="m-0">
-              <OverviewTab
-                campaign={campaign}
-                formData={formData}
-                stats={stats}
-                onCandidateClick={(match) => {
-                  setDrawerCandidateId(match.candidate_id);
-                  setDrawerMatchData(match);
-                }}
-              />
+              {activeTab === "overview" && (
+                <OverviewTab
+                  campaign={campaign}
+                  formData={formData}
+                  stats={stats}
+                  onCandidateClick={(match) => {
+                    setDrawerCandidateId(match.candidate_id);
+                    setDrawerMatchData(match);
+                  }}
+                />
+              )}
             </TabsContent>
           )}
 
           {/* Candidates Tab */}
           {!isNew && (
             <TabsContent value="candidates" className="m-0">
-              <CandidatesTab
-                campaign={campaign}
-                matchedCandidates={campaign?.matched_candidates || []}
-                selectedCandidates={selectedCandidates}
-                onToggleCandidateSelect={handleToggleCandidateSelect}
-                onSelectAllExcellent={handleSelectAllExcellent}
-                onSaveSelection={handleSaveSelection}
-                onGenerateOutreach={handleGenerateOutreach}
-                onRunMatching={() => runAutoMatching(campaign)}
-                onCandidateClick={(match) => {
-                  setDrawerCandidateId(match.candidate_id);
-                  setDrawerMatchData(match);
-                }}
-                isMatching={isMatching}
-                savingSelection={savingSelection}
-                generatingOutreach={generatingOutreach}
-                linkedNest={linkedNest}
-                nestCandidates={nestCandidates}
-                formData={formData}
-              />
+              {activeTab === "candidates" && (
+                <CandidatesTab
+                  campaign={campaign}
+                  matchedCandidates={campaign?.matched_candidates || []}
+                  selectedCandidates={selectedCandidates}
+                  onToggleCandidateSelect={handleToggleCandidateSelect}
+                  onSelectAllExcellent={handleSelectAllExcellent}
+                  onSaveSelection={handleSaveSelection}
+                  onGenerateOutreach={handleGenerateOutreach}
+                  onRunMatching={() => runAutoMatching(campaign)}
+                  onCandidateClick={(match) => {
+                    setDrawerCandidateId(match.candidate_id);
+                    setDrawerMatchData(match);
+                  }}
+                  isMatching={isMatching}
+                  savingSelection={savingSelection}
+                  generatingOutreach={generatingOutreach}
+                  linkedNest={linkedNest}
+                  nestCandidates={nestCandidates}
+                  formData={formData}
+                />
+              )}
             </TabsContent>
           )}
 
@@ -2061,119 +2065,131 @@ export default function TalentCampaignDetail() {
           {/* Outreach Tab */}
           {!isNew && (
             <TabsContent value="outreach" className="m-0">
-              {/* Mode Toggle + Customize button */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant={outreachMode === "queue" ? "default" : "ghost"}
-                    onClick={() => setOutreachMode("queue")}
-                    className={outreachMode === "queue" ? "bg-red-500 hover:bg-red-600" : `${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")}`}
-                  >
-                    <Mail className="w-4 h-4 mr-1" />
-                    Queue View
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={outreachMode === "linkedin" ? "default" : "ghost"}
-                    onClick={() => setOutreachMode("linkedin")}
-                    className={outreachMode === "linkedin" ? "bg-red-500 hover:bg-red-600" : `${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")}`}
-                  >
-                    <Linkedin className="w-4 h-4 mr-1" />
-                    LinkedIn Workflow
-                  </Button>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowCustomizeDrawer(true)}
-                  className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-600", "text-zinc-300")} ${t("hover:text-gray-900", "hover:text-white")}`}
-                >
-                  <SlidersHorizontal className="w-4 h-4 mr-2" />
-                  Customize Messages
-                </Button>
-              </div>
-
-              {outreachMode === "queue" && (
-                <OutreachQueueTab
-                  campaign={campaign}
-                  tasks={outreachTasks}
-                  onRefresh={fetchOutreachTasks}
-                  onSendTask={handleSendTask}
-                  onSendAll={handleSendAllTasks}
-                  onCancelTask={handleCancelTask}
-                />
-              )}
-              {outreachMode === "linkedin" && (
-                <LinkedInOutreachWorkflow
-                  campaign={campaign}
-                  organizationId={campaign?.organization_id}
-                />
-              )}
-
-              {/* Customize Messages Sheet Drawer */}
-              <Sheet open={showCustomizeDrawer} onOpenChange={setShowCustomizeDrawer}>
-                <SheetContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")} w-[480px] sm:max-w-[480px] overflow-y-auto`}>
-                  <SheetHeader>
-                    <SheetTitle className={t("text-gray-900", "text-white")}>Customize Messages</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-4">
-                    <OutreachCustomizationPanel
-                      organizationId={campaign?.organization_id}
-                      campaignId={campaign?.id}
-                    />
+              {activeTab === "outreach" && (
+                <>
+                  {/* Mode Toggle + Customize button */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant={outreachMode === "queue" ? "default" : "ghost"}
+                        onClick={() => setOutreachMode("queue")}
+                        className={outreachMode === "queue" ? "bg-red-500 hover:bg-red-600" : `${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")}`}
+                      >
+                        <Mail className="w-4 h-4 mr-1" />
+                        Queue View
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={outreachMode === "linkedin" ? "default" : "ghost"}
+                        onClick={() => setOutreachMode("linkedin")}
+                        className={outreachMode === "linkedin" ? "bg-red-500 hover:bg-red-600" : `${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")}`}
+                      >
+                        <Linkedin className="w-4 h-4 mr-1" />
+                        LinkedIn Workflow
+                      </Button>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowCustomizeDrawer(true)}
+                      className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-600", "text-zinc-300")} ${t("hover:text-gray-900", "hover:text-white")}`}
+                    >
+                      <SlidersHorizontal className="w-4 h-4 mr-2" />
+                      Customize Messages
+                    </Button>
                   </div>
-                </SheetContent>
-              </Sheet>
+
+                  {outreachMode === "queue" && (
+                    <OutreachQueueTab
+                      campaign={campaign}
+                      tasks={outreachTasks}
+                      onRefresh={fetchOutreachTasks}
+                      onSendTask={handleSendTask}
+                      onSendAll={handleSendAllTasks}
+                      onCancelTask={handleCancelTask}
+                    />
+                  )}
+                  {outreachMode === "linkedin" && (
+                    <LinkedInOutreachWorkflow
+                      campaign={campaign}
+                      organizationId={campaign?.organization_id}
+                    />
+                  )}
+
+                  {/* Customize Messages Sheet Drawer */}
+                  <Sheet open={showCustomizeDrawer} onOpenChange={setShowCustomizeDrawer}>
+                    <SheetContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")} w-[480px] sm:max-w-[480px] overflow-y-auto`}>
+                      <SheetHeader>
+                        <SheetTitle className={t("text-gray-900", "text-white")}>Customize Messages</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-4">
+                        <OutreachCustomizationPanel
+                          organizationId={campaign?.organization_id}
+                          campaignId={campaign?.id}
+                        />
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </>
+              )}
             </TabsContent>
           )}
 
           {/* Flow Tab */}
           {!isNew && (
             <TabsContent value="flow" className="m-0">
-              <TalentFlowTab
-                ref={flowTabRef}
-                campaign={campaign}
-                onFlowSaved={(flowId) => handleChange('flow_id', flowId)}
-              />
+              {activeTab === "flow" && (
+                <TalentFlowTab
+                  ref={flowTabRef}
+                  campaign={campaign}
+                  onFlowSaved={(flowId) => handleChange('flow_id', flowId)}
+                />
+              )}
             </TabsContent>
           )}
 
           {/* Analytics Tab */}
           {!isNew && (
             <TabsContent value="analytics" className="m-0">
-              <AnalyticsTab
-                campaign={campaign}
-                outreachTasks={outreachTasks}
-                matchedCandidates={campaign?.matched_candidates || []}
-              />
+              {activeTab === "analytics" && (
+                <AnalyticsTab
+                  campaign={campaign}
+                  outreachTasks={outreachTasks}
+                  matchedCandidates={campaign?.matched_candidates || []}
+                />
+              )}
             </TabsContent>
           )}
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6 m-0">
-            <SettingsTab
-              formData={formData}
-              handleChange={handleChange}
-              handleStatusChange={handleStatusChange}
-              isNew={isNew}
-              projects={projects}
-              roles={roles}
-              campaign={campaign}
-            />
-
-            {/* Outreach Sequence (merged from Sequence tab) */}
-            {!isNew && (
-              <div className={`pt-6 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
-                <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
-                  <FileText className="w-5 h-5 text-red-400" />
-                  Outreach Sequence
-                </h3>
-                <CampaignSequenceEditor
-                  steps={formData.sequence_steps}
-                  onChange={(steps) => handleChange("sequence_steps", steps)}
+            {activeTab === "settings" && (
+              <>
+                <SettingsTab
+                  formData={formData}
+                  handleChange={handleChange}
+                  handleStatusChange={handleStatusChange}
+                  isNew={isNew}
+                  projects={projects}
+                  roles={roles}
+                  campaign={campaign}
                 />
-              </div>
+
+                {/* Outreach Sequence (merged from Sequence tab) */}
+                {!isNew && (
+                  <div className={`pt-6 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
+                    <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
+                      <FileText className="w-5 h-5 text-red-400" />
+                      Outreach Sequence
+                    </h3>
+                    <CampaignSequenceEditor
+                      steps={formData.sequence_steps}
+                      onChange={(steps) => handleChange("sequence_steps", steps)}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
         </Tabs>

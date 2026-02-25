@@ -147,9 +147,9 @@ export default function FinanceVendors({ embedded = false }) {
     try {
       setLoading(true);
       const [vendorData, billData, acctData, typeData] = await Promise.all([
-        db.entities.Vendor?.list?.({ limit: 1000 }).catch(() => []),
-        db.entities.Bill?.list?.({ limit: 2000 }).catch(() => []),
-        db.entities.Account?.list?.({ limit: 1000 }).catch(() => []),
+        db.entities.Vendor?.list?.({ limit: 200 }).catch(() => []),
+        db.entities.Bill?.list?.({ limit: 500 }).catch(() => []),
+        db.entities.Account?.list?.({ limit: 200 }).catch(() => []),
         db.entities.AccountType?.list?.({ limit: 10 }).catch(() => []),
       ]);
       setVendors(vendorData || []);

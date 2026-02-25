@@ -252,7 +252,7 @@ export default function AdminAuditLogs() {
         .from('admin_audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1000);
+        .limit(500);
 
       if (error) throw error;
 

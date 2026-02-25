@@ -96,7 +96,7 @@ export default function FinanceProposalBuilder() {
       setLoading(true);
 
       // Load prospects for dropdown
-      const prospectData = await Prospect.list?.({ limit: 500 }).catch(() => []) || [];
+      const prospectData = await Prospect.list?.({ limit: 200 }).catch(() => []) || [];
       setProspects(prospectData);
 
       // Load existing proposal if editing
