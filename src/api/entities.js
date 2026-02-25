@@ -137,6 +137,7 @@ export const Proposal = db.entities.Proposal;
 
 // === CREATE (Content Creation) ===
 export const BrandAssets = db.entities.BrandAssets;
+export const BrandBuilderProject = db.entities.BrandBuilderProject;
 export const GeneratedContent = db.entities.GeneratedContent;
 export const RenderJob = db.entities.RenderJob;
 export const VideoProject = db.entities.VideoProject;

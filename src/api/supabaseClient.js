@@ -155,6 +155,7 @@ const tableNameMap = {
 
   // === CREATE (Content Creation) ===
   'BrandAssets': 'brand_assets',
+  'BrandBuilderProject': 'brand_projects',
   'GeneratedContent': 'generated_content',
   'RenderJob': 'render_jobs',
   'VideoProject': 'video_projects',
@@ -507,6 +508,7 @@ export const entities = {
 
   // === CREATE (Content Creation) ===
   BrandAssets: createEntityWrapper('BrandAssets'),
+  BrandBuilderProject: createEntityWrapper('BrandBuilderProject'),
   GeneratedContent: createEntityWrapper('GeneratedContent'),
   RenderJob: createEntityWrapper('RenderJob'),
   VideoProject: createEntityWrapper('VideoProject'),
