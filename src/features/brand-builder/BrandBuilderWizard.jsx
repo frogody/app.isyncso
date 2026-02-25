@@ -67,8 +67,15 @@ export default function BrandBuilderWizard() {
       .map(([id]) => Number(id));
   }, [project]);
 
+  // Reset creating flag once projectId changes from 'new' to a real ID
+  useEffect(() => {
+    if (projectId !== 'new' && creating) {
+      setCreating(false);
+    }
+  }, [projectId, creating]);
+
   // Loading state — creating new project
-  if (projectId === 'new' || creating) {
+  if (projectId === 'new') {
     // If user context finished loading but no user/company, redirect
     if (!userLoading && (!user?.id || !company?.id) && !creating) {
       return (
