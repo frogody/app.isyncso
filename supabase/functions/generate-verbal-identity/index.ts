@@ -6,6 +6,8 @@ const corsHeaders = {
 };
 
 const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
+const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 
 // ── System prompts per section ──────────────────────────────────────────
 
@@ -264,51 +266,130 @@ function parseJsonResponse(content: string): Record<string, any> {
   }
 }
 
-// ── LLM call ────────────────────────────────────────────────────────────
+// ── LLM call (multi-provider with fallback chain) ────────────────────────
+
+async function callGemini(systemPrompt: string, userPrompt: string, maxTokens: number, model: string): Promise<Record<string, any> | null> {
+  if (!GOOGLE_API_KEY) return null;
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: maxTokens,
+            responseMimeType: 'application/json',
+          },
+        }),
+      }
+    );
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[Gemini ${model}] ${response.status}:`, errText.slice(0, 200));
+      return null;
+    }
+    const data = await response.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) { console.error(`[Gemini ${model}] Empty response`); return null; }
+    return parseJsonResponse(content);
+  } catch (err) {
+    console.error(`[Gemini ${model}] Error:`, err);
+    return null;
+  }
+}
+
+async function callGroq(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<Record<string, any> | null> {
+  if (!GROQ_API_KEY) return null;
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.7,
+        max_tokens: maxTokens,
+        response_format: { type: 'json_object' },
+      }),
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[Groq] ${response.status}:`, errText.slice(0, 200));
+      return null;
+    }
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) { console.error('[Groq] Empty response'); return null; }
+    return parseJsonResponse(content);
+  } catch (err) {
+    console.error('[Groq] Error:', err);
+    return null;
+  }
+}
+
+async function callTogether(systemPrompt: string, userPrompt: string, maxTokens: number): Promise<Record<string, any> | null> {
+  if (!TOGETHER_API_KEY) return null;
+  try {
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.7,
+        max_tokens: maxTokens,
+        response_format: { type: 'json_object' },
+      }),
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`[Together] ${response.status}:`, errText.slice(0, 200));
+      return null;
+    }
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) { console.error('[Together] Empty response'); return null; }
+    return parseJsonResponse(content);
+  } catch (err) {
+    console.error('[Together] Error:', err);
+    return null;
+  }
+}
 
 async function callLLM(systemPrompt: string, userPrompt: string, maxTokens = 4000): Promise<Record<string, any>> {
-  const temperatures = [0.7, 0.3];
+  // Try providers in order: Gemini 2.5 Flash → Gemini 2.0 Flash → Groq → Together
+  const providers = [
+    () => callGemini(systemPrompt, userPrompt, maxTokens, 'gemini-2.5-flash'),
+    () => callGemini(systemPrompt, userPrompt, maxTokens, 'gemini-2.0-flash'),
+    () => callGroq(systemPrompt, userPrompt, maxTokens),
+    () => callTogether(systemPrompt, userPrompt, maxTokens),
+  ];
 
-  for (const temp of temperatures) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-            generationConfig: {
-              temperature: temp,
-              maxOutputTokens: maxTokens,
-              responseMimeType: 'application/json',
-            },
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error(`Gemini error (temp=${temp}):`, errText);
-        continue;
-      }
-
-      const data = await response.json();
-      const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!content) {
-        console.error(`Empty Gemini response at temp=${temp}`);
-        continue;
-      }
-
-      return parseJsonResponse(content);
-    } catch (err) {
-      console.error(`Parse failed at temp=${temp}:`, err);
-      continue;
+  for (const provider of providers) {
+    const result = await provider();
+    if (result) {
+      console.log('[callLLM] Success with provider');
+      return result;
     }
   }
 
-  throw new Error('Failed to generate after retries');
+  throw new Error('Failed to generate after retries (all providers failed)');
 }
 
 // ── Section handlers ────────────────────────────────────────────────────
