@@ -1476,6 +1476,13 @@ export default function CandidateDetailDrawer({
   // Campaign Matches state
   const [campaignMatches, setCampaignMatches] = useState([]);
 
+  // Open Roles + Outreach state
+  const [openRoles, setOpenRoles] = useState([]);
+  const [openRolesLoading, setOpenRolesLoading] = useState(false);
+  const [generatingOutreach, setGeneratingOutreach] = useState(null); // role id being generated
+  const [outreachPreview, setOutreachPreview] = useState(null); // { role, message }
+  const [outreachChannel, setOutreachChannel] = useState("email");
+
   // Panel preferences
   const {
     preferences,
@@ -1493,6 +1500,7 @@ export default function CandidateDetailDrawer({
       fetchCandidateDetails();
       fetchActivityHistory();
       fetchCampaignMatches();
+      fetchOpenRoles();
     }
   }, [candidateId, open]);
 
@@ -1684,6 +1692,116 @@ export default function CandidateDetailDrawer({
     } catch (err) {
       console.error("Error fetching matches:", err);
     }
+  };
+
+  // Fetch all open roles for the organization
+  const fetchOpenRoles = async () => {
+    if (!user?.organization_id) return;
+    setOpenRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("roles")
+        .select("*, project:project_id(id, title, client_name)")
+        .eq("organization_id", user.organization_id)
+        .eq("status", "open")
+        .order("created_date", { ascending: false });
+
+      if (error) throw error;
+      setOpenRoles(data || []);
+    } catch (err) {
+      console.error("Error fetching open roles:", err);
+    } finally {
+      setOpenRolesLoading(false);
+    }
+  };
+
+  // Generate outreach message for a specific role
+  const handleGenerateOutreach = async (role) => {
+    if (!candidate) return;
+    setGeneratingOutreach(role.id);
+    try {
+      const candidateName = candidate.name || `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim();
+
+      // Build role context from the role's data
+      const skills = Array.isArray(role.required_skills) ? role.required_skills : [];
+      const roleContext = {
+        perfect_fit_criteria: skills.join(", "),
+        selling_points: role.description || "",
+        must_haves: skills.join("\n"),
+        nice_to_haves: Array.isArray(role.preferred_skills) ? role.preferred_skills.join("\n") : "",
+        compensation_range: role.salary_range || "",
+        unique_aspects: [
+          role.location_requirements ? `Location: ${role.location_requirements}` : "",
+          role.remote_policy ? `Remote: ${role.remote_policy}` : "",
+          role.employment_type ? `Type: ${role.employment_type.replace("_", " ")}` : "",
+        ].filter(Boolean).join(". "),
+      };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCampaignOutreach`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            candidate_id: candidate.id,
+            organization_id: user.organization_id,
+            candidate_name: candidateName,
+            candidate_title: candidate.current_title || candidate.job_title,
+            candidate_company: candidate.current_company || candidate.company_name,
+            candidate_skills: candidate.skills || [],
+            // Intelligence data
+            intelligence_score: candidate.intelligence_score,
+            recommended_approach: candidate.recommended_approach,
+            outreach_hooks: candidate.outreach_hooks || [],
+            best_outreach_angle: candidate.best_outreach_angle,
+            timing_signals: candidate.timing_signals || [],
+            company_pain_points: candidate.company_pain_points || [],
+            key_insights: candidate.key_insights || [],
+            lateral_opportunities: candidate.lateral_opportunities || [],
+            intelligence_factors: candidate.intelligence_factors,
+            // Role context
+            role_context: roleContext,
+            role_title: role.title,
+            company_name: role.project?.client_name || "",
+            // Settings
+            stage: "initial",
+            campaign_type: outreachChannel,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to generate outreach");
+      const data = await response.json();
+
+      setOutreachPreview({
+        role,
+        message: data,
+        candidateName,
+      });
+      toast.success("Outreach message generated!", {
+        description: data.personalization_score
+          ? `Personalization: ${data.personalization_score}%`
+          : undefined,
+      });
+    } catch (err) {
+      console.error("Error generating outreach:", err);
+      toast.error("Failed to generate outreach message");
+    } finally {
+      setGeneratingOutreach(null);
+    }
+  };
+
+  // Copy outreach message to clipboard
+  const handleCopyOutreach = async () => {
+    if (!outreachPreview?.message) return;
+    const text = outreachPreview.message.subject
+      ? `Subject: ${outreachPreview.message.subject}\n\n${outreachPreview.message.content}`
+      : outreachPreview.message.content;
+    await navigator.clipboard.writeText(text);
+    toast.success("Message copied to clipboard");
   };
 
   // SYNC Intel handler
@@ -2323,99 +2441,180 @@ export default function CandidateDetailDrawer({
                     </div>
                   )}
                   {activeTab === "matches" && (
-                    <div className="space-y-4">
-                      {campaignMatches.length === 0 ? (
-                        <div className="text-center py-12">
-                          <Target className={`w-12 h-12 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-4`} />
-                          <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-2`}>No Campaign Matches</h3>
-                          <p className={`${t("text-gray-500", "text-zinc-400")} text-sm`}>
-                            This candidate hasn't been matched to any campaigns yet.
-                          </p>
-                        </div>
-                      ) : (
-                        campaignMatches.map((match) => (
-                          <div
-                            key={match.id}
-                            className={`${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-xl border ${t("border-gray-200", "border-zinc-700/50")} p-4`}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-3">
-                                {/* Score Circle */}
-                                <div className="relative w-14 h-14 flex-shrink-0">
-                                  <svg className="w-14 h-14 -rotate-90">
-                                    <circle
-                                      cx="28"
-                                      cy="28"
-                                      r="24"
-                                      fill="none"
-                                      stroke="rgba(255,255,255,0.1)"
-                                      strokeWidth="4"
-                                    />
-                                    <circle
-                                      cx="28"
-                                      cy="28"
-                                      r="24"
-                                      fill="none"
-                                      stroke={match.match_score >= 80 ? "#22c55e" : match.match_score >= 60 ? "#eab308" : "#ef4444"}
-                                      strokeWidth="4"
-                                      strokeLinecap="round"
-                                      strokeDasharray={`${(match.match_score / 100) * 150.8} 150.8`}
-                                    />
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className={`text-sm font-bold ${t("text-gray-900", "text-white")}`}>{match.match_score}%</span>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <h4 className={`font-semibold ${t("text-gray-900", "text-white")}`}>{match.campaigns?.name || "Unknown Campaign"}</h4>
-                                  <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>{match.campaigns?.campaign_type || "—"}</p>
-                                  {match.match_reasons?.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                      {match.match_reasons.slice(0, 3).map((reason, idx) => (
-                                        <span key={idx} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
-                                          {reason}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                match.campaigns?.status === "active"
-                                  ? "bg-red-500/20 text-red-400"
-                                  : t("bg-gray-200 text-gray-500", "bg-zinc-500/20 text-zinc-400")
-                              }`}>
-                                {match.campaigns?.status || "unknown"}
-                              </span>
+                    <div className="space-y-6">
+                      {/* Open Roles Section */}
+                      <div>
+                        <h3 className={`text-sm font-semibold ${t("text-gray-900", "text-white")} mb-3 flex items-center gap-2`}>
+                          <Briefcase className="w-4 h-4 text-red-400" />
+                          Open Roles ({openRoles.length})
+                        </h3>
+                        {openRolesLoading ? (
+                          <div className="flex items-center justify-center py-6">
+                            <Loader2 className={`w-5 h-5 ${t("text-gray-400", "text-zinc-500")} animate-spin`} />
+                          </div>
+                        ) : openRoles.length === 0 ? (
+                          <div className={`text-center py-6 ${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg border ${t("border-gray-200", "border-zinc-700/30")}`}>
+                            <Briefcase className={`w-8 h-8 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-2`} />
+                            <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>No open roles</p>
+                            <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-1`}>Create roles in Recruitment Projects</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {/* Channel selector */}
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>Channel:</span>
+                              {["email", "linkedin", "sms"].map((ch) => (
+                                <button
+                                  key={ch}
+                                  onClick={() => setOutreachChannel(ch)}
+                                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                    outreachChannel === ch
+                                      ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                      : `${t("bg-gray-100 text-gray-500 border-gray-200", "bg-zinc-800 text-zinc-400 border-zinc-700")} ${t("hover:bg-gray-200", "hover:bg-zinc-700")}`
+                                  }`}
+                                >
+                                  {ch === "linkedin" ? "LinkedIn" : ch.charAt(0).toUpperCase() + ch.slice(1)}
+                                </button>
+                              ))}
                             </div>
 
-                            {match.best_outreach_angle && (
-                              <div className={`mt-3 pt-3 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
-                                <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Best Approach</p>
-                                <p className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>{match.best_outreach_angle}</p>
-                              </div>
-                            )}
-
-                            {match.timing_signals?.length > 0 && (
-                              <div className={`mt-3 pt-3 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
-                                <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Timing Signals</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {match.timing_signals.slice(0, 3).map((signal, idx) => (
-                                    <span key={idx} className="text-xs px-2 py-0.5 bg-red-500/10 text-red-400 rounded border border-red-500/20">
-                                      {signal.trigger || signal}
-                                    </span>
-                                  ))}
+                            {openRoles.map((role) => (
+                              <div
+                                key={role.id}
+                                className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-xl border ${t("border-gray-200", "border-zinc-700/30")} p-4`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className={`font-semibold ${t("text-gray-900", "text-white")} truncate`}>{role.title}</h4>
+                                    <div className={`flex items-center gap-2 text-xs ${t("text-gray-500", "text-zinc-400")} mt-1`}>
+                                      {role.project?.client_name && (
+                                        <span className="flex items-center gap-1">
+                                          <Building2 className="w-3 h-3" />
+                                          {role.project.client_name}
+                                        </span>
+                                      )}
+                                      {role.project?.title && (
+                                        <span className="flex items-center gap-1">
+                                          <FileText className="w-3 h-3" />
+                                          {role.project.title}
+                                        </span>
+                                      )}
+                                      {role.location_requirements && (
+                                        <span className="flex items-center gap-1">
+                                          <MapPin className="w-3 h-3" />
+                                          {role.location_requirements}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {role.required_skills?.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {role.required_skills.slice(0, 4).map((skill, idx) => (
+                                          <span key={idx} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
+                                            {skill}
+                                          </span>
+                                        ))}
+                                        {role.required_skills.length > 4 && (
+                                          <span className={`text-[10px] px-2 py-0.5 ${t("bg-gray-100 text-gray-500", "bg-zinc-700 text-zinc-400")} rounded-full`}>
+                                            +{role.required_skills.length - 4}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleGenerateOutreach(role)}
+                                    disabled={generatingOutreach === role.id}
+                                    className="bg-red-500 hover:bg-red-600 text-white flex-shrink-0"
+                                  >
+                                    {generatingOutreach === role.id ? (
+                                      <>
+                                        <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                        Generating...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Sparkles className="w-3 h-3 mr-1.5" />
+                                        Reach Out
+                                      </>
+                                    )}
+                                  </Button>
                                 </div>
+                                {role.salary_range && (
+                                  <div className={`mt-2 text-xs ${t("text-gray-500", "text-zinc-400")} flex items-center gap-1`}>
+                                    <Euro className="w-3 h-3" />
+                                    {role.salary_range}
+                                  </div>
+                                )}
                               </div>
-                            )}
-
-                            <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-3`}>
-                              Matched {new Date(match.matched_at).toLocaleDateString()}
-                            </p>
+                            ))}
                           </div>
-                        ))
+                        )}
+                      </div>
+
+                      {/* Campaign Matches Section */}
+                      {campaignMatches.length > 0 && (
+                        <div>
+                          <h3 className={`text-sm font-semibold ${t("text-gray-900", "text-white")} mb-3 flex items-center gap-2`}>
+                            <Target className="w-4 h-4 text-red-400" />
+                            Campaign Matches ({campaignMatches.length})
+                          </h3>
+                          <div className="space-y-3">
+                            {campaignMatches.map((match) => (
+                              <div
+                                key={match.id}
+                                className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-xl border ${t("border-gray-200", "border-zinc-700/30")} p-4`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-start gap-3">
+                                    <div className="relative w-12 h-12 flex-shrink-0">
+                                      <svg className="w-12 h-12 -rotate-90">
+                                        <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                                        <circle
+                                          cx="24" cy="24" r="20" fill="none"
+                                          stroke={match.match_score >= 80 ? "#22c55e" : match.match_score >= 60 ? "#eab308" : "#ef4444"}
+                                          strokeWidth="3" strokeLinecap="round"
+                                          strokeDasharray={`${(match.match_score / 100) * 125.6} 125.6`}
+                                        />
+                                      </svg>
+                                      <div className="absolute inset-0 flex items-center justify-center">
+                                        <span className={`text-xs font-bold ${t("text-gray-900", "text-white")}`}>{match.match_score}%</span>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <h4 className={`font-semibold text-sm ${t("text-gray-900", "text-white")}`}>{match.campaigns?.name || "Unknown"}</h4>
+                                      <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>{match.campaigns?.campaign_type || "—"}</p>
+                                      {match.match_reasons?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1.5">
+                                          {match.match_reasons.slice(0, 3).map((reason, idx) => (
+                                            <span key={idx} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
+                                              {reason}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    match.campaigns?.status === "active"
+                                      ? "bg-red-500/20 text-red-400"
+                                      : t("bg-gray-200 text-gray-500", "bg-zinc-500/20 text-zinc-400")
+                                  }`}>
+                                    {match.campaigns?.status || "unknown"}
+                                  </span>
+                                </div>
+                                {match.best_outreach_angle && (
+                                  <div className={`mt-2 pt-2 border-t ${t("border-gray-200", "border-zinc-700/30")}`}>
+                                    <p className={`text-xs ${t("text-gray-700", "text-zinc-300")}`}>{match.best_outreach_angle}</p>
+                                  </div>
+                                )}
+                                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-2`}>
+                                  Matched {new Date(match.matched_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
@@ -2574,6 +2773,97 @@ export default function CandidateDetailDrawer({
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Outreach Preview Modal */}
+      <Dialog open={!!outreachPreview} onOpenChange={(open) => !open && setOutreachPreview(null)}>
+        <DialogContent className={`${t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")} ${t("text-gray-900", "text-white")} max-w-lg max-h-[80vh] overflow-hidden flex flex-col`}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-red-400" />
+              Outreach Preview
+            </DialogTitle>
+          </DialogHeader>
+
+          {outreachPreview && (
+            <div className="space-y-4 mt-2 overflow-y-auto flex-1">
+              {/* Role + Candidate header */}
+              <div className={`flex items-center gap-3 p-3 rounded-lg ${t("bg-gray-50 border-gray-200", "bg-zinc-800/50 border-zinc-700/50")} border`}>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                  {outreachPreview.candidateName?.charAt(0)?.toUpperCase() || "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-medium text-sm ${t("text-gray-900", "text-white")}`}>{outreachPreview.candidateName}</p>
+                  <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>
+                    For: {outreachPreview.role?.title} {outreachPreview.role?.project?.client_name ? `at ${outreachPreview.role.project.client_name}` : ""}
+                  </p>
+                </div>
+                {outreachPreview.message?.personalization_score && (
+                  <span className="text-xs px-2 py-1 bg-red-500/20 text-red-400 rounded-full font-medium">
+                    {outreachPreview.message.personalization_score}% Personal
+                  </span>
+                )}
+              </div>
+
+              {/* Subject line (if present) */}
+              {outreachPreview.message?.subject && (
+                <div>
+                  <label className={`text-xs font-medium ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>Subject</label>
+                  <p className={`text-sm ${t("text-gray-900", "text-white")} mt-1 p-2 rounded ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                    {outreachPreview.message.subject}
+                  </p>
+                </div>
+              )}
+
+              {/* Message content */}
+              <div>
+                <label className={`text-xs font-medium ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>Message</label>
+                <div className={`text-sm ${t("text-gray-700", "text-zinc-300")} mt-1 p-3 rounded-lg ${t("bg-gray-50 border-gray-200", "bg-zinc-800/50 border-zinc-700/30")} border whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto`}>
+                  {outreachPreview.message?.content}
+                </div>
+              </div>
+
+              {/* Intelligence used badges */}
+              {outreachPreview.message?.intelligence_used?.length > 0 && (
+                <div>
+                  <label className={`text-xs font-medium ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>AI Personalization Used</label>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {outreachPreview.message.intelligence_used.map((item, i) => (
+                      <span key={i} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-2">
+                <Button
+                  onClick={handleCopyOutreach}
+                  variant="outline"
+                  className={`flex-1 ${t("border-gray-200 text-gray-700", "border-zinc-700 text-zinc-300")}`}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Message
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleCopyOutreach();
+                    if (candidate?.linkedin_url) {
+                      window.open(candidate.linkedin_url, "_blank");
+                    }
+                    setOutreachPreview(null);
+                  }}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Copy & Open LinkedIn
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </AnimatePresence>
