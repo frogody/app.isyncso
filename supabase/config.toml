@@ -312,3 +312,12 @@ verify_jwt = false
 
 [functions.product-feed-sync]
 verify_jwt = false
+
+[functions.generate-brand-strategy]
+verify_jwt = false
+
+[functions.generate-verbal-identity]
+verify_jwt = false
+
+[functions.generate-visual-language]
+verify_jwt = false
