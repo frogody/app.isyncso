@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { toast } from "sonner";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import CampaignWizard from "@/components/talent/CampaignWizard";
@@ -140,13 +141,14 @@ const ProgressRing = ({ progress, size = 40, strokeWidth = 3 }) => {
           transition={{ duration: 1, ease: "easeOut" }}
         />
       </svg>
-      <span className="absolute text-xs font-medium text-white">{progress}%</span>
+      <span className="absolute text-xs font-medium text-white dark:text-white">{progress}%</span>
     </div>
   );
 };
 
 // Campaign Card
 const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onClick }) => {
+  const { t } = useTheme();
   const [showMenu, setShowMenu] = useState(false);
 
   const matchedCandidates = campaign.matched_candidates || [];
@@ -166,19 +168,19 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
               <StatusBadge status={campaign.status} />
               <TypeBadge type={campaign.campaign_type} />
             </div>
-            <h3 className="text-sm font-semibold text-white">{campaign.name}</h3>
-            <p className="text-xs text-white/60 line-clamp-2 mt-0.5">{campaign.description}</p>
+            <h3 className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>{campaign.name}</h3>
+            <p className={`text-xs ${t("text-gray-500", "text-white/60")} line-clamp-2 mt-0.5`}>{campaign.description}</p>
           </div>
           
           {/* Menu */}
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+              className={`p-2 rounded-lg ${t("hover:bg-gray-100", "hover:bg-white/10")} ${t("text-gray-400", "text-white/60")} ${t("hover:text-gray-900", "hover:text-white")} transition-colors`}
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
-            
+
             <AnimatePresence>
               {showMenu && (
                 <>
@@ -187,14 +189,14 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-1 w-48 bg-slate-800 border border-white/10 rounded-lg shadow-xl z-20 overflow-hidden"
+                    className={`absolute right-0 top-full mt-1 w-48 ${t("bg-white", "bg-slate-800")} border ${t("border-gray-200", "border-white/10")} rounded-lg shadow-xl z-20 overflow-hidden`}
                   >
                     <button
                       onClick={() => {
                         onClick();
                         setShowMenu(false);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
+                      className={`w-full px-4 py-2 text-left text-sm ${t("text-gray-600 hover:bg-gray-100", "text-white/70 hover:bg-white/10")} flex items-center gap-2`}
                     >
                       <Eye className="w-4 h-4" />
                       View Details
@@ -204,7 +206,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
                         onEdit(campaign);
                         setShowMenu(false);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
+                      className={`w-full px-4 py-2 text-left text-sm ${t("text-gray-600 hover:bg-gray-100", "text-white/70 hover:bg-white/10")} flex items-center gap-2`}
                     >
                       <Edit className="w-4 h-4" />
                       Edit Settings
@@ -214,7 +216,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
                         onToggle(campaign);
                         setShowMenu(false);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
+                      className={`w-full px-4 py-2 text-left text-sm ${t("text-gray-600 hover:bg-gray-100", "text-white/70 hover:bg-white/10")} flex items-center gap-2`}
                     >
                       {campaign.status === "active" ? (
                         <>
@@ -233,7 +235,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
                         onDuplicate(campaign);
                         setShowMenu(false);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
+                      className={`w-full px-4 py-2 text-left text-sm ${t("text-gray-600 hover:bg-gray-100", "text-white/70 hover:bg-white/10")} flex items-center gap-2`}
                     >
                       <Copy className="w-4 h-4" />
                       Duplicate
@@ -258,16 +260,16 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
         {/* Stats */}
         <div className="grid grid-cols-4 gap-3 mb-3">
           <div className="text-center">
-            <p className="text-lg font-bold text-white">{matchedCandidates.length}</p>
-            <p className="text-[10px] text-white/60">Candidates</p>
+            <p className={`text-lg font-bold ${t("text-gray-900", "text-white")}`}>{matchedCandidates.length}</p>
+            <p className={`text-[10px] ${t("text-gray-500", "text-white/60")}`}>Candidates</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-red-400">{sentCount}</p>
-            <p className="text-[10px] text-white/60">Sent</p>
+            <p className={`text-[10px] ${t("text-gray-500", "text-white/60")}`}>Sent</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-red-400">{repliedCount}</p>
-            <p className="text-[10px] text-white/60">Replied</p>
+            <p className={`text-[10px] ${t("text-gray-500", "text-white/60")}`}>Replied</p>
           </div>
           <div className="flex items-center justify-center">
             <ProgressRing progress={progress} size={32} strokeWidth={2} />
@@ -276,7 +278,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
 
         {/* Progress Bar */}
         <div className="mb-3">
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div className={`h-1.5 ${t("bg-gray-200", "bg-white/10")} rounded-full overflow-hidden`}>
             <motion.div
               className="h-full bg-gradient-to-r from-red-500 to-red-600"
               initial={{ width: 0 }}
@@ -287,8 +289,8 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/10">
-          <div className="flex items-center gap-1.5 text-xs text-white/40">
+        <div className={`flex items-center justify-between pt-3 border-t ${t("border-gray-200", "border-white/10")}`}>
+          <div className={`flex items-center gap-1.5 text-xs ${t("text-gray-400", "text-white/40")}`}>
             <Calendar className="w-3 h-3" />
             <span>Created {new Date(campaign.created_date).toLocaleDateString()}</span>
           </div>
@@ -307,6 +309,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
 
 // Create Campaign Modal
 const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
+  const { t } = useTheme();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -335,14 +338,14 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+        className={`relative w-full max-w-lg ${t("bg-white", "bg-slate-900")} border ${t("border-gray-200", "border-white/10")} rounded-2xl shadow-2xl overflow-hidden`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-xl font-semibold text-white">Create Campaign</h2>
+        <div className={`flex items-center justify-between p-6 border-b ${t("border-gray-200", "border-white/10")}`}>
+          <h2 className={`text-xl font-semibold ${t("text-gray-900", "text-white")}`}>Create Campaign</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            className={`p-2 rounded-lg ${t("hover:bg-gray-100", "hover:bg-white/10")} ${t("text-gray-400", "text-white/60")} ${t("hover:text-gray-900", "hover:text-white")} transition-colors`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -351,30 +354,30 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <Label className="text-zinc-400 mb-2 block">Campaign Name</Label>
+            <Label className={`${t("text-gray-500", "text-zinc-400")} mb-2 block`}>Campaign Name</Label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
               placeholder="e.g., Q1 Engineering Recruitment"
-              className="bg-zinc-800/50 border-zinc-700 text-white"
+              className={`${t("bg-gray-100", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}
               required
             />
           </div>
 
           <div>
-            <Label className="text-zinc-400 mb-2 block">Description</Label>
+            <Label className={`${t("text-gray-500", "text-zinc-400")} mb-2 block`}>Description</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))}
               placeholder="Brief description of the campaign goals..."
               rows={3}
-              className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+              className={`${t("bg-gray-100", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} resize-none`}
             />
           </div>
 
           <div>
-            <Label className="text-zinc-400 mb-2 block">Campaign Type</Label>
+            <Label className={`${t("text-gray-500", "text-zinc-400")} mb-2 block`}>Campaign Type</Label>
             <div className="grid grid-cols-2 gap-3">
               {[
                 { value: "recruitment", label: "Recruitment", icon: Users, description: "Talent sourcing & outreach" },
@@ -387,12 +390,12 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
                   className={`p-4 rounded-lg border transition-colors ${
                     formData.campaign_type === type.value
                       ? "bg-red-500/20 border-red-500/50 text-red-400"
-                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                      : t("bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100", "bg-white/5 border-white/10 text-white/70 hover:bg-white/10")
                   }`}
                 >
                   <type.icon className="w-6 h-6 mx-auto mb-2" />
                   <p className="font-medium text-sm">{type.label}</p>
-                  <p className="text-xs text-white/50 mt-1">{type.description}</p>
+                  <p className={`text-xs ${t("text-gray-400", "text-white/50")} mt-1`}>{type.description}</p>
                 </button>
               ))}
             </div>
@@ -404,7 +407,7 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-zinc-700"
+              className={`flex-1 ${t("border-gray-200", "border-zinc-700")}`}
             >
               Cancel
             </Button>
@@ -431,6 +434,7 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
 
 export default function TalentCampaigns() {
   const { user } = useUser();
+  const { t } = useTheme();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [campaigns, setCampaigns] = useState([]);
@@ -684,7 +688,7 @@ export default function TalentCampaigns() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black relative">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
         <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           <div className="flex items-center justify-between">
             <Skeleton className="h-8 w-48" />
@@ -726,7 +730,7 @@ export default function TalentCampaigns() {
         />
 
       <Tabs value={pageTab} onValueChange={setPageTab}>
-        <TabsList className="bg-zinc-800/50 mb-4">
+        <TabsList className={`${t("bg-gray-100", "bg-zinc-800/50")} mb-4`}>
           <TabsTrigger
             value="campaigns"
             className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
@@ -778,13 +782,13 @@ export default function TalentCampaigns() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t("text-gray-400", "text-white/40")}`} />
               <input
                 type="text"
                 placeholder="Search campaigns..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-red-500/50"
+                className={`w-full pl-10 pr-4 py-2 ${t("bg-white", "bg-white/5")} border ${t("border-gray-200", "border-white/10")} rounded-lg ${t("text-gray-900 placeholder-gray-400", "text-white placeholder-white/40")} focus:outline-none focus:border-red-500/50`}
               />
             </div>
           </div>
@@ -792,7 +796,7 @@ export default function TalentCampaigns() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-red-500/50"
+            className={`px-4 py-2 ${t("bg-white", "bg-white/5")} border ${t("border-gray-200", "border-white/10")} rounded-lg ${t("text-gray-600", "text-white/70")} focus:outline-none focus:border-red-500/50`}
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -804,7 +808,7 @@ export default function TalentCampaigns() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-red-500/50"
+            className={`px-4 py-2 ${t("bg-white", "bg-white/5")} border ${t("border-gray-200", "border-white/10")} rounded-lg ${t("text-gray-600", "text-white/70")} focus:outline-none focus:border-red-500/50`}
           >
             <option value="">All Types</option>
             <option value="recruitment">Recruitment</option>
@@ -813,7 +817,7 @@ export default function TalentCampaigns() {
 
           <button
             onClick={fetchCampaigns}
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            className={`p-2 rounded-lg ${t("bg-gray-100 hover:bg-gray-200", "bg-white/5 hover:bg-white/10")} ${t("text-gray-400 hover:text-gray-900", "text-white/60 hover:text-white")} transition-colors`}
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -842,9 +846,9 @@ export default function TalentCampaigns() {
         </motion.div>
       ) : (
         <GlassCard className="p-12 text-center">
-          <Megaphone className="w-12 h-12 text-white/20 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No campaigns found</h3>
-          <p className="text-white/60 mb-6">
+          <Megaphone className={`w-12 h-12 ${t("text-gray-300", "text-white/20")} mx-auto mb-4`} />
+          <h3 className={`text-lg font-medium ${t("text-gray-900", "text-white")} mb-2`}>No campaigns found</h3>
+          <p className={`${t("text-gray-500", "text-white/60")} mb-6`}>
             {searchQuery || statusFilter || typeFilter
               ? "Try adjusting your filters"
               : "Create your first campaign to start reaching out to candidates"}
@@ -886,19 +890,19 @@ export default function TalentCampaigns() {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingCampaign} onOpenChange={() => setDeletingCampaign(null)}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+        <AlertDialogContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")}`}>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white flex items-center gap-2">
+            <AlertDialogTitle className={`${t("text-gray-900", "text-white")} flex items-center gap-2`}>
               <AlertTriangle className="w-5 h-5 text-red-400" />
               Delete Campaign
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
-              Are you sure you want to delete <strong className="text-white">{deletingCampaign?.name}</strong>?
+            <AlertDialogDescription className={t("text-gray-500", "text-zinc-400")}>
+              Are you sure you want to delete <strong className={t("text-gray-900", "text-white")}>{deletingCampaign?.name}</strong>?
               This will also delete all related outreach tasks. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700">
+            <AlertDialogCancel className={`${t("bg-gray-100", "bg-zinc-800")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} ${t("hover:bg-gray-200", "hover:bg-zinc-700")}`}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

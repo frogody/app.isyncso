@@ -89,6 +89,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 
 const CAMPAIGN_TYPES = [
   { value: "email", label: "Email", icon: Mail },
@@ -144,6 +145,7 @@ const TypeBadge = ({ type }) => {
 
 // Weights Display Widget
 const WeightsDisplayWidget = ({ weights }) => {
+  const { t } = useTheme();
   if (!weights) return null;
 
   const factors = [
@@ -166,16 +168,16 @@ const WeightsDisplayWidget = ({ weights }) => {
   };
 
   return (
-    <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-      <h4 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
+    <div className={`p-4 ${t("bg-gray-100", "bg-zinc-800/50")} rounded-xl border ${t("border-gray-200", "border-zinc-700/50")}`}>
+      <h4 className={`text-sm font-medium ${t("text-gray-600", "text-zinc-300")} mb-3 flex items-center gap-2`}>
         <SlidersHorizontal className="w-4 h-4 text-red-400" />
         Matching Weights
       </h4>
       <div className="space-y-2">
         {factors.map(({ key, label, color }) => (
           <div key={key} className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500 w-20">{label}</span>
-            <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden">
+            <span className={`text-xs ${t("text-gray-400", "text-zinc-500")} w-20`}>{label}</span>
+            <div className={`flex-1 h-2 ${t("bg-gray-200", "bg-zinc-700")} rounded-full overflow-hidden`}>
               <div
                 className={`h-full ${colorMap[color].bg}`}
                 style={{ width: `${weights[key] || 0}%` }}
@@ -198,23 +200,25 @@ const WeightsDisplayWidget = ({ weights }) => {
 // OutreachPreviewModal extracted to @/components/talent/OutreachPreviewModal.jsx
 
 // Outreach Success Dialog - Shows after tasks are created
-const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) => (
+const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) => {
+  const { t } = useTheme();
+  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-center">
+    <DialogContent className={`max-w-md ${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")} text-center`}>
       <div className="py-4">
         <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
           <PartyPopper className="w-8 h-8 text-red-400" />
         </div>
-        <h2 className="text-xl font-semibold text-white mb-2">
+        <h2 className={`text-xl font-semibold ${t("text-gray-900", "text-white")} mb-2`}>
           Outreach Ready!
         </h2>
-        <p className="text-zinc-400 mb-6">
+        <p className={`${t("text-gray-500", "text-zinc-400")} mb-6`}>
           {taskCount} personalized messages are queued and ready to send.
         </p>
 
-        <div className="p-4 rounded-lg bg-zinc-800/50 text-left mb-6">
-          <h3 className="text-sm font-medium text-white mb-2">Next Steps:</h3>
-          <ul className="space-y-2 text-sm text-zinc-400">
+        <div className={`p-4 rounded-lg ${t("bg-gray-100", "bg-zinc-800/50")} text-left mb-6`}>
+          <h3 className={`text-sm font-medium ${t("text-gray-900", "text-white")} mb-2`}>Next Steps:</h3>
+          <ul className={`space-y-2 text-sm ${t("text-gray-500", "text-zinc-400")}`}>
             <li className="flex items-center gap-2">
               <Check className="w-4 h-4 text-red-400 shrink-0" />
               Review messages in the Outreach Queue
@@ -234,7 +238,7 @@ const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) =
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="border-zinc-700"
+            className={t("border-gray-200", "border-zinc-700")}
           >
             Close
           </Button>
@@ -249,12 +253,14 @@ const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) =
       </div>
     </DialogContent>
   </Dialog>
-);
+  );
+};
 
 // OutreachQueueTab extracted to @/components/talent/OutreachQueueTab.jsx
 
 // Overview Tab Component (slimmed — candidate grid moved to CandidatesTab)
 const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
+  const { t } = useTheme();
   const matchedCandidates = campaign?.matched_candidates || [];
   const topCandidates = useMemo(() => {
     return [...matchedCandidates]
@@ -269,45 +275,45 @@ const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
         {/* Campaign Info */}
         <div className="lg:col-span-2 space-y-6">
           <GlassCard className="p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
               <Megaphone className="w-5 h-5 text-red-400" />
               Campaign Details
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-zinc-500 uppercase tracking-wider">Description</label>
-                <p className="text-white/80 mt-1">
+                <label className={`text-xs ${t("text-gray-400", "text-zinc-500")} uppercase tracking-wider`}>Description</label>
+                <p className={`${t("text-gray-700", "text-white/80")} mt-1`}>
                   {formData.description || "No description provided"}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Type</label>
+                  <label className={`text-xs ${t("text-gray-400", "text-zinc-500")} uppercase tracking-wider`}>Type</label>
                   <div className="mt-1">
                     <TypeBadge type={formData.campaign_type} />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Status</label>
+                  <label className={`text-xs ${t("text-gray-400", "text-zinc-500")} uppercase tracking-wider`}>Status</label>
                   <div className="mt-1">
                     <StatusBadge status={formData.status} />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-700/50">
+              <div className={`grid grid-cols-3 gap-4 pt-4 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
                 <div>
-                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Daily Limit</label>
-                  <p className="text-lg font-semibold text-white mt-1">{formData.daily_limit}</p>
+                  <label className={`text-xs ${t("text-gray-400", "text-zinc-500")} uppercase tracking-wider`}>Daily Limit</label>
+                  <p className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mt-1`}>{formData.daily_limit}</p>
                 </div>
                 <div>
-                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Min Delay</label>
-                  <p className="text-lg font-semibold text-white mt-1">{formData.delay_min_minutes} min</p>
+                  <label className={`text-xs ${t("text-gray-400", "text-zinc-500")} uppercase tracking-wider`}>Min Delay</label>
+                  <p className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mt-1`}>{formData.delay_min_minutes} min</p>
                 </div>
                 <div>
-                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Max Delay</label>
-                  <p className="text-lg font-semibold text-white mt-1">{formData.delay_max_minutes} min</p>
+                  <label className={`text-xs ${t("text-gray-400", "text-zinc-500")} uppercase tracking-wider`}>Max Delay</label>
+                  <p className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mt-1`}>{formData.delay_max_minutes} min</p>
                 </div>
               </div>
             </div>
@@ -320,7 +326,7 @@ const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
 
           {/* Top 5 Candidates Preview */}
           <GlassCard className="p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
               <Sparkles className="w-5 h-5 text-red-400" />
               Top Candidates ({matchedCandidates.length} total)
             </h3>
@@ -330,14 +336,14 @@ const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
                   <button
                     key={match.candidate_id || idx}
                     onClick={() => onCandidateClick?.(match)}
-                    className="w-full flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+                    className={`w-full flex items-center gap-3 p-3 ${t("bg-gray-100", "bg-zinc-800/30")} rounded-lg ${t("hover:bg-gray-200", "hover:bg-zinc-800/50")} transition-colors text-left`}
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
                       {match.candidate_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{match.candidate_name}</p>
-                      <p className="text-xs text-zinc-500 truncate">{match.current_role || match.current_title || 'Unknown role'}</p>
+                      <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} truncate`}>{match.candidate_name}</p>
+                      <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} truncate`}>{match.current_role || match.current_title || 'Unknown role'}</p>
                     </div>
                     <Badge className={`shrink-0 ${
                       match.match_score >= 80 ? 'bg-red-500/20 text-red-400' :
@@ -349,51 +355,51 @@ const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
                   </button>
                 ))}
                 {matchedCandidates.length > 5 && (
-                  <p className="text-xs text-zinc-500 text-center pt-2">
-                    +{matchedCandidates.length - 5} more — see Candidates tab
+                  <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} text-center pt-2`}>
+                    +{matchedCandidates.length - 5} more -- see Candidates tab
                   </p>
                 )}
               </div>
             ) : (
               <div className="text-center py-6">
-                <Brain className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className="text-zinc-500 text-sm">No matched candidates yet</p>
-                <p className="text-xs text-zinc-600 mt-1">Go to the Candidates tab to run matching</p>
+                <Brain className={`w-8 h-8 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-2`} />
+                <p className={`${t("text-gray-400", "text-zinc-500")} text-sm`}>No matched candidates yet</p>
+                <p className={`text-xs ${t("text-gray-300", "text-zinc-600")} mt-1`}>Go to the Candidates tab to run matching</p>
               </div>
             )}
           </GlassCard>
 
           {/* Sequence Preview */}
           <GlassCard className="p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
               <FileText className="w-5 h-5 text-red-400" />
               Sequence Steps ({formData.sequence_steps?.length || 0})
             </h3>
             {formData.sequence_steps?.length > 0 ? (
               <div className="space-y-3">
                 {formData.sequence_steps.slice(0, 3).map((step, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg">
+                  <div key={idx} className={`flex items-center gap-3 p-3 ${t("bg-gray-100", "bg-zinc-800/30")} rounded-lg`}>
                     <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 font-semibold text-sm">
                       {idx + 1}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-white">{step.type || "Email"}</p>
-                      <p className="text-xs text-zinc-500">
+                      <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>{step.type || "Email"}</p>
+                      <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
                         {step.delay_days ? `Wait ${step.delay_days} days` : "Immediate"}
                       </p>
                     </div>
                   </div>
                 ))}
                 {formData.sequence_steps.length > 3 && (
-                  <p className="text-sm text-zinc-500 text-center">
+                  <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} text-center`}>
                     +{formData.sequence_steps.length - 3} more steps
                   </p>
                 )}
               </div>
             ) : (
               <div className="text-center py-6">
-                <FileText className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className="text-zinc-500">No sequence steps configured yet</p>
+                <FileText className={`w-8 h-8 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-2`} />
+                <p className={t("text-gray-400", "text-zinc-500")}>No sequence steps configured yet</p>
               </div>
             )}
           </GlassCard>
@@ -407,17 +413,17 @@ const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
                 <Users className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.totalCandidates}</p>
-                <p className="text-xs text-zinc-500">Matched Candidates</p>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{stats.totalCandidates}</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Matched Candidates</p>
               </div>
             </div>
-            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div className={`h-2 ${t("bg-gray-200", "bg-zinc-800")} rounded-full overflow-hidden`}>
               <div
                 className="h-full bg-gradient-to-r from-red-500 to-red-600"
                 style={{ width: `${Math.min((stats.sent / Math.max(stats.totalCandidates, 1)) * 100, 100)}%` }}
               />
             </div>
-            <p className="text-xs text-zinc-500 mt-2">
+            <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-2`}>
               {stats.sent} contacted ({Math.round((stats.sent / Math.max(stats.totalCandidates, 1)) * 100)}%)
             </p>
           </GlassCard>
@@ -428,8 +434,8 @@ const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
                 <MessageSquare className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.replied}</p>
-                <p className="text-xs text-zinc-500">Replies</p>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{stats.replied}</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Replies</p>
               </div>
             </div>
             <p className="text-sm text-red-400">
@@ -443,33 +449,33 @@ const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
                 <Send className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{stats.sent}</p>
-                <p className="text-xs text-zinc-500">Messages Sent</p>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{stats.sent}</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Messages Sent</p>
               </div>
             </div>
           </GlassCard>
 
           {/* Auto-Match Status */}
           <GlassCard className="p-5">
-            <h4 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+            <h4 className={`text-sm font-medium ${t("text-gray-500", "text-zinc-400")} mb-3 flex items-center gap-2`}>
               <Sparkles className="w-4 h-4 text-red-400" />
               Auto-Match
             </h4>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Status</span>
-                <span className={`text-xs font-medium ${formData.auto_match_enabled ? "text-red-400" : "text-zinc-500"}`}>
+                <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Status</span>
+                <span className={`text-xs font-medium ${formData.auto_match_enabled ? "text-red-400" : t("text-gray-400", "text-zinc-500")}`}>
                   {formData.auto_match_enabled ? "Enabled" : "Disabled"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">Min Score</span>
-                <span className="text-xs font-medium text-white">{formData.min_match_score || 30}%</span>
+                <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Min Score</span>
+                <span className={`text-xs font-medium ${t("text-gray-900", "text-white")}`}>{formData.min_match_score || 30}%</span>
               </div>
               {formData.project_id && (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-zinc-500">Target</span>
-                  <span className="text-xs text-white">Project linked</span>
+                  <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Target</span>
+                  <span className={`text-xs ${t("text-gray-900", "text-white")}`}>Project linked</span>
                 </div>
               )}
             </div>
@@ -487,6 +493,7 @@ const OverviewTab = ({ campaign, formData, stats, onCandidateClick }) => {
 
 // Settings Tab Component
 const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projects, roles, campaign }) => {
+  const { t } = useTheme();
   const [showMatchingSettings, setShowMatchingSettings] = useState(false);
   // Filter roles based on selected project
   const availableRoles = useMemo(() => {
@@ -498,25 +505,25 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label className="text-zinc-400">Campaign Name</Label>
+          <Label className={t("text-gray-600", "text-zinc-400")}>Campaign Name</Label>
           <Input
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
-            className="bg-zinc-800/50 border-zinc-700 text-white"
+            className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}
             placeholder="Q1 Engineering Recruitment"
           />
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-400">Campaign Type</Label>
+          <Label className={t("text-gray-600", "text-zinc-400")}>Campaign Type</Label>
           <Select
             value={formData.campaign_type}
             onValueChange={(v) => handleChange("campaign_type", v)}
           >
-            <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+            <SelectTrigger className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700">
+            <SelectContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-700")}`}>
               {CAMPAIGN_TYPES.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   <div className="flex items-center gap-2">
@@ -531,31 +538,31 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
       </div>
 
       <div className="space-y-2">
-        <Label className="text-zinc-400">Description</Label>
+        <Label className={t("text-gray-600", "text-zinc-400")}>Description</Label>
         <Textarea
           value={formData.description}
           onChange={(e) => handleChange("description", e.target.value)}
-          className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+          className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} resize-none`}
           placeholder="Campaign goals and target audience..."
           rows={3}
         />
       </div>
 
       {/* Campaign Targeting */}
-      <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-xl space-y-4">
+      <div className={`p-4 ${t("bg-gray-50", "bg-zinc-800/30")} border ${t("border-gray-200", "border-zinc-700/50")} rounded-xl space-y-4`}>
         <div>
-          <h4 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+          <h4 className={`text-sm font-semibold ${t("text-gray-900", "text-white")} mb-1 flex items-center gap-2`}>
             <Target className="w-4 h-4 text-red-400" />
             Campaign Targeting
           </h4>
-          <p className="text-xs text-zinc-500">
+          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
             Link this campaign to a project or role for AI candidate matching
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-zinc-400">Project</Label>
+            <Label className={t("text-gray-600", "text-zinc-400")}>Project</Label>
             <Select
               value={formData.project_id || "__none__"}
               onValueChange={(v) => {
@@ -566,10 +573,10 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
                 }
               }}
             >
-              <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+              <SelectTrigger className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}>
                 <SelectValue placeholder="Select project..." />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-700")}`}>
                 <SelectItem value="__none__">No Project</SelectItem>
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
@@ -581,15 +588,15 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
           </div>
 
           <div className="space-y-2">
-            <Label className="text-zinc-400">Role</Label>
+            <Label className={t("text-gray-600", "text-zinc-400")}>Role</Label>
             <Select
               value={formData.role_id || "__none__"}
               onValueChange={(v) => handleChange("role_id", v === "__none__" ? null : v)}
             >
-              <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+              <SelectTrigger className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}>
                 <SelectValue placeholder="Select role..." />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-700")}`}>
                 <SelectItem value="__none__">No Specific Role</SelectItem>
                 {availableRoles.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
@@ -603,14 +610,14 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
       </div>
 
       {/* Auto-Match Settings */}
-      <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-xl space-y-4">
+      <div className={`p-4 ${t("bg-gray-50", "bg-zinc-800/30")} border ${t("border-gray-200", "border-zinc-700/50")} rounded-xl space-y-4`}>
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+            <h4 className={`text-sm font-semibold ${t("text-gray-900", "text-white")} mb-1 flex items-center gap-2`}>
               <Sparkles className="w-4 h-4 text-red-400" />
               Auto-Match Candidates
             </h4>
-            <p className="text-xs text-zinc-500">
+            <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
               Automatically find and match candidates when campaign is activated
             </p>
           </div>
@@ -618,7 +625,7 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
             type="button"
             onClick={() => handleChange("auto_match_enabled", !formData.auto_match_enabled)}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              formData.auto_match_enabled ? "bg-red-500" : "bg-zinc-700"
+              formData.auto_match_enabled ? "bg-red-500" : t("bg-gray-300", "bg-zinc-700")
             }`}
           >
             <span
@@ -630,31 +637,31 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
         </div>
 
         {formData.auto_match_enabled && (
-          <div className="pt-3 border-t border-zinc-700/50">
+          <div className={`pt-3 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-zinc-400">Minimum Match Score</Label>
+                <Label className={t("text-gray-600", "text-zinc-400")}>Minimum Match Score</Label>
                 <Select
                   value={String(formData.min_match_score || 30)}
                   onValueChange={(v) => handleChange("min_match_score", parseInt(v))}
                 >
-                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                  <SelectTrigger className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                  <SelectContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-700")}`}>
                     <SelectItem value="20">20% - Include more candidates</SelectItem>
                     <SelectItem value="30">30% - Balanced (Recommended)</SelectItem>
                     <SelectItem value="50">50% - Higher quality</SelectItem>
                     <SelectItem value="70">70% - Only best matches</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-zinc-600">
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-600")}`}>
                   Only candidates above this score will be matched
                 </p>
               </div>
               <div className="flex items-center">
-                <div className="p-3 bg-zinc-800/50 rounded-lg text-xs text-zinc-400">
-                  <p className="font-medium text-zinc-300 mb-1">How it works:</p>
+                <div className={`p-3 ${t("bg-gray-100", "bg-zinc-800/50")} rounded-lg text-xs ${t("text-gray-500", "text-zinc-400")}`}>
+                  <p className={`font-medium ${t("text-gray-600", "text-zinc-300")} mb-1`}>How it works:</p>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>Analyzes all candidates against role requirements</li>
                     <li>Matches run when campaign is activated</li>
@@ -669,95 +676,95 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
 
       <div className="grid grid-cols-3 gap-6">
         <div className="space-y-2">
-          <Label className="text-zinc-400">Daily Limit</Label>
+          <Label className={t("text-gray-600", "text-zinc-400")}>Daily Limit</Label>
           <Input
             type="number"
             value={formData.daily_limit}
             onChange={(e) => handleChange("daily_limit", parseInt(e.target.value) || 50)}
-            className="bg-zinc-800/50 border-zinc-700 text-white"
+            className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}
             min={1}
             max={500}
           />
-          <p className="text-xs text-zinc-600">Max messages per day</p>
+          <p className={`text-xs ${t("text-gray-400", "text-zinc-600")}`}>Max messages per day</p>
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-400">Min Delay (minutes)</Label>
+          <Label className={t("text-gray-600", "text-zinc-400")}>Min Delay (minutes)</Label>
           <Input
             type="number"
             value={formData.delay_min_minutes}
             onChange={(e) => handleChange("delay_min_minutes", parseInt(e.target.value) || 5)}
-            className="bg-zinc-800/50 border-zinc-700 text-white"
+            className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}
             min={1}
           />
-          <p className="text-xs text-zinc-600">Between messages</p>
+          <p className={`text-xs ${t("text-gray-400", "text-zinc-600")}`}>Between messages</p>
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-400">Max Delay (minutes)</Label>
+          <Label className={t("text-gray-600", "text-zinc-400")}>Max Delay (minutes)</Label>
           <Input
             type="number"
             value={formData.delay_max_minutes}
             onChange={(e) => handleChange("delay_max_minutes", parseInt(e.target.value) || 30)}
-            className="bg-zinc-800/50 border-zinc-700 text-white"
+            className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}
             min={1}
           />
-          <p className="text-xs text-zinc-600">Random delay range</p>
+          <p className={`text-xs ${t("text-gray-400", "text-zinc-600")}`}>Random delay range</p>
         </div>
       </div>
 
       {/* Matching Settings (Role Context, Criteria Weights, Signal Filters) */}
       {!isNew && (
-        <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-xl space-y-4">
+        <div className={`p-4 ${t("bg-gray-50", "bg-zinc-800/30")} border ${t("border-gray-200", "border-zinc-700/50")} rounded-xl space-y-4`}>
           <button
             type="button"
             onClick={() => setShowMatchingSettings(!showMatchingSettings)}
             className="w-full flex items-center justify-between"
           >
             <div>
-              <h4 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+              <h4 className={`text-sm font-semibold ${t("text-gray-900", "text-white")} mb-1 flex items-center gap-2`}>
                 <SlidersHorizontal className="w-4 h-4 text-red-400" />
                 Matching Settings
               </h4>
-              <p className="text-xs text-zinc-500 text-left">
+              <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} text-left`}>
                 Role context, criteria weights, and signal filters for AI matching
               </p>
             </div>
-            <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${showMatchingSettings ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-4 h-4 ${t("text-gray-400", "text-zinc-400")} transition-transform ${showMatchingSettings ? 'rotate-180' : ''}`} />
           </button>
 
           {showMatchingSettings && (
-            <div className="pt-3 border-t border-zinc-700/50 space-y-6">
+            <div className={`pt-3 border-t ${t("border-gray-200", "border-zinc-700/50")} space-y-6`}>
               {/* Role Context */}
               <div className="space-y-4">
-                <h5 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Role Context</h5>
+                <h5 className={`text-xs font-semibold ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>Role Context</h5>
                 <div className="space-y-3">
                   <div className="space-y-2">
-                    <Label className="text-zinc-400">Perfect Fit Criteria</Label>
+                    <Label className={t("text-gray-600", "text-zinc-400")}>Perfect Fit Criteria</Label>
                     <Textarea
                       value={formData.role_context_perfect_fit || ""}
                       onChange={(e) => handleChange("role_context_perfect_fit", e.target.value)}
-                      className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+                      className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} resize-none`}
                       placeholder="What makes someone a perfect fit for this role..."
                       rows={3}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-zinc-400">Selling Points</Label>
+                    <Label className={t("text-gray-600", "text-zinc-400")}>Selling Points</Label>
                     <Textarea
                       value={formData.role_context_selling_points || ""}
                       onChange={(e) => handleChange("role_context_selling_points", e.target.value)}
-                      className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+                      className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} resize-none`}
                       placeholder="Why should a candidate join? What makes this opportunity compelling..."
                       rows={3}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-zinc-400">Ideal Background</Label>
+                    <Label className={t("text-gray-600", "text-zinc-400")}>Ideal Background</Label>
                     <Textarea
                       value={formData.role_context_ideal_background || ""}
                       onChange={(e) => handleChange("role_context_ideal_background", e.target.value)}
-                      className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+                      className={`${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} resize-none`}
                       placeholder="Describe the ideal candidate background..."
                       rows={2}
                     />
@@ -767,7 +774,7 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
 
               {/* Criteria Weights */}
               <div className="space-y-3">
-                <h5 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Criteria Weights</h5>
+                <h5 className={`text-xs font-semibold ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>Criteria Weights</h5>
                 <CriteriaWeightingStep
                   weights={formData.criteria_weights || DEFAULT_WEIGHTS}
                   onChange={(weights) => handleChange("criteria_weights", weights)}
@@ -776,7 +783,7 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
 
               {/* Signal Filters */}
               <div className="space-y-3">
-                <h5 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Signal Filters</h5>
+                <h5 className={`text-xs font-semibold ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>Signal Filters</h5>
                 <SignalMatchingConfig
                   selectedSignals={formData.signal_filters || []}
                   onChange={(signals) => handleChange("signal_filters", signals)}
@@ -789,15 +796,15 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
 
       {!isNew && (
         <div className="space-y-2">
-          <Label className="text-zinc-400">Status</Label>
+          <Label className={t("text-gray-600", "text-zinc-400")}>Status</Label>
           <Select
             value={formData.status}
             onValueChange={(v) => handleStatusChange(v)}
           >
-            <SelectTrigger className="w-[200px] bg-zinc-800/50 border-zinc-700 text-white">
+            <SelectTrigger className={`w-[200px] ${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700">
+            <SelectContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-700")}`}>
               {CAMPAIGN_STATUSES.map((status) => (
                 <SelectItem key={status.value} value={status.value}>
                   {status.label}
@@ -812,6 +819,7 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
 };
 
 export default function TalentCampaignDetail() {
+  const { t } = useTheme();
   const { user } = useUser();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -1803,7 +1811,7 @@ export default function TalentCampaignDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black relative">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
         <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded-lg" />
@@ -1819,7 +1827,7 @@ export default function TalentCampaignDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -1830,18 +1838,18 @@ export default function TalentCampaignDetail() {
         <div className="flex items-center gap-4">
           <Link
             to={createPageUrl("TalentCampaigns")}
-            className="p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            className={`p-2 rounded-lg ${t("bg-gray-100", "bg-zinc-800/50")} ${t("hover:bg-gray-200", "hover:bg-zinc-800")} ${t("text-gray-400", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")} transition-colors`}
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>
                 {isNew ? "New Campaign" : formData.name || "Campaign"}
               </h1>
               {!isNew && <StatusBadge status={formData.status} />}
             </div>
-            <p className="text-sm text-zinc-500 mt-0.5">
+            <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} mt-0.5`}>
               {isNew ? "Create a new outreach campaign" : "Manage your campaign settings and candidates"}
             </p>
           </div>
@@ -1872,7 +1880,7 @@ export default function TalentCampaignDetail() {
               <Button
                 variant="outline"
                 onClick={handleDuplicate}
-                className="border-zinc-700"
+                className={t("border-gray-200", "border-zinc-700")}
               >
                 <Copy className="w-4 h-4 mr-2" />
                 Duplicate
@@ -1906,7 +1914,7 @@ export default function TalentCampaignDetail() {
       <GlassCard className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center justify-between mb-4 gap-4">
-            <TabsList className="bg-zinc-800/50">
+            <TabsList className={t("bg-gray-100", "bg-zinc-800/50")}>
               {!isNew && (
                 <TabsTrigger
                   value="overview"
@@ -1981,7 +1989,7 @@ export default function TalentCampaignDetail() {
                   size="sm"
                   variant="outline"
                   onClick={() => flowTabRef.current?.regenerate()}
-                  className="border-zinc-700 text-zinc-300 hover:text-white"
+                  className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-600", "text-zinc-300")} ${t("hover:text-gray-900", "hover:text-white")}`}
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Regenerate
@@ -1990,7 +1998,7 @@ export default function TalentCampaignDetail() {
                   size="sm"
                   variant="outline"
                   onClick={() => flowTabRef.current?.validate()}
-                  className="border-zinc-700 text-zinc-300 hover:text-white"
+                  className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-600", "text-zinc-300")} ${t("hover:text-gray-900", "hover:text-white")}`}
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
                   Validate
@@ -1999,7 +2007,7 @@ export default function TalentCampaignDetail() {
                   size="sm"
                   variant="outline"
                   onClick={() => flowTabRef.current?.autoLayout()}
-                  className="border-zinc-700 text-zinc-300 hover:text-white"
+                  className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-600", "text-zinc-300")} ${t("hover:text-gray-900", "hover:text-white")}`}
                 >
                   <LayoutGrid className="w-4 h-4 mr-2" />
                   Auto-layout
@@ -2060,7 +2068,7 @@ export default function TalentCampaignDetail() {
                     size="sm"
                     variant={outreachMode === "queue" ? "default" : "ghost"}
                     onClick={() => setOutreachMode("queue")}
-                    className={outreachMode === "queue" ? "bg-red-500 hover:bg-red-600" : "text-zinc-400 hover:text-white"}
+                    className={outreachMode === "queue" ? "bg-red-500 hover:bg-red-600" : `${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")}`}
                   >
                     <Mail className="w-4 h-4 mr-1" />
                     Queue View
@@ -2069,7 +2077,7 @@ export default function TalentCampaignDetail() {
                     size="sm"
                     variant={outreachMode === "linkedin" ? "default" : "ghost"}
                     onClick={() => setOutreachMode("linkedin")}
-                    className={outreachMode === "linkedin" ? "bg-red-500 hover:bg-red-600" : "text-zinc-400 hover:text-white"}
+                    className={outreachMode === "linkedin" ? "bg-red-500 hover:bg-red-600" : `${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")}`}
                   >
                     <Linkedin className="w-4 h-4 mr-1" />
                     LinkedIn Workflow
@@ -2079,7 +2087,7 @@ export default function TalentCampaignDetail() {
                   size="sm"
                   variant="outline"
                   onClick={() => setShowCustomizeDrawer(true)}
-                  className="border-zinc-700 text-zinc-300 hover:text-white"
+                  className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-600", "text-zinc-300")} ${t("hover:text-gray-900", "hover:text-white")}`}
                 >
                   <SlidersHorizontal className="w-4 h-4 mr-2" />
                   Customize Messages
@@ -2105,9 +2113,9 @@ export default function TalentCampaignDetail() {
 
               {/* Customize Messages Sheet Drawer */}
               <Sheet open={showCustomizeDrawer} onOpenChange={setShowCustomizeDrawer}>
-                <SheetContent className="bg-zinc-900 border-zinc-800 w-[480px] sm:max-w-[480px] overflow-y-auto">
+                <SheetContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")} w-[480px] sm:max-w-[480px] overflow-y-auto`}>
                   <SheetHeader>
-                    <SheetTitle className="text-white">Customize Messages</SheetTitle>
+                    <SheetTitle className={t("text-gray-900", "text-white")}>Customize Messages</SheetTitle>
                   </SheetHeader>
                   <div className="mt-4">
                     <OutreachCustomizationPanel
@@ -2156,8 +2164,8 @@ export default function TalentCampaignDetail() {
 
             {/* Outreach Sequence (merged from Sequence tab) */}
             {!isNew && (
-              <div className="pt-6 border-t border-zinc-700/50">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <div className={`pt-6 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
+                <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
                   <FileText className="w-5 h-5 text-red-400" />
                   Outreach Sequence
                 </h3>

@@ -77,6 +77,7 @@ import {
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getCrossCheckedTenure } from "@/utils/tenureCrossCheck";
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 // Animation variants
 const containerVariants = {
@@ -98,15 +99,16 @@ const itemVariants = {
 
 // Expandable Text component
 const ExpandableText = ({ text, maxLength = 200 }) => {
+  const { t } = useTheme();
   const [expanded, setExpanded] = useState(false);
-  if (!text) return <span className="text-white/40">—</span>;
+  if (!text) return <span className={t("text-gray-300", "text-white/40")}>—</span>;
 
   const shouldTruncate = text.length > maxLength;
   const displayText = expanded || !shouldTruncate ? text : `${text.substring(0, maxLength)}...`;
 
   return (
     <div>
-      <p className="text-sm text-white/70 leading-relaxed">{displayText}</p>
+      <p className={`text-sm ${t("text-gray-600", "text-white/70")} leading-relaxed`}>{displayText}</p>
       {shouldTruncate && (
         <button
           onClick={() => setExpanded(!expanded)}
@@ -126,37 +128,39 @@ const statCardColorMap = {
 };
 
 const StatCard = ({ label, value, icon: Icon, color = "red", subtext }) => {
+  const { t } = useTheme();
   const colors = statCardColorMap[color] || statCardColorMap.red;
   return (
-    <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors">
+    <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-5 ${t("hover:bg-gray-50", "hover:bg-white/[0.05]")} transition-colors`}>
       <div className="flex items-start justify-between mb-3">
         <div className={`p-2.5 rounded-xl ${colors.bg}`}>
           <Icon className={`w-5 h-5 ${colors.text}`} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-white mb-1">{value}</p>
-      <p className="text-sm text-white/50">{label}</p>
-      {subtext && <p className="text-xs text-white/30 mt-1">{subtext}</p>}
+      <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")} mb-1`}>{value}</p>
+      <p className={`text-sm ${t("text-gray-500", "text-white/50")}`}>{label}</p>
+      {subtext && <p className={`text-xs ${t("text-gray-400", "text-white/30")} mt-1`}>{subtext}</p>}
     </div>
   );
 };
 
 // Info Row
 const InfoRow = ({ icon: Icon, label, value, link }) => {
+  const { t } = useTheme();
   if (!value) return null;
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0">
-      <div className="p-2 rounded-lg bg-white/[0.04]">
-        <Icon className="w-4 h-4 text-white/40" />
+    <div className={`flex items-center gap-3 py-3 border-b ${t("border-gray-100", "border-white/[0.04]")} last:border-0`}>
+      <div className={`p-2 rounded-lg ${t("bg-gray-100", "bg-white/[0.04]")}`}>
+        <Icon className={`w-4 h-4 ${t("text-gray-400", "text-white/40")}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-white/40">{label}</p>
+        <p className={`text-xs ${t("text-gray-400", "text-white/40")}`}>{label}</p>
         {link ? (
           <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-red-400 hover:text-red-300 truncate flex items-center gap-1">
             {value} <ExternalLink className="w-3 h-3" />
           </a>
         ) : (
-          <p className="text-sm text-white truncate">{value}</p>
+          <p className={`text-sm ${t("text-gray-900", "text-white")} truncate`}>{value}</p>
         )}
       </div>
     </div>
@@ -212,7 +216,7 @@ const SatisfactionBadge = ({ level }) => {
 };
 
 // Timeline Item
-const TimelineItem = ({ item, isLast }) => {
+const TimelineItem = ({ item, isLast, t }) => {
   const typeStyles = {
     outreach: { icon: Send, color: "text-red-400", bg: "bg-red-500/15" },
     reply: { icon: MessageSquare, color: "text-red-300", bg: "bg-red-400/15" },
@@ -229,21 +233,21 @@ const TimelineItem = ({ item, isLast }) => {
         <div className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center`}>
           <Icon className={`w-4 h-4 ${style.color}`} />
         </div>
-        {!isLast && <div className="w-px flex-1 bg-white/[0.06] my-2" />}
+        {!isLast && <div className={`w-px flex-1 ${t("bg-gray-200", "bg-white/[0.06]")} my-2`} />}
       </div>
       <div className="flex-1 pb-6">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-white capitalize">{item.title}</h4>
-          <span className="text-xs text-white/30">{item.date}</span>
+          <h4 className={`text-sm font-medium ${t("text-gray-900", "text-white")} capitalize`}>{item.title}</h4>
+          <span className={`text-xs ${t("text-gray-400", "text-white/30")}`}>{item.date}</span>
         </div>
-        <p className="text-xs text-white/50 mt-1">{item.description}</p>
+        <p className={`text-xs ${t("text-gray-500", "text-white/50")} mt-1`}>{item.description}</p>
       </div>
     </div>
   );
 };
 
 // Outreach Task Card
-const OutreachTaskCard = ({ task }) => {
+const OutreachTaskCard = ({ task, t }) => {
   const statusStyles = {
     pending: { color: "text-red-300", bg: "bg-red-400/15", label: "Pending" },
     approved_ready: { color: "text-red-400", bg: "bg-red-500/15", label: "Ready" },
@@ -254,16 +258,16 @@ const OutreachTaskCard = ({ task }) => {
   const style = statusStyles[task.status] || statusStyles.pending;
 
   return (
-    <div className="p-5 bg-white/[0.03] border border-white/[0.06] rounded-2xl hover:bg-white/[0.05] transition-colors">
+    <div className={`p-5 ${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl ${t("hover:bg-gray-50", "hover:bg-white/[0.05]")} transition-colors`}>
       <div className="flex items-center justify-between mb-3">
         <span className={`text-xs px-2.5 py-1 rounded-lg ${style.bg} ${style.color}`}>
           {style.label}
         </span>
-        <span className="text-xs text-white/30">{task.stage}</span>
+        <span className={`text-xs ${t("text-gray-400", "text-white/30")}`}>{task.stage}</span>
       </div>
-      <h4 className="text-sm font-medium text-white capitalize">{task.task_type?.replace(/_/g, " ")}</h4>
+      <h4 className={`text-sm font-medium ${t("text-gray-900", "text-white")} capitalize`}>{task.task_type?.replace(/_/g, " ")}</h4>
       {task.sent_at && (
-        <p className="text-xs text-white/40 mt-2">Sent: {new Date(task.sent_at).toLocaleDateString()}</p>
+        <p className={`text-xs ${t("text-gray-400", "text-white/40")} mt-2`}>Sent: {new Date(task.sent_at).toLocaleDateString()}</p>
       )}
     </div>
   );
@@ -271,14 +275,15 @@ const OutreachTaskCard = ({ task }) => {
 
 // Analysis Card
 const AnalysisCard = ({ icon: Icon, title, content, maxLength = 300 }) => {
+  const { t } = useTheme();
   if (!content) return null;
   return (
-    <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+    <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-6`}>
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2.5 rounded-xl bg-red-500/10">
           <Icon className="w-5 h-5 text-red-400" />
         </div>
-        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <h3 className={`text-base font-semibold ${t("text-gray-900", "text-white")}`}>{title}</h3>
       </div>
       <ExpandableText text={content} maxLength={maxLength} />
     </div>
@@ -286,6 +291,7 @@ const AnalysisCard = ({ icon: Icon, title, content, maxLength = 300 }) => {
 };
 
 export default function TalentCandidateProfile() {
+  const { t } = useTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const candidateId = searchParams.get("id");
@@ -739,7 +745,7 @@ export default function TalentCandidateProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")}`}>
         <div className="w-full px-6 lg:px-8 py-6 space-y-6">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-48 rounded-2xl" />
@@ -753,13 +759,13 @@ export default function TalentCandidateProfile() {
 
   if (!candidate) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} flex items-center justify-center`}>
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
-            <User className="w-10 h-10 text-white/20" />
+          <div className={`w-20 h-20 mx-auto mb-6 rounded-full ${t("bg-gray-100", "bg-white/5")} flex items-center justify-center`}>
+            <User className={`w-10 h-10 ${t("text-gray-300", "text-white/20")}`} />
           </div>
-          <h3 className="text-xl font-semibold text-white mb-2">Candidate not found</h3>
-          <p className="text-white/50 mb-6">The candidate you're looking for doesn't exist.</p>
+          <h3 className={`text-xl font-semibold ${t("text-gray-900", "text-white")} mb-2`}>Candidate not found</h3>
+          <p className={`${t("text-gray-500", "text-white/50")} mb-6`}>The candidate you're looking for doesn't exist.</p>
           <Link
             to={createPageUrl("TalentCandidates")}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors"
@@ -803,7 +809,7 @@ export default function TalentCandidateProfile() {
   });
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className={`min-h-screen ${t("bg-gray-50", "bg-black")}`}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -813,7 +819,7 @@ export default function TalentCandidateProfile() {
         {/* Back Button */}
         <Link
           to={createPageUrl("TalentCandidates")}
-          className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm"
+          className={`inline-flex items-center gap-2 ${t("text-gray-500", "text-white/50")} ${t("hover:text-gray-900", "hover:text-white")} transition-colors text-sm`}
         >
           <ChevronLeft className="w-4 h-4" />
           Back to Candidates
@@ -821,7 +827,7 @@ export default function TalentCandidateProfile() {
 
         {/* Hero Section */}
         <motion.div variants={itemVariants}>
-          <div className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-xl p-6">
+          <div className={`${t("bg-white", "bg-gradient-to-br from-white/[0.04] to-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-xl p-6`}>
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               {/* Avatar & Basic Info */}
               <div className="flex items-center gap-4 flex-1">
@@ -829,9 +835,9 @@ export default function TalentCandidateProfile() {
                   {initials}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-lg font-semibold text-white">{fullName}</h1>
-                  <p className="text-white/60 text-sm mb-1">{candidate.job_title || "—"}</p>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/40">
+                  <h1 className={`text-lg font-semibold ${t("text-gray-900", "text-white")}`}>{fullName}</h1>
+                  <p className={`${t("text-gray-500", "text-white/60")} text-sm mb-1`}>{candidate.job_title || "—"}</p>
+                  <div className={`flex flex-wrap items-center gap-3 text-xs ${t("text-gray-400", "text-white/40")}`}>
                     {candidate.company_name && (
                       <span className="inline-flex items-center gap-1">
                         <Building2 className="w-3 h-3" />
@@ -902,32 +908,32 @@ export default function TalentCandidateProfile() {
             </div>
 
             {/* Quick Stats Bar */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4 pt-4 border-t border-white/[0.06]">
+            <div className={`grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4 pt-4 border-t ${t("border-gray-200", "border-white/[0.06]")}`}>
               <div>
-                <p className="text-[10px] text-white/40 mb-0.5">Urgency</p>
+                <p className={`text-[10px] ${t("text-gray-400", "text-white/40")} mb-0.5`}>Urgency</p>
                 <UrgencyBadge level={candidate.recruitment_urgency} size="xs" />
               </div>
               <div>
-                <p className="text-[10px] text-white/40 mb-0.5">Satisfaction</p>
+                <p className={`text-[10px] ${t("text-gray-400", "text-white/40")} mb-0.5`}>Satisfaction</p>
                 <SatisfactionBadge level={candidate.job_satisfaction} size="xs" />
               </div>
               <div>
-                <p className="text-[10px] text-white/40 mb-0.5">Salary</p>
+                <p className={`text-[10px] ${t("text-gray-400", "text-white/40")} mb-0.5`}>Salary</p>
                 <p className="text-sm font-semibold text-red-400">
                   {candidate.salary_range ? `€${Number(candidate.salary_range).toLocaleString()}` : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-[10px] text-white/40 mb-0.5">Tenure</p>
-                <p className="text-sm font-semibold text-white">{getCrossCheckedTenure(candidate) || 0}y</p>
+                <p className={`text-[10px] ${t("text-gray-400", "text-white/40")} mb-0.5`}>Tenure</p>
+                <p className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>{getCrossCheckedTenure(candidate) || 0}y</p>
               </div>
               <div>
-                <p className="text-[10px] text-white/40 mb-0.5">Promos</p>
-                <p className="text-sm font-semibold text-white">{candidate.times_promoted || 0}</p>
+                <p className={`text-[10px] ${t("text-gray-400", "text-white/40")} mb-0.5`}>Promos</p>
+                <p className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>{candidate.times_promoted || 0}</p>
               </div>
               <div>
-                <p className="text-[10px] text-white/40 mb-0.5">Job Changes</p>
-                <p className="text-sm font-semibold text-white">{candidate.times_company_hopped || 0}</p>
+                <p className={`text-[10px] ${t("text-gray-400", "text-white/40")} mb-0.5`}>Job Changes</p>
+                <p className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>{candidate.times_company_hopped || 0}</p>
               </div>
             </div>
           </div>
@@ -935,7 +941,7 @@ export default function TalentCandidateProfile() {
 
         {/* Tab Navigation */}
         <motion.div variants={itemVariants}>
-          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+          <div className={`flex gap-1 p-1 ${t("bg-gray-100", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-xl`}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -943,7 +949,7 @@ export default function TalentCandidateProfile() {
                 className={`flex-1 px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
                   activeTab === tab.id
                     ? "bg-red-500 text-white shadow-lg shadow-red-500/20"
-                    : "text-white/50 hover:text-white hover:bg-white/[0.04]"
+                    : `${t("text-gray-500", "text-white/50")} ${t("hover:text-gray-900", "hover:text-white")} ${t("hover:bg-gray-200", "hover:bg-white/[0.04]")}`
                 }`}
               >
                 {tab.label}
@@ -1022,8 +1028,8 @@ export default function TalentCandidateProfile() {
 
                 {/* Skills */}
                 {candidate.skills && candidate.skills.length > 0 && (
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-6`}>
+                    <h3 className={`text-base font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
                       <Award className="w-5 h-5 text-red-400" />
                       Skills ({candidate.skills.length})
                     </h3>
@@ -1043,8 +1049,8 @@ export default function TalentCandidateProfile() {
 
                 {/* Work History */}
                 {candidate.work_history && candidate.work_history.length > 0 && (
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-6`}>
+                    <h3 className={`text-base font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
                       <Briefcase className="w-5 h-5 text-red-400" />
                       Work History ({candidate.work_history.length})
                     </h3>
@@ -1056,21 +1062,21 @@ export default function TalentCandidateProfile() {
                         const description = job.summary || job.description;
 
                         return (
-                          <div key={idx} className="flex gap-3 p-3 bg-white/[0.02] rounded-lg border border-white/[0.04]">
+                          <div key={idx} className={`flex gap-3 p-3 ${t("bg-gray-50", "bg-white/[0.02]")} rounded-lg border ${t("border-gray-100", "border-white/[0.04]")}`}>
                             <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20 flex-shrink-0">
                               <Briefcase className="w-5 h-5 text-red-400" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-white">{jobTitle || 'Unknown Position'}</p>
-                              <p className="text-sm text-white/60">{companyName || 'Unknown Company'}</p>
+                              <p className={`font-medium ${t("text-gray-900", "text-white")}`}>{jobTitle || 'Unknown Position'}</p>
+                              <p className={`text-sm ${t("text-gray-500", "text-white/60")}`}>{companyName || 'Unknown Company'}</p>
                               {(job.start_date || job.end_date) && (
-                                <p className="text-xs text-white/40 mt-1 flex items-center gap-1">
+                                <p className={`text-xs ${t("text-gray-400", "text-white/40")} mt-1 flex items-center gap-1`}>
                                   <Calendar className="w-3 h-3" />
                                   {job.start_date} - {job.end_date || 'Present'}
                                 </p>
                               )}
                               {description && (
-                                <p className="text-sm text-white/50 mt-2 line-clamp-2">{description}</p>
+                                <p className={`text-sm ${t("text-gray-500", "text-white/50")} mt-2 line-clamp-2`}>{description}</p>
                               )}
                             </div>
                           </div>
@@ -1082,8 +1088,8 @@ export default function TalentCandidateProfile() {
 
                 {/* Education */}
                 {candidate.education && candidate.education.length > 0 && (
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-6`}>
+                    <h3 className={`text-base font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
                       <GraduationCap className="w-5 h-5 text-purple-400" />
                       Education ({candidate.education.length})
                     </h3>
@@ -1096,15 +1102,15 @@ export default function TalentCandidateProfile() {
                         const displayDegree = degreeName || majorName || 'Degree';
 
                         return (
-                          <div key={idx} className="flex gap-3 p-3 bg-white/[0.02] rounded-lg border border-white/[0.04]">
+                          <div key={idx} className={`flex gap-3 p-3 ${t("bg-gray-50", "bg-white/[0.02]")} rounded-lg border ${t("border-gray-100", "border-white/[0.04]")}`}>
                             <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center border border-purple-500/20 flex-shrink-0">
                               <GraduationCap className="w-5 h-5 text-purple-400" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-white">{displayDegree}</p>
-                              <p className="text-sm text-white/60">{schoolName || 'Unknown Institution'}</p>
+                              <p className={`font-medium ${t("text-gray-900", "text-white")}`}>{displayDegree}</p>
+                              <p className={`text-sm ${t("text-gray-500", "text-white/60")}`}>{schoolName || 'Unknown Institution'}</p>
                               {(edu.year || edu.end_date || edu.graduation_year) && (
-                                <p className="text-xs text-white/40 mt-1 flex items-center gap-1">
+                                <p className={`text-xs ${t("text-gray-400", "text-white/40")} mt-1 flex items-center gap-1`}>
                                   <Calendar className="w-3 h-3" />
                                   {edu.year || edu.end_date || edu.graduation_year}
                                 </p>
@@ -1119,8 +1125,8 @@ export default function TalentCandidateProfile() {
 
                 {/* Certifications */}
                 {candidate.certifications && candidate.certifications.length > 0 && (
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-6`}>
+                    <h3 className={`text-base font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
                       <BadgeCheck className="w-5 h-5 text-green-400" />
                       Certifications ({candidate.certifications.length})
                     </h3>
@@ -1132,12 +1138,12 @@ export default function TalentCandidateProfile() {
                         const certDate = typeof cert === 'object' ? (cert?.date || cert?.issued_date) : null;
 
                         return (
-                          <div key={idx} className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-lg border border-white/[0.04]">
+                          <div key={idx} className={`flex items-center gap-3 p-3 ${t("bg-gray-50", "bg-white/[0.02]")} rounded-lg border ${t("border-gray-100", "border-white/[0.04]")}`}>
                             <BadgeCheck className="w-5 h-5 text-green-400 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-white truncate">{certName}</p>
-                              {certIssuer && <p className="text-xs text-white/50">{certIssuer}</p>}
-                              {certDate && <p className="text-xs text-white/40">{certDate}</p>}
+                              <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} truncate`}>{certName}</p>
+                              {certIssuer && <p className={`text-xs ${t("text-gray-400", "text-white/50")}`}>{certIssuer}</p>}
+                              {certDate && <p className={`text-xs ${t("text-gray-400", "text-white/40")}`}>{certDate}</p>}
                             </div>
                           </div>
                         );
@@ -1148,8 +1154,8 @@ export default function TalentCandidateProfile() {
 
                 {/* Interests */}
                 {candidate.interests && candidate.interests.length > 0 && (
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-6`}>
+                    <h3 className={`text-base font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
                       <Heart className="w-5 h-5 text-pink-400" />
                       Interests ({candidate.interests.length})
                     </h3>
@@ -1171,8 +1177,8 @@ export default function TalentCandidateProfile() {
               {/* Side Column */}
               <div className="space-y-6">
                 {/* Contact Info */}
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                  <h3 className="text-base font-semibold text-white mb-4">Contact Information</h3>
+                <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-6`}>
+                  <h3 className={`text-base font-semibold ${t("text-gray-900", "text-white")} mb-4`}>Contact Information</h3>
                   <div className="space-y-1">
                     <InfoRow icon={Mail} label="Email" value={candidate.email} link={candidate.email ? `mailto:${candidate.email}` : null} />
                     <InfoRow icon={Phone} label="Phone" value={candidate.phone} />
@@ -1183,14 +1189,14 @@ export default function TalentCandidateProfile() {
 
                 {/* Recent Activity */}
                 {historyItems.length > 0 && (
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                  <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-6`}>
+                    <h3 className={`text-base font-semibold ${t("text-gray-900", "text-white")} mb-4 flex items-center gap-2`}>
                       <History className="w-5 h-5 text-red-400" />
                       Recent Activity
                     </h3>
                     <div>
                       {historyItems.slice(0, 4).map((item, idx) => (
-                        <TimelineItem key={idx} item={item} isLast={idx === Math.min(historyItems.length - 1, 3)} />
+                        <TimelineItem key={idx} item={item} isLast={idx === Math.min(historyItems.length - 1, 3)} t={t} />
                       ))}
                     </div>
                   </div>
@@ -1205,7 +1211,7 @@ export default function TalentCandidateProfile() {
               {/* Compact Company Info Bar */}
               <motion.div
                 variants={itemVariants}
-                className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
+                className={`${t("bg-white", "bg-white/[0.02]")} rounded-xl border ${t("border-gray-200", "border-white/[0.06]")} p-4`}
               >
                 <div className="flex flex-wrap items-center gap-6">
                   <div className="flex items-center gap-3">
@@ -1213,33 +1219,33 @@ export default function TalentCandidateProfile() {
                       <Building2 className="w-5 h-5 text-red-400" />
                     </div>
                     <div>
-                      <p className="text-white font-semibold">{candidate.company_name || "—"}</p>
-                      <p className="text-xs text-white/40">{candidate.industry || "Industry unknown"}</p>
+                      <p className={`${t("text-gray-900", "text-white")} font-semibold`}>{candidate.company_name || "—"}</p>
+                      <p className={`text-xs ${t("text-gray-400", "text-white/40")}`}>{candidate.industry || "Industry unknown"}</p>
                     </div>
                   </div>
-                  <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                  <div className={`h-8 w-px ${t("bg-gray-200", "bg-white/10")} hidden sm:block`} />
                   <div className="flex flex-wrap gap-4 text-sm">
                     {candidate.company_size && (
                       <div>
-                        <span className="text-white/40 text-xs">Size</span>
-                        <p className="text-white font-medium">{candidate.company_size}</p>
+                        <span className={`${t("text-gray-400", "text-white/40")} text-xs`}>Size</span>
+                        <p className={`${t("text-gray-900", "text-white")} font-medium`}>{candidate.company_size}</p>
                       </div>
                     )}
                     {candidate.company_type && (
                       <div>
-                        <span className="text-white/40 text-xs">Type</span>
-                        <p className="text-white font-medium">{candidate.company_type}</p>
+                        <span className={`${t("text-gray-400", "text-white/40")} text-xs`}>Type</span>
+                        <p className={`${t("text-gray-900", "text-white")} font-medium`}>{candidate.company_type}</p>
                       </div>
                     )}
                     {candidate.company_hq && (
                       <div>
-                        <span className="text-white/40 text-xs">HQ</span>
-                        <p className="text-white font-medium">{candidate.company_hq}</p>
+                        <span className={`${t("text-gray-400", "text-white/40")} text-xs`}>HQ</span>
+                        <p className={`${t("text-gray-900", "text-white")} font-medium`}>{candidate.company_hq}</p>
                       </div>
                     )}
                     {candidate.company_domain && (
                       <div>
-                        <span className="text-white/40 text-xs">Website</span>
+                        <span className={`${t("text-gray-400", "text-white/40")} text-xs`}>Website</span>
                         <a
                           href={`https://${candidate.company_domain}`}
                           target="_blank"
@@ -1253,7 +1259,7 @@ export default function TalentCandidateProfile() {
                   </div>
                 </div>
                 {candidate.company_description && (
-                  <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                  <div className={`mt-3 pt-3 border-t ${t("border-gray-200", "border-white/[0.06]")}`}>
                     <ExpandableText text={candidate.company_description} maxLength={250} />
                   </div>
                 )}
@@ -1269,7 +1275,7 @@ export default function TalentCandidateProfile() {
                     <div className="p-1.5 rounded-lg bg-red-500/20">
                       <FileText className="w-4 h-4 text-red-400" />
                     </div>
-                    <h3 className="font-semibold text-white text-sm">Recent M&A News</h3>
+                    <h3 className={`font-semibold ${t("text-gray-900", "text-white")} text-sm`}>Recent M&A News</h3>
                   </div>
                   <ExpandableText text={candidate.recent_ma_news} maxLength={300} />
                 </motion.div>
@@ -1289,15 +1295,15 @@ export default function TalentCandidateProfile() {
               {candidate.experience_report && (
                 <motion.div
                   variants={itemVariants}
-                  className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
+                  className={`${t("bg-white", "bg-white/[0.02]")} rounded-xl border ${t("border-gray-200", "border-white/[0.06]")} p-4`}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <div className="p-1.5 rounded-lg bg-red-500/10">
                       <FileText className="w-4 h-4 text-red-400" />
                     </div>
-                    <h3 className="font-semibold text-white text-sm">Experience Report</h3>
+                    <h3 className={`font-semibold ${t("text-gray-900", "text-white")} text-sm`}>Experience Report</h3>
                   </div>
-                  <p className="text-sm text-white/70 leading-relaxed">{candidate.experience_report}</p>
+                  <p className={`text-sm ${t("text-gray-600", "text-white/70")} leading-relaxed`}>{candidate.experience_report}</p>
                 </motion.div>
               )}
             </div>
@@ -1319,14 +1325,14 @@ export default function TalentCandidateProfile() {
               {campaignMatches.length > 0 ? (
                 <div className="space-y-4">
                   {/* Match Summary */}
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5">
+                  <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-5`}>
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-white">Campaign Matches</h3>
+                      <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")}`}>Campaign Matches</h3>
                       <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
                         {campaignMatches.length} {campaignMatches.length === 1 ? "match" : "matches"}
                       </Badge>
                     </div>
-                    <p className="text-sm text-white/50">
+                    <p className={`text-sm ${t("text-gray-500", "text-white/50")}`}>
                       This candidate has been matched to the following campaigns through the auto-match process.
                       Higher scores indicate better fit for the role requirements.
                     </p>
@@ -1340,7 +1346,7 @@ export default function TalentCandidateProfile() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors"
+                        className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-5 ${t("hover:bg-gray-50", "hover:bg-white/[0.05]")} transition-colors`}
                       >
                         {/* Rank Badge & Score */}
                         <div className="flex items-start justify-between mb-4">
@@ -1352,18 +1358,18 @@ export default function TalentCandidateProfile() {
                                 ? "bg-gradient-to-br from-red-400 to-red-500 text-white"
                                 : index === 2
                                 ? "bg-gradient-to-br from-red-600 to-red-700 text-white"
-                                : "bg-white/10 text-white/60"
+                                : `${t("bg-gray-100", "bg-white/10")} ${t("text-gray-500", "text-white/60")}`
                             }`}>
                               #{index + 1}
                             </div>
                             <div>
                               <Link
                                 to={`${createPageUrl("TalentCampaignDetail")}?id=${match.campaign_id}`}
-                                className="text-white font-semibold hover:text-red-400 transition-colors"
+                                className={`${t("text-gray-900", "text-white")} font-semibold hover:text-red-400 transition-colors`}
                               >
                                 {match.campaigns?.name || "Unknown Campaign"}
                               </Link>
-                              <p className="text-sm text-white/50">
+                              <p className={`text-sm ${t("text-gray-500", "text-white/50")}`}>
                                 {match.role_title || "General Match"}
                                 {match.project_name && ` • ${match.project_name}`}
                               </p>
@@ -1393,7 +1399,7 @@ export default function TalentCandidateProfile() {
                               />
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-lg font-bold text-white">{Math.round(match.match_score)}</span>
+                              <span className={`text-lg font-bold ${t("text-gray-900", "text-white")}`}>{Math.round(match.match_score)}</span>
                             </div>
                           </div>
                         </div>
@@ -1401,12 +1407,12 @@ export default function TalentCandidateProfile() {
                         {/* Match Reasons */}
                         {match.match_reasons?.length > 0 && (
                           <div className="space-y-2 mb-4">
-                            <p className="text-xs text-white/40 uppercase tracking-wide">Match Reasons</p>
+                            <p className={`text-xs ${t("text-gray-400", "text-white/40")} uppercase tracking-wide`}>Match Reasons</p>
                             <div className="flex flex-wrap gap-2">
                               {match.match_reasons.slice(0, 4).map((reason, i) => (
                                 <span
                                   key={i}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.05] text-xs text-white/70"
+                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg ${t("bg-gray-100", "bg-white/[0.05]")} text-xs ${t("text-gray-600", "text-white/70")}`}
                                 >
                                   <CheckCircle2 className="w-3 h-3 text-red-400" />
                                   {reason}
@@ -1417,8 +1423,8 @@ export default function TalentCandidateProfile() {
                         )}
 
                         {/* Meta Info */}
-                        <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-                          <div className="flex items-center gap-4 text-xs text-white/40">
+                        <div className={`flex items-center justify-between pt-3 border-t ${t("border-gray-200", "border-white/[0.06]")}`}>
+                          <div className={`flex items-center gap-4 text-xs ${t("text-gray-400", "text-white/40")}`}>
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3 h-3" />
                               {new Date(match.matched_at).toLocaleDateString()}
@@ -1436,7 +1442,7 @@ export default function TalentCandidateProfile() {
                             )}
                           </div>
                           {match.recommended_approach && (
-                            <span className="text-xs text-white/50">
+                            <span className={`text-xs ${t("text-gray-400", "text-white/50")}`}>
                               {match.recommended_approach === "immediate" && "⚡ Immediate"}
                               {match.recommended_approach === "targeted" && "🎯 Targeted"}
                               {match.recommended_approach === "nurture" && "🌱 Nurture"}
@@ -1448,12 +1454,12 @@ export default function TalentCandidateProfile() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-12 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.04] flex items-center justify-center">
-                    <Target className="w-8 h-8 text-white/20" />
+                <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-12 text-center`}>
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl ${t("bg-gray-100", "bg-white/[0.04]")} flex items-center justify-center`}>
+                    <Target className={`w-8 h-8 ${t("text-gray-300", "text-white/20")}`} />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">No Matches Yet</h3>
-                  <p className="text-white/50 mb-6 max-w-md mx-auto">
+                  <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-2`}>No Matches Yet</h3>
+                  <p className={`${t("text-gray-500", "text-white/50")} mb-6 max-w-md mx-auto`}>
                     This candidate hasn't been matched to any campaigns yet. Run auto-match on a campaign to see how well they fit.
                   </p>
                   <Link to={createPageUrl("TalentCampaigns")}>
@@ -1473,16 +1479,16 @@ export default function TalentCandidateProfile() {
               {outreachTasks.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {outreachTasks.map((task) => (
-                    <OutreachTaskCard key={task.id} task={task} />
+                    <OutreachTaskCard key={task.id} task={task} t={t} />
                   ))}
                 </div>
               ) : (
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-12 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.04] flex items-center justify-center">
-                    <MessageSquare className="w-8 h-8 text-white/20" />
+                <div className={`${t("bg-white", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.06]")} rounded-2xl p-12 text-center`}>
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl ${t("bg-gray-100", "bg-white/[0.04]")} flex items-center justify-center`}>
+                    <MessageSquare className={`w-8 h-8 ${t("text-gray-300", "text-white/20")}`} />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">No Outreach Yet</h3>
-                  <p className="text-white/50 mb-6 max-w-md mx-auto">
+                  <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")} mb-2`}>No Outreach Yet</h3>
+                  <p className={`${t("text-gray-500", "text-white/50")} mb-6 max-w-md mx-auto`}>
                     Start engaging with this candidate through email, LinkedIn, or phone outreach.
                   </p>
                   <Button className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 px-8">
@@ -1497,9 +1503,9 @@ export default function TalentCandidateProfile() {
 
         {/* SMS Modal */}
         <Dialog open={showSMSModal} onOpenChange={setShowSMSModal}>
-          <DialogContent className="bg-zinc-900 border-white/10 max-w-lg">
+          <DialogContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-white/10")} max-w-lg`}>
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
+              <DialogTitle className={`${t("text-gray-900", "text-white")} flex items-center gap-2`}>
                 <MessageSquare className="w-5 h-5 text-red-400" />
                 Send SMS to {fullName}
               </DialogTitle>
@@ -1507,14 +1513,14 @@ export default function TalentCandidateProfile() {
 
             <div className="space-y-4 pt-2">
               {/* Recipient Info */}
-              <div className="bg-white/[0.03] rounded-lg p-3 border border-white/[0.06]">
+              <div className={`${t("bg-gray-50", "bg-white/[0.03]")} rounded-lg p-3 border ${t("border-gray-200", "border-white/[0.06]")}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-sm font-bold text-white">
                     {initials}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">{fullName}</p>
-                    <p className="text-xs text-white/50">
+                    <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>{fullName}</p>
+                    <p className={`text-xs ${t("text-gray-400", "text-white/50")}`}>
                       {candidate.verified_phone || candidate.phone || "No phone number"}
                     </p>
                   </div>
@@ -1523,18 +1529,18 @@ export default function TalentCandidateProfile() {
 
               {/* From Number Selection */}
               <div>
-                <label className="block text-xs text-white/50 mb-1.5">From Number</label>
+                <label className={`block text-xs ${t("text-gray-400", "text-white/50")} mb-1.5`}>From Number</label>
                 {availableNumbers.length > 0 ? (
                   <Select value={sendingFromNumber} onValueChange={setSendingFromNumber}>
-                    <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white">
+                    <SelectTrigger className={`${t("bg-white", "bg-white/[0.03]")} ${t("border-gray-200", "border-white/[0.08]")} ${t("text-gray-900", "text-white")}`}>
                       <SelectValue placeholder="Select a number" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-white/10">
+                    <SelectContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-white/10")}`}>
                       {availableNumbers.map((num) => (
                         <SelectItem
                           key={num.id}
                           value={num.phone_number}
-                          className="text-white hover:bg-white/[0.05]"
+                          className={`${t("text-gray-900", "text-white")} ${t("hover:bg-gray-50", "hover:bg-white/[0.05]")}`}
                         >
                           {num.phone_number} {num.friendly_name && `(${num.friendly_name})`}
                         </SelectItem>
@@ -1542,9 +1548,9 @@ export default function TalentCandidateProfile() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <div className="bg-white/[0.03] rounded-lg p-3 border border-white/[0.06] text-center">
-                    <Phone className="w-5 h-5 text-white/20 mx-auto mb-1" />
-                    <p className="text-xs text-white/50">No phone numbers available</p>
+                  <div className={`${t("bg-gray-50", "bg-white/[0.03]")} rounded-lg p-3 border ${t("border-gray-200", "border-white/[0.06]")} text-center`}>
+                    <Phone className={`w-5 h-5 ${t("text-gray-300", "text-white/20")} mx-auto mb-1`} />
+                    <p className={`text-xs ${t("text-gray-400", "text-white/50")}`}>No phone numbers available</p>
                     <Link
                       to={createPageUrl("TalentSMSOutreach")}
                       className="text-xs text-red-400 hover:text-red-300"
@@ -1558,7 +1564,7 @@ export default function TalentCandidateProfile() {
               {/* Message Input */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs text-white/50">Message</label>
+                  <label className={`text-xs ${t("text-gray-400", "text-white/50")}`}>Message</label>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1578,10 +1584,10 @@ export default function TalentCandidateProfile() {
                   value={smsMessage}
                   onChange={(e) => setSmsMessage(e.target.value)}
                   placeholder="Type your message or click AI Generate for a personalized message..."
-                  className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-white/30 min-h-[120px] resize-none"
+                  className={`${t("bg-white", "bg-white/[0.03]")} ${t("border-gray-200", "border-white/[0.08]")} ${t("text-gray-900", "text-white")} ${t("placeholder:text-gray-400", "placeholder:text-white/30")} min-h-[120px] resize-none`}
                 />
                 <div className="flex items-center justify-between mt-1.5">
-                  <span className="text-xs text-white/30">
+                  <span className={`text-xs ${t("text-gray-400", "text-white/30")}`}>
                     {smsMessage.length} characters
                     {smsMessage.length > 160 && (
                       <span className="text-yellow-400/70 ml-1">
@@ -1599,7 +1605,7 @@ export default function TalentCandidateProfile() {
                     <AlertTriangle className="w-4 h-4" />
                     <span className="text-xs font-medium">No phone number available</span>
                   </div>
-                  <p className="text-xs text-white/50 mt-1">
+                  <p className={`text-xs ${t("text-gray-500", "text-white/50")} mt-1`}>
                     Click "Enrich" on the profile to find this candidate's phone number.
                   </p>
                 </div>
@@ -1610,7 +1616,7 @@ export default function TalentCandidateProfile() {
                 <Button
                   variant="outline"
                   onClick={() => setShowSMSModal(false)}
-                  className="flex-1 border-white/10 text-white/70 hover:bg-white/5"
+                  className={`flex-1 ${t("border-gray-200", "border-white/10")} ${t("text-gray-600", "text-white/70")} ${t("hover:bg-gray-50", "hover:bg-white/5")}`}
                 >
                   Cancel
                 </Button>

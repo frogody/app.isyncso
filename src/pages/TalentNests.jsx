@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,7 @@ const CATEGORIES = [
 // ============================================================================
 // SIMPLE NEST CARD - Clean, minimal design
 // ============================================================================
-const NestCard = ({ nest, onClick }) => {
+const NestCard = ({ nest, onClick, t }) => {
   const itemCount = nest.item_count || 0;
   const price = parseFloat(nest.price) || 0;
 
@@ -61,27 +62,27 @@ const NestCard = ({ nest, onClick }) => {
     >
       <div
         onClick={onClick}
-        className="group p-4 rounded-lg bg-zinc-900/40 border border-zinc-800/50 hover:border-zinc-700/50 cursor-pointer transition-all duration-300"
+        className={`group p-4 rounded-lg ${t("bg-white", "bg-zinc-900/40")} border ${t("border-gray-200", "border-zinc-800/50")} ${t("hover:border-gray-300", "hover:border-zinc-700/50")} cursor-pointer transition-all duration-300`}
       >
         {/* Title */}
-        <h3 className="text-base font-medium text-white mb-2">
+        <h3 className={`text-base font-medium ${t("text-gray-900", "text-white")} mb-2`}>
           {nest.name}
         </h3>
 
         {/* Description */}
-        <p className="text-xs text-zinc-500 mb-4 line-clamp-2">
+        <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mb-4 line-clamp-2`}>
           {nest.description || `${nest.nest_type} dataset`}
         </p>
 
         {/* Bottom row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-lg font-semibold text-white">€{price.toFixed(0)}</span>
-            <span className="text-xs text-zinc-500">
+            <span className={`text-lg font-semibold ${t("text-gray-900", "text-white")}`}>€{price.toFixed(0)}</span>
+            <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
               {itemCount.toLocaleString()} {nest.nest_type === 'companies' ? 'companies' : 'profiles'}
             </span>
           </div>
-          <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-red-400 transition-colors" />
+          <ArrowRight className={`w-4 h-4 ${t("text-gray-300", "text-zinc-600")} group-hover:text-red-400 transition-colors`} />
         </div>
       </div>
     </motion.div>
@@ -96,23 +97,24 @@ const FilterSheet = ({
   setSelectedCategory,
   priceRange,
   setPriceRange,
+  t,
 }) => {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-400">
+        <Button variant="outline" size="sm" className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-500", "text-zinc-400")}`}>
           <Filter className="w-4 h-4 mr-2" />
           Filters
         </Button>
       </SheetTrigger>
-      <SheetContent className="bg-zinc-900 border-zinc-800">
+      <SheetContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")}`}>
         <SheetHeader>
-          <SheetTitle className="text-white">Filter Nests</SheetTitle>
+          <SheetTitle className={t("text-gray-900", "text-white")}>Filter Nests</SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-6">
           {/* Category */}
           <div>
-            <label className="text-sm text-zinc-400 mb-3 block">Category</label>
+            <label className={`text-sm ${t("text-gray-500", "text-zinc-400")} mb-3 block`}>Category</label>
             <div className="space-y-2">
               {CATEGORIES.map(cat => (
                 <button
@@ -121,7 +123,7 @@ const FilterSheet = ({
                   className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-colors ${
                     selectedCategory === cat.id
                       ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                      : 'text-zinc-400 hover:bg-zinc-800/50'
+                      : `${t("text-gray-500", "text-zinc-400")} ${t("hover:bg-gray-100", "hover:bg-zinc-800/50")}`
                   }`}
                 >
                   {cat.label}
@@ -132,9 +134,9 @@ const FilterSheet = ({
 
           {/* Price Range */}
           <div>
-            <label className="text-sm text-zinc-400 mb-3 block">Price Range</label>
+            <label className={`text-sm ${t("text-gray-500", "text-zinc-400")} mb-3 block`}>Price Range</label>
             <Select value={priceRange} onValueChange={setPriceRange}>
-              <SelectTrigger className="bg-zinc-800/50 border-zinc-700">
+              <SelectTrigger className={`${t("bg-gray-100", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")}`}>
                 <SelectValue placeholder="Any price" />
               </SelectTrigger>
               <SelectContent>
@@ -156,6 +158,7 @@ const FilterSheet = ({
 // ============================================================================
 export default function TalentNests() {
   const navigate = useNavigate();
+  const { t } = useTheme();
   const [loading, setLoading] = useState(true);
   const [nests, setNests] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -261,8 +264,8 @@ export default function TalentNests() {
     <div className="w-full px-4 lg:px-6 py-4 space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-lg font-bold text-white mb-1">Talent Nests</h1>
-        <p className="text-zinc-500 text-xs">
+        <h1 className={`text-lg font-bold ${t("text-gray-900", "text-white")} mb-1`}>Talent Nests</h1>
+        <p className={`${t("text-gray-400", "text-zinc-500")} text-xs`}>
           Pre-built candidate datasets for your recruitment needs
         </p>
       </div>
@@ -270,12 +273,12 @@ export default function TalentNests() {
       {/* Search and Filters Bar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${t("text-gray-400", "text-zinc-500")}`} />
           <Input
             placeholder="Search nests..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-11 h-9 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder:text-zinc-600"
+            className={`pl-11 h-9 ${t("bg-white", "bg-zinc-900/50")} ${t("border-gray-200", "border-zinc-800")} ${t("focus:border-gray-300", "focus:border-zinc-700")} ${t("text-gray-900", "text-white")} ${t("placeholder:text-gray-400", "placeholder:text-zinc-600")}`}
           />
         </div>
 
@@ -284,10 +287,11 @@ export default function TalentNests() {
           setSelectedCategory={setSelectedCategory}
           priceRange={priceRange}
           setPriceRange={setPriceRange}
+          t={t}
         />
 
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-40 h-9 bg-zinc-900/50 border-zinc-800">
+          <SelectTrigger className={`w-40 h-9 ${t("bg-white", "bg-zinc-900/50")} ${t("border-gray-200", "border-zinc-800")}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -300,7 +304,7 @@ export default function TalentNests() {
       </div>
 
       {/* Results count */}
-      <p className="text-xs text-zinc-500">
+      <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
         {filteredNests.length} nests available
       </p>
 
@@ -312,6 +316,7 @@ export default function TalentNests() {
               key={nest.id}
               nest={nest}
               onClick={() => handleViewNest(nest)}
+              t={t}
             />
           ))}
         </AnimatePresence>
@@ -320,7 +325,7 @@ export default function TalentNests() {
       {/* Empty State */}
       {filteredNests.length === 0 && (
         <div className="text-center py-20">
-          <p className="text-zinc-500 mb-2">No nests match your criteria</p>
+          <p className={`${t("text-gray-400", "text-zinc-500")} mb-2`}>No nests match your criteria</p>
           <Button
             variant="ghost"
             onClick={() => {
@@ -344,8 +349,8 @@ export default function TalentNests() {
                 <Megaphone className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <p className="text-white font-medium">Ready to start recruiting?</p>
-                <p className="text-zinc-400 text-sm">Purchase a nest to unlock data, then launch a targeted campaign or enrich</p>
+                <p className={`${t("text-gray-900", "text-white")} font-medium`}>Ready to start recruiting?</p>
+                <p className={`${t("text-gray-500", "text-zinc-400")} text-sm`}>Purchase a nest to unlock data, then launch a targeted campaign or enrich</p>
               </div>
             </div>
             <div className="flex gap-2">

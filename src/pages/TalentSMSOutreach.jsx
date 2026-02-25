@@ -47,6 +47,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import PhoneNumberManager from "@/components/integrations/PhoneNumberManager";
 import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 // Status configuration
 const STATUS_CONFIG = {
@@ -61,7 +62,7 @@ const STATUS_CONFIG = {
 };
 
 // Conversation Card
-const ConversationCard = ({ conversation, candidate, onClick }) => {
+const ConversationCard = ({ conversation, candidate, onClick, t }) => {
   const status = STATUS_CONFIG[conversation.status] || STATUS_CONFIG.queued;
   const StatusIcon = status.icon;
   const lastMessage = conversation.messages?.[conversation.messages.length - 1];
@@ -75,7 +76,7 @@ const ConversationCard = ({ conversation, candidate, onClick }) => {
       animate={{ opacity: 1, y: 0 }}
 
       onClick={onClick}
-      className="p-3 rounded-lg bg-zinc-900/40 border border-zinc-800/50 hover:border-red-500/30 cursor-pointer transition-all"
+      className={`p-3 rounded-lg ${t("bg-white", "bg-zinc-900/40")} border ${t("border-gray-200", "border-zinc-800/50")} hover:border-red-500/30 cursor-pointer transition-all`}
     >
       <div className="flex items-start gap-3">
         {/* Avatar */}
@@ -86,24 +87,24 @@ const ConversationCard = ({ conversation, candidate, onClick }) => {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h4 className="font-medium text-white text-sm truncate">{candidateName}</h4>
+            <h4 className={`font-medium ${t("text-gray-900", "text-white")} text-sm truncate`}>{candidateName}</h4>
             <Badge variant="outline" className={`text-[10px] ${status.color}`}>
               <StatusIcon className="w-3 h-3 mr-1" />
               {status.label}
             </Badge>
           </div>
 
-          <p className="text-xs text-zinc-500 truncate mb-1">
+          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} truncate mb-1`}>
             {candidate?.job_title} {candidate?.company_name ? `at ${candidate.company_name}` : ""}
           </p>
 
           {lastMessage && (
-            <p className="text-xs text-zinc-400 truncate">
+            <p className={`text-xs ${t("text-gray-500", "text-zinc-400")} truncate`}>
               {lastMessage.role === "assistant" ? "You: " : ""}{lastMessage.content}
             </p>
           )}
 
-          <div className="flex items-center gap-3 mt-2 text-[10px] text-zinc-500">
+          <div className={`flex items-center gap-3 mt-2 text-[10px] ${t("text-gray-400", "text-zinc-500")}`}>
             <span className="flex items-center gap-1">
               <Phone className="w-3 h-3" />
               {conversation.phone_number}
@@ -114,14 +115,14 @@ const ConversationCard = ({ conversation, candidate, onClick }) => {
           </div>
         </div>
 
-        <ChevronRight className="w-4 h-4 text-zinc-600 shrink-0" />
+        <ChevronRight className={`w-4 h-4 ${t("text-gray-300", "text-zinc-600")} shrink-0`} />
       </div>
     </motion.div>
   );
 };
 
 // Conversation Detail Sheet
-const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
+const ConversationSheet = ({ conversation, candidate, onClose, onRefresh, t }) => {
   const [draftMessage, setDraftMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [generatingAI, setGeneratingAI] = useState(false);
@@ -214,15 +215,15 @@ const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
 
   return (
     <Sheet open={!!conversation} onOpenChange={() => onClose()}>
-      <SheetContent className="w-full sm:max-w-lg bg-zinc-900 border-zinc-800">
+      <SheetContent className={`w-full sm:max-w-lg ${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")}`}>
         <SheetHeader>
-          <SheetTitle className="text-white flex items-center gap-3">
+          <SheetTitle className={`${t("text-gray-900", "text-white")} flex items-center gap-3`}>
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-sm font-bold text-white">
               {candidateName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()}
             </div>
             <div>
               <p className="font-semibold">{candidateName}</p>
-              <p className="text-xs text-zinc-500 font-normal">{conversation?.phone_number}</p>
+              <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} font-normal`}>{conversation?.phone_number}</p>
             </div>
           </SheetTitle>
         </SheetHeader>
@@ -237,12 +238,12 @@ const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
               <div
                 className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
                   msg.role === "assistant"
-                    ? "bg-red-500/20 text-white border border-red-500/30"
-                    : "bg-zinc-800 text-white border border-zinc-700"
+                    ? `bg-red-500/20 ${t("text-gray-900", "text-white")} border border-red-500/30`
+                    : `${t("bg-gray-100", "bg-zinc-800")} ${t("text-gray-900", "text-white")} border ${t("border-gray-200", "border-zinc-700")}`
                 }`}
               >
                 <p>{msg.content}</p>
-                <p className="text-[10px] text-zinc-500 mt-1">
+                <p className={`text-[10px] ${t("text-gray-400", "text-zinc-500")} mt-1`}>
                   {new Date(msg.timestamp).toLocaleString()}
                 </p>
               </div>
@@ -261,14 +262,14 @@ const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
 
         {/* Compose Area */}
         {!conversation?.opted_out && (
-          <div className="border-t border-zinc-800 pt-4 space-y-3">
+          <div className={`border-t ${t("border-gray-200", "border-zinc-800")} pt-4 space-y-3`}>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleGenerateAI}
                 disabled={generatingAI}
-                className="border-zinc-700 text-zinc-400 hover:text-white"
+                className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")}`}
               >
                 {generatingAI ? (
                   <RefreshCw className="w-4 h-4 animate-spin mr-1" />
@@ -285,7 +286,7 @@ const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
                 value={draftMessage}
                 onChange={(e) => setDraftMessage(e.target.value)}
                 placeholder="Type a message..."
-                className="flex-1 bg-zinc-800 border-zinc-700 text-white"
+                className={`flex-1 ${t("bg-white", "bg-zinc-800")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}
                 maxLength={320}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -309,7 +310,7 @@ const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
                 )}
               </Button>
             </div>
-            <p className="text-[10px] text-zinc-500 text-right">{draftMessage.length}/320 characters</p>
+            <p className={`text-[10px] ${t("text-gray-400", "text-zinc-500")} text-right`}>{draftMessage.length}/320 characters</p>
           </div>
         )}
       </SheetContent>
@@ -318,6 +319,7 @@ const ConversationSheet = ({ conversation, candidate, onClose, onRefresh }) => {
 };
 
 export default function TalentSMSOutreach() {
+  const { t } = useTheme();
   const { user } = useUser();
   const navigate = useNavigate();
 
@@ -431,7 +433,7 @@ export default function TalentSMSOutreach() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black px-6 py-6 space-y-6">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} px-6 py-6 space-y-6`}>
         <Skeleton className="h-10 w-64" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[...Array(4)].map((_, i) => (
@@ -451,19 +453,19 @@ export default function TalentSMSOutreach() {
   const needsSetup = phoneNumbers.length === 0;
 
   return (
-    <div className="min-h-screen bg-black px-6 py-6 space-y-6">
+    <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} px-6 py-6 space-y-6`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-white">SMS Outreach</h1>
-          <p className="text-xs text-zinc-500">{conversations.length} conversations</p>
+          <h1 className={`text-lg font-bold ${t("text-gray-900", "text-white")}`}>SMS Outreach</h1>
+          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{conversations.length} conversations</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowPhoneSetup(true)}
-            className="border-zinc-700 text-zinc-400 hover:text-white gap-2"
+            className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")} gap-2`}
           >
             <Phone className="w-4 h-4" />
             {phoneNumbers.length > 0 ? `${phoneNumbers.length} Number${phoneNumbers.length > 1 ? 's' : ''}` : 'Get Number'}
@@ -472,7 +474,7 @@ export default function TalentSMSOutreach() {
             variant="ghost"
             size="icon"
             onClick={fetchConversations}
-            className="text-zinc-400 hover:text-white"
+            className={`${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")}`}
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -488,8 +490,8 @@ export default function TalentSMSOutreach() {
                 <Phone className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <h4 className="font-medium text-white">Get a Phone Number</h4>
-                <p className="text-xs text-zinc-400">Purchase a phone number to start sending SMS</p>
+                <h4 className={`font-medium ${t("text-gray-900", "text-white")}`}>Get a Phone Number</h4>
+                <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>Purchase a phone number to start sending SMS</p>
               </div>
             </div>
             <Button
@@ -506,12 +508,12 @@ export default function TalentSMSOutreach() {
       {showPhoneSetup && (
         <GlassCard className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Phone Numbers</h3>
+            <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")}`}>Phone Numbers</h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowPhoneSetup(false)}
-              className="text-zinc-400"
+              className={`${t("text-gray-500", "text-zinc-400")}`}
             >
               Close
             </Button>
@@ -534,8 +536,8 @@ export default function TalentSMSOutreach() {
               <MessageSquare className="w-3 h-3 text-zinc-400" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.total}</p>
-              <p className="text-[9px] text-zinc-500">Total</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.total}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Total</p>
             </div>
           </div>
         </GlassCard>
@@ -546,8 +548,8 @@ export default function TalentSMSOutreach() {
               <Clock className="w-3 h-3 text-zinc-400" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.queued}</p>
-              <p className="text-[9px] text-zinc-500">Queued</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.queued}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Queued</p>
             </div>
           </div>
         </GlassCard>
@@ -558,8 +560,8 @@ export default function TalentSMSOutreach() {
               <Send className="w-3 h-3 text-red-400" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.sent}</p>
-              <p className="text-[9px] text-zinc-500">Sent</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.sent}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Sent</p>
             </div>
           </div>
         </GlassCard>
@@ -570,8 +572,8 @@ export default function TalentSMSOutreach() {
               <CheckCircle className="w-3 h-3 text-red-400" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.delivered}</p>
-              <p className="text-[9px] text-zinc-500">Delivered</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.delivered}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Delivered</p>
             </div>
           </div>
         </GlassCard>
@@ -582,8 +584,8 @@ export default function TalentSMSOutreach() {
               <MessageCircle className="w-3 h-3 text-red-300" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.responded}</p>
-              <p className="text-[9px] text-zinc-500">Responded</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.responded}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Responded</p>
             </div>
           </div>
         </GlassCard>
@@ -594,8 +596,8 @@ export default function TalentSMSOutreach() {
               <Sparkles className="w-3 h-3 text-red-400" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.interested}</p>
-              <p className="text-[9px] text-zinc-500">Interested</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.interested}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Interested</p>
             </div>
           </div>
         </GlassCard>
@@ -606,8 +608,8 @@ export default function TalentSMSOutreach() {
               <Calendar className="w-3 h-3 text-red-400" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.scheduled}</p>
-              <p className="text-[9px] text-zinc-500">Scheduled</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.scheduled}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Scheduled</p>
             </div>
           </div>
         </GlassCard>
@@ -618,8 +620,8 @@ export default function TalentSMSOutreach() {
               <XCircle className="w-3 h-3 text-red-400" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.declined}</p>
-              <p className="text-[9px] text-zinc-500">Declined</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.declined}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Declined</p>
             </div>
           </div>
         </GlassCard>
@@ -630,8 +632,8 @@ export default function TalentSMSOutreach() {
               <Ban className="w-3 h-3 text-zinc-500" />
             </div>
             <div>
-              <p className="text-base font-bold text-white">{stats.opted_out}</p>
-              <p className="text-[9px] text-zinc-500">Opted Out</p>
+              <p className={`text-base font-bold ${t("text-gray-900", "text-white")}`}>{stats.opted_out}</p>
+              <p className={`text-[9px] ${t("text-gray-400", "text-zinc-500")}`}>Opted Out</p>
             </div>
           </div>
         </GlassCard>
@@ -647,16 +649,16 @@ export default function TalentSMSOutreach() {
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-zinc-800 border-zinc-700 text-white text-sm"
+                className={`pl-10 ${t("bg-white", "bg-zinc-800")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} text-sm`}
               />
             </div>
           </div>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700 text-white text-sm">
+            <SelectTrigger className={`w-40 ${t("bg-white", "bg-zinc-800")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} text-sm`}>
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
+            <SelectContent className={`${t("bg-white", "bg-zinc-800")} ${t("border-gray-200", "border-zinc-700")}`}>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="queued">Queued</SelectItem>
               <SelectItem value="sent">Sent</SelectItem>
@@ -674,9 +676,9 @@ export default function TalentSMSOutreach() {
       {/* Conversations List */}
       {filteredConversations.length === 0 ? (
         <GlassCard className="p-12 text-center">
-          <MessageSquare className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No conversations yet</h3>
-          <p className="text-zinc-500 text-sm">
+          <MessageSquare className={`w-12 h-12 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-4`} />
+          <h3 className={`text-lg font-medium ${t("text-gray-900", "text-white")} mb-2`}>No conversations yet</h3>
+          <p className={`${t("text-gray-400", "text-zinc-500")} text-sm`}>
             Start SMS outreach from a campaign to see conversations here.
           </p>
         </GlassCard>
@@ -688,6 +690,7 @@ export default function TalentSMSOutreach() {
               conversation={conv}
               candidate={candidates[conv.candidate_id]}
               onClick={() => setSelectedConversation(conv)}
+              t={t}
             />
           ))}
         </div>
@@ -698,6 +701,7 @@ export default function TalentSMSOutreach() {
         conversation={selectedConversation}
         candidate={selectedConversation ? candidates[selectedConversation.candidate_id] : null}
         onClose={() => setSelectedConversation(null)}
+        t={t}
         onRefresh={() => {
           fetchConversations();
           if (selectedConversation) {

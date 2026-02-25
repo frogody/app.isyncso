@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { supabase } from "@/api/supabaseClient";
@@ -58,7 +59,7 @@ import { createPageUrl } from "@/utils";
 // ============================================================================
 // PURCHASE DIALOG
 // ============================================================================
-const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
+const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user, t }) => {
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState(null);
   const [exclusionPreview, setExclusionPreview] = useState(null);
@@ -93,21 +94,19 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
 
         if (!excludedClients?.length) { setCheckingExclusions(false); return; }
 
-        // Check each candidate's company against excluded clients using the DB function
-        const companyNames = [...new Set(
-          nestItems.map(i => i.candidates?.company_name).filter(Boolean)
-        )];
-
+        // Check each candidate's CURRENT employer against excluded clients
         const exclusionMap = {}; // client_company -> count
-        for (const companyName of companyNames) {
-          const { data: match } = await supabase.rpc('match_excluded_client', {
-            p_company_name: companyName,
+        for (const item of nestItems) {
+          const c = item.candidates;
+          if (!c) continue;
+          const { data: match } = await supabase.rpc('check_candidate_current_exclusion', {
+            p_company_name: c.company_name || '',
+            p_work_history: c.work_history || [],
             p_organization_id: user.organization_id,
           });
           if (match?.length > 0) {
             const clientCompany = match[0].client_company;
-            const count = nestItems.filter(i => i.candidates?.company_name === companyName).length;
-            exclusionMap[clientCompany] = (exclusionMap[clientCompany] || 0) + count;
+            exclusionMap[clientCompany] = (exclusionMap[clientCompany] || 0) + 1;
           }
         }
 
@@ -214,16 +213,18 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
             return true;
           });
 
-        // Build exclusion map for each candidate's company
+        // Build exclusion map - check current employment, not just company_name
         const exclusionResults = {};
-        const uniqueCompanies = [...new Set(deduped.map(i => i.candidates.company_name).filter(Boolean))];
-        for (const companyName of uniqueCompanies) {
-          const { data: match } = await supabase.rpc('match_excluded_client', {
-            p_company_name: companyName,
+        for (const item of deduped) {
+          const c = item.candidates;
+          const key = c.id;
+          const { data: match } = await supabase.rpc('check_candidate_current_exclusion', {
+            p_company_name: c.company_name || '',
+            p_work_history: c.work_history || [],
             p_organization_id: user.organization_id,
           });
           if (match?.length > 0) {
-            exclusionResults[companyName] = match[0];
+            exclusionResults[key] = match[0];
           }
         }
 
@@ -238,7 +239,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
             source: 'nest_purchase',
             import_source: `nest:${nest.id}`,
           };
-          const match = exclusionResults[candidateData.company_name];
+          const match = exclusionResults[item.candidates.id];
           if (match) {
             excludedCandidates.push({
               ...base,
@@ -313,30 +314,30 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+      <DialogContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")} max-w-md`}>
         <DialogHeader>
-          <DialogTitle className="text-white">Purchase Nest</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogTitle className={t("text-gray-900", "text-white")}>Purchase Nest</DialogTitle>
+          <DialogDescription className={t("text-gray-500", "text-zinc-400")}>
             Unlock full access to {itemCount.toLocaleString()} {nest?.nest_type === 'companies' ? 'companies' : 'candidate profiles'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-6 space-y-4">
-          <div className="flex items-center justify-between py-3 border-b border-zinc-800">
-            <span className="text-zinc-400">Nest</span>
-            <span className="text-white">{nest?.name}</span>
+          <div className={`flex items-center justify-between py-3 border-b ${t("border-gray-200", "border-zinc-800")}`}>
+            <span className={t("text-gray-500", "text-zinc-400")}>Nest</span>
+            <span className={t("text-gray-900", "text-white")}>{nest?.name}</span>
           </div>
-          <div className="flex items-center justify-between py-3 border-b border-zinc-800">
-            <span className="text-zinc-400">{nest?.nest_type === 'companies' ? 'Companies' : 'Candidates'}</span>
-            <span className="text-white">{itemCount.toLocaleString()}</span>
+          <div className={`flex items-center justify-between py-3 border-b ${t("border-gray-200", "border-zinc-800")}`}>
+            <span className={t("text-gray-500", "text-zinc-400")}>{nest?.nest_type === 'companies' ? 'Companies' : 'Candidates'}</span>
+            <span className={t("text-gray-900", "text-white")}>{itemCount.toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between py-3">
-            <span className="text-white font-medium">Total</span>
-            <span className="text-2xl font-semibold text-white">€{price.toFixed(0)}</span>
+            <span className={`${t("text-gray-900", "text-white")} font-medium`}>Total</span>
+            <span className={`text-2xl font-semibold ${t("text-gray-900", "text-white")}`}>€{price.toFixed(0)}</span>
           </div>
 
           <div className="space-y-3 pt-4">
-            <p className="text-sm text-zinc-400 font-medium">What's included:</p>
+            <p className={`text-sm ${t("text-gray-500", "text-zinc-400")} font-medium`}>What's included:</p>
             {[
               "Full profile access with contact details",
               "SYNC Intel auto-matching to your roles",
@@ -345,7 +346,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
               "Export to CSV anytime",
               "30-day data freshness guarantee",
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-zinc-400">
+              <div key={i} className={`flex items-center gap-2 text-sm ${t("text-gray-500", "text-zinc-400")}`}>
                 <Check className="w-4 h-4 text-red-400 flex-shrink-0" />
                 {item}
               </div>
@@ -354,7 +355,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
 
           {/* Exclusion Preview */}
           {checkingExclusions && (
-            <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700 text-zinc-400 text-sm flex items-center gap-2">
+            <div className={`p-3 rounded-lg ${t("bg-gray-100", "bg-zinc-800/50")} border ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-500", "text-zinc-400")} text-sm flex items-center gap-2`}>
               <Loader2 className="w-4 h-4 animate-spin" />
               Checking for client exclusions...
             </div>
@@ -365,19 +366,19 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
                 <ShieldAlert className="w-4 h-4 text-amber-400" />
                 <span className="text-sm font-medium text-amber-400">Client Exclusions</span>
               </div>
-              <p className="text-sm text-zinc-300 mb-2">
+              <p className={`text-sm ${t("text-gray-600", "text-zinc-300")} mb-2`}>
                 {exclusionPreview.total} candidate{exclusionPreview.total !== 1 ? 's' : ''} work for your excluded clients and will be ruled out:
               </p>
               <div className="space-y-1 mb-2">
                 {Object.entries(exclusionPreview.byClient).map(([client, count]) => (
                   <div key={client} className="flex items-center justify-between text-sm">
-                    <span className="text-zinc-400">• {client}</span>
+                    <span className={t("text-gray-500", "text-zinc-400")}>• {client}</span>
                     <span className="text-amber-400 font-medium">{count}</span>
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-zinc-400">
-                You will receive <span className="text-white font-medium">{exclusionPreview.activeCount}</span> active candidates.
+              <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>
+                You will receive <span className={`${t("text-gray-900", "text-white")} font-medium`}>{exclusionPreview.activeCount}</span> active candidates.
               </p>
             </div>
           )}
@@ -390,7 +391,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="border-zinc-700">
+          <Button variant="outline" onClick={onClose} className={t("border-gray-200", "border-zinc-700")}>
             Cancel
           </Button>
           <Button onClick={handlePurchase} disabled={purchasing} className="bg-red-500 hover:bg-red-600">
@@ -413,6 +414,7 @@ export default function TalentNestDetail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useUser();
+  const { t } = useTheme();
   const [loading, setLoading] = useState(true);
   const [nest, setNest] = useState(null);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
@@ -714,13 +716,13 @@ export default function TalentNestDetail() {
       <div className="w-full px-6 lg:px-8 py-6">
         <button
           onClick={() => navigate('/marketplace/nests')}
-          className="flex items-center gap-2 text-zinc-500 hover:text-white mb-8 transition-colors"
+          className={`flex items-center gap-2 ${t("text-gray-400", "text-zinc-500")} ${t("hover:text-gray-900", "hover:text-white")} mb-8 transition-colors`}
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Nests
         </button>
         <div className="text-center py-20">
-          <p className="text-zinc-400">Nest not found</p>
+          <p className={t("text-gray-500", "text-zinc-400")}>Nest not found</p>
         </div>
       </div>
     );
@@ -735,7 +737,7 @@ export default function TalentNestDetail() {
       {/* Back Button */}
       <button
         onClick={() => navigate('/marketplace/nests')}
-        className="flex items-center gap-2 text-zinc-500 hover:text-white mb-6 transition-colors"
+        className={`flex items-center gap-2 ${t("text-gray-400", "text-zinc-500")} ${t("hover:text-gray-900", "hover:text-white")} mb-6 transition-colors`}
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Nests
@@ -746,50 +748,50 @@ export default function TalentNestDetail() {
         {/* Left Content - 3 columns */}
         <div className="lg:col-span-3 space-y-8">
           {/* Hero Section */}
-          <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+          <div className={`p-6 rounded-2xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.06]")}`}>
             <div className="flex items-center gap-3 mb-4">
               <Badge className="bg-red-500/10 text-red-400 border-red-500/20 px-3 py-1">
                 {nestType === 'candidates' ? 'Talent Dataset' : nestType === 'prospects' ? 'Sales Dataset' : nestType === 'companies' ? 'Company Dataset' : 'Investor Dataset'}
               </Badge>
-              <Badge variant="outline" className="border-zinc-700 text-zinc-400 px-3 py-1">
+              <Badge variant="outline" className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-500", "text-zinc-400")} px-3 py-1`}>
                 <MapPin className="w-3 h-3 mr-1" />
                 Netherlands
               </Badge>
             </div>
 
-            <h1 className="text-3xl font-bold text-white mb-3">{nest.name}</h1>
-            <p className="text-zinc-400 leading-relaxed mb-6">
+            <h1 className={`text-3xl font-bold ${t("text-gray-900", "text-white")} mb-3`}>{nest.name}</h1>
+            <p className={`${t("text-gray-500", "text-zinc-400")} leading-relaxed mb-6`}>
               {nest.description || `Pre-researched ${nestType} dataset with rich insights, ready for SYNC Intel auto-matching and personalized outreach.`}
             </p>
 
             {/* Key Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+              <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                 <Users className="w-5 h-5 text-red-400 mb-2" />
-                <p className="text-2xl font-bold text-white">{itemCount.toLocaleString()}</p>
-                <p className="text-xs text-zinc-500">{nestType === 'companies' ? 'Total Companies' : 'Total Profiles'}</p>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>{itemCount.toLocaleString()}</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{nestType === 'companies' ? 'Total Companies' : 'Total Profiles'}</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+              <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                 <Brain className="w-5 h-5 text-red-400 mb-2" />
-                <p className="text-2xl font-bold text-white">100%</p>
-                <p className="text-xs text-zinc-500">SYNC Analyzed</p>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>100%</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>SYNC Analyzed</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+              <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                 <Target className="w-5 h-5 text-red-400 mb-2" />
-                <p className="text-2xl font-bold text-white">Ready</p>
-                <p className="text-xs text-zinc-500">Auto-Match</p>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>Ready</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Auto-Match</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+              <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                 <MessageSquare className="w-5 h-5 text-red-400 mb-2" />
-                <p className="text-2xl font-bold text-white">AI</p>
-                <p className="text-xs text-zinc-500">Outreach Ready</p>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>AI</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Outreach Ready</p>
               </div>
             </div>
           </div>
 
           {/* What's Included */}
           <div>
-            <h2 className="text-xl font-semibold text-white mb-4">What's Included</h2>
+            <h2 className={`text-xl font-semibold ${t("text-gray-900", "text-white")} mb-4`}>What's Included</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {(nestType === 'companies' ? [
                 { icon: Factory, title: "Company Intelligence", desc: "Detailed company profiles with industry classification, employee count, revenue data, and growth indicators." },
@@ -820,10 +822,10 @@ export default function TalentNestDetail() {
                 { icon: Mail, title: "Contact Details", desc: "Full contact information including email, phone, and LinkedIn profiles for direct outreach." },
                 { icon: FileText, title: "Export Anytime", desc: "Export candidate data to CSV or integrate directly with your ATS system." },
               ]).map((feature, i) => (
-                <div key={i} className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1] transition-colors">
+                <div key={i} className={`p-5 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.06]")} ${t("hover:border-gray-300", "hover:border-white/[0.1]")} transition-colors`}>
                   <feature.icon className="w-6 h-6 text-red-400 mb-3" />
-                  <h3 className="font-medium text-white mb-1">{feature.title}</h3>
-                  <p className="text-sm text-zinc-500 leading-relaxed">{feature.desc}</p>
+                  <h3 className={`font-medium ${t("text-gray-900", "text-white")} mb-1`}>{feature.title}</h3>
+                  <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} leading-relaxed`}>{feature.desc}</p>
                 </div>
               ))}
             </div>
@@ -832,8 +834,8 @@ export default function TalentNestDetail() {
           {/* Sample Preview */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">{nestType === 'companies' ? 'Sample Company Preview' : 'Sample Profile Preview'}</h2>
-              <Badge variant="outline" className="border-zinc-700 text-zinc-500">
+              <h2 className={`text-xl font-semibold ${t("text-gray-900", "text-white")}`}>{nestType === 'companies' ? 'Sample Company Preview' : 'Sample Profile Preview'}</h2>
+              <Badge variant="outline" className={`${t("border-gray-200", "border-zinc-700")} ${t("text-gray-400", "text-zinc-500")}`}>
                 <Lock className="w-3 h-3 mr-1" />
                 Data anonymized
               </Badge>
@@ -841,7 +843,7 @@ export default function TalentNestDetail() {
 
             {nestType === 'prospects' ? (
               /* Prospect Card Preview */
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+              <div className={`p-6 rounded-2xl ${t("bg-gray-50", "bg-gradient-to-br from-white/[0.03] to-white/[0.01]")} border ${t("border-gray-200", "border-white/[0.08]")}`}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 space-y-5">
                     <div className="flex items-start gap-4">
@@ -850,10 +852,10 @@ export default function TalentNestDetail() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <div className="h-5 w-32 bg-zinc-700 rounded blur-[2px]" />
-                          <div className="h-5 w-24 bg-zinc-700 rounded blur-[2px]" />
+                          <div className={`h-5 w-32 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[2px]`} />
+                          <div className={`h-5 w-24 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[2px]`} />
                         </div>
-                        <p className="text-zinc-400 mt-1">VP of Sales at SaaS Company</p>
+                        <p className={`${t("text-gray-500", "text-zinc-400")} mt-1`}>VP of Sales at SaaS Company</p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
                             Decision Maker
@@ -872,26 +874,26 @@ export default function TalentNestDetail() {
                         { label: "Budget", value: "€50-100k", highlight: true },
                         { label: "Decision Level", value: "C-Suite" },
                       ].map((stat, i) => (
-                        <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                          <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
-                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                        <div key={i} className={`p-3 rounded-lg ${t("bg-gray-50", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
+                          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mb-1`}>{stat.label}</p>
+                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : t("text-gray-900", "text-white")}`}>{stat.value}</p>
                         </div>
                       ))}
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                       <div className="flex items-center gap-2 mb-2">
                         <Target className="w-4 h-4 text-red-400" />
-                        <span className="text-sm font-medium text-white">Sales Assessment</span>
+                        <span className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Sales Assessment</span>
                       </div>
-                      <p className="text-sm text-zinc-400 leading-relaxed">
+                      <p className={`text-sm ${t("text-gray-500", "text-zinc-400")} leading-relaxed`}>
                         This prospect shows strong buying signals. Their company recently expanded and is actively evaluating solutions in your space. Decision-maker with budget authority and a history of fast procurement cycles.
                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       {["CRM", "Marketing Automation", "Sales Enablement", "Data Analytics", "Cloud Infrastructure"].map((interest, i) => (
-                        <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                        <span key={i} className={`px-3 py-1.5 rounded-lg ${t("bg-gray-100", "bg-white/[0.04]")} ${t("text-gray-500", "text-zinc-400")} text-sm border ${t("border-gray-200", "border-white/[0.05]")}`}>
                           {interest}
                         </span>
                       ))}
@@ -899,16 +901,16 @@ export default function TalentNestDetail() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                      <p className="text-sm font-medium text-white mb-3">Contact Information</p>
+                    <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
+                      <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} mb-3`}>Contact Information</p>
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           <Mail className="w-4 h-4 text-zinc-500" />
-                          <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                          <div className={`h-4 w-full ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[3px]`} />
                         </div>
                         <div className="flex items-center gap-3">
                           <Phone className="w-4 h-4 text-zinc-500" />
-                          <div className="h-4 w-24 bg-zinc-700 rounded blur-[3px]" />
+                          <div className={`h-4 w-24 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[3px]`} />
                         </div>
                         <div className="flex items-center gap-3">
                           <Linkedin className="w-4 h-4 text-zinc-500" />
@@ -916,21 +918,21 @@ export default function TalentNestDetail() {
                         </div>
                         <div className="flex items-center gap-3">
                           <MapPin className="w-4 h-4 text-zinc-500" />
-                          <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                          <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>Amsterdam, NL</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-center gap-2 py-3">
                       <Lock className="w-4 h-4 text-red-400" />
-                      <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
+                      <span className={`text-sm ${t("text-gray-400", "text-zinc-500")}`}>Purchase to unlock full data</span>
                     </div>
                   </div>
                 </div>
               </div>
             ) : nestType === 'investors' ? (
               /* Investor Card Preview */
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+              <div className={`p-6 rounded-2xl ${t("bg-gray-50", "bg-gradient-to-br from-white/[0.03] to-white/[0.01]")} border ${t("border-gray-200", "border-white/[0.08]")}`}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 space-y-5">
                     <div className="flex items-start gap-4">
@@ -939,10 +941,10 @@ export default function TalentNestDetail() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <div className="h-5 w-32 bg-zinc-700 rounded blur-[2px]" />
-                          <div className="h-5 w-24 bg-zinc-700 rounded blur-[2px]" />
+                          <div className={`h-5 w-32 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[2px]`} />
+                          <div className={`h-5 w-24 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[2px]`} />
                         </div>
-                        <p className="text-zinc-400 mt-1">Partner at Venture Capital Firm</p>
+                        <p className={`${t("text-gray-500", "text-zinc-400")} mt-1`}>Partner at Venture Capital Firm</p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
                             Series A-B
@@ -961,26 +963,26 @@ export default function TalentNestDetail() {
                         { label: "Investments", value: "45+" },
                         { label: "Focus", value: "B2B SaaS" },
                       ].map((stat, i) => (
-                        <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                          <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
-                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                        <div key={i} className={`p-3 rounded-lg ${t("bg-gray-50", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
+                          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mb-1`}>{stat.label}</p>
+                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : t("text-gray-900", "text-white")}`}>{stat.value}</p>
                         </div>
                       ))}
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                       <div className="flex items-center gap-2 mb-2">
                         <Target className="w-4 h-4 text-red-400" />
-                        <span className="text-sm font-medium text-white">Investor Assessment</span>
+                        <span className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Investor Assessment</span>
                       </div>
-                      <p className="text-sm text-zinc-400 leading-relaxed">
+                      <p className={`text-sm ${t("text-gray-500", "text-zinc-400")} leading-relaxed`}>
                         Highly active investor focused on B2B SaaS in Europe. Recently led 3 rounds in the past quarter. Known for hands-on support and strong network in the enterprise space. Thesis aligns with growth-stage companies.
                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       {["B2B SaaS", "Enterprise", "AI/ML", "Fintech", "Climate Tech", "Marketplace"].map((focus, i) => (
-                        <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                        <span key={i} className={`px-3 py-1.5 rounded-lg ${t("bg-gray-100", "bg-white/[0.04]")} ${t("text-gray-500", "text-zinc-400")} text-sm border ${t("border-gray-200", "border-white/[0.05]")}`}>
                           {focus}
                         </span>
                       ))}
@@ -988,16 +990,16 @@ export default function TalentNestDetail() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                      <p className="text-sm font-medium text-white mb-3">Contact Information</p>
+                    <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
+                      <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} mb-3`}>Contact Information</p>
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           <Mail className="w-4 h-4 text-zinc-500" />
-                          <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                          <div className={`h-4 w-full ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[3px]`} />
                         </div>
                         <div className="flex items-center gap-3">
                           <Phone className="w-4 h-4 text-zinc-500" />
-                          <div className="h-4 w-24 bg-zinc-700 rounded blur-[3px]" />
+                          <div className={`h-4 w-24 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[3px]`} />
                         </div>
                         <div className="flex items-center gap-3">
                           <Linkedin className="w-4 h-4 text-zinc-500" />
@@ -1005,21 +1007,21 @@ export default function TalentNestDetail() {
                         </div>
                         <div className="flex items-center gap-3">
                           <MapPin className="w-4 h-4 text-zinc-500" />
-                          <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                          <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>Amsterdam, NL</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-center gap-2 py-3">
                       <Lock className="w-4 h-4 text-red-400" />
-                      <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
+                      <span className={`text-sm ${t("text-gray-400", "text-zinc-500")}`}>Purchase to unlock full data</span>
                     </div>
                   </div>
                 </div>
               </div>
             ) : nestType === 'companies' ? (
               /* Company Card Preview */
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+              <div className={`p-6 rounded-2xl ${t("bg-gray-50", "bg-gradient-to-br from-white/[0.03] to-white/[0.01]")} border ${t("border-gray-200", "border-white/[0.08]")}`}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 space-y-5">
                     <div className="flex items-start gap-4">
@@ -1028,9 +1030,9 @@ export default function TalentNestDetail() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <div className="h-5 w-40 bg-zinc-700 rounded blur-[2px]" />
+                          <div className={`h-5 w-40 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[2px]`} />
                         </div>
-                        <p className="text-zinc-400 mt-1">Technology / SaaS</p>
+                        <p className={`${t("text-gray-500", "text-zinc-400")} mt-1`}>Technology / SaaS</p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
                             Series B
@@ -1049,26 +1051,26 @@ export default function TalentNestDetail() {
                         { label: "Location", value: "Amsterdam" },
                         { label: "Revenue", value: "€10-50M", highlight: true },
                       ].map((stat, i) => (
-                        <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                          <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
-                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                        <div key={i} className={`p-3 rounded-lg ${t("bg-gray-50", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
+                          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mb-1`}>{stat.label}</p>
+                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : t("text-gray-900", "text-white")}`}>{stat.value}</p>
                         </div>
                       ))}
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                       <div className="flex items-center gap-2 mb-2">
                         <Building2 className="w-4 h-4 text-red-400" />
-                        <span className="text-sm font-medium text-white">Company Description</span>
+                        <span className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Company Description</span>
                       </div>
-                      <p className="text-sm text-zinc-400 leading-relaxed">
+                      <p className={`text-sm ${t("text-gray-500", "text-zinc-400")} leading-relaxed`}>
                         A fast-growing B2B SaaS company specializing in workflow automation for enterprise clients. Recently expanded into the DACH market with a new office in Berlin.
                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       {["React", "Node.js", "AWS", "Kubernetes", "PostgreSQL", "Terraform"].map((tech, i) => (
-                        <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                        <span key={i} className={`px-3 py-1.5 rounded-lg ${t("bg-gray-100", "bg-white/[0.04]")} ${t("text-gray-500", "text-zinc-400")} text-sm border ${t("border-gray-200", "border-white/[0.05]")}`}>
                           {tech}
                         </span>
                       ))}
@@ -1076,20 +1078,20 @@ export default function TalentNestDetail() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                      <p className="text-sm font-medium text-white mb-3">Company Details</p>
+                    <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
+                      <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} mb-3`}>Company Details</p>
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           <Globe className="w-4 h-4 text-zinc-500" />
-                          <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                          <div className={`h-4 w-full ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[3px]`} />
                         </div>
                         <div className="flex items-center gap-3">
                           <MapPin className="w-4 h-4 text-zinc-500" />
-                          <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                          <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>Amsterdam, NL</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <Users className="w-4 h-4 text-zinc-500" />
-                          <span className="text-sm text-zinc-400">201-500 employees</span>
+                          <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>201-500 employees</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <Hash className="w-4 h-4 text-zinc-500" />
@@ -1100,14 +1102,14 @@ export default function TalentNestDetail() {
 
                     <div className="flex items-center justify-center gap-2 py-3">
                       <Lock className="w-4 h-4 text-red-400" />
-                      <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
+                      <span className={`text-sm ${t("text-gray-400", "text-zinc-500")}`}>Purchase to unlock full data</span>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
               /* Profile Card Preview (original) */
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+              <div className={`p-6 rounded-2xl ${t("bg-gray-50", "bg-gradient-to-br from-white/[0.03] to-white/[0.01]")} border ${t("border-gray-200", "border-white/[0.08]")}`}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="lg:col-span-2 space-y-5">
                     <div className="flex items-start gap-4">
@@ -1116,10 +1118,10 @@ export default function TalentNestDetail() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <div className="h-5 w-32 bg-zinc-700 rounded blur-[2px]" />
-                          <div className="h-5 w-24 bg-zinc-700 rounded blur-[2px]" />
+                          <div className={`h-5 w-32 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[2px]`} />
+                          <div className={`h-5 w-24 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[2px]`} />
                         </div>
-                        <p className="text-zinc-400 mt-1">Senior Software Engineer at Tech Company</p>
+                        <p className={`${t("text-gray-500", "text-zinc-400")} mt-1`}>Senior Software Engineer at Tech Company</p>
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
                             Medium Satisfaction
@@ -1138,26 +1140,26 @@ export default function TalentNestDetail() {
                         { label: "Company Changes", value: "3" },
                         { label: "Salary Range", value: "€75-90k", highlight: true },
                       ].map((stat, i) => (
-                        <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
-                          <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
-                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                        <div key={i} className={`p-3 rounded-lg ${t("bg-gray-50", "bg-white/[0.03]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
+                          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mb-1`}>{stat.label}</p>
+                          <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : t("text-gray-900", "text-white")}`}>{stat.value}</p>
                         </div>
                       ))}
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                       <div className="flex items-center gap-2 mb-2">
                         <Target className="w-4 h-4 text-red-400" />
-                        <span className="text-sm font-medium text-white">Recruitment Assessment</span>
+                        <span className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Recruitment Assessment</span>
                       </div>
-                      <p className="text-sm text-zinc-400 leading-relaxed">
+                      <p className={`text-sm ${t("text-gray-500", "text-zinc-400")} leading-relaxed`}>
                         This candidate shows signs of being open to new opportunities. They've been in their current role for 2.5 years without significant growth, and their LinkedIn activity suggests active market exploration. High priority for outreach.
                       </p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       {["Python", "React", "AWS", "PostgreSQL", "Docker", "Kubernetes", "TypeScript", "GraphQL"].map((skill, i) => (
-                        <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                        <span key={i} className={`px-3 py-1.5 rounded-lg ${t("bg-gray-100", "bg-white/[0.04]")} ${t("text-gray-500", "text-zinc-400")} text-sm border ${t("border-gray-200", "border-white/[0.05]")}`}>
                           {skill}
                         </span>
                       ))}
@@ -1165,16 +1167,16 @@ export default function TalentNestDetail() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
-                      <p className="text-sm font-medium text-white mb-3">Contact Information</p>
+                    <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
+                      <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} mb-3`}>Contact Information</p>
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           <Mail className="w-4 h-4 text-zinc-500" />
-                          <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                          <div className={`h-4 w-full ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[3px]`} />
                         </div>
                         <div className="flex items-center gap-3">
                           <Phone className="w-4 h-4 text-zinc-500" />
-                          <div className="h-4 w-24 bg-zinc-700 rounded blur-[3px]" />
+                          <div className={`h-4 w-24 ${t("bg-gray-300", "bg-zinc-700")} rounded blur-[3px]`} />
                         </div>
                         <div className="flex items-center gap-3">
                           <Linkedin className="w-4 h-4 text-zinc-500" />
@@ -1182,7 +1184,7 @@ export default function TalentNestDetail() {
                         </div>
                         <div className="flex items-center gap-3">
                           <MapPin className="w-4 h-4 text-zinc-500" />
-                          <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                          <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>Amsterdam, NL</span>
                         </div>
                       </div>
                     </div>
@@ -1190,7 +1192,7 @@ export default function TalentNestDetail() {
                     <div className="p-4 rounded-xl bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20">
                       <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-4 h-4 text-red-400" />
-                        <span className="text-sm font-medium text-white">AI-Generated Outreach</span>
+                        <span className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>AI-Generated Outreach</span>
                       </div>
                       <p className="text-xs text-zinc-400 leading-relaxed italic">
                         "Hi [Name], I noticed you've been building impressive data pipelines at Tech Company. We're scaling our engineering team and your experience with AWS and Python would be perfect for our Senior Engineer role..."
@@ -1199,7 +1201,7 @@ export default function TalentNestDetail() {
 
                     <div className="flex items-center justify-center gap-2 py-3">
                       <Lock className="w-4 h-4 text-red-400" />
-                      <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
+                      <span className={`text-sm ${t("text-gray-400", "text-zinc-500")}`}>Purchase to unlock full data</span>
                     </div>
                   </div>
                 </div>
@@ -1216,18 +1218,18 @@ export default function TalentNestDetail() {
               >
                 <div className="flex items-center gap-3">
                   <ShieldAlert className="w-5 h-5 text-amber-400" />
-                  <h2 className="text-lg font-semibold text-white">Ruled Out Candidates</h2>
+                  <h2 className={`text-lg font-semibold ${t("text-gray-900", "text-white")}`}>Ruled Out Candidates</h2>
                   <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
                     {ruledOut.length}
                   </Badge>
                 </div>
-                <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform ${ruledOutExpanded ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-5 h-5 ${t("text-gray-400", "text-zinc-400")} transition-transform ${ruledOutExpanded ? 'rotate-180' : ''}`} />
               </button>
 
               {ruledOutExpanded && (
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-zinc-400">
+                    <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>
                       These candidates work for your excluded clients and were automatically ruled out.
                     </p>
                     <Button
@@ -1243,12 +1245,12 @@ export default function TalentNestDetail() {
 
                   <div className="space-y-2 max-h-[300px] overflow-y-auto">
                     {ruledOut.map(candidate => (
-                      <div key={candidate.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <div key={candidate.id} className={`flex items-center justify-between p-3 rounded-lg ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.05]")}`}>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">
+                          <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} truncate`}>
                             {candidate.full_name || 'Unknown'}
                           </p>
-                          <p className="text-xs text-zinc-500">
+                          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
                             {candidate.job_title} at {candidate.company_name}
                             {candidate.prospects?.company && (
                               <span className="text-amber-400"> — matched to {candidate.prospects.company}</span>
@@ -1259,7 +1261,7 @@ export default function TalentNestDetail() {
                           onClick={() => handleRecoverCandidate(candidate.id)}
                           variant="ghost"
                           size="sm"
-                          className="text-zinc-400 hover:text-white ml-2"
+                          className={`${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-900", "hover:text-white")} ml-2`}
                         >
                           <RotateCcw className="w-3 h-3 mr-1" />
                           Recover
@@ -1274,7 +1276,7 @@ export default function TalentNestDetail() {
 
           {/* How It Works */}
           <div>
-            <h2 className="text-xl font-semibold text-white mb-4">How It Works</h2>
+            <h2 className={`text-xl font-semibold ${t("text-gray-900", "text-white")} mb-4`}>How It Works</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {(nestType === 'companies' ? [
                 { step: 1, icon: CreditCard, title: "Purchase Nest", desc: "Get instant access to all companies" },
@@ -1297,13 +1299,13 @@ export default function TalentNestDetail() {
                 { step: 3, icon: Sparkles, title: "SYNC Matches", desc: "AI matches & scores candidates" },
                 { step: 4, icon: Rocket, title: "Reach Out", desc: "Send personalized messages" },
               ]).map((item, i) => (
-                <div key={i} className="relative p-5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <div key={i} className={`relative p-5 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.06]")}`}>
                   <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
                     {item.step}
                   </div>
-                  <item.icon className="w-6 h-6 text-zinc-500 mb-3" />
-                  <h3 className="font-medium text-white mb-1">{item.title}</h3>
-                  <p className="text-sm text-zinc-500">{item.desc}</p>
+                  <item.icon className={`w-6 h-6 ${t("text-gray-400", "text-zinc-500")} mb-3`} />
+                  <h3 className={`font-medium ${t("text-gray-900", "text-white")} mb-1`}>{item.title}</h3>
+                  <p className={`text-sm ${t("text-gray-400", "text-zinc-500")}`}>{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -1314,10 +1316,10 @@ export default function TalentNestDetail() {
         <div className="lg:col-span-1">
           <div className="sticky top-6 space-y-4">
             {/* Price Card */}
-            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+            <div className={`p-6 rounded-2xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.06]")}`}>
               <div className="text-center mb-5">
-                <p className="text-4xl font-bold text-white">€{price.toFixed(0)}</p>
-                <p className="text-sm text-zinc-500 mt-1">one-time payment</p>
+                <p className={`text-4xl font-bold ${t("text-gray-900", "text-white")}`}>€{price.toFixed(0)}</p>
+                <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} mt-1`}>one-time payment</p>
               </div>
 
               <div className="space-y-3 mb-5">
@@ -1328,7 +1330,7 @@ export default function TalentNestDetail() {
                   "Full contact details",
                   "Export to CSV",
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-zinc-400">
+                  <div key={i} className={`flex items-center gap-2 text-sm ${t("text-gray-500", "text-zinc-400")}`}>
                     <Check className="w-4 h-4 text-red-400 flex-shrink-0" />
                     {item}
                   </div>
@@ -1343,7 +1345,7 @@ export default function TalentNestDetail() {
                         <Bell className="w-4 h-4 text-red-400" />
                         <span className="text-sm font-medium text-red-400">Update Available</span>
                       </div>
-                      <p className="text-xs text-zinc-400 mb-3">
+                      <p className={`text-xs ${t("text-gray-500", "text-zinc-400")} mb-3`}>
                         New candidates have been added to this nest since your last sync.
                       </p>
                       <Button
@@ -1411,7 +1413,7 @@ export default function TalentNestDetail() {
                     Purchase Nest
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
-                  <p className="text-xs text-zinc-600 text-center mt-3">
+                  <p className={`text-xs ${t("text-gray-300", "text-zinc-600")} text-center mt-3`}>
                     Instant access after purchase
                   </p>
                 </>
@@ -1419,15 +1421,15 @@ export default function TalentNestDetail() {
             </div>
 
             {/* Trust Badges */}
-            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+            <div className={`p-4 rounded-xl ${t("bg-gray-50", "bg-white/[0.02]")} border ${t("border-gray-200", "border-white/[0.06]")}`}>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-sm">
                   <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
                     <Check className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
-                    <p className="text-white font-medium">Verified Data</p>
-                    <p className="text-xs text-zinc-500">Updated within 30 days</p>
+                    <p className={`${t("text-gray-900", "text-white")} font-medium`}>Verified Data</p>
+                    <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Updated within 30 days</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
@@ -1435,8 +1437,8 @@ export default function TalentNestDetail() {
                     <Zap className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
-                    <p className="text-white font-medium">Instant Access</p>
-                    <p className="text-xs text-zinc-500">Available immediately</p>
+                    <p className={`${t("text-gray-900", "text-white")} font-medium`}>Instant Access</p>
+                    <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Available immediately</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
@@ -1444,8 +1446,8 @@ export default function TalentNestDetail() {
                     <Brain className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
-                    <p className="text-white font-medium">SYNC Intel</p>
-                    <p className="text-xs text-zinc-500">AI-powered insights</p>
+                    <p className={`${t("text-gray-900", "text-white")} font-medium`}>SYNC Intel</p>
+                    <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>AI-powered insights</p>
                   </div>
                 </div>
               </div>
@@ -1455,7 +1457,7 @@ export default function TalentNestDetail() {
       </div>
 
       {/* Mobile Purchase CTA */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-zinc-900/95 backdrop-blur-lg border-t border-white/[0.08] z-50">
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 p-4 ${t("bg-white/95", "bg-zinc-900/95")} backdrop-blur-lg border-t ${t("border-gray-200", "border-white/[0.08]")} z-50`}>
         <div className="flex items-center justify-between">
           <div>
             {hasPurchased ? (
@@ -1468,12 +1470,12 @@ export default function TalentNestDetail() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} {nestType === 'companies' ? 'companies' : 'profiles'} owned</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{itemCount.toLocaleString()} {nestType === 'companies' ? 'companies' : 'profiles'} owned</p>
               </>
             ) : (
               <>
-                <p className="text-2xl font-bold text-white">€{price.toFixed(0)}</p>
-                <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} profiles</p>
+                <p className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>€{price.toFixed(0)}</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{itemCount.toLocaleString()} profiles</p>
               </>
             )}
           </div>
@@ -1519,23 +1521,24 @@ export default function TalentNestDetail() {
         nest={nest}
         onPurchase={handlePurchase}
         user={user}
+        t={t}
       />
 
       {/* Post-Purchase Success Dialog */}
       <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
+        <DialogContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")} max-w-lg`}>
           <div className="text-center py-4">
             {/* Success Animation */}
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center">
               <PartyPopper className="w-10 h-10 text-red-400" />
             </div>
 
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className={`text-2xl font-bold ${t("text-gray-900", "text-white")} mb-2`}>
               Nest Purchased! 🎉
             </h2>
-            <p className="text-zinc-400 mb-6">
-              <span className="text-white font-medium">{purchasedNestInfo?.itemCount?.toLocaleString()}</span> candidates
-              from <span className="text-white font-medium">{purchasedNestInfo?.name}</span> have been added to your talent pool.
+            <p className={`${t("text-gray-500", "text-zinc-400")} mb-6`}>
+              <span className={`${t("text-gray-900", "text-white")} font-medium`}>{purchasedNestInfo?.itemCount?.toLocaleString()}</span> candidates
+              from <span className={`${t("text-gray-900", "text-white")} font-medium`}>{purchasedNestInfo?.name}</span> have been added to your talent pool.
             </p>
 
             {/* Intel Processing Notice */}
@@ -1546,7 +1549,7 @@ export default function TalentNestDetail() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-red-400 mb-1">SYNC Intel Processing</p>
-                  <p className="text-xs text-zinc-400">
+                  <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>
                     We're analyzing each candidate's profile to generate intelligence insights,
                     match scores, and personalized outreach angles. This runs in the background.
                   </p>
@@ -1556,7 +1559,7 @@ export default function TalentNestDetail() {
 
             {/* Next Steps */}
             <div className="space-y-3">
-              <p className="text-sm text-zinc-500 font-medium mb-3">What would you like to do next?</p>
+              <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} font-medium mb-3`}>What would you like to do next?</p>
 
               {/* Primary CTA - Create Campaign */}
               <Button
@@ -1567,7 +1570,7 @@ export default function TalentNestDetail() {
                 Create Matching Campaign
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
-              <p className="text-xs text-zinc-500">
+              <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
                 Match these candidates to your open roles and generate personalized outreach
               </p>
 
@@ -1575,7 +1578,7 @@ export default function TalentNestDetail() {
               <Button
                 onClick={handleViewCandidatesFromSuccess}
                 variant="outline"
-                className="w-full h-11 border-zinc-700 text-white hover:bg-zinc-800"
+                className={`w-full h-11 ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")} ${t("hover:bg-gray-100", "hover:bg-zinc-800")}`}
               >
                 <Users className="w-4 h-4 mr-2" />
                 View Candidates First
@@ -1584,7 +1587,7 @@ export default function TalentNestDetail() {
               {/* Skip for now */}
               <button
                 onClick={() => setShowSuccessDialog(false)}
-                className="text-sm text-zinc-500 hover:text-zinc-400 mt-2"
+                className={`text-sm ${t("text-gray-400", "text-zinc-500")} ${t("hover:text-gray-600", "hover:text-zinc-400")} mt-2`}
               >
                 I'll do this later
               </button>

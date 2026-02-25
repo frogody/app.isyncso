@@ -6,6 +6,7 @@ const animate = anime;
 import { prefersReducedMotion } from '@/lib/animations';
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { createPageUrl } from "@/utils";
 import {
   Plus, Building2, User, Euro, Mail, Phone, ExternalLink, Trash2,
@@ -68,7 +69,7 @@ const emptyForm = {
   aliasInput: '',
 };
 
-function ClientCard({ client, onEdit, onDelete, onView }) {
+function ClientCard({ client, onEdit, onDelete, onView, t }) {
   const stage = CLIENT_STAGES.find(s => s.id === client.stage) || CLIENT_STAGES[0];
   const fullName = [client.first_name, client.last_name].filter(Boolean).join(' ');
 
@@ -77,7 +78,7 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="group relative bg-zinc-900/60 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-zinc-700/60 transition-all duration-200 overflow-hidden"
+      className={`group relative ${t("bg-white border-gray-200 hover:border-gray-300", "bg-zinc-900/60 border-zinc-800/60 hover:border-zinc-700/60")} backdrop-blur-sm rounded-xl border transition-all duration-200 overflow-hidden`}
     >
       {/* Top gradient bar */}
       <div className={`absolute top-0 left-0 right-0 h-1 ${stage.color} opacity-60`} />
@@ -86,31 +87,31 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0" onClick={() => onView(client)}>
-            <h4 className="font-semibold text-white truncate cursor-pointer hover:text-red-400/80 transition-colors">
+            <h4 className={`font-semibold ${t("text-gray-900", "text-white")} truncate cursor-pointer hover:text-red-400/80 transition-colors`}>
               {client.company || 'Unnamed Company'}
             </h4>
             {fullName && (
-              <p className="text-zinc-500 text-sm flex items-center gap-1.5 mt-1">
+              <p className={`${t("text-gray-400", "text-zinc-500")} text-sm flex items-center gap-1.5 mt-1`}>
                 <User className="w-3 h-3" />
                 <span className="truncate">{fullName}</span>
-                {client.job_title && <span className="text-zinc-600">· {client.job_title}</span>}
+                {client.job_title && <span className={t("text-gray-300", "text-zinc-600")}>· {client.job_title}</span>}
               </p>
             )}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                <MoreHorizontal className="w-4 h-4 text-zinc-400" />
+                <MoreHorizontal className={`w-4 h-4 ${t("text-gray-400", "text-zinc-400")}`} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-              <DropdownMenuItem onClick={() => onView(client)} className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+            <DropdownMenuContent align="end" className={t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")}>
+              <DropdownMenuItem onClick={() => onView(client)} className={t("text-gray-600 focus:text-gray-900 focus:bg-gray-100", "text-zinc-300 focus:text-white focus:bg-zinc-800")}>
                 <Eye className="w-4 h-4 mr-2" /> View Details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(client)} className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+              <DropdownMenuItem onClick={() => onEdit(client)} className={t("text-gray-600 focus:text-gray-900 focus:bg-gray-100", "text-zinc-300 focus:text-white focus:bg-zinc-800")}>
                 <Edit2 className="w-4 h-4 mr-2" /> Edit Client
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-zinc-800" />
+              <DropdownMenuSeparator className={t("bg-gray-200", "bg-zinc-800")} />
               <DropdownMenuItem onClick={() => onDelete(client.id)} className="text-red-400 focus:text-red-300 focus:bg-red-950/30">
                 <Trash2 className="w-4 h-4 mr-2" /> Delete Client
               </DropdownMenuItem>
@@ -121,19 +122,19 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
         {/* Contact info */}
         <div className="mt-3 space-y-1">
           {client.email && (
-            <a href={`mailto:${client.email}`} className="flex items-center gap-2 text-xs text-zinc-400 hover:text-red-400 transition-colors">
+            <a href={`mailto:${client.email}`} className={`flex items-center gap-2 text-xs ${t("text-gray-500", "text-zinc-400")} hover:text-red-400 transition-colors`}>
               <Mail className="w-3 h-3" />
               <span className="truncate">{client.email}</span>
             </a>
           )}
           {client.phone && (
-            <a href={`tel:${client.phone}`} className="flex items-center gap-2 text-xs text-zinc-400 hover:text-red-400 transition-colors">
+            <a href={`tel:${client.phone}`} className={`flex items-center gap-2 text-xs ${t("text-gray-500", "text-zinc-400")} hover:text-red-400 transition-colors`}>
               <Phone className="w-3 h-3" />
               <span>{client.phone}</span>
             </a>
           )}
           {client.location && (
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <div className={`flex items-center gap-2 text-xs ${t("text-gray-400", "text-zinc-500")}`}>
               <MapPin className="w-3 h-3" />
               <span>{client.location}</span>
             </div>
@@ -141,12 +142,12 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
         </div>
 
         {/* Footer */}
-        <div className="mt-3 pt-2 border-t border-zinc-800/50 flex items-center justify-between">
+        <div className={`mt-3 pt-2 border-t ${t("border-gray-200", "border-zinc-800/50")} flex items-center justify-between`}>
           <Badge className={`text-[10px] px-2 py-0.5 h-5 ${stage.badgeClass} border-0`}>
             {stage.label}
           </Badge>
           {client.recruitment_fee_percentage && (
-            <span className="text-xs text-zinc-500">
+            <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
               Fee: {client.recruitment_fee_percentage}%
             </span>
           )}
@@ -156,16 +157,16 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
   );
 }
 
-function ClientTableRow({ client, onEdit, onDelete, onView, reducedMotion }) {
+function ClientTableRow({ client, onEdit, onDelete, onView, reducedMotion, t }) {
   const stage = CLIENT_STAGES.find(s => s.id === client.stage) || CLIENT_STAGES[0];
   const fullName = [client.first_name, client.last_name].filter(Boolean).join(' ');
 
   return (
     <TableRow
-      className="border-zinc-800/50 hover:bg-zinc-900/50 transition-colors"
+      className={`${t("border-gray-200 hover:bg-gray-50", "border-zinc-800/50 hover:bg-zinc-900/50")} transition-colors`}
       style={{ opacity: reducedMotion ? 1 : undefined }}
     >
-      <TableCell className="font-medium text-white">
+      <TableCell className={`font-medium ${t("text-gray-900", "text-white")}`}>
         <div className="flex items-center gap-3">
           <div className={`w-2 h-2 rounded-full ${stage.color}`} />
           <div>
@@ -173,22 +174,22 @@ function ClientTableRow({ client, onEdit, onDelete, onView, reducedMotion }) {
               {client.company || 'Unnamed Company'}
             </span>
             {client.industry && (
-              <p className="text-xs text-zinc-500 mt-0.5">{client.industry}</p>
+              <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-0.5`}>{client.industry}</p>
             )}
           </div>
         </div>
       </TableCell>
-      <TableCell className="text-zinc-400">
+      <TableCell className={t("text-gray-500", "text-zinc-400")}>
         {fullName && (
           <div>
             <span>{fullName}</span>
             {client.job_title && (
-              <p className="text-xs text-zinc-500 mt-0.5">{client.job_title}</p>
+              <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-0.5`}>{client.job_title}</p>
             )}
           </div>
         )}
       </TableCell>
-      <TableCell className="text-zinc-400">
+      <TableCell className={t("text-gray-500", "text-zinc-400")}>
         {client.email && (
           <a href={`mailto:${client.email}`} className="hover:text-red-400 transition-colors">
             {client.email}
@@ -200,24 +201,24 @@ function ClientTableRow({ client, onEdit, onDelete, onView, reducedMotion }) {
           {stage.label}
         </Badge>
       </TableCell>
-      <TableCell className="text-zinc-400">
+      <TableCell className={t("text-gray-500", "text-zinc-400")}>
         {client.recruitment_fee_percentage ? `${client.recruitment_fee_percentage}%` : '-'}
       </TableCell>
       <TableCell className="text-right">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-7 w-7">
-              <MoreHorizontal className="w-4 h-4 text-zinc-400" />
+              <MoreHorizontal className={`w-4 h-4 ${t("text-gray-400", "text-zinc-400")}`} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-            <DropdownMenuItem onClick={() => onView(client)} className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+          <DropdownMenuContent align="end" className={t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")}>
+            <DropdownMenuItem onClick={() => onView(client)} className={t("text-gray-600 focus:text-gray-900 focus:bg-gray-100", "text-zinc-300 focus:text-white focus:bg-zinc-800")}>
               <Eye className="w-4 h-4 mr-2" /> View Details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(client)} className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+            <DropdownMenuItem onClick={() => onEdit(client)} className={t("text-gray-600 focus:text-gray-900 focus:bg-gray-100", "text-zinc-300 focus:text-white focus:bg-zinc-800")}>
               <Edit2 className="w-4 h-4 mr-2" /> Edit Client
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-zinc-800" />
+            <DropdownMenuSeparator className={t("bg-gray-200", "bg-zinc-800")} />
             <DropdownMenuItem onClick={() => onDelete(client.id)} className="text-red-400 focus:text-red-300 focus:bg-red-950/30">
               <Trash2 className="w-4 h-4 mr-2" /> Delete Client
             </DropdownMenuItem>
@@ -230,6 +231,7 @@ function ClientTableRow({ client, onEdit, onDelete, onView, reducedMotion }) {
 
 export default function TalentClients() {
   const { user } = useUser();
+  const { t } = useTheme();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -558,24 +560,24 @@ export default function TalentClients() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black relative">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
         <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-          <Skeleton className="h-24 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className={`h-24 w-full ${t("bg-gray-200", "bg-zinc-800")} rounded-xl`} />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 bg-zinc-800 rounded-lg" />)}
+            {[1,2,3,4].map(i => <Skeleton key={i} className={`h-20 ${t("bg-gray-200", "bg-zinc-800")} rounded-lg`} />)}
           </div>
-          <Skeleton className="h-[300px] w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className={`h-[300px] w-full ${t("bg-gray-200", "bg-zinc-800")} rounded-xl`} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-3xl" />
+        <div className={`absolute top-20 left-1/4 w-[500px] h-[500px] ${t("bg-red-500/3", "bg-red-500/5")} rounded-full blur-3xl`} />
+        <div className={`absolute bottom-20 right-1/4 w-[400px] h-[400px] ${t("bg-red-500/3", "bg-red-500/5")} rounded-full blur-3xl`} />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
@@ -611,11 +613,11 @@ export default function TalentClients() {
 
         {/* Stats Row */}
         <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`stat-card p-3 rounded-lg ${t("bg-white border-gray-200", "bg-zinc-900/50 border-zinc-800/60")} border`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-[10px]">Total Clients</p>
-                <p className="text-lg font-bold text-white">{stats.total}</p>
+                <p className={`${t("text-gray-400", "text-zinc-500")} text-[10px]`}>Total Clients</p>
+                <p className={`text-lg font-bold ${t("text-gray-900", "text-white")}`}>{stats.total}</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
                 <Building2 className="w-4 h-4 text-red-400/70" />
@@ -624,11 +626,11 @@ export default function TalentClients() {
           </div>
 
           {CLIENT_STAGES.slice(0, 4).map(stage => (
-            <div key={stage.id} className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
+            <div key={stage.id} className={`stat-card p-3 rounded-lg ${t("bg-white border-gray-200", "bg-zinc-900/50 border-zinc-800/60")} border`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-zinc-500 text-[10px]">{stage.label}</p>
-                  <p className="text-lg font-bold text-white">{stats.byStage[stage.id] || 0}</p>
+                  <p className={`${t("text-gray-400", "text-zinc-500")} text-[10px]`}>{stage.label}</p>
+                  <p className={`text-lg font-bold ${t("text-gray-900", "text-white")}`}>{stats.byStage[stage.id] || 0}</p>
                 </div>
                 <div className={`w-8 h-8 rounded-lg ${stage.color}/20 flex items-center justify-center`}>
                   <div className={`w-2 h-2 rounded-full ${stage.color}`} />
@@ -653,7 +655,7 @@ export default function TalentClients() {
                 <p className="text-sm font-medium text-red-400">
                   {loadingExcluded ? 'Loading...' : `${excludedCount} candidate${excludedCount !== 1 ? 's' : ''} ruled out`}
                 </p>
-                <p className="text-xs text-zinc-500">Blocked based on your existing clients</p>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Blocked based on your existing clients</p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-red-400/50 group-hover:text-red-400 transition-colors" />
@@ -664,17 +666,17 @@ export default function TalentClients() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t("text-gray-400", "text-zinc-500")}`} />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search clients..."
-                className="pl-10 bg-zinc-900/50 border-zinc-800 text-white focus:border-red-500/50"
+                className={`pl-10 ${t("bg-white border-gray-200 text-gray-900 focus:border-red-500/50", "bg-zinc-900/50 border-zinc-800 text-white focus:border-red-500/50")}`}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 ${t("text-gray-400 hover:text-gray-900", "text-zinc-500 hover:text-white")}`}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -682,11 +684,11 @@ export default function TalentClients() {
             </div>
 
             <Select value={stageFilter} onValueChange={setStageFilter}>
-              <SelectTrigger className="w-40 bg-zinc-900/50 border-zinc-800 text-white">
-                <Filter className="w-4 h-4 mr-2 text-zinc-500" />
+              <SelectTrigger className={`w-40 ${t("bg-white border-gray-200 text-gray-900", "bg-zinc-900/50 border-zinc-800 text-white")}`}>
+                <Filter className={`w-4 h-4 mr-2 ${t("text-gray-400", "text-zinc-500")}`} />
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectContent className={t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")}>
                 <SelectItem value="all">All Stages</SelectItem>
                 {CLIENT_STAGES.map(stage => (
                   <SelectItem key={stage.id} value={stage.id}>
@@ -705,7 +707,7 @@ export default function TalentClients() {
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="icon"
               onClick={() => setViewMode('table')}
-              className={viewMode === 'table' ? 'bg-red-500/20 text-red-400' : 'text-zinc-400 hover:text-white'}
+              className={viewMode === 'table' ? 'bg-red-500/20 text-red-400' : t('text-gray-500 hover:text-gray-900', 'text-zinc-400 hover:text-white')}
             >
               <List className="w-4 h-4" />
             </Button>
@@ -713,7 +715,7 @@ export default function TalentClients() {
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="icon"
               onClick={() => setViewMode('grid')}
-              className={viewMode === 'grid' ? 'bg-red-500/20 text-red-400' : 'text-zinc-400 hover:text-white'}
+              className={viewMode === 'grid' ? 'bg-red-500/20 text-red-400' : t('text-gray-500 hover:text-gray-900', 'text-zinc-400 hover:text-white')}
             >
               <Grid3X3 className="w-4 h-4" />
             </Button>
@@ -722,14 +724,14 @@ export default function TalentClients() {
 
         {/* Content */}
         {filteredClients.length === 0 ? (
-          <div className="p-12 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-12 text-center rounded-xl ${t("bg-white border-gray-200", "bg-zinc-900/50 border-zinc-800/60")} border`}>
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center mx-auto mb-4">
               <Building2 className="w-8 h-8 text-red-400" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">
+            <h3 className={`text-xl font-bold ${t("text-gray-900", "text-white")} mb-2`}>
               {clients.length === 0 ? 'Add Your First Client' : 'No Clients Found'}
             </h3>
-            <p className="text-zinc-400 mb-6 max-w-md mx-auto text-sm">
+            <p className={`${t("text-gray-500", "text-zinc-400")} mb-6 max-w-md mx-auto text-sm`}>
               {clients.length === 0
                 ? 'Track your recruitment clients and their fee agreements. Add your first client to get started.'
                 : 'Try adjusting your search or filter criteria.'}
@@ -742,16 +744,16 @@ export default function TalentClients() {
             )}
           </div>
         ) : viewMode === 'table' ? (
-          <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
+          <div className={`rounded-xl ${t("bg-white border-gray-200", "bg-zinc-900/50 border-zinc-800/60")} border overflow-hidden`}>
             <Table>
               <TableHeader>
-                <TableRow className="border-zinc-800/50 hover:bg-transparent">
-                  <TableHead className="text-zinc-400">Company</TableHead>
-                  <TableHead className="text-zinc-400">Contact</TableHead>
-                  <TableHead className="text-zinc-400">Email</TableHead>
-                  <TableHead className="text-zinc-400">Stage</TableHead>
-                  <TableHead className="text-zinc-400">Fee</TableHead>
-                  <TableHead className="text-zinc-400 text-right">Actions</TableHead>
+                <TableRow className={`${t("border-gray-200 hover:bg-transparent", "border-zinc-800/50 hover:bg-transparent")}`}>
+                  <TableHead className={t("text-gray-500", "text-zinc-400")}>Company</TableHead>
+                  <TableHead className={t("text-gray-500", "text-zinc-400")}>Contact</TableHead>
+                  <TableHead className={t("text-gray-500", "text-zinc-400")}>Email</TableHead>
+                  <TableHead className={t("text-gray-500", "text-zinc-400")}>Stage</TableHead>
+                  <TableHead className={t("text-gray-500", "text-zinc-400")}>Fee</TableHead>
+                  <TableHead className={`${t("text-gray-500", "text-zinc-400")} text-right`}>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -764,6 +766,7 @@ export default function TalentClients() {
                       onDelete={handleDelete}
                       onView={openViewModal}
                       reducedMotion={reducedMotion}
+                      t={t}
                     />
                   ))}
                 </AnimatePresence>
@@ -780,6 +783,7 @@ export default function TalentClients() {
                   onEdit={openEditModal}
                   onDelete={handleDelete}
                   onView={openViewModal}
+                  t={t}
                 />
               ))}
             </AnimatePresence>
@@ -794,9 +798,9 @@ export default function TalentClients() {
           }
           setShowModal(open);
         }}>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl p-0 overflow-hidden">
-            <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-red-500/10 to-red-600/10">
-              <DialogTitle className="text-base font-semibold text-white flex items-center gap-2">
+          <DialogContent className={`${t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")} max-w-xl p-0 overflow-hidden`}>
+            <div className={`px-6 py-4 border-b ${t("border-gray-200", "border-zinc-800")} bg-gradient-to-r from-red-500/10 to-red-600/10`}>
+              <DialogTitle className={`text-base font-semibold ${t("text-gray-900", "text-white")} flex items-center gap-2`}>
                 <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
                   <Building2 className="w-4 h-4 text-red-400" />
                 </div>
@@ -813,30 +817,30 @@ export default function TalentClients() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Company Name</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Company Name</label>
                     <Input
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                      className={t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}
                       placeholder="e.g. TechCorp Inc."
                     />
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Industry</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Industry</label>
                     <Input
                       value={formData.industry}
                       onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                      className={t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}
                       placeholder="e.g. Technology"
                     />
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Company Size</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Company Size</label>
                     <Select value={formData.company_size} onValueChange={(v) => setFormData({ ...formData, company_size: v })}>
-                      <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500">
+                      <SelectTrigger className={t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}>
                         <SelectValue placeholder="Select size" />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-700">
+                      <SelectContent className={t("bg-white border-gray-200", "bg-zinc-900 border-zinc-700")}>
                         <SelectItem value="1-10">1-10 employees</SelectItem>
                         <SelectItem value="11-50">11-50 employees</SelectItem>
                         <SelectItem value="51-200">51-200 employees</SelectItem>
@@ -847,13 +851,13 @@ export default function TalentClients() {
                     </Select>
                   </div>
                   <div className="col-span-2">
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Website</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Website</label>
                     <div className="relative">
-                      <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Globe className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t("text-gray-400", "text-zinc-500")}`} />
                       <Input
                         value={formData.website}
                         onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                        className="pl-10 bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                        className={`pl-10 ${t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}`}
                         placeholder="https://example.com"
                       />
                     </div>
@@ -869,39 +873,39 @@ export default function TalentClients() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">First Name</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>First Name</label>
                     <Input
                       value={formData.first_name}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                      className={t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}
                       placeholder="John"
                     />
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Last Name</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Last Name</label>
                     <Input
                       value={formData.last_name}
                       onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                      className={t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}
                       placeholder="Doe"
                     />
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Job Title</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Job Title</label>
                     <Input
                       value={formData.job_title}
                       onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                      className={t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}
                       placeholder="HR Manager"
                     />
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Stage</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Stage</label>
                     <Select value={formData.stage} onValueChange={(v) => setFormData({ ...formData, stage: v })}>
-                      <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500">
+                      <SelectTrigger className={t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-700">
+                      <SelectContent className={t("bg-white border-gray-200", "bg-zinc-900 border-zinc-700")}>
                         {CLIENT_STAGES.map(s => (
                           <SelectItem key={s.id} value={s.id}>
                             <span className="flex items-center gap-2">
@@ -914,26 +918,26 @@ export default function TalentClients() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Email</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Email</label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t("text-gray-400", "text-zinc-500")}`} />
                       <Input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="pl-10 bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                        className={`pl-10 ${t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}`}
                         placeholder="john@example.com"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Phone</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Phone</label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t("text-gray-400", "text-zinc-500")}`} />
                       <Input
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="pl-10 bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                        className={`pl-10 ${t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}`}
                         placeholder="+1 (555) 123-4567"
                       />
                     </div>
@@ -948,13 +952,13 @@ export default function TalentClients() {
                   Location
                 </div>
                 <div>
-                  <label className="text-zinc-400 text-sm mb-1.5 block">Location</label>
+                  <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Location</label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <MapPin className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${t("text-gray-400", "text-zinc-500")}`} />
                     <Input
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                      className="pl-10 bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                      className={`pl-10 ${t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")}`}
                       placeholder="Amsterdam, Netherlands"
                     />
                   </div>
@@ -969,7 +973,7 @@ export default function TalentClients() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Fee Percentage</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Fee Percentage</label>
                     <div className="relative">
                       <Input
                         type="number"
@@ -977,21 +981,21 @@ export default function TalentClients() {
                         max="100"
                         value={formData.recruitment_fee_percentage}
                         onChange={(e) => setFormData({ ...formData, recruitment_fee_percentage: e.target.value })}
-                        className="bg-zinc-800/50 border-zinc-700 text-white pr-7"
+                        className={`${t("bg-white border-gray-200 text-gray-900", "bg-zinc-800/50 border-zinc-700 text-white")} pr-7`}
                         placeholder="20"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">%</span>
+                      <span className={`absolute right-3 top-1/2 -translate-y-1/2 ${t("text-gray-400", "text-zinc-500")}`}>%</span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Or Flat Fee</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Or Flat Fee</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">€</span>
+                      <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${t("text-gray-400", "text-zinc-500")}`}>€</span>
                       <Input
                         type="number"
                         value={formData.recruitment_fee_flat}
                         onChange={(e) => setFormData({ ...formData, recruitment_fee_flat: e.target.value })}
-                        className="bg-zinc-800/50 border-zinc-700 text-white pl-7"
+                        className={`${t("bg-white border-gray-200 text-gray-900", "bg-zinc-800/50 border-zinc-700 text-white")} pl-7`}
                         placeholder="5000"
                       />
                     </div>
@@ -1001,24 +1005,24 @@ export default function TalentClients() {
 
               {/* Notes */}
               <div>
-                <label className="text-zinc-400 text-sm mb-1.5 block">Notes</label>
+                <label className={`${t("text-gray-500", "text-zinc-400")} text-sm mb-1.5 block`}>Notes</label>
                 <Textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500 resize-none"
+                  className={`${t("bg-white border-gray-200 text-gray-900 focus:border-red-500", "bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500")} resize-none`}
                   rows={3}
                   placeholder="Add any relevant notes about this client..."
                 />
               </div>
 
               {/* Candidate Exclusion */}
-              <div className={`p-3 rounded-lg border space-y-3 ${formData.exclude_candidates ? 'bg-red-500/5 border-red-500/30' : 'bg-zinc-800/30 border-zinc-700/50'}`}>
+              <div className={`p-3 rounded-lg border space-y-3 ${formData.exclude_candidates ? 'bg-red-500/5 border-red-500/30' : t('bg-gray-50 border-gray-200', 'bg-zinc-800/30 border-zinc-700/50')}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ShieldAlert className={`w-4 h-4 ${formData.exclude_candidates ? 'text-red-400' : 'text-zinc-500'}`} />
+                    <ShieldAlert className={`w-4 h-4 ${formData.exclude_candidates ? 'text-red-400' : t('text-gray-400', 'text-zinc-500')}`} />
                     <div>
-                      <p className="text-sm font-medium text-white">Exclude Candidates</p>
-                      <p className="text-xs text-zinc-500">Never contact candidates from this company</p>
+                      <p className={`text-sm font-medium ${t("text-gray-900", "text-white")}`}>Exclude Candidates</p>
+                      <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>Never contact candidates from this company</p>
                     </div>
                   </div>
                   <button
@@ -1036,7 +1040,7 @@ export default function TalentClients() {
 
                 {formData.exclude_candidates && (
                   <div className="pt-2 border-t border-red-500/20 space-y-2">
-                    <label className="text-zinc-400 text-xs block">Company Aliases (also known as)</label>
+                    <label className={`${t("text-gray-500", "text-zinc-400")} text-xs block`}>Company Aliases (also known as)</label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {(formData.company_aliases || []).map((alias, i) => (
                         <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-red-500/10 text-red-400 rounded-md text-xs border border-red-500/20">
@@ -1068,14 +1072,14 @@ export default function TalentClients() {
                             });
                           }
                         }}
-                        className="bg-zinc-800/50 border-zinc-700 text-white text-xs h-8"
+                        className={`${t("bg-white border-gray-200 text-gray-900", "bg-zinc-800/50 border-zinc-700 text-white")} text-xs h-8`}
                         placeholder="e.g. Deloitte Nederland B.V."
                       />
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8 border-zinc-700 text-zinc-400 hover:text-white"
+                        className={`h-8 ${t("border-gray-200 text-gray-500 hover:text-gray-900", "border-zinc-700 text-zinc-400 hover:text-white")}`}
                         onClick={() => {
                           if (formData.aliasInput?.trim()) {
                             setFormData({
@@ -1089,15 +1093,15 @@ export default function TalentClients() {
                         <Plus className="w-3 h-3" />
                       </Button>
                     </div>
-                    <p className="text-[10px] text-zinc-600">Press Enter to add. Include all known variations of the company name.</p>
+                    <p className={`text-[10px] ${t("text-gray-300", "text-zinc-600")}`}>Press Enter to add. Include all known variations of the company name.</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+            <div className={`px-6 py-4 border-t ${t("border-gray-200 bg-gray-50", "border-zinc-800 bg-zinc-900/80")} flex items-center justify-end gap-3`}>
+              <Button variant="outline" onClick={() => setShowModal(false)} className={t("border-gray-200 text-gray-600 hover:bg-gray-100", "border-zinc-700 text-zinc-300 hover:bg-zinc-800")}>
                 Cancel
               </Button>
               <Button
@@ -1127,9 +1131,9 @@ export default function TalentClients() {
 
         {/* Excluded Candidates Modal */}
         <Dialog open={showExcludedModal} onOpenChange={setShowExcludedModal}>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl p-0 overflow-hidden max-h-[80vh]">
-            <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-red-500/10 to-red-600/10">
-              <DialogTitle className="text-base font-semibold text-white flex items-center gap-2">
+          <DialogContent className={`${t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")} max-w-2xl p-0 overflow-hidden max-h-[80vh]`}>
+            <div className={`px-6 py-4 border-b ${t("border-gray-200", "border-zinc-800")} bg-gradient-to-r from-red-500/10 to-red-600/10`}>
+              <DialogTitle className={`text-base font-semibold ${t("text-gray-900", "text-white")} flex items-center gap-2`}>
                 <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
                   <Ban className="w-4 h-4 text-red-400" />
                 </div>
@@ -1138,7 +1142,7 @@ export default function TalentClients() {
                   {excludedCandidates.length}
                 </Badge>
               </DialogTitle>
-              <p className="text-xs text-zinc-500 mt-1 ml-10">
+              <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-1 ml-10`}>
                 These candidates are blocked because they work for one of your clients
               </p>
             </div>
@@ -1146,19 +1150,19 @@ export default function TalentClients() {
             <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
               {excludedCandidates.length === 0 ? (
                 <div className="p-8 text-center">
-                  <p className="text-zinc-500">No excluded candidates found</p>
+                  <p className={t("text-gray-400", "text-zinc-500")}>No excluded candidates found</p>
                 </div>
               ) : (
-                <div className="divide-y divide-zinc-800/50">
+                <div className={`divide-y ${t("divide-gray-200", "divide-zinc-800/50")}`}>
                   {excludedCandidates.map((candidate) => (
                     <div
                       key={candidate.id}
-                      className="px-6 py-3 hover:bg-zinc-800/30 transition-colors"
+                      className={`px-6 py-3 ${t("hover:bg-gray-50", "hover:bg-zinc-800/30")} transition-colors`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-white truncate">
+                            <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} truncate`}>
                               {[candidate.first_name, candidate.last_name].filter(Boolean).join(' ') || 'Unknown'}
                             </p>
                             {candidate.linkedin_profile && (
@@ -1175,13 +1179,13 @@ export default function TalentClients() {
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             {candidate.job_title && (
-                              <span className="text-xs text-zinc-400 truncate">{candidate.job_title}</span>
+                              <span className={`text-xs ${t("text-gray-500", "text-zinc-400")} truncate`}>{candidate.job_title}</span>
                             )}
                             {candidate.job_title && candidate.company_name && (
-                              <span className="text-zinc-600">·</span>
+                              <span className={t("text-gray-300", "text-zinc-600")}>·</span>
                             )}
                             {candidate.company_name && (
-                              <span className="text-xs text-zinc-500 truncate">{candidate.company_name}</span>
+                              <span className={`text-xs ${t("text-gray-400", "text-zinc-500")} truncate`}>{candidate.company_name}</span>
                             )}
                           </div>
                         </div>

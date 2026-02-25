@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -54,7 +55,7 @@ const stagger = {
 };
 
 // ─── Stat Pill ────────────────────────────────────────────────────────────────
-function StatPill({ icon: Icon, value, label, sub }) {
+function StatPill({ icon: Icon, value, label, sub, t }) {
   const isPercentage = typeof value === 'string' && value.endsWith('%');
   const numericValue = isPercentage ? parseFloat(value) : (typeof value === 'number' ? value : null);
 
@@ -62,17 +63,17 @@ function StatPill({ icon: Icon, value, label, sub }) {
     <motion.div
       variants={fadeIn}
     >
-      <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800/60 rounded-xl px-4 py-3">
+      <div className={`flex items-center gap-3 ${t("bg-white border-gray-200", "bg-zinc-900/60 border-zinc-800/60")} border rounded-xl px-4 py-3`}>
         <div className="p-2 rounded-lg bg-red-500/10 text-red-400 shrink-0">
           <Icon className="w-4 h-4" />
         </div>
         <div className="min-w-0">
-          <div className="text-xl font-bold text-white leading-none">
+          <div className={`text-xl font-bold ${t("text-gray-900", "text-white")} leading-none`}>
             {numericValue !== null ? (
               <AnimatedNumber value={numericValue} suffix={isPercentage ? '%' : ''} duration={1} />
             ) : value}
           </div>
-          <div className="text-[11px] text-zinc-500 mt-0.5 truncate">{label}{sub ? ` · ${sub}` : ''}</div>
+          <div className={`text-[11px] ${t("text-gray-400", "text-zinc-500")} mt-0.5 truncate`}>{label}{sub ? ` · ${sub}` : ''}</div>
         </div>
       </div>
     </motion.div>
@@ -80,14 +81,14 @@ function StatPill({ icon: Icon, value, label, sub }) {
 }
 
 // ─── Response Rate Ring ───────────────────────────────────────────────────────
-function ResponseRateRing({ rate, sent, replied }) {
+function ResponseRateRing({ rate, sent, replied, t }) {
   const r = 44;
   const c = 2 * Math.PI * r;
   return (
     <div className="flex items-center gap-6">
       <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
         <svg width="100" height="100" className="-rotate-90">
-          <circle cx="50" cy="50" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+          <circle cx="50" cy="50" r={r} fill="none" stroke={t ? t("rgba(0,0,0,0.06)", "rgba(255,255,255,0.06)") : "rgba(255,255,255,0.06)"} strokeWidth="8" />
           <motion.circle
             cx="50" cy="50" r={r} fill="none"
             stroke="#ef4444" strokeWidth="8" strokeLinecap="round"
@@ -98,7 +99,7 @@ function ResponseRateRing({ rate, sent, replied }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-white">
+          <span className={`text-2xl font-bold ${t("text-gray-900", "text-white")}`}>
             <AnimatedNumber value={rate} suffix="%" duration={1} />
           </span>
         </div>
@@ -106,13 +107,13 @@ function ResponseRateRing({ rate, sent, replied }) {
       <div className="space-y-2 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-red-500" />
-          <span className="text-zinc-400">Sent</span>
-          <span className="text-white font-medium ml-auto">{sent}</span>
+          <span className={t("text-gray-500", "text-zinc-400")}>Sent</span>
+          <span className={`${t("text-gray-900", "text-white")} font-medium ml-auto`}>{sent}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-red-300" />
-          <span className="text-zinc-400">Replied</span>
-          <span className="text-white font-medium ml-auto">{replied}</span>
+          <span className={t("text-gray-500", "text-zinc-400")}>Replied</span>
+          <span className={`${t("text-gray-900", "text-white")} font-medium ml-auto`}>{replied}</span>
         </div>
       </div>
     </div>
@@ -120,7 +121,7 @@ function ResponseRateRing({ rate, sent, replied }) {
 }
 
 // ─── Pipeline Mini Bars ───────────────────────────────────────────────────────
-function PipelineBars({ candidates }) {
+function PipelineBars({ candidates, t }) {
   const stages = useMemo(() => {
     const order = ["new", "contacted", "responded", "screening", "interview", "offer", "hired", "rejected"];
     const counts = {};
@@ -138,8 +139,8 @@ function PipelineBars({ candidates }) {
         return (
           <div key={s.name} className="space-y-0.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-500">{s.name}</span>
-              <span className="text-[10px] text-zinc-600">{s.count > 0 ? s.count : ''}</span>
+              <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{s.name}</span>
+              <span className={`text-[10px] ${t("text-gray-300", "text-zinc-600")}`}>{s.count > 0 ? s.count : ''}</span>
             </div>
             <AnimatedProgress value={pct} color="rose" glow={s.count > 0} />
           </div>
@@ -150,7 +151,7 @@ function PipelineBars({ candidates }) {
 }
 
 // ─── Intel Distribution Bar ───────────────────────────────────────────────────
-function IntelBar({ data }) {
+function IntelBar({ data, t }) {
   const levels = [
     { key: "Critical", color: "bg-red-600", count: data.critical || 0 },
     { key: "High", color: "bg-red-500", count: data.high || 0 },
@@ -170,10 +171,10 @@ function IntelBar({ data }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
         {levels.map(l => (
           <div key={l.key} className="text-center">
-            <div className="text-sm font-semibold text-white">
+            <div className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>
               <AnimatedNumber value={l.count} duration={0.8} />
             </div>
-            <div className="text-[10px] text-zinc-500">{l.key}</div>
+            <div className={`text-[10px] ${t("text-gray-400", "text-zinc-500")}`}>{l.key}</div>
           </div>
         ))}
       </div>
@@ -182,10 +183,10 @@ function IntelBar({ data }) {
 }
 
 // ─── Campaign Row ─────────────────────────────────────────────────────────────
-function CampaignRow({ campaign, outreachTasks }) {
-  const tasks = outreachTasks.filter(t => t.campaign_id === campaign.id);
-  const sent = tasks.filter(t => t.status === "sent" || t.status === "replied").length;
-  const replied = tasks.filter(t => t.status === "replied").length;
+function CampaignRow({ campaign, outreachTasks, t }) {
+  const tasks = outreachTasks.filter(tk => tk.campaign_id === campaign.id);
+  const sent = tasks.filter(tk => tk.status === "sent" || tk.status === "replied").length;
+  const replied = tasks.filter(tk => tk.status === "replied").length;
   const rate = sent > 0 ? Math.round((replied / sent) * 100) : 0;
   const matches = campaign.matched_candidates?.length || 0;
 
@@ -202,18 +203,18 @@ function CampaignRow({ campaign, outreachTasks }) {
           <Megaphone className="w-4 h-4 text-red-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-white truncate group-hover:text-red-400 transition-colors">{campaign.name}</p>
-          <p className="text-[11px] text-zinc-500">{matches} matches · {sent} sent</p>
+          <p className={`text-sm ${t("text-gray-900", "text-white")} truncate group-hover:text-red-400 transition-colors`}>{campaign.name}</p>
+          <p className={`text-[11px] ${t("text-gray-400", "text-zinc-500")}`}>{matches} matches · {sent} sent</p>
         </div>
         <div className="text-right shrink-0">
-          <span className={`text-sm font-medium ${rate >= 20 ? 'text-red-400' : rate > 0 ? 'text-zinc-300' : 'text-zinc-600'}`}>
+          <span className={`text-sm font-medium ${rate >= 20 ? 'text-red-400' : rate > 0 ? t('text-gray-600', 'text-zinc-300') : t('text-gray-300', 'text-zinc-600')}`}>
             {rate >= 20 ? (
               <AnimatedBadge variant="destructive" pulse size="xs" className="bg-red-500/20 text-red-400 border-red-500/30">{rate}%</AnimatedBadge>
             ) : (
               `${rate}%`
             )}
           </span>
-          <p className="text-[10px] text-zinc-600">{replied} replies</p>
+          <p className={`text-[10px] ${t("text-gray-300", "text-zinc-600")}`}>{replied} replies</p>
         </div>
       </Link>
     </motion.div>
@@ -221,14 +222,14 @@ function CampaignRow({ campaign, outreachTasks }) {
 }
 
 // ─── Recommendation Card ──────────────────────────────────────────────────────
-function RecCard({ icon: Icon, title, description, actionLabel, actionUrl }) {
+function RecCard({ icon: Icon, title, description, actionLabel, actionUrl, t }) {
   return (
-    <div className="p-3 rounded-lg bg-white/[0.02] border border-zinc-800/50">
+    <div className={`p-3 rounded-lg ${t("bg-gray-50 border-gray-200", "bg-white/[0.02] border-zinc-800/50")} border`}>
       <div className="flex items-start gap-2.5">
         <Icon className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
         <div className="min-w-0">
-          <p className="text-sm text-white font-medium">{title}</p>
-          <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
+          <p className={`text-sm ${t("text-gray-900", "text-white")} font-medium`}>{title}</p>
+          <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-0.5`}>{description}</p>
           {actionUrl && (
             <Link to={actionUrl} className="mt-1.5 inline-flex items-center text-xs text-red-400 hover:text-red-300">
               {actionLabel} <ArrowRight className="w-3 h-3 ml-1" />
@@ -241,23 +242,23 @@ function RecCard({ icon: Icon, title, description, actionLabel, actionUrl }) {
 }
 
 // ─── Nest Card ────────────────────────────────────────────────────────────────
-function NestCard({ nest }) {
+function NestCard({ nest, t }) {
   return (
     <Link to={`/TalentNestDetail?id=${nest.id}`}>
       <motion.div
-        className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4 hover:border-red-500/20 transition-all h-full flex flex-col"
+        className={`${t("bg-white border-gray-200", "bg-zinc-900/60 border-zinc-800/60")} border rounded-xl p-4 hover:border-red-500/20 transition-all h-full flex flex-col`}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       >
         <AnimatedBadge className="bg-red-500/15 text-red-400 text-[10px] w-fit mb-2">
           {nest.category || nest.nest_type || 'candidates'}
         </AnimatedBadge>
-        <h4 className="text-sm font-medium text-white mb-1 line-clamp-1">{nest.name}</h4>
-        <p className="text-xs text-zinc-500 line-clamp-2 flex-1 mb-3">{nest.description}</p>
-        <div className="flex items-center justify-between text-xs pt-2 border-t border-zinc-800/60">
-          <span className="text-zinc-500 flex items-center gap-1">
+        <h4 className={`text-sm font-medium ${t("text-gray-900", "text-white")} mb-1 line-clamp-1`}>{nest.name}</h4>
+        <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} line-clamp-2 flex-1 mb-3`}>{nest.description}</p>
+        <div className={`flex items-center justify-between text-xs pt-2 border-t ${t("border-gray-200", "border-zinc-800/60")}`}>
+          <span className={`${t("text-gray-400", "text-zinc-500")} flex items-center gap-1`}>
             <Users className="w-3 h-3" /> {nest.item_count || 0}
           </span>
-          <span className="text-white font-medium">€{nest.price || 0}</span>
+          <span className={`${t("text-gray-900", "text-white")} font-medium`}>€{nest.price || 0}</span>
         </div>
       </motion.div>
     </Link>
@@ -269,6 +270,7 @@ function NestCard({ nest }) {
 // ═════════════════════════════════════════════════════════════════════════════
 export default function TalentDashboard() {
   const { user } = useUser();
+  const { t } = useTheme();
   const navigate = useNavigate();
 
   const [candidates, setCandidates] = useState([]);
@@ -407,7 +409,7 @@ export default function TalentDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")}`}>
         <div className="w-full px-4 lg:px-6 py-4 space-y-4">
           <Skeleton className="h-8 w-48" />
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
@@ -422,7 +424,7 @@ export default function TalentDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className={`min-h-screen ${t("bg-gray-50", "bg-black")}`}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-5">
 
         {/* Header */}
@@ -432,34 +434,34 @@ export default function TalentDashboard() {
           color="red"
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <MotionButton variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+              <MotionButton variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className={`${t("border-gray-200 bg-white text-gray-600 hover:bg-gray-100", "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700")} text-xs h-8`}>
                 <Briefcase className="w-3.5 h-3.5 mr-1" /> Create Role
               </MotionButton>
-              <MotionButton variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+              <MotionButton variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className={`${t("border-gray-200 bg-white text-gray-600 hover:bg-gray-100", "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700")} text-xs h-8`}>
                 <Package className="w-3.5 h-3.5 mr-1" /> Browse Nests
               </MotionButton>
-              <MotionButton variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+              <MotionButton variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className={`${t("border-gray-200 bg-white text-gray-600 hover:bg-gray-100", "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700")} text-xs h-8`}>
                 <Sparkles className="w-3.5 h-3.5 mr-1" /> Run Matching
               </MotionButton>
-              <MotionButton variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+              <MotionButton variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className={`${t("border-gray-200 bg-white text-gray-600 hover:bg-gray-100", "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700")} text-xs h-8`}>
                 <Send className="w-3.5 h-3.5 mr-1" /> Launch Outreach
               </MotionButton>
               <MotionButton variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs h-8">
                 <Users className="w-3.5 h-3.5 mr-1" /> Add Candidate
               </MotionButton>
-              <div className="h-5 w-px bg-zinc-700 mx-1" />
+              <div className={`h-5 w-px ${t("bg-gray-200", "bg-zinc-700")} mx-1`} />
               <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger className="w-[120px] bg-zinc-900/60 border-zinc-800 text-white text-xs h-8">
+                <SelectTrigger className={`w-[120px] ${t("bg-white border-gray-200 text-gray-900", "bg-zinc-900/60 border-zinc-800 text-white")} text-xs h-8`}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectContent className={t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")}>
                   <SelectItem value="7d">Last 7 days</SelectItem>
                   <SelectItem value="30d">Last 30 days</SelectItem>
                   <SelectItem value="90d">Last 90 days</SelectItem>
                   <SelectItem value="all">All time</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="ghost" size="sm" onClick={fetchData} className="text-zinc-500 hover:text-white h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" onClick={fetchData} className={`${t("text-gray-400 hover:text-gray-900", "text-zinc-500 hover:text-white")} h-8 w-8 p-0`}>
                 <RefreshCw className="w-3.5 h-3.5" />
               </Button>
             </div>
@@ -470,14 +472,14 @@ export default function TalentDashboard() {
         <motion.div variants={stagger} initial="hidden" animate="visible"
           className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2"
         >
-          <StatPill icon={Users} value={metrics.totalCandidates} label="Candidates" sub={`${metrics.intelReady} intel`} />
-          <StatPill icon={Megaphone} value={metrics.activeCampaigns} label="Campaigns" sub={`${metrics.totalMatches} matches`} />
-          <StatPill icon={Send} value={metrics.sentOutreach} label="Sent" sub={`${metrics.totalOutreach} total`} />
-          <StatPill icon={MessageSquare} value={`${metrics.responseRate}%`} label="Response" sub={`${metrics.repliedOutreach} replies`} />
-          <StatPill icon={Briefcase} value={metrics.activeProjects} label="Projects" sub={`${projects.length} total`} />
-          <StatPill icon={Target} value={metrics.activeRoles} label="Open Roles" sub={`${roles.length} total`} />
-          <StatPill icon={CheckCircle2} value={metrics.filledRoles} label="Filled" sub={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}%`} />
-          <StatPill icon={Brain} value={metrics.highRiskCandidates} label="High Intel" sub="Score 60+" />
+          <StatPill icon={Users} value={metrics.totalCandidates} label="Candidates" sub={`${metrics.intelReady} intel`} t={t} />
+          <StatPill icon={Megaphone} value={metrics.activeCampaigns} label="Campaigns" sub={`${metrics.totalMatches} matches`} t={t} />
+          <StatPill icon={Send} value={metrics.sentOutreach} label="Sent" sub={`${metrics.totalOutreach} total`} t={t} />
+          <StatPill icon={MessageSquare} value={`${metrics.responseRate}%`} label="Response" sub={`${metrics.repliedOutreach} replies`} t={t} />
+          <StatPill icon={Briefcase} value={metrics.activeProjects} label="Projects" sub={`${projects.length} total`} t={t} />
+          <StatPill icon={Target} value={metrics.activeRoles} label="Open Roles" sub={`${roles.length} total`} t={t} />
+          <StatPill icon={CheckCircle2} value={metrics.filledRoles} label="Filled" sub={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}%`} t={t} />
+          <StatPill icon={Brain} value={metrics.highRiskCandidates} label="High Intel" sub="Score 60+" t={t} />
         </motion.div>
 
         {/* ── Main Grid: Left (2/3) + Right (1/3) ─────────────────────── */}
@@ -490,23 +492,23 @@ export default function TalentDashboard() {
             <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <motion.div variants={fadeIn}>
                 <GlassCard className="p-5 h-full">
-                  <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Response Rate</div>
-                  <ResponseRateRing rate={metrics.responseRate} sent={metrics.sentOutreach} replied={metrics.repliedOutreach} />
+                  <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} font-medium uppercase tracking-wider mb-3`}>Response Rate</div>
+                  <ResponseRateRing rate={metrics.responseRate} sent={metrics.sentOutreach} replied={metrics.repliedOutreach} t={t} />
                 </GlassCard>
               </motion.div>
 
               <motion.div variants={fadeIn}>
                 <GlassCard className="p-5 h-full">
-                  <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">
+                  <div className={`flex items-center gap-1.5 text-xs ${t("text-gray-400", "text-zinc-500")} font-medium uppercase tracking-wider mb-3`}>
                     <Award className="w-3.5 h-3.5 text-red-400" /> Best Campaign
                   </div>
                   {bestCampaign ? (
                     <div>
-                      <h4 className="text-sm font-semibold text-white mb-2 truncate">{bestCampaign.name}</h4>
+                      <h4 className={`text-sm font-semibold ${t("text-gray-900", "text-white")} mb-2 truncate`}>{bestCampaign.name}</h4>
                       <div className="space-y-1.5 text-sm">
-                        <div className="flex justify-between"><span className="text-zinc-500">Rate</span><span className="text-white font-medium">{bestCampaign.rate?.toFixed(1)}%</span></div>
-                        <div className="flex justify-between"><span className="text-zinc-500">Sent</span><span className="text-zinc-300">{bestCampaign.sent}</span></div>
-                        <div className="flex justify-between"><span className="text-zinc-500">Replied</span><span className="text-red-400">{bestCampaign.replied}</span></div>
+                        <div className="flex justify-between"><span className={t("text-gray-400", "text-zinc-500")}>Rate</span><span className={`${t("text-gray-900", "text-white")} font-medium`}>{bestCampaign.rate?.toFixed(1)}%</span></div>
+                        <div className="flex justify-between"><span className={t("text-gray-400", "text-zinc-500")}>Sent</span><span className={t("text-gray-600", "text-zinc-300")}>{bestCampaign.sent}</span></div>
+                        <div className="flex justify-between"><span className={t("text-gray-400", "text-zinc-500")}>Replied</span><span className="text-red-400">{bestCampaign.replied}</span></div>
                       </div>
                       <Link to={`${createPageUrl('TalentCampaignDetail')}?id=${bestCampaign.id}`}
                         className="mt-3 inline-flex items-center text-xs text-red-400 hover:text-red-300">
@@ -515,7 +517,7 @@ export default function TalentDashboard() {
                     </div>
                   ) : (
                     <div className="text-center py-2">
-                      <p className="text-zinc-600 text-sm">No campaigns yet</p>
+                      <p className={`${t("text-gray-300", "text-zinc-600")} text-sm`}>No campaigns yet</p>
                       <Link to={`${createPageUrl('TalentCampaignDetail')}?new=true`}
                         className="mt-1 inline-flex items-center text-xs text-red-400 hover:text-red-300">
                         Create Campaign <ArrowRight className="w-3 h-3 ml-1" />
@@ -527,17 +529,17 @@ export default function TalentDashboard() {
 
               <motion.div variants={fadeIn}>
                 <GlassCard className="p-5 h-full">
-                  <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">
+                  <div className={`flex items-center gap-1.5 text-xs ${t("text-gray-400", "text-zinc-500")} font-medium uppercase tracking-wider mb-3`}>
                     <Sparkles className="w-3.5 h-3.5 text-red-400" /> Recommendations
                   </div>
                   {recommendations.length > 0 ? (
                     <div className="space-y-2">
-                      {recommendations.map((rec, i) => <RecCard key={i} {...rec} />)}
+                      {recommendations.map((rec, i) => <RecCard key={i} {...rec} t={t} />)}
                     </div>
                   ) : (
                     <div className="text-center py-3">
                       <CheckCircle2 className="w-8 h-8 text-red-500/40 mx-auto mb-1.5" />
-                      <p className="text-zinc-500 text-sm">All looking good</p>
+                      <p className={`${t("text-gray-400", "text-zinc-500")} text-sm`}>All looking good</p>
                     </div>
                   )}
                 </GlassCard>
@@ -548,14 +550,14 @@ export default function TalentDashboard() {
             <motion.div variants={stagger} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <motion.div variants={fadeIn}>
                 <GlassCard className="p-5">
-                  <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Pipeline Stages</div>
-                  <PipelineBars candidates={candidates} />
+                  <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} font-medium uppercase tracking-wider mb-3`}>Pipeline Stages</div>
+                  <PipelineBars candidates={candidates} t={t} />
                 </GlassCard>
               </motion.div>
               <motion.div variants={fadeIn}>
                 <GlassCard className="p-5">
-                  <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Intelligence Distribution</div>
-                  <IntelBar data={metrics.intelligenceDistribution} />
+                  <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} font-medium uppercase tracking-wider mb-3`}>Intelligence Distribution</div>
+                  <IntelBar data={metrics.intelligenceDistribution} t={t} />
                 </GlassCard>
               </motion.div>
             </motion.div>
@@ -564,7 +566,7 @@ export default function TalentDashboard() {
             <motion.div variants={fadeIn} initial="hidden" animate="visible">
               <GlassCard className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Campaigns</div>
+                  <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} font-medium uppercase tracking-wider`}>Campaigns</div>
                   <Link to={createPageUrl("TalentCampaigns")}>
                     <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 h-7 text-xs px-2">
                       View All <ArrowRight className="w-3 h-3 ml-1" />
@@ -583,7 +585,7 @@ export default function TalentDashboard() {
                 ) : (
                   <div className="space-y-0.5">
                     {campaigns.slice(0, 5).map(c => (
-                      <CampaignRow key={c.id} campaign={c} outreachTasks={outreachTasks} />
+                      <CampaignRow key={c.id} campaign={c} outreachTasks={outreachTasks} t={t} />
                     ))}
                   </div>
                 )}
@@ -598,7 +600,7 @@ export default function TalentDashboard() {
             <motion.div variants={fadeIn} initial="hidden" animate="visible">
               <GlassCard className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider">Recommended Nests</div>
+                  <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} font-medium uppercase tracking-wider`}>Recommended Nests</div>
                   <Link to="/marketplace/nests">
                     <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 h-7 text-xs px-2">
                       Browse <ArrowRight className="w-3 h-3 ml-1" />
@@ -618,7 +620,7 @@ export default function TalentDashboard() {
                   />
                 ) : (
                   <div className="space-y-3">
-                    {recommendedNests.map(nest => <NestCard key={nest.id} nest={nest} />)}
+                    {recommendedNests.map(nest => <NestCard key={nest.id} nest={nest} t={t} />)}
                   </div>
                 )}
               </GlassCard>
@@ -627,7 +629,7 @@ export default function TalentDashboard() {
             {/* Activity Feed */}
             <motion.div variants={fadeIn} initial="hidden" animate="visible">
               <GlassCard className="p-5">
-                <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Recent Activity</div>
+                <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} font-medium uppercase tracking-wider mb-3`}>Recent Activity</div>
                 <ActivityFeed limit={8} showHeader={false} compact={true} />
               </GlassCard>
             </motion.div>
