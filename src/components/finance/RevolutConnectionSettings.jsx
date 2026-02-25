@@ -45,7 +45,7 @@ export default function RevolutConnectionSettings() {
     try {
       const { data } = await supabase
         .from('bank_connections')
-        .select('*, bank_accounts(id, name, currency)')
+        .select('*, bank_accounts(id, bank_name, account_name, currency)')
         .eq('company_id', companyId)
         .eq('provider', 'revolut')
         .maybeSingle();
@@ -64,10 +64,10 @@ export default function RevolutConnectionSettings() {
     try {
       const { data } = await supabase
         .from('bank_accounts')
-        .select('id, name, currency')
+        .select('id, bank_name, account_name, currency')
         .eq('company_id', companyId)
         .eq('is_active', true)
-        .order('name');
+        .order('bank_name');
       setBankAccounts(data || []);
     } catch (e) {
       console.warn('Failed to load bank accounts:', e);
@@ -91,7 +91,7 @@ export default function RevolutConnectionSettings() {
           is_active: true,
           sync_frequency: 'daily',
         }, { onConflict: 'company_id,provider' })
-        .select('*, bank_accounts(id, name, currency)')
+        .select('*, bank_accounts(id, bank_name, account_name, currency)')
         .single();
 
       if (error) throw error;
@@ -229,7 +229,7 @@ export default function RevolutConnectionSettings() {
                   <SelectContent>
                     {bankAccounts.map((acc) => (
                       <SelectItem key={acc.id} value={acc.id}>
-                        {acc.name} ({acc.currency || 'EUR'})
+                        {acc.bank_name} — {acc.account_name} ({acc.currency || 'EUR'})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -253,7 +253,7 @@ export default function RevolutConnectionSettings() {
               <div className="flex items-center justify-between text-sm">
                 <span className={ft('text-slate-500', 'text-zinc-400')}>Bank Account</span>
                 <span className={ft('text-slate-700', 'text-zinc-300')}>
-                  {connection.bank_accounts?.name || 'Unknown'}
+                  {connection.bank_accounts?.bank_name ? `${connection.bank_accounts.bank_name} — ${connection.bank_accounts.account_name}` : 'Unknown'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
