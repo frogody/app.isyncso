@@ -35,6 +35,7 @@ const TOOLS = [
     accentLight: '#a78bfa',  // violet-400
     bgGlow: 'rgba(139, 92, 246, 0.08)',
     status: 'live',
+    hidden: true,
   },
   {
     key: 'photoshoot',
@@ -57,6 +58,7 @@ const TOOLS = [
     accentLight: '#fb923c',  // orange-400
     bgGlow: 'rgba(249, 115, 22, 0.08)',
     status: 'live',
+    hidden: true,
   },
   {
     key: 'podcast',
@@ -407,7 +409,7 @@ export default function Create() {
             <span className="text-[11px] text-zinc-700 font-medium">{TOOLS.filter(t => t.status === 'live').length} active</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {TOOLS.map((tool, i) => (
+            {TOOLS.filter(t => !t.hidden).map((tool, i) => (
               <ToolCard key={tool.key} tool={tool} index={i} />
             ))}
           </div>

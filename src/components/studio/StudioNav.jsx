@@ -15,6 +15,8 @@ import {
   Shirt,
 } from 'lucide-react';
 
+const HIDDEN_ITEMS = ['video', 'clipshoot'];
+
 const NAV_ITEMS = [
   { key: 'home',       label: 'Studio',     path: '/Studio',           icon: Home },
   { key: 'image',      label: 'Image',      path: '/StudioImage',      icon: ImageIcon },
@@ -27,7 +29,7 @@ const NAV_ITEMS = [
   { key: 'voice',      label: 'Voice',      path: '/StudioVoice',      icon: AudioLines },
   { key: 'fashion',    label: 'Fashion',    path: '/StudioFashionBooth', icon: Shirt },
   { key: 'avatar',     label: 'Avatar',     path: '/StudioAvatar',     icon: UserCircle },
-];
+].filter(item => !HIDDEN_ITEMS.includes(item.key));
 
 export default function StudioNav({ current }) {
   const navigate = useNavigate();
