@@ -308,6 +308,8 @@ import Create from "./Create";
 
 import CreateBranding from "./CreateBranding";
 
+import BrandBuilderWizard from "@/features/brand-builder/BrandBuilderWizard";
+
 import CreateImages from "./CreateImages";
 
 import CreateVideos from "./CreateVideos";
@@ -1397,6 +1399,9 @@ function PagesContent() {
                 <Route path="/Create" element={<Create />} />
 
                 <Route path="/CreateBranding" element={<CreateBranding />} />
+
+                <Route path="/create/brand-builder/:projectId" element={<BrandBuilderWizard />} />
+                <Route path="/create/brand-builder/:projectId/:screen" element={<BrandBuilderWizard />} />
 
                 <Route path="/CreateImages" element={<Navigate to="/StudioImage" replace />} />
 

@@ -511,6 +511,36 @@ export default function CreateBranding() {
             </div>
           </div>
 
+          {/* ---- AI Brand Builder CTA ---- */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <a
+              href="/create/brand-builder/new"
+              className={`group block rounded-[20px] ${ct('bg-gradient-to-r from-yellow-50 to-amber-50', 'bg-gradient-to-r from-yellow-400/[0.06] to-amber-400/[0.04]')} border ${ct('border-yellow-200', 'border-yellow-500/20')} p-5 transition-all hover:border-yellow-400/40 hover:shadow-[0_0_30px_-10px_rgba(234,179,8,0.15)]`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-400/15 border border-yellow-400/25 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')} flex items-center gap-2`}>
+                      AI Brand Builder
+                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-yellow-400 text-black rounded-full">New</span>
+                    </h3>
+                    <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} mt-0.5`}>
+                      Generate a complete brand identity in 8 steps — colors, typography, logo system, voice, and more.
+                    </p>
+                  </div>
+                </div>
+                <ChevronLeft className={`w-4 h-4 ${ct('text-slate-400', 'text-zinc-500')} rotate-180 group-hover:translate-x-1 transition-transform`} />
+              </div>
+            </a>
+          </motion.div>
+
           {/* ---- Live Brand Preview ---- */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
