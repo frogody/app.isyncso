@@ -255,8 +255,8 @@ const navigationItems = [
     url: createPageUrl("Products"),
     icon: Package,
     permission: null,
+    alwaysVisible: true,
     matchPatterns: ["/product", "/inventory", "/stockpurchases", "/emailpoolsettings"],
-    requiresAnyApp: ['products'],
   },
   {
     title: "B2B Store",
@@ -264,7 +264,6 @@ const navigationItems = [
     icon: Store,
     permission: "products.manage",
     matchPatterns: ["/storedashboard", "/b2bstorebuilder", "/b2b"],
-    requiresAnyApp: ['products'],
   },
   {
     title: "Inbox",
