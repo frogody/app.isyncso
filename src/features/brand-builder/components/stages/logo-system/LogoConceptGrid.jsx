@@ -1,9 +1,11 @@
 /**
  * Sub-step 2: Logo Concept Grid.
- * Displays 8-12 generated concepts in a grid with micro-previews and "more like this".
+ * Displays SVG concepts + AI-generated logos in a grid with micro-previews and "more like this".
  */
 import { motion } from 'framer-motion';
-import { Check, Loader2, RefreshCw } from 'lucide-react';
+import { Check, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import ImageGenerationCard from '../../shared/ImageGenerationCard';
+import RegenerateButton from '../../shared/RegenerateButton';
 
 export default function LogoConceptGrid({
   concepts,
@@ -11,9 +13,14 @@ export default function LogoConceptGrid({
   onSelect,
   onMoreLikeThis,
   isLoadingMore,
+  // AI logo props
+  aiLogos = [],
+  aiLogosLoading = false,
+  onGenerateAiLogos,
+  onRegenerateAiLogo,
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Your Logo Concepts</h2>
         <p className="text-sm text-zinc-400">
@@ -21,6 +28,70 @@ export default function LogoConceptGrid({
         </p>
       </div>
 
+      {/* AI-Generated Logos Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-yellow-400" />
+            <h3 className="text-sm font-semibold text-white">AI Logo Concepts</h3>
+            <span className="text-[10px] text-zinc-600 bg-white/[0.05] px-2 py-0.5 rounded-full">Nano Banana Pro</span>
+          </div>
+          {aiLogos.length > 0 && (
+            <RegenerateButton
+              onClick={onGenerateAiLogos}
+              isLoading={aiLogosLoading}
+              label="Regenerate All"
+            />
+          )}
+        </div>
+
+        {aiLogos.length === 0 && !aiLogosLoading ? (
+          <button
+            onClick={onGenerateAiLogos}
+            disabled={aiLogosLoading}
+            className="w-full py-8 rounded-[20px] border-2 border-dashed border-yellow-400/20 bg-yellow-400/[0.03] hover:bg-yellow-400/[0.06] hover:border-yellow-400/30 transition-colors flex flex-col items-center justify-center gap-3"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-yellow-400/10 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-yellow-400" />
+            </div>
+            <span className="text-sm text-yellow-400 font-medium">Generate AI Logo Concepts</span>
+            <span className="text-xs text-zinc-500">Creates 3 unique logo designs using AI</span>
+          </button>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            {aiLogosLoading && aiLogos.length === 0 ? (
+              // Loading placeholders
+              [0, 1, 2].map((i) => (
+                <ImageGenerationCard
+                  key={`loading-${i}`}
+                  isLoading
+                  label="logo"
+                  aspectRatio="4/3"
+                />
+              ))
+            ) : (
+              aiLogos.map((logo, idx) => (
+                <AiLogoCard
+                  key={idx}
+                  logo={logo}
+                  index={idx}
+                  isLoading={logo.loading}
+                  onRegenerate={() => onRegenerateAiLogo(idx)}
+                />
+              ))
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Algorithmic Concepts</span>
+        <div className="flex-1 h-px bg-white/10" />
+      </div>
+
+      {/* SVG Concept Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
         {concepts.map((concept, idx) => (
           <ConceptCard
@@ -35,6 +106,37 @@ export default function LogoConceptGrid({
         ))}
       </div>
     </div>
+  );
+}
+
+function AiLogoCard({ logo, index, isLoading, onRegenerate }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="rounded-[20px] bg-white/[0.03] border border-white/10 overflow-hidden"
+    >
+      <ImageGenerationCard
+        imageUrl={logo.url}
+        isLoading={isLoading}
+        error={logo.error}
+        onRetry={onRegenerate}
+        label={`AI Logo ${index + 1}`}
+        aspectRatio="4/3"
+      />
+      {logo.url && !isLoading && (
+        <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between">
+          <span className="text-[10px] text-zinc-500">Concept {index + 1}</span>
+          <RegenerateButton
+            onClick={onRegenerate}
+            isLoading={isLoading}
+            label="Redo"
+            size="sm"
+          />
+        </div>
+      )}
+    </motion.div>
   );
 }
 

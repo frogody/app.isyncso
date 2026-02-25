@@ -4,7 +4,9 @@
  */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Monitor, Smartphone, Maximize2, X } from 'lucide-react';
+import { RefreshCw, Monitor, Smartphone, Maximize2, X, Sparkles } from 'lucide-react';
+import ImageGenerationCard from '../../shared/ImageGenerationCard';
+import RegenerateButton from '../../shared/RegenerateButton';
 
 function SvgPreview({ svg, className = '' }) {
   return (
@@ -15,7 +17,7 @@ function SvgPreview({ svg, className = '' }) {
   );
 }
 
-export default function PresentationWebPreview({ presentation, websiteMockup, onRegenerate }) {
+export default function PresentationWebPreview({ presentation, websiteMockup, onRegenerate, aiMockups = {}, aiMockupsLoading = {}, onGenerateAiMockup }) {
   const [expandedSlide, setExpandedSlide] = useState(null);
 
   return (
@@ -89,7 +91,47 @@ export default function PresentationWebPreview({ presentation, websiteMockup, on
         )}
       </section>
 
-      {/* Website Mockups */}
+      {/* AI Website Mockup */}
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="space-y-3 pt-4"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-yellow-400" />
+            <h3 className="text-sm font-semibold text-white">AI Website Mockup</h3>
+          </div>
+          {aiMockups['website'] && (
+            <RegenerateButton
+              onClick={() => onGenerateAiMockup('website')}
+              isLoading={aiMockupsLoading['website']}
+              label="Regenerate"
+            />
+          )}
+        </div>
+        {!aiMockups['website'] && !aiMockupsLoading['website'] ? (
+          <button
+            onClick={() => onGenerateAiMockup('website')}
+            className="w-full py-6 rounded-[20px] border-2 border-dashed border-yellow-400/20 bg-yellow-400/[0.03] hover:bg-yellow-400/[0.06] hover:border-yellow-400/30 transition-colors flex flex-col items-center justify-center gap-2"
+          >
+            <Sparkles className="w-5 h-5 text-yellow-400" />
+            <span className="text-xs text-yellow-400 font-medium">Generate AI Website Mockup</span>
+          </button>
+        ) : (
+          <ImageGenerationCard
+            imageUrl={aiMockups['website']}
+            isLoading={aiMockupsLoading['website']}
+            error={aiMockups['website_error']}
+            onRetry={() => onGenerateAiMockup('website')}
+            label="Website"
+            aspectRatio="16/10"
+          />
+        )}
+      </motion.section>
+
+      {/* SVG Website Mockups */}
       <div className="pt-4">
         <h2 className="text-xl font-bold text-white mb-1">Website Mockup</h2>
         <p className="text-sm text-zinc-400">

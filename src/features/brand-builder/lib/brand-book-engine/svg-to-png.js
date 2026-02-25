@@ -65,7 +65,45 @@ export async function batchSvgToPng(items, onProgress) {
 }
 
 /**
+ * Fetch a remote image URL and convert to base64 data URL for PDF embedding.
+ */
+async function fetchUrlAsDataUrl(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Batch-fetch multiple image URLs as data URLs.
+ */
+async function batchFetchUrls(items) {
+  const result = {};
+  const CHUNK = 4;
+  for (let i = 0; i < items.length; i += CHUNK) {
+    const chunk = items.slice(i, i + CHUNK);
+    const dataUrls = await Promise.all(
+      chunk.map((item) => fetchUrlAsDataUrl(item.url))
+    );
+    chunk.forEach((item, idx) => {
+      result[item.key] = dataUrls[idx];
+    });
+  }
+  return result;
+}
+
+/**
  * Extract ALL SVGs from a completed brand project and convert to PNGs.
+ * Also fetches AI-generated image URLs and converts them to base64.
  * Organized by section for the PDF renderer.
  */
 export async function prepareAllImages(project, onProgress) {
@@ -177,7 +215,39 @@ export async function prepareAllImages(project, onProgress) {
       items.push({ key: 'web_mobile', svg: web.screenshot_mobile, width: 300, height: 650 });
   }
 
-  // ── Batch convert ─────────────────────────────────────────────
+  // ── Batch convert SVGs ────────────────────────────────────────
   const images = await batchSvgToPng(items, onProgress);
+
+  // ── AI-generated images (fetch URLs → base64) ───────────────
+  const urlItems = [];
+
+  // AI logos (stored in brand_dna._aiLogos)
+  const aiLogos = project?.brand_dna?._aiLogos || [];
+  aiLogos.forEach((logo, i) => {
+    if (logo?.url) urlItems.push({ key: `ai_logo_${i}`, url: logo.url });
+  });
+
+  // AI mockups (stored in applications._aiMockups)
+  const aiMockups = project?.applications?._aiMockups || {};
+  for (const [type, url] of Object.entries(aiMockups)) {
+    if (url && typeof url === 'string' && !type.endsWith('_error')) {
+      urlItems.push({ key: `ai_mockup_${type}`, url });
+    }
+  }
+
+  // AI visual examples (stored in visual_language._aiExamples)
+  const aiExamples = project?.visual_language?._aiExamples || {};
+  (aiExamples.photography || []).forEach((img, i) => {
+    if (img?.url) urlItems.push({ key: `ai_photo_${i}`, url: img.url });
+  });
+  (aiExamples.illustration || []).forEach((img, i) => {
+    if (img?.url) urlItems.push({ key: `ai_illustration_${i}`, url: img.url });
+  });
+
+  if (urlItems.length > 0) {
+    const aiImages = await batchFetchUrls(urlItems);
+    Object.assign(images, aiImages);
+  }
+
   return images;
 }

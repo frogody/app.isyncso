@@ -3,7 +3,9 @@
  * Shows email signature, social profiles/covers, post template, OG image, zoom bg.
  */
 import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Sparkles } from 'lucide-react';
+import ImageGenerationCard from '../../shared/ImageGenerationCard';
+import RegenerateButton from '../../shared/RegenerateButton';
 
 function SvgPreview({ svg, className = '' }) {
   return (
@@ -38,7 +40,7 @@ const PLATFORM_LABELS = {
   facebook: 'Facebook',
 };
 
-export default function DigitalPreview({ digital, onRegenerate }) {
+export default function DigitalPreview({ digital, onRegenerate, aiMockups = {}, aiMockupsLoading = {}, onGenerateAiMockup }) {
   if (!digital) return null;
 
   return (
@@ -49,6 +51,47 @@ export default function DigitalPreview({ digital, onRegenerate }) {
           Your brand across digital touchpoints — email, social media, and web.
         </p>
       </div>
+
+      {/* AI Social Media Mockup */}
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-3"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-yellow-400" />
+            <h3 className="text-sm font-semibold text-white">AI Social Media Mockup</h3>
+          </div>
+          {aiMockups['social-media'] && (
+            <RegenerateButton
+              onClick={() => onGenerateAiMockup('social-media')}
+              isLoading={aiMockupsLoading['social-media']}
+              label="Regenerate"
+            />
+          )}
+        </div>
+        <div className="max-w-md">
+          {!aiMockups['social-media'] && !aiMockupsLoading['social-media'] ? (
+            <button
+              onClick={() => onGenerateAiMockup('social-media')}
+              className="w-full py-6 rounded-[20px] border-2 border-dashed border-yellow-400/20 bg-yellow-400/[0.03] hover:bg-yellow-400/[0.06] hover:border-yellow-400/30 transition-colors flex flex-col items-center justify-center gap-2"
+            >
+              <Sparkles className="w-5 h-5 text-yellow-400" />
+              <span className="text-xs text-yellow-400 font-medium">Generate AI Social Mockup</span>
+            </button>
+          ) : (
+            <ImageGenerationCard
+              imageUrl={aiMockups['social-media']}
+              isLoading={aiMockupsLoading['social-media']}
+              error={aiMockups['social-media_error']}
+              onRetry={() => onGenerateAiMockup('social-media')}
+              label="Social Media"
+              aspectRatio="1/1"
+            />
+          )}
+        </div>
+      </motion.section>
 
       {/* Email Signature */}
       <motion.section

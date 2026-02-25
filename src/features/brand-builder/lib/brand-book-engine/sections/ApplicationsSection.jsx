@@ -48,6 +48,25 @@ export default function ApplicationsSection({ project, images, styles }) {
           <Text style={styles.sectionSubtitle}>Your brand applied to real-world touchpoints</Text>
         </View>
 
+        {/* AI Photorealistic Mockups */}
+        {(images?.['ai_mockup_business-card'] || images?.['ai_mockup_letterhead']) && (
+          <View style={[styles.subSection, styles.mb12]}>
+            <Text style={styles.subSectionTitle}>AI Photorealistic Mockups</Text>
+            <View style={styles.twoCol}>
+              {images?.['ai_mockup_business-card'] && (
+                <View style={styles.col}>
+                  <MockupImage src={images['ai_mockup_business-card']} label="Business Card" width={200} height={150} styles={styles} />
+                </View>
+              )}
+              {images?.['ai_mockup_letterhead'] && (
+                <View style={styles.col}>
+                  <MockupImage src={images['ai_mockup_letterhead']} label="Letterhead" width={170} height={227} styles={styles} />
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
         <Text style={[styles.subSectionTitle, styles.mb8]}>Stationery</Text>
 
         {/* Business Cards */}
@@ -100,6 +119,16 @@ export default function ApplicationsSection({ project, images, styles }) {
       {/* Page 2: Digital — Social */}
       <Page size="A4" style={styles.page} wrap>
         <Text style={[styles.subSectionTitle, styles.mb8]}>Digital — Social Media</Text>
+
+        {/* AI Social Media Mockup */}
+        {images?.['ai_mockup_social-media'] && (
+          <View style={[styles.subSection, styles.mb12]}>
+            <Text style={styles.bodyBold}>AI Social Media Mockup</Text>
+            <View style={{ alignItems: 'center' }}>
+              <MockupImage src={images['ai_mockup_social-media']} label="Social Media" width={200} height={200} styles={styles} />
+            </View>
+          </View>
+        )}
 
         {/* Social Profiles */}
         <View style={styles.mb12}>
@@ -183,6 +212,16 @@ export default function ApplicationsSection({ project, images, styles }) {
             );
           })}
         </View>
+
+        {/* AI Website Mockup */}
+        {images?.['ai_mockup_website'] && (
+          <View style={[styles.subSection, styles.mb12]}>
+            <Text style={styles.subSectionTitle}>AI Website Mockup</Text>
+            <View style={{ backgroundColor: '#fafafa', borderRadius: 6, borderWidth: 1, borderColor: '#e4e4e7', padding: 8, alignItems: 'center' }}>
+              <Image src={images['ai_mockup_website']} style={{ width: '100%', height: 180, objectFit: 'contain' }} />
+            </View>
+          </View>
+        )}
 
         {/* Website Mockups */}
         <Text style={[styles.subSectionTitle, styles.mb8, styles.mt16]}>Website Mockup</Text>

@@ -269,7 +269,7 @@ export default function GuidelinesMessaging({
         <div className="space-y-3">
           {doDonts.map((pair, idx) => (
             <div key={idx} className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-green-500/5 border border-green-500/15 p-3 space-y-1.5">
+              <div className="rounded-xl bg-green-500/5 border border-green-500/15 border-l-[3px] border-l-green-500/40 p-4 space-y-2">
                 <span className="text-[10px] font-semibold text-green-400 uppercase tracking-wider">Do</span>
                 <textarea
                   value={pair.do_example?.text || ''}
@@ -284,7 +284,7 @@ export default function GuidelinesMessaging({
                   placeholder="Why this works..."
                 />
               </div>
-              <div className="rounded-xl bg-red-500/5 border border-red-500/15 p-3 space-y-1.5">
+              <div className="rounded-xl bg-red-500/5 border border-red-500/15 border-l-[3px] border-l-red-500/40 p-4 space-y-2">
                 <span className="text-[10px] font-semibold text-red-400 uppercase tracking-wider">Don't</span>
                 <textarea
                   value={pair.dont_example?.text || ''}
@@ -313,7 +313,7 @@ export default function GuidelinesMessaging({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className="rounded-[20px] bg-white/[0.03] border border-white/10 p-5 space-y-3"
+              className="rounded-[20px] bg-white/[0.03] border border-white/10 hover:border-white/20 p-5 space-y-3 transition-colors duration-200"
             >
               <input
                 value={seg.audience_segment || ''}
@@ -446,13 +446,13 @@ export default function GuidelinesMessaging({
 function Section({ title, children, regenerate, isRegenerating }) {
   return (
     <section>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-white">{title}</h3>
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
+        <h3 className="text-base font-semibold text-white">{title}</h3>
         {regenerate && (
           <button
             onClick={regenerate}
             disabled={isRegenerating}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-yellow-400 bg-zinc-800/40 border border-white/[0.06] hover:bg-yellow-400/10 hover:border-yellow-400/20 transition-all duration-200"
           >
             {isRegenerating ? (
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -477,10 +477,10 @@ function PolicySelect({ label, options, value, onChange }) {
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
-            className={`flex-1 py-1.5 text-[10px] font-medium rounded-lg transition-colors ${
+            className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
               value === opt.value
-                ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/40'
-                : 'bg-zinc-800/60 text-zinc-500 border border-white/[0.06] hover:border-white/20'
+                ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/40 shadow-[0_0_12px_rgba(250,204,21,0.08)]'
+                : 'bg-zinc-800/60 text-zinc-500 border border-white/[0.06] hover:border-white/20 hover:text-zinc-300'
             }`}
           >
             {opt.label}
@@ -497,10 +497,10 @@ function ToggleControl({ label, value, onChange }) {
       <label className="text-xs font-medium text-zinc-400 mb-2 block">{label}</label>
       <button
         onClick={() => onChange(!value)}
-        className={`w-full py-1.5 text-[10px] font-medium rounded-lg transition-colors ${
+        className={`w-full py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
           value
-            ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/40'
-            : 'bg-zinc-800/60 text-zinc-500 border border-white/[0.06] hover:border-white/20'
+            ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/40 shadow-[0_0_12px_rgba(250,204,21,0.08)]'
+            : 'bg-zinc-800/60 text-zinc-500 border border-white/[0.06] hover:border-white/20 hover:text-zinc-300'
         }`}
       >
         {value ? 'Yes' : 'No'}
@@ -511,8 +511,8 @@ function ToggleControl({ label, value, onChange }) {
 
 function CopyMockup({ label, children, className = '' }) {
   return (
-    <div className={`rounded-[16px] bg-white/[0.03] border border-white/10 p-4 ${className}`}>
-      <span className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-2">{label}</span>
+    <div className={`rounded-[16px] bg-white/[0.03] border border-white/10 hover:border-white/20 p-4 transition-colors duration-200 ${className}`}>
+      <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium block mb-2">{label}</span>
       {children}
     </div>
   );

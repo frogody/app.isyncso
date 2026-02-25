@@ -48,7 +48,7 @@ export default function VoiceConfig({ brandDna, onChange }) {
       </div>
 
       {/* Brand Context Summary */}
-      <div className="rounded-[20px] bg-white/[0.03] border border-white/10 p-6 space-y-3">
+      <div className="rounded-[20px] bg-white/[0.03] border border-white/10 hover:border-white/20 p-6 space-y-3 transition-colors duration-200">
         <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Brand Context</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -102,7 +102,7 @@ export default function VoiceConfig({ brandDna, onChange }) {
                 disabled={disabled}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   selected
-                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/40'
+                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/40 shadow-[0_0_12px_rgba(250,204,21,0.08)]'
                     : disabled
                     ? 'bg-zinc-800/30 text-zinc-600 border border-white/[0.04] cursor-not-allowed'
                     : 'bg-zinc-800/60 text-zinc-400 border border-white/[0.06] hover:border-white/20 hover:text-zinc-300'
@@ -166,7 +166,7 @@ export default function VoiceConfig({ brandDna, onChange }) {
           {audiences.map((aud, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/60 border border-white/[0.06]"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/60 border border-white/[0.06] hover:border-white/15 transition-colors duration-200"
             >
               <span className="text-sm text-zinc-300 flex-1">{aud}</span>
               <button

@@ -112,8 +112,8 @@ export default function BusinessIdentity({ data, onChange }) {
           onClick={() => handlePathSwitch('scratch')}
           className={`flex-1 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
             entryPath === 'scratch'
-              ? 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-400'
-              : 'bg-zinc-800/40 border border-zinc-700/40 text-zinc-400 hover:border-zinc-600'
+              ? 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 shadow-[0_0_16px_rgba(250,204,21,0.08)]'
+              : 'bg-zinc-800/40 border border-zinc-700/40 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
           }`}
         >
           Start from Scratch
@@ -122,8 +122,8 @@ export default function BusinessIdentity({ data, onChange }) {
           onClick={() => handlePathSwitch('import')}
           className={`flex-1 px-4 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all ${
             entryPath === 'import'
-              ? 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-400'
-              : 'bg-zinc-800/40 border border-zinc-700/40 text-zinc-400 hover:border-zinc-600'
+              ? 'bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 shadow-[0_0_16px_rgba(250,204,21,0.08)]'
+              : 'bg-zinc-800/40 border border-zinc-700/40 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
           }`}
         >
           <Upload className="w-3.5 h-3.5" />
@@ -381,10 +381,10 @@ export default function BusinessIdentity({ data, onChange }) {
             <button
               key={value}
               onClick={() => onChange({ company_stage: value })}
-              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
+              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
                 data.company_stage === value
-                  ? 'bg-yellow-400/10 border-yellow-400/30 text-white'
-                  : 'bg-zinc-800/30 border-zinc-700/40 text-zinc-400 hover:border-zinc-600'
+                  ? 'bg-yellow-400/10 border-yellow-400/30 text-white shadow-[0_0_20px_rgba(250,204,21,0.08)]'
+                  : 'bg-zinc-800/30 border-zinc-700/40 text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-300'
               }`}
             >
               <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${data.company_stage === value ? 'text-yellow-400' : 'text-zinc-500'}`} />

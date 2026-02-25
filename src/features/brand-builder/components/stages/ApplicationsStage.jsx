@@ -9,7 +9,7 @@
  *
  * All generation is synchronous client-side SVG composition — no LLM, no loading.
  */
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { useAutoSave } from '../../hooks/useAutoSave';
@@ -22,6 +22,7 @@ import {
   generateSocialPostTemplate, generateOgImage, generateZoomBackground,
   generateSlides, generateDesktopMockup, generateMobileMockup,
 } from '../../lib/application-engine/index.js';
+import { generateBrandImage, buildMockupPrompt } from '../../lib/brand-image-service.js';
 import StationeryPreview from './applications/StationeryPreview';
 import DigitalPreview from './applications/DigitalPreview';
 import PresentationWebPreview from './applications/PresentationWebPreview';
@@ -29,6 +30,12 @@ import PresentationWebPreview from './applications/PresentationWebPreview';
 export default function ApplicationsStage({ project, updateStageData, onNext }) {
   // ── State ──────────────────────────────────────────────────────
   const [subStep, setSubStep] = useState(1);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
+  // AI mockup state
+  const [aiMockups, setAiMockups] = useState(() => project?.applications?._aiMockups || {});
+  const [aiMockupsLoading, setAiMockupsLoading] = useState({});
 
   // Generate all applications on mount (synchronous, fast)
   const generated = useMemo(() => {
@@ -60,6 +67,13 @@ export default function ApplicationsStage({ project, updateStageData, onNext }) 
       setApplications(generated);
     }
   }, [generated, applications]);
+
+  // Sync AI mockups into applications for auto-save persistence
+  useEffect(() => {
+    if (Object.keys(aiMockups).length > 0 && applications) {
+      setApplications(prev => prev ? { ...prev, _aiMockups: aiMockups } : prev);
+    }
+  }, [aiMockups]);
 
   // ── Auto-save ────────────────────────────────────────────────────
   const saveFn = useCallback(
@@ -132,6 +146,83 @@ export default function ApplicationsStage({ project, updateStageData, onNext }) 
     }
   }, [applications, project]);
 
+  // ── AI Mockup Generation ────────────────────────────────────────
+  const brandCtx = useMemo(() => ({
+    companyName: project?.brand_dna?.company_name || 'Brand',
+    primaryColor: project?.color_system?.palette?.primary?.base || '#000000',
+    secondaryColor: project?.color_system?.palette?.secondary?.base || '#666666',
+    fontFamily: project?.typography_system?.headings?.family || 'sans-serif',
+    tagline: project?.brand_dna?.tagline || '',
+  }), [project?.brand_dna, project?.color_system, project?.typography_system]);
+
+  const handleGenerateAiMockup = useCallback(async (type) => {
+    setAiMockupsLoading(prev => ({ ...prev, [type]: true }));
+
+    try {
+      const prompt = buildMockupPrompt({ type, ...brandCtx });
+      const dims = {
+        'business-card': { width: 1024, height: 768 },
+        'letterhead': { width: 768, height: 1024 },
+        'social-media': { width: 1024, height: 1024 },
+        'website': { width: 1280, height: 800 },
+      };
+      const { width, height } = dims[type] || { width: 1024, height: 1024 };
+
+      const result = await generateBrandImage({
+        prompt,
+        category: `mockup-${type}`,
+        width,
+        height,
+      });
+
+      if (!mountedRef.current) return;
+      setAiMockups(prev => ({ ...prev, [type]: result.url }));
+      toast.success(`${type.replace(/-/g, ' ')} mockup generated`);
+    } catch (err) {
+      console.error(`[ApplicationsStage] AI mockup ${type} failed:`, err);
+      if (mountedRef.current) setAiMockups(prev => ({ ...prev, [`${type}_error`]: true }));
+      toast.error(`Mockup generation failed`);
+    } finally {
+      if (mountedRef.current) setAiMockupsLoading(prev => ({ ...prev, [type]: false }));
+    }
+  }, [brandCtx]);
+
+  const handleGenerateAllMockups = useCallback(async () => {
+    const types = ['business-card', 'letterhead', 'social-media', 'website'];
+    types.forEach(t => setAiMockupsLoading(prev => ({ ...prev, [t]: true })));
+
+    const results = await Promise.allSettled(
+      types.map(type => {
+        const prompt = buildMockupPrompt({ type, ...brandCtx });
+        const dims = {
+          'business-card': { width: 1024, height: 768 },
+          'letterhead': { width: 768, height: 1024 },
+          'social-media': { width: 1024, height: 1024 },
+          'website': { width: 1280, height: 800 },
+        };
+        const { width, height } = dims[type] || { width: 1024, height: 1024 };
+        return generateBrandImage({ prompt, category: `mockup-${type}`, width, height });
+      })
+    );
+
+    if (!mountedRef.current) return;
+
+    const updated = { ...aiMockups };
+    results.forEach((r, i) => {
+      const type = types[i];
+      if (r.status === 'fulfilled') {
+        updated[type] = r.value.url;
+      } else {
+        updated[`${type}_error`] = true;
+      }
+    });
+
+    setAiMockups(updated);
+    setAiMockupsLoading({});
+    const succeeded = results.filter(r => r.status === 'fulfilled').length;
+    toast.success(`Generated ${succeeded}/${types.length} AI mockups`);
+  }, [brandCtx, aiMockups]);
+
   // ── Sub-step navigation ────────────────────────────────────────
   const goSubNext = useCallback(() => {
     if (subStep < 3) {
@@ -200,12 +291,19 @@ export default function ApplicationsStage({ project, updateStageData, onNext }) 
             <StationeryPreview
               stationery={applications?.stationery}
               onRegenerate={handleRegenerate}
+              aiMockups={aiMockups}
+              aiMockupsLoading={aiMockupsLoading}
+              onGenerateAiMockup={handleGenerateAiMockup}
+              onGenerateAllMockups={handleGenerateAllMockups}
             />
           )}
           {subStep === 2 && (
             <DigitalPreview
               digital={applications?.digital}
               onRegenerate={handleRegenerate}
+              aiMockups={aiMockups}
+              aiMockupsLoading={aiMockupsLoading}
+              onGenerateAiMockup={handleGenerateAiMockup}
             />
           )}
           {subStep === 3 && (
@@ -213,6 +311,9 @@ export default function ApplicationsStage({ project, updateStageData, onNext }) 
               presentation={applications?.presentation}
               websiteMockup={applications?.website_mockup}
               onRegenerate={handleRegenerate}
+              aiMockups={aiMockups}
+              aiMockupsLoading={aiMockupsLoading}
+              onGenerateAiMockup={handleGenerateAiMockup}
             />
           )}
         </motion.div>

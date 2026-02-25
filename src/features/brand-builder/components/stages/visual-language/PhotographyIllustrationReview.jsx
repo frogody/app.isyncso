@@ -1,11 +1,13 @@
 /**
  * Sub-step 2: Photography & Illustration Review.
- * Shows LLM-generated photography direction + illustration style. All editable.
+ * Shows LLM-generated photography direction + illustration style + AI example images. All editable.
  */
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Loader2, Plus, X } from 'lucide-react';
+import { RefreshCw, Loader2, Plus, X, Sparkles } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import ImageGenerationCard from '../../shared/ImageGenerationCard';
+import RegenerateButton from '../../shared/RegenerateButton';
 
 const ILLUSTRATION_OPTIONS = {
   style: ['flat', 'line-art', 'geometric', 'hand-drawn', '3d-isometric'],
@@ -24,6 +26,11 @@ export default function PhotographyIllustrationReview({
   onChangeIllustration,
   onRegenerate,
   isRegenerating,
+  // AI example props
+  aiExamples = { photography: [], illustration: [] },
+  aiExamplesLoading = { photography: false, illustration: false },
+  onGeneratePhotoExamples,
+  onGenerateIllustrationExamples,
 }) {
   return (
     <div className="space-y-10">
@@ -48,7 +55,55 @@ export default function PhotographyIllustrationReview({
           </button>
         </div>
 
-        <div className="rounded-[20px] bg-white/[0.03] border border-white/10 p-6 space-y-5">
+        {/* AI Photography Examples */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+              <span className="text-xs font-medium text-zinc-300">Example Photos</span>
+            </div>
+            {aiExamples.photography?.length > 0 && (
+              <RegenerateButton
+                onClick={onGeneratePhotoExamples}
+                isLoading={aiExamplesLoading.photography}
+                label="Regenerate"
+                size="sm"
+              />
+            )}
+          </div>
+
+          {aiExamples.photography?.length === 0 && !aiExamplesLoading.photography ? (
+            <button
+              onClick={onGeneratePhotoExamples}
+              className="w-full py-5 rounded-2xl border-2 border-dashed border-yellow-400/20 bg-yellow-400/[0.03] hover:bg-yellow-400/[0.06] hover:border-yellow-400/30 transition-colors flex flex-col items-center justify-center gap-2"
+            >
+              <Sparkles className="w-5 h-5 text-yellow-400" />
+              <span className="text-xs text-yellow-400 font-medium">Generate Example Photos</span>
+              <span className="text-[10px] text-zinc-500">Creates 3 photos matching your direction</span>
+            </button>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {aiExamplesLoading.photography && aiExamples.photography?.length === 0 ? (
+                [0, 1, 2].map(i => (
+                  <ImageGenerationCard key={i} isLoading label="photo" aspectRatio="4/3" />
+                ))
+              ) : (
+                aiExamples.photography?.map((img, idx) => (
+                  <ImageGenerationCard
+                    key={idx}
+                    imageUrl={img.url}
+                    isLoading={false}
+                    error={img.error}
+                    label={`Example ${idx + 1}`}
+                    aspectRatio="4/3"
+                  />
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-[20px] bg-white/[0.03] border border-white/10 hover:border-white/20 p-6 space-y-5 transition-colors duration-200">
           {/* Text fields */}
           {['mood', 'lighting', 'composition', 'color_treatment', 'subjects'].map((field) => (
             <div key={field}>
@@ -144,7 +199,55 @@ export default function PhotographyIllustrationReview({
           </button>
         </div>
 
-        <div className="rounded-[20px] bg-white/[0.03] border border-white/10 p-6 space-y-5">
+        {/* AI Illustration Examples */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+              <span className="text-xs font-medium text-zinc-300">Example Illustrations</span>
+            </div>
+            {aiExamples.illustration?.length > 0 && (
+              <RegenerateButton
+                onClick={onGenerateIllustrationExamples}
+                isLoading={aiExamplesLoading.illustration}
+                label="Regenerate"
+                size="sm"
+              />
+            )}
+          </div>
+
+          {aiExamples.illustration?.length === 0 && !aiExamplesLoading.illustration ? (
+            <button
+              onClick={onGenerateIllustrationExamples}
+              className="w-full py-5 rounded-2xl border-2 border-dashed border-yellow-400/20 bg-yellow-400/[0.03] hover:bg-yellow-400/[0.06] hover:border-yellow-400/30 transition-colors flex flex-col items-center justify-center gap-2"
+            >
+              <Sparkles className="w-5 h-5 text-yellow-400" />
+              <span className="text-xs text-yellow-400 font-medium">Generate Example Illustrations</span>
+              <span className="text-[10px] text-zinc-500">Creates 3 illustrations matching your style</span>
+            </button>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {aiExamplesLoading.illustration && aiExamples.illustration?.length === 0 ? (
+                [0, 1, 2].map(i => (
+                  <ImageGenerationCard key={i} isLoading label="illustration" aspectRatio="4/3" />
+                ))
+              ) : (
+                aiExamples.illustration?.map((img, idx) => (
+                  <ImageGenerationCard
+                    key={idx}
+                    imageUrl={img.url}
+                    isLoading={false}
+                    error={img.error}
+                    label={`Example ${idx + 1}`}
+                    aspectRatio="4/3"
+                  />
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-[20px] bg-white/[0.03] border border-white/10 hover:border-white/20 p-6 space-y-5 transition-colors duration-200">
           {/* Select fields */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {['style', 'line_weight', 'corner_radius', 'color_usage', 'complexity'].map((field) => (

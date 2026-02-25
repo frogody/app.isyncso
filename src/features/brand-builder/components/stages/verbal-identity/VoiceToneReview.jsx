@@ -111,7 +111,7 @@ function VoiceAttributeCard({ attr, index, onUpdate, onRegenerate, isRegeneratin
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="rounded-[20px] bg-white/[0.03] border border-white/10 p-5 space-y-4"
+      className="rounded-[20px] bg-white/[0.03] border border-white/10 hover:border-white/20 p-5 space-y-4 transition-colors duration-200"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
@@ -123,7 +123,7 @@ function VoiceAttributeCard({ attr, index, onUpdate, onRegenerate, isRegeneratin
         <button
           onClick={onRegenerate}
           disabled={isRegenerating}
-          className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+          className="p-1.5 rounded-lg bg-zinc-800/40 border border-white/[0.06] hover:bg-yellow-400/10 hover:border-yellow-400/20 text-zinc-500 hover:text-yellow-400 transition-all duration-200 shrink-0"
           title="Regenerate this attribute"
         >
           {isRegenerating ? (
@@ -187,14 +187,14 @@ function ToneContextCard({ tone, index, onUpdate, onRegenerate, isRegenerating }
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="rounded-[20px] bg-white/[0.03] border border-white/10 p-5"
+      className="rounded-[20px] bg-white/[0.03] border border-white/10 hover:border-white/20 p-5 transition-colors duration-200"
     >
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-white">{tone.context}</h4>
         <button
           onClick={onRegenerate}
           disabled={isRegenerating}
-          className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-500 hover:text-zinc-300 transition-colors"
+          className="p-1.5 rounded-lg bg-zinc-800/40 border border-white/[0.06] hover:bg-yellow-400/10 hover:border-yellow-400/20 text-zinc-500 hover:text-yellow-400 transition-all duration-200"
           title="Regenerate this context"
         >
           {isRegenerating ? (

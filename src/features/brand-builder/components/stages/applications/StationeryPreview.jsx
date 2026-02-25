@@ -1,9 +1,11 @@
 /**
  * Sub-step 1: Stationery Preview.
- * Shows business card front/back, letterhead, and envelope.
+ * Shows AI mockups (if generated) + SVG business card front/back, letterhead, and envelope.
  */
 import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Sparkles } from 'lucide-react';
+import ImageGenerationCard from '../../shared/ImageGenerationCard';
+import RegenerateButton from '../../shared/RegenerateButton';
 
 function MockupCard({ label, svg, aspect, onRegenerate }) {
   return (
@@ -37,8 +39,17 @@ function MockupCard({ label, svg, aspect, onRegenerate }) {
   );
 }
 
-export default function StationeryPreview({ stationery, onRegenerate }) {
+export default function StationeryPreview({
+  stationery,
+  onRegenerate,
+  aiMockups = {},
+  aiMockupsLoading = {},
+  onGenerateAiMockup,
+  onGenerateAllMockups,
+}) {
   if (!stationery) return null;
+
+  const hasAnyAiMockup = aiMockups['business-card'] || aiMockups['letterhead'];
 
   return (
     <div className="space-y-8">
@@ -47,6 +58,84 @@ export default function StationeryPreview({ stationery, onRegenerate }) {
         <p className="text-sm text-zinc-400">
           Your brand applied to print touchpoints — business cards, letterhead, and envelope.
         </p>
+      </div>
+
+      {/* AI Mockups Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-yellow-400" />
+            <h3 className="text-sm font-semibold text-white">AI Photorealistic Mockups</h3>
+          </div>
+          {hasAnyAiMockup && (
+            <RegenerateButton
+              onClick={onGenerateAllMockups}
+              isLoading={Object.values(aiMockupsLoading).some(Boolean)}
+              label="Regenerate All"
+            />
+          )}
+        </div>
+
+        {!hasAnyAiMockup && !aiMockupsLoading['business-card'] ? (
+          <button
+            onClick={onGenerateAllMockups}
+            className="w-full py-6 rounded-[20px] border-2 border-dashed border-yellow-400/20 bg-yellow-400/[0.03] hover:bg-yellow-400/[0.06] hover:border-yellow-400/30 transition-colors flex flex-col items-center justify-center gap-3"
+          >
+            <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-yellow-400" />
+            </div>
+            <span className="text-sm text-yellow-400 font-medium">Generate AI Mockups</span>
+            <span className="text-xs text-zinc-500">Business card, letterhead, social media & website</span>
+          </button>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Business Card</span>
+                <RegenerateButton
+                  onClick={() => onGenerateAiMockup('business-card')}
+                  isLoading={aiMockupsLoading['business-card']}
+                  label="Redo"
+                  size="sm"
+                />
+              </div>
+              <ImageGenerationCard
+                imageUrl={aiMockups['business-card']}
+                isLoading={aiMockupsLoading['business-card']}
+                error={aiMockups['business-card_error']}
+                onRetry={() => onGenerateAiMockup('business-card')}
+                label="Business Card"
+                aspectRatio="4/3"
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Letterhead</span>
+                <RegenerateButton
+                  onClick={() => onGenerateAiMockup('letterhead')}
+                  isLoading={aiMockupsLoading['letterhead']}
+                  label="Redo"
+                  size="sm"
+                />
+              </div>
+              <ImageGenerationCard
+                imageUrl={aiMockups['letterhead']}
+                isLoading={aiMockupsLoading['letterhead']}
+                error={aiMockups['letterhead_error']}
+                onRetry={() => onGenerateAiMockup('letterhead')}
+                label="Letterhead"
+                aspectRatio="3/4"
+              />
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Algorithmic Mockups</span>
+        <div className="flex-1 h-px bg-white/10" />
       </div>
 
       {/* Business Cards — side by side */}

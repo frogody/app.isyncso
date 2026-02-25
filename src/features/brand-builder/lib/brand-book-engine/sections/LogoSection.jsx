@@ -61,6 +61,27 @@ export default function LogoSection({ project, images, styles }) {
           </View>
         )}
 
+        {/* AI Logo Concepts */}
+        {(images?.ai_logo_0 || images?.ai_logo_1 || images?.ai_logo_2) && (
+          <View style={styles.subSection}>
+            <Text style={styles.subSectionTitle}>AI Logo Concepts</Text>
+            <View style={styles.imageGrid}>
+              {[0, 1, 2].map((i) => {
+                const img = images?.[`ai_logo_${i}`];
+                if (!img) return null;
+                return (
+                  <View key={i} style={{ width: 150, marginBottom: 8 }}>
+                    <View style={{ width: 150, height: 105, backgroundColor: '#fafafa', borderRadius: 6, borderWidth: 1, borderColor: '#e4e4e7', alignItems: 'center', justifyContent: 'center' }}>
+                      <Image src={img} style={{ width: 140, height: 95, objectFit: 'contain' }} />
+                    </View>
+                    <Text style={[styles.caption, { textAlign: 'center' }]}>Concept {i + 1}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Design Rationale */}
         {ls.concept?.design_rationale && (
           <View style={styles.subSection}>

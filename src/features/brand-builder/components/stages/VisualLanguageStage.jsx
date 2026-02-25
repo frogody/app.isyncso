@@ -7,12 +7,13 @@
  * Sub-step 2: PhotographyIllustrationReview (LLM-generated photography + illustration)
  * Sub-step 3: IconographyPatterns (algorithmically generated icons + patterns)
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { buildVisualContext, generateIconSet, rerenderIconSet, generatePatterns } from '../../lib/visual-engine/index.js';
+import { generateBrandImage, buildPhotographyPrompt, buildIllustrationPrompt } from '../../lib/brand-image-service.js';
 import VisualConfig from './visual-language/VisualConfig';
 import PhotographyIllustrationReview from './visual-language/PhotographyIllustrationReview';
 import IconographyPatterns from './visual-language/IconographyPatterns';
@@ -65,6 +66,12 @@ export default function VisualLanguageStage({ project, updateStageData, onNext }
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
+  // AI example images
+  const [aiExamples, setAiExamples] = useState(() => project?.visual_language?._aiExamples || { photography: [], illustration: [] });
+  const [aiExamplesLoading, setAiExamplesLoading] = useState({ photography: false, illustration: false });
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
   // ── Derived ────────────────────────────────────────────────────
   const brandDna = project?.brand_dna;
   const colorSystem = project?.color_system;
@@ -77,8 +84,9 @@ export default function VisualLanguageStage({ project, updateStageData, onNext }
       illustration: illustration || {},
       iconography: iconography || {},
       patterns: patternSystem || { patterns: [], graphic_devices: [] },
+      _aiExamples: aiExamples,
     };
-  }, [photography, illustration, iconography, patternSystem]);
+  }, [photography, illustration, iconography, patternSystem, aiExamples]);
 
   const saveFn = useCallback(
     (data) => updateStageData(6, data),
@@ -134,6 +142,90 @@ export default function VisualLanguageStage({ project, updateStageData, onNext }
       toast.error('Pattern regeneration failed');
     }
   }, [project]);
+
+  // ── AI Example Image Generation ──────────────────────────────────
+  const handleGeneratePhotoExamples = useCallback(async () => {
+    setAiExamplesLoading(prev => ({ ...prev, photography: true }));
+    const variations = [
+      'Hero image for homepage or marketing material',
+      'Lifestyle scene showing the brand in context',
+      'Product or service detail shot',
+    ];
+
+    try {
+      const results = await Promise.allSettled(
+        variations.map((variation) =>
+          generateBrandImage({
+            prompt: buildPhotographyPrompt({
+              mood: photography?.mood,
+              lighting: photography?.lighting,
+              composition: photography?.composition,
+              colorTreatment: photography?.color_treatment,
+              subjects: photography?.subjects,
+              variation,
+            }),
+            category: 'photography-example',
+            width: 1024,
+            height: 768,
+          })
+        )
+      );
+
+      if (!mountedRef.current) return;
+      const images = results.map((r) =>
+        r.status === 'fulfilled' ? { url: r.value.url } : { url: null, error: true }
+      );
+      setAiExamples(prev => ({ ...prev, photography: images }));
+      toast.success(`Generated ${images.filter(i => i.url).length} photo examples`);
+    } catch (err) {
+      console.error('[VisualLanguageStage] Photo example generation failed:', err);
+      toast.error('Photo example generation failed');
+    } finally {
+      if (mountedRef.current) setAiExamplesLoading(prev => ({ ...prev, photography: false }));
+    }
+  }, [photography]);
+
+  const handleGenerateIllustrationExamples = useCallback(async () => {
+    setAiExamplesLoading(prev => ({ ...prev, illustration: true }));
+    const brandColors = `${colorSystem?.palette?.primary?.base || '#000'} and ${colorSystem?.palette?.secondary?.base || '#666'}`;
+    const variations = [
+      'Abstract brand pattern or decorative element',
+      'Icon set or small illustration for UI elements',
+      'Feature illustration for marketing or documentation',
+    ];
+
+    try {
+      const results = await Promise.allSettled(
+        variations.map((variation) =>
+          generateBrandImage({
+            prompt: buildIllustrationPrompt({
+              style: illustration?.style,
+              lineWeight: illustration?.line_weight,
+              colorUsage: illustration?.color_usage,
+              complexity: illustration?.complexity,
+              brandColors,
+              variation,
+            }),
+            category: 'illustration-example',
+            width: 1024,
+            height: 768,
+          })
+        )
+      );
+
+      if (!mountedRef.current) return;
+      const images = results.map((r) =>
+        r.status === 'fulfilled' ? { url: r.value.url } : { url: null, error: true }
+      );
+      setAiExamples(prev => ({ ...prev, illustration: images }));
+      toast.success(`Generated ${images.filter(i => i.url).length} illustration examples`);
+    } catch (err) {
+      console.error('[VisualLanguageStage] Illustration example generation failed:', err);
+      toast.error('Illustration example generation failed');
+    } finally {
+      if (mountedRef.current) setAiExamplesLoading(prev => ({ ...prev, illustration: false }));
+    }
+  }, [illustration, colorSystem]);
 
   // ── Handle icon style change (re-renders all icons) ──────────────
   const handleIconographyChange = useCallback((updated) => {
@@ -280,6 +372,10 @@ export default function VisualLanguageStage({ project, updateStageData, onNext }
               onChangeIllustration={setIllustration}
               onRegenerate={handleRegenerate}
               isRegenerating={isRegenerating}
+              aiExamples={aiExamples}
+              aiExamplesLoading={aiExamplesLoading}
+              onGeneratePhotoExamples={handleGeneratePhotoExamples}
+              onGenerateIllustrationExamples={handleGenerateIllustrationExamples}
             />
           )}
           {subStep === 3 && iconography && patternSystem && (

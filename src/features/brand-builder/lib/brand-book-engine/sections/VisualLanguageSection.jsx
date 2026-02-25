@@ -34,6 +34,26 @@ export default function VisualLanguageSection({ project, images, styles }) {
           <Text style={styles.sectionSubtitle}>Photography, illustration, iconography, and patterns</Text>
         </View>
 
+        {/* AI Photography Examples */}
+        {(images?.ai_photo_0 || images?.ai_photo_1 || images?.ai_photo_2) && (
+          <View style={[styles.subSection, styles.mb12]}>
+            <Text style={styles.subSectionTitle}>Photography Examples</Text>
+            <View style={styles.imageGrid}>
+              {[0, 1, 2].map((i) => {
+                const img = images?.[`ai_photo_${i}`];
+                if (!img) return null;
+                return (
+                  <View key={i} style={{ width: 150, marginBottom: 8 }}>
+                    <View style={{ width: 150, height: 100, backgroundColor: '#fafafa', borderRadius: 6, borderWidth: 1, borderColor: '#e4e4e7', overflow: 'hidden' }}>
+                      <Image src={img} style={{ width: 150, height: 100, objectFit: 'cover' }} />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Photography */}
         {photo && (
           <View style={styles.subSection}>
@@ -85,6 +105,26 @@ export default function VisualLanguageSection({ project, images, styles }) {
                 )}
               </View>
             )}
+          </View>
+        )}
+
+        {/* AI Illustration Examples */}
+        {(images?.ai_illustration_0 || images?.ai_illustration_1 || images?.ai_illustration_2) && (
+          <View style={[styles.subSection, styles.mb12]}>
+            <Text style={styles.subSectionTitle}>Illustration Examples</Text>
+            <View style={styles.imageGrid}>
+              {[0, 1, 2].map((i) => {
+                const img = images?.[`ai_illustration_${i}`];
+                if (!img) return null;
+                return (
+                  <View key={i} style={{ width: 150, marginBottom: 8 }}>
+                    <View style={{ width: 150, height: 100, backgroundColor: '#fafafa', borderRadius: 6, borderWidth: 1, borderColor: '#e4e4e7', overflow: 'hidden' }}>
+                      <Image src={img} style={{ width: 150, height: 100, objectFit: 'cover' }} />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         )}
 

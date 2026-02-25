@@ -20,6 +20,7 @@ import {
   generateLogoRules,
   generateConstructionGrid,
 } from '../../lib/logo-engine/index.js';
+import { generateBrandImage, buildLogoPrompt } from '../../lib/brand-image-service.js';
 import LogoTypeSelection from './logo-system/LogoTypeSelection';
 import LogoConceptGrid from './logo-system/LogoConceptGrid';
 import LogoRefinement from './logo-system/LogoRefinement';
@@ -55,6 +56,10 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [aiLogos, setAiLogos] = useState(() => {
+    return project?.brand_dna?._aiLogos || [];
+  });
+  const [aiLogosLoading, setAiLogosLoading] = useState(false);
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
 
@@ -108,6 +113,103 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
   const handleRefinementChange = useCallback((updatedConcept) => {
     setRefinedConcept(updatedConcept);
   }, []);
+
+  // ── AI Logo Generation ───────────────────────────────────────
+  const handleGenerateAiLogos = useCallback(async () => {
+    setAiLogosLoading(true);
+    const primaryColor = palette?.primary?.base || '#000000';
+    const secondaryColor = palette?.secondary?.base || '#666666';
+    const fontFamily = typography?.headings?.family || 'sans-serif';
+    const industry = brandDna?.industry?.primary || 'business';
+    const pv = brandDna?.personality_vector;
+    const name = brandDna?.company_name || 'Brand';
+
+    const variations = [
+      'Icon mark with abstract symbol',
+      'Lettermark using the first letter',
+      'Wordmark with custom typography',
+    ];
+
+    try {
+      const results = await Promise.allSettled(
+        variations.map((variation) =>
+          generateBrandImage({
+            prompt: buildLogoPrompt({
+              companyName: name,
+              industry,
+              personalityVector: pv,
+              primaryColor,
+              secondaryColor,
+              fontFamily,
+              variation,
+            }),
+            category: 'logo',
+            width: 1024,
+            height: 768,
+          })
+        )
+      );
+
+      if (!mountedRef.current) return;
+
+      const logos = results.map((r, i) => {
+        if (r.status === 'fulfilled') return { url: r.value.url };
+        console.error(`[LogoSystemStage] AI logo ${i} failed:`, r.reason);
+        return { url: null, error: true };
+      });
+
+      setAiLogos(logos);
+      // Persist to project for brand book PDF
+      updateStageData(1, { ...brandDna, _aiLogos: logos });
+      toast.success(`Generated ${logos.filter(l => l.url).length} AI logos`);
+    } catch (err) {
+      console.error('[LogoSystemStage] AI logo generation failed:', err);
+      toast.error('AI logo generation failed');
+    } finally {
+      if (mountedRef.current) setAiLogosLoading(false);
+    }
+  }, [palette, typography, brandDna]);
+
+  const handleRegenerateAiLogo = useCallback(async (index) => {
+    const primaryColor = palette?.primary?.base || '#000000';
+    const secondaryColor = palette?.secondary?.base || '#666666';
+    const fontFamily = typography?.headings?.family || 'sans-serif';
+    const industry = brandDna?.industry?.primary || 'business';
+    const pv = brandDna?.personality_vector;
+    const name = brandDna?.company_name || 'Brand';
+    const variations = ['Icon mark with abstract symbol', 'Lettermark using the first letter', 'Wordmark with custom typography'];
+
+    setAiLogos(prev => prev.map((l, i) => i === index ? { ...l, loading: true } : l));
+
+    try {
+      const result = await generateBrandImage({
+        prompt: buildLogoPrompt({
+          companyName: name,
+          industry,
+          personalityVector: pv,
+          primaryColor,
+          secondaryColor,
+          fontFamily,
+          variation: variations[index] || 'Creative logo concept',
+        }),
+        category: 'logo',
+        width: 1024,
+        height: 768,
+      });
+
+      if (!mountedRef.current) return;
+      setAiLogos(prev => {
+        const updated = prev.map((l, i) => i === index ? { url: result.url } : l);
+        updateStageData(1, { ...brandDna, _aiLogos: updated });
+        return updated;
+      });
+      toast.success('Logo regenerated');
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setAiLogos(prev => prev.map((l, i) => i === index ? { url: null, error: true } : l));
+      toast.error('Regeneration failed');
+    }
+  }, [palette, typography, brandDna]);
 
   // ── Sub-step navigation ────────────────────────────────────────
   const goSubNext = useCallback(() => {
@@ -274,6 +376,10 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
               onSelect={handleConceptSelect}
               onMoreLikeThis={handleMoreLikeThis}
               isLoadingMore={isLoadingMore}
+              aiLogos={aiLogos}
+              aiLogosLoading={aiLogosLoading}
+              onGenerateAiLogos={handleGenerateAiLogos}
+              onRegenerateAiLogo={handleRegenerateAiLogo}
             />
           )}
           {subStep === 3 && refinedConcept && (
