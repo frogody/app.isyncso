@@ -1315,6 +1315,18 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               </button>
             );
           })}
+
+          {/* Add Apps button — always visible after engine items */}
+          <Link
+            to={createPageUrl("Settings") + "?tab=workspace"}
+            onClick={triggerActivity}
+            className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[36px] p-2 rounded-xl transition-all duration-200 group relative
+              text-zinc-600 hover:text-zinc-400 hover:bg-white/5 active:bg-white/10 active:scale-[0.98] border border-dashed border-zinc-800 hover:border-zinc-700 mt-1`}
+            title="Add more apps"
+          >
+            <Plus className="w-4 h-4 flex-shrink-0 transition-colors group-hover:text-zinc-400" />
+            {isMobile && <span className="text-sm font-medium">Add apps</span>}
+          </Link>
           </div>
 
         <div className="h-px bg-white/5 mx-2 my-2" />
