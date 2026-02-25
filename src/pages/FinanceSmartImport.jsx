@@ -802,6 +802,27 @@ export default function FinanceSmartImport() {
         } catch (recErr) {
           console.warn('Recurring template (non-critical):', recErr);
         }
+
+        // Also create subscription tracker entry
+        try {
+          await supabase.from('subscriptions').insert({
+            user_id: user.id,
+            company_id: companyId,
+            name: formData.vendor_name,
+            provider: formData.vendor_name,
+            amount,
+            billing_cycle: formData.recurring_frequency || 'monthly',
+            category: formData.category || 'other',
+            next_billing_date: recurring?.suggested_next_date || nextDate,
+            tax_rate: formData.tax_rate || 21,
+            tax_amount: taxAmount,
+            tax_mechanism: taxDecision?.mechanism || 'standard_btw',
+            status: 'active',
+            description: `Auto-created from Smart Import${formData.invoice_number ? ': #' + formData.invoice_number : ''}`,
+          });
+        } catch (subErr) {
+          console.warn('Subscription tracker (non-critical):', subErr);
+        }
       }
 
       const label = documentType === 'proforma' ? 'Proforma saved as draft!' : 'Expense saved and filed!';
