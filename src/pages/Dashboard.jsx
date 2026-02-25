@@ -161,8 +161,32 @@ export default function Dashboard() {
       ];
 
       if (configs.length > 0) {
-        setEnabledApps(configs[0].enabled_apps || ['learn', 'growth', 'sentinel']);
-        setEnabledWidgets(configs[0].dashboard_widgets || defaultWidgets);
+        const savedApps = configs[0].enabled_apps || ['learn', 'growth', 'sentinel'];
+        setEnabledApps(savedApps);
+
+        // Migrate obsolete widget IDs from old onboarding personas
+        let savedWidgets = configs[0].dashboard_widgets || defaultWidgets;
+        const hasObsoleteWidgets = savedWidgets.some(w =>
+          w.startsWith('products_') || w === 'sync_recent' || w === 'create_recent' ||
+          w === 'create_gallery' || w === 'raise_progress' || w === 'finance_invoices' ||
+          w === 'talent_pipeline' || w === 'talent_candidates'
+        );
+        if (hasObsoleteWidgets) {
+          // Replace obsolete IDs with real ones based on enabled apps
+          savedWidgets = savedWidgets.filter(w => WIDGET_CONFIG[w]);
+          if (savedApps.includes('products') && !savedWidgets.some(w => w.startsWith('commerce_'))) {
+            savedWidgets.unshift('commerce_b2b_overview', 'commerce_orders', 'commerce_revenue', 'commerce_products', 'commerce_outstanding');
+          }
+          if (savedApps.includes('finance') && !savedWidgets.some(w => w.startsWith('finance_'))) {
+            savedWidgets.push('finance_overview', 'finance_revenue', 'finance_expenses', 'finance_pending', 'finance_mrr');
+          }
+          if (savedApps.includes('raise') && !savedWidgets.some(w => w.startsWith('raise_'))) {
+            savedWidgets.push('raise_campaign', 'raise_target', 'raise_committed', 'raise_investors');
+          }
+          // Persist the fix so it only runs once
+          db.entities.UserAppConfig.update(configs[0].id, { dashboard_widgets: savedWidgets }).catch(() => {});
+        }
+        setEnabledWidgets(savedWidgets);
       } else {
         setEnabledWidgets(defaultWidgets);
       }

@@ -30,7 +30,7 @@ export const PERSONAS = [
     icon: Users,
     color: 'red',
     enabledApps: ['sync', 'talent'],
-    dashboardWidgets: ['talent_pipeline', 'talent_candidates', 'quick_actions', 'actions_recent'],
+    dashboardWidgets: ['quick_actions', 'actions_recent'],
     appConfigs: {},
   },
   {
@@ -50,7 +50,7 @@ export const PERSONAS = [
     icon: Palette,
     color: 'rose',
     enabledApps: ['sync', 'create'],
-    dashboardWidgets: ['create_recent', 'create_gallery', 'quick_actions', 'actions_recent'],
+    dashboardWidgets: ['quick_actions', 'actions_recent'],
     appConfigs: {},
   },
   {
@@ -60,7 +60,7 @@ export const PERSONAS = [
     icon: Package,
     color: 'teal',
     enabledApps: ['sync', 'products', 'finance'],
-    dashboardWidgets: ['products_inventory', 'products_lowstock', 'finance_overview', 'quick_actions', 'actions_recent'],
+    dashboardWidgets: ['commerce_b2b_overview', 'commerce_orders', 'commerce_revenue', 'commerce_products', 'commerce_outstanding', 'finance_overview', 'quick_actions', 'actions_recent'],
     appConfigs: {
       products_settings: { digitalEnabled: false, physicalEnabled: true, serviceEnabled: false }
     },
@@ -72,7 +72,7 @@ export const PERSONAS = [
     icon: Download,
     color: 'cyan',
     enabledApps: ['sync', 'products', 'finance'],
-    dashboardWidgets: ['products_inventory', 'finance_overview', 'quick_actions', 'actions_recent'],
+    dashboardWidgets: ['commerce_b2b_overview', 'commerce_orders', 'commerce_revenue', 'commerce_products', 'finance_overview', 'quick_actions', 'actions_recent'],
     appConfigs: {
       products_settings: { digitalEnabled: true, physicalEnabled: false, serviceEnabled: true }
     },
@@ -84,7 +84,7 @@ export const PERSONAS = [
     icon: Euro,
     color: 'amber',
     enabledApps: ['sync', 'finance'],
-    dashboardWidgets: ['finance_overview', 'finance_invoices', 'quick_actions', 'actions_recent'],
+    dashboardWidgets: ['finance_overview', 'finance_revenue', 'finance_expenses', 'finance_pending', 'finance_mrr', 'quick_actions', 'actions_recent'],
     appConfigs: {},
   },
   {
@@ -94,7 +94,7 @@ export const PERSONAS = [
     icon: Briefcase,
     color: 'purple',
     enabledApps: ['sync', 'learn', 'growth', 'finance'],
-    dashboardWidgets: ['sync_recent', 'learn_progress', 'growth_pipeline', 'finance_overview', 'quick_actions', 'actions_recent'],
+    dashboardWidgets: ['learn_progress', 'learn_stats', 'growth_pipeline', 'growth_stats', 'finance_overview', 'finance_revenue', 'quick_actions', 'actions_recent'],
     appConfigs: {},
   },
   {
@@ -114,7 +114,7 @@ export const PERSONAS = [
     icon: TrendingUp,
     color: 'orange',
     enabledApps: ['sync', 'raise'],
-    dashboardWidgets: ['raise_progress', 'raise_investors', 'quick_actions', 'actions_recent'],
+    dashboardWidgets: ['raise_campaign', 'raise_target', 'raise_committed', 'raise_investors', 'raise_meetings', 'quick_actions', 'actions_recent'],
     appConfigs: {},
   },
 ];
