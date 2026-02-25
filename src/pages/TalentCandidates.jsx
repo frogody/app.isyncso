@@ -459,7 +459,7 @@ export default function TalentCandidates() {
       // (work_history, education, intelligence_factors, company_intelligence, etc.)
       const { data, error } = await supabase
         .from("candidates")
-        .select("id, first_name, last_name, full_name, job_title, current_title, company_name, current_company, person_home_location, location, profile_image_url, intelligence_score, intelligence_level, recommended_approach, last_intelligence_update, email, phone, skills, linkedin_profile, outreach_stage, contact_status, intelligence_urgency, years_experience, created_date, updated_at, excluded_reason")
+        .select("id, first_name, last_name, job_title, company_name, person_home_location, profile_image_url, intelligence_score, intelligence_level, recommended_approach, last_intelligence_update, email, phone, skills, linkedin_profile, outreach_stage, contact_status, intelligence_urgency, years_experience, created_date, updated_date, excluded_reason")
         .eq("organization_id", user.organization_id)
         .is("excluded_reason", null)
         .order("created_date", { ascending: false });
