@@ -124,10 +124,12 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
     const pv = brandDna?.personality_vector;
     const name = brandDna?.company_name || 'Brand';
 
+    const tagline = brandDna?.strategy?.positioning?.statement?.split('.')[0] || '';
+
     const variations = [
-      'Icon mark with abstract symbol',
-      'Lettermark using the first letter',
-      'Wordmark with custom typography',
+      `Iconic symbol mark — a single distinctive abstract or geometric icon that captures the essence of ${industry || 'the business'}. No text, pure symbol. Think Apple, Nike, Airbnb level iconography.`,
+      `Lettermark / Monogram — use the initials or first letter of "${name}" as the primary design element. Craft the letter(s) into a unique, ownable mark with distinctive character. Think IBM, HBO, Chanel.`,
+      `Custom wordmark — the full name "${name}" set in a bespoke typographic treatment with unique character. The letterforms themselves become the brand mark through distinctive styling, spacing, or ligatures. Think Google, FedEx, Coca-Cola.`,
     ];
 
     try {
@@ -142,10 +144,11 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
               secondaryColor,
               fontFamily,
               variation,
+              tagline,
             }),
             category: 'logo',
             width: 1024,
-            height: 768,
+            height: 1024,
           })
         )
       );
@@ -177,7 +180,12 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
     const industry = brandDna?.industry?.primary || 'business';
     const pv = brandDna?.personality_vector;
     const name = brandDna?.company_name || 'Brand';
-    const variations = ['Icon mark with abstract symbol', 'Lettermark using the first letter', 'Wordmark with custom typography'];
+    const tagline = brandDna?.strategy?.positioning?.statement?.split('.')[0] || '';
+    const variations = [
+      `Iconic symbol mark — a single distinctive abstract or geometric icon that captures the essence of ${industry || 'the business'}. No text, pure symbol. Think Apple, Nike, Airbnb level iconography.`,
+      `Lettermark / Monogram — use the initials or first letter of "${name}" as the primary design element. Craft the letter(s) into a unique, ownable mark. Think IBM, HBO, Chanel.`,
+      `Custom wordmark — the full name "${name}" set in a bespoke typographic treatment. The letterforms themselves become the brand mark. Think Google, FedEx, Coca-Cola.`,
+    ];
 
     setAiLogos(prev => prev.map((l, i) => i === index ? { ...l, loading: true } : l));
 
@@ -190,11 +198,12 @@ export default function LogoSystemStage({ project, updateStageData, onNext }) {
           primaryColor,
           secondaryColor,
           fontFamily,
-          variation: variations[index] || 'Creative logo concept',
+          tagline,
+          variation: variations[index] || 'Creative logo concept with distinctive character',
         }),
         category: 'logo',
         width: 1024,
-        height: 768,
+        height: 1024,
       });
 
       if (!mountedRef.current) return;

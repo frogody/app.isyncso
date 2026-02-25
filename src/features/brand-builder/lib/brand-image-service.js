@@ -56,21 +56,63 @@ export async function generateBrandImage({
 }
 
 /**
- * Build a logo generation prompt from brand context.
+ * Build a high-quality logo generation prompt from brand context.
+ * Uses all 5 personality vector dimensions for nuanced style direction.
  */
-export function buildLogoPrompt({ companyName, industry, personalityVector, primaryColor, secondaryColor, fontFamily, conceptHint, variation }) {
+export function buildLogoPrompt({ companyName, industry, personalityVector, primaryColor, secondaryColor, fontFamily, conceptHint, variation, tagline }) {
   const pv = personalityVector || [50, 50, 50, 50, 50];
-  const styleWord = pv[0] > 60 ? 'modern and contemporary' : pv[0] < 40 ? 'classic and timeless' : 'balanced';
-  const toneWord = pv[2] > 60 ? 'playful and friendly' : pv[2] < 40 ? 'serious and professional' : 'approachable';
 
-  let prompt = `Professional logo design for "${companyName}", a ${industry || 'business'} company. ${styleWord} style, ${toneWord} personality.`;
-  prompt += ` Primary brand color: ${primaryColor || '#000000'}. Secondary color: ${secondaryColor || '#666666'}.`;
-  if (fontFamily) prompt += ` Typography feel: ${fontFamily}.`;
-  if (conceptHint) prompt += ` Concept: ${conceptHint}.`;
-  if (variation) prompt += ` Variation: ${variation}.`;
-  prompt += ` Clean vector style on white background, suitable for business use. Single logo mark, no mockups, no background patterns.`;
+  // Map all 5 personality dimensions to visual characteristics
+  // [0] Modern↔Traditional, [1] Bold↔Refined, [2] Playful↔Serious, [3] Warm↔Cool, [4] Complex↔Simple
+  const era = pv[0] > 65 ? 'contemporary minimalist' : pv[0] < 35 ? 'classic heritage' : 'timeless';
+  const weight = pv[1] > 65 ? 'bold and confident with strong geometric forms' : pv[1] < 35 ? 'refined and elegant with delicate details' : 'balanced weight';
+  const mood = pv[2] > 65 ? 'friendly and approachable' : pv[2] < 35 ? 'authoritative and trustworthy' : 'professional yet approachable';
+  const warmth = pv[3] > 65 ? 'organic, rounded shapes with warmth' : pv[3] < 35 ? 'precise, angular geometry with cool sophistication' : 'harmonious proportions';
+  const complexity = pv[4] > 65 ? 'intricate and detailed' : pv[4] < 35 ? 'ultra-minimal and reductive' : 'clean and purposeful';
 
-  return prompt;
+  const parts = [
+    `Design a world-class professional logo for "${companyName}", a ${industry || 'business'} company.`,
+    ``,
+    `DESIGN DIRECTION:`,
+    `- Visual era: ${era}`,
+    `- Character: ${weight}`,
+    `- Personality: ${mood}`,
+    `- Form language: ${warmth}`,
+    `- Detail level: ${complexity}`,
+    ``,
+    `COLOR SPECIFICATION:`,
+    `- Primary brand color: ${primaryColor || '#000000'}`,
+    `- Secondary accent: ${secondaryColor || '#666666'}`,
+    `- Use these exact colors. The logo must work in these brand colors.`,
+    ``,
+    `LOGO TYPE: ${variation || 'Creative logo concept'}.`,
+  ];
+
+  if (fontFamily) {
+    parts.push(`TYPOGRAPHY: The lettering should feel like ${fontFamily} — match that typographic character.`);
+  }
+
+  if (tagline) {
+    parts.push(`TAGLINE: "${tagline}" — incorporate subtly below the main mark if appropriate.`);
+  }
+
+  if (conceptHint) {
+    parts.push(`CONCEPT DIRECTION: ${conceptHint}.`);
+  }
+
+  parts.push(
+    ``,
+    `QUALITY REQUIREMENTS:`,
+    `- This must look like it was designed by a top-tier branding agency (Pentagram, Wolff Olins, Landor level quality).`,
+    `- Clean vector-style rendering, mathematically precise geometry, perfect symmetry where appropriate.`,
+    `- Render on a pure white background (#FFFFFF). Show ONLY the logo — nothing else.`,
+    `- The logo must be immediately recognizable, memorable, and scalable from favicon to billboard.`,
+    `- Professional kerning and letterspacing if text is included.`,
+    ``,
+    `AVOID: Clipart, stock imagery, gradients unless integral to concept, drop shadows, bevels, 3D effects, overly complex illustrations, generic symbols (globes, arrows, checkmarks), busy backgrounds, multiple logo variations in one image, watermarks, mockup contexts, amateurish proportions.`,
+  );
+
+  return parts.join('\n');
 }
 
 /**
