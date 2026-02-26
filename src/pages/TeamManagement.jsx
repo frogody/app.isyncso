@@ -729,10 +729,6 @@ export default function TeamManagement({ embedded = false }) {
               <Boxes className="w-4 h-4 mr-2" />
               Teams
             </TabsTrigger>
-            <TabsTrigger value="roles" className="data-[state=active]:bg-zinc-800">
-              <Shield className="w-4 h-4 mr-2" />
-              Roles & Permissions
-            </TabsTrigger>
             <TabsTrigger value="invitations" className="data-[state=active]:bg-zinc-800">
               <Mail className="w-4 h-4 mr-2" />
               Invitations
@@ -840,111 +836,6 @@ export default function TeamManagement({ embedded = false }) {
                   ))}
                 </div>
               )}
-            </GlassCard>
-          </TabsContent>
-
-          {/* ROLES & PERMISSIONS TAB */}
-          <TabsContent value="roles" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Roles List */}
-              <GlassCard className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-purple-400" />
-                    Role Hierarchy
-                  </h3>
-                  <Badge className="bg-zinc-800 text-zinc-400">
-                    {roles.length} roles
-                  </Badge>
-                </div>
-
-                <div className="space-y-3">
-                  {roles.sort((a, b) => b.hierarchy_level - a.hierarchy_level).map((role) => {
-                    const config = ROLE_CONFIG[role.name] || ROLE_CONFIG.user;
-                    const Icon = config.icon;
-
-                    return (
-                      <div
-                        key={role.id}
-                        className={`
-                          p-4 rounded-xl border cursor-pointer transition-all
-                          ${selectedRole?.id === role.id
-                            ? 'bg-zinc-800/80 border-cyan-500/50'
-                            : 'bg-zinc-800/30 border-zinc-700/50 hover:border-zinc-600'}
-                        `}
-                        onClick={() => setSelectedRole(role)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg ${config.color} flex items-center justify-center`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white font-medium capitalize">
-                                {role.name.replace('_', ' ')}
-                              </span>
-                              <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-400">
-                                Level {role.hierarchy_level}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-zinc-500">{role.description}</p>
-                          </div>
-                          <ChevronRight className={`w-5 h-5 text-zinc-500 transition-transform ${selectedRole?.id === role.id ? 'rotate-90' : ''}`} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </GlassCard>
-
-              {/* Role Permissions */}
-              <GlassCard className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Key className="w-5 h-5 text-green-400" />
-                    {selectedRole ? `${selectedRole.name.replace('_', ' ')} Permissions` : 'Select a Role'}
-                  </h3>
-                </div>
-
-                {selectedRole ? (
-                  <RolePermissionsView
-                    role={selectedRole}
-                    allPermissions={permissions}
-                    permissionCategories={PERMISSION_CATEGORIES}
-                  />
-                ) : (
-                  <div className="text-center py-12 text-zinc-500">
-                    <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                    <p>Select a role to view its permissions</p>
-                  </div>
-                )}
-              </GlassCard>
-            </div>
-
-            {/* Permission Reference */}
-            <GlassCard className="p-6">
-              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
-                <Info className="w-5 h-5 text-cyan-400" />
-                Permission Reference Guide
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(PERMISSION_CATEGORIES).map(([category, resources]) => (
-                  <div key={category}>
-                    <h4 className="text-sm font-semibold text-cyan-400 mb-3">{category}</h4>
-                    <div className="space-y-2">
-                      {resources.map(resource => (
-                        <div key={resource} className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30">
-                          <span className="text-sm text-zinc-300 capitalize">{resource}</span>
-                          <Badge variant="outline" className="text-xs border-zinc-700 text-zinc-500">
-                            {permissions.filter(p => p.resource === resource).length} actions
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
             </GlassCard>
           </TabsContent>
 
