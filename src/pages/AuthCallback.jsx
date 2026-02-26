@@ -31,6 +31,15 @@ export default function AuthCallback() {
           // Ensure user profile exists
           await db.auth.ensureUserProfile();
 
+          // Save terms acceptance if user accepted during signup
+          const pendingTerms = localStorage.getItem('terms_accepted_pending');
+          if (pendingTerms) {
+            try {
+              await db.auth.updateMe({ terms_accepted_at: pendingTerms, terms_version: '2026-02-26' });
+            } catch (e) { console.warn('[AuthCallback] terms save:', e); }
+            localStorage.removeItem('terms_accepted_pending');
+          }
+
           // Get user data to check onboarding status
           const user = await db.auth.me();
           const hasCompletedOnboarding = user?.job_title?.trim()?.length > 0 || user?.onboarding_completed === true;

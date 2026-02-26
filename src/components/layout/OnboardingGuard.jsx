@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import TermsAcceptanceGate from "./TermsAcceptanceGate";
 
 // Dynamically import to avoid circular dependencies
 const Onboarding = React.lazy(() => import("../../pages/Onboarding"));
@@ -130,6 +131,21 @@ export default function OnboardingGuard({ children }) {
     );
   }
 
-  // User is authenticated and has completed onboarding - show normal app
+  // User is authenticated and has completed onboarding — check terms acceptance
+  const hasAcceptedTerms = !!user?.terms_accepted_at;
+
+  if (!hasAcceptedTerms) {
+    return (
+      <TermsAcceptanceGate
+        user={user}
+        onAccepted={() => {
+          // Refresh user data to pick up the new terms_accepted_at
+          setUser(prev => ({ ...prev, terms_accepted_at: new Date().toISOString() }));
+        }}
+      />
+    );
+  }
+
+  // All checks passed — show normal app
   return children;
 }

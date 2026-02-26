@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -57,14 +59,18 @@ export default function Login() {
 
     try {
       if (isSignUp) {
+        if (!termsAccepted) { setError("You must agree to the Terms of Service and Privacy Policy"); return; }
         const { user, error } = await db.auth.signUpWithEmail(
           formData.email, formData.password, { full_name: formData.fullName }
         );
         if (error) { setError(error.message || "Failed to create account"); return; }
         if (user && !user.email_confirmed_at) {
+          // Store acceptance flag — will be saved after email confirmation + first login
+          localStorage.setItem('terms_accepted_pending', new Date().toISOString());
           setSuccess("Check your email for a confirmation link to complete registration.");
         } else {
           await db.auth.ensureUserProfile();
+          try { await db.auth.updateMe({ terms_accepted_at: new Date().toISOString(), terms_version: '2026-02-26' }); } catch (e) { console.warn('[Login] terms save:', e); }
           navigate('/Onboarding', { replace: true });
         }
       } else {
@@ -77,6 +83,12 @@ export default function Login() {
         }
         if (user) {
           await db.auth.ensureUserProfile();
+          // Check if user accepted terms during signup (email confirmation flow)
+          const pendingTerms = localStorage.getItem('terms_accepted_pending');
+          if (pendingTerms) {
+            try { await db.auth.updateMe({ terms_accepted_at: pendingTerms, terms_version: '2026-02-26' }); } catch (e) { console.warn('[Login] terms save:', e); }
+            localStorage.removeItem('terms_accepted_pending');
+          }
           const params = new URLSearchParams(window.location.search);
           const redirectUrl = params.get('redirect');
           const returnUrl = redirectUrl || localStorage.getItem('returnUrl') || '/Dashboard';
@@ -92,9 +104,14 @@ export default function Login() {
   };
 
   const handleGoogleAuth = async () => {
+    if (isSignUp && !termsAccepted) { setError("You must agree to the Terms of Service and Privacy Policy"); return; }
     setGoogleLoading(true);
     setError(null);
     try {
+      // Store acceptance flag before redirect — AuthCallback will save to DB
+      if (isSignUp && termsAccepted) {
+        localStorage.setItem('terms_accepted_pending', new Date().toISOString());
+      }
       const { error } = await db.auth.signInWithGoogle();
       if (error) { setError(error.message || "Failed to connect to Google"); setGoogleLoading(false); }
     } catch (err) {
@@ -172,7 +189,7 @@ export default function Login() {
               variant="outline"
               className="w-full h-11 bg-white hover:bg-zinc-100 text-zinc-900 border-0 text-sm font-medium rounded-xl"
               onClick={handleGoogleAuth}
-              disabled={googleLoading || loading}
+              disabled={googleLoading || loading || (isSignUp && !termsAccepted)}
             >
               {googleLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -263,10 +280,27 @@ export default function Login() {
                 </div>
               </div>
 
+              {isSignUp && (
+                <label className="flex items-start gap-2.5 mt-1 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => { setTermsAccepted(e.target.checked); setError(null); }}
+                    className="mt-0.5 w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-emerald-500 focus:ring-emerald-500/30 focus:ring-offset-0 cursor-pointer"
+                  />
+                  <span className="text-[11px] text-zinc-500 leading-relaxed group-hover:text-zinc-400 transition-colors">
+                    I agree to the{' '}
+                    <Link to="/terms" target="_blank" className="text-cyan-400 hover:underline" onClick={(e) => e.stopPropagation()}>Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link to="/privacy" target="_blank" className="text-cyan-400 hover:underline" onClick={(e) => e.stopPropagation()}>Privacy Policy</Link>
+                  </span>
+                </label>
+              )}
+
               <Button
                 type="submit"
                 className="w-full h-11 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium text-sm rounded-xl mt-1"
-                disabled={loading || googleLoading}
+                disabled={loading || googleLoading || (isSignUp && !termsAccepted)}
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -286,7 +320,7 @@ export default function Login() {
           {isSignUp ? "Already have an account? " : "Don't have an account? "}
           <button
             type="button"
-            onClick={() => { setIsSignUp(!isSignUp); setError(null); setSuccess(null); }}
+            onClick={() => { setIsSignUp(!isSignUp); setError(null); setSuccess(null); setTermsAccepted(false); }}
             className="text-emerald-400/80 hover:text-emerald-400 font-medium transition-colors"
           >
             {isSignUp ? "Sign in" : "Sign up"}
@@ -295,7 +329,7 @@ export default function Login() {
 
         {/* Trust signal */}
         <p className="text-center text-[11px] text-zinc-700 mt-8">
-          Enterprise-grade security &middot; SOC 2 compliant
+          Secure &middot; GDPR compliant &middot; Your data stays yours
         </p>
       </div>
     </div>
