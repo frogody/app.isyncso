@@ -184,6 +184,7 @@ serve(async (req) => {
         'premium_quality': 'Ultra high-end commercial photography, award-winning quality, maximum detail and impact',
         'fashion_tryon': 'FASHION VIRTUAL TRY-ON: The reference image contains a garment. Generate the garment being worn on a fashion model. PRESERVE the exact garment design, fabric, color, pattern, and all construction details. Describe the MODEL and SCENE, not the garment itself.',
         'fashion_lookbook': 'FASHION LOOKBOOK: The reference image contains a garment. Generate a styled editorial fashion lookbook scene featuring this garment. PRESERVE exact garment appearance. Focus on editorial styling, scene composition, and mood.',
+        'ugc_script': 'UGC TikTok video script. Write a 50-80 word script that a real content creator would say to camera while showing a product. Follow UGC formula: HOOK (attention-grabbing opening line, max 2 seconds — e.g. "OMG you NEED this" / "Stop scrolling — this changed my life") → PROBLEM (relatable pain point, 1-2 sentences) → SOLUTION (introduce the product naturally as the fix, 2-3 sentences) → CTA (soft call to action like "link in bio" or "trust me, grab one"). Write in casual first-person voice. Enthusiastic but genuine — NOT salesy or cringe. Return ONLY the spoken words in the enhanced_prompt field.',
       };
       context.push(`Use case: ${useCaseDescriptions[use_case] || use_case}`);
     }
@@ -331,6 +332,19 @@ serve(async (req) => {
       } else {
         throw new Error('Could not parse AI response as JSON');
       }
+    }
+
+    // ── UGC script: return raw script text, skip image quality boosts ──
+    if (use_case === 'ugc_script') {
+      const scriptText = (enhanced.enhanced_prompt || '').replace(/^["']|["']$/g, '').trim();
+      return new Response(
+        JSON.stringify({
+          enhanced_prompt: scriptText || prompt,
+          original_prompt: prompt,
+          style_tags: ['ugc', 'tiktok'],
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // ── Deterministic quality boost ──────────────────────────────────

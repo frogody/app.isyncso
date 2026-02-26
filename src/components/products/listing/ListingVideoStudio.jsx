@@ -24,6 +24,8 @@ import {
   ChevronDown,
   ChevronUp,
   Save,
+  Users,
+  User,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -99,6 +101,42 @@ const VIDEO_PRESETS = [
       'Keep the product exactly as shown in the reference image. Do not alter, modify, or reimagine the product in any way.',
     ].join(' '),
   },
+];
+
+const UGC_CREATOR_STYLES = [
+  {
+    id: 'female_young',
+    label: 'Young Woman',
+    description: 'Energetic Gen-Z creator vibe',
+    prompt: 'Young woman in her early 20s with natural makeup, casual streetwear (oversized graphic tee or crop top), hair down, energetic and expressive personality, bright smile',
+  },
+  {
+    id: 'male_young',
+    label: 'Young Man',
+    description: 'Authentic, relatable guy',
+    prompt: 'Young man in his mid 20s wearing a casual hoodie or plain t-shirt, natural look with short to medium hair, friendly and genuine expression, approachable vibe',
+  },
+  {
+    id: 'female_mid',
+    label: 'Woman 30s',
+    description: 'Polished but approachable',
+    prompt: 'Woman in her early 30s with a stylish casual outfit, minimal jewelry, well-kept hair, warm approachable smile, confident but relatable, lifestyle influencer aesthetic',
+  },
+  {
+    id: 'male_mid',
+    label: 'Man 30s',
+    description: 'Trustworthy reviewer style',
+    prompt: 'Man in his early 30s with a clean casual look, well-groomed beard or clean-shaven, button-up shirt or polo, confident but genuine expression, tech reviewer aesthetic',
+  },
+];
+
+const UGC_GENERATION_MESSAGES = [
+  'Generating creator with your product...',
+  'Setting up the shot...',
+  'Creating TikTok-style video with Veo 3.1...',
+  'Animating the creator...',
+  'Adding natural movements...',
+  'Finalizing UGC video...',
 ];
 
 const GENERATION_MESSAGES = [
@@ -428,6 +466,12 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
   const [previewingHistoryVideo, setPreviewingHistoryVideo] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
 
+  // UGC state
+  const [ugcMode, setUgcMode] = useState(false);
+  const [ugcCreatorStyle, setUgcCreatorStyle] = useState(UGC_CREATOR_STYLES[0]);
+  const [ugcScript, setUgcScript] = useState('');
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+
   const statusIntervalRef = useRef(null);
   const elapsedIntervalRef = useRef(null);
 
@@ -471,14 +515,14 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
   }, [loadVideoHistory]);
 
   // Cycle through status messages during generation
-  const startStatusCycle = useCallback(() => {
+  const startStatusCycle = useCallback((messages = GENERATION_MESSAGES) => {
     let idx = 0;
-    setStatusMessage(GENERATION_MESSAGES[0]);
+    setStatusMessage(messages[0]);
     setElapsedSeconds(0);
 
     statusIntervalRef.current = setInterval(() => {
-      idx = (idx + 1) % GENERATION_MESSAGES.length;
-      setStatusMessage(GENERATION_MESSAGES[idx]);
+      idx = (idx + 1) % messages.length;
+      setStatusMessage(messages[idx]);
     }, 6000);
 
     elapsedIntervalRef.current = setInterval(() => {
@@ -741,6 +785,196 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
   }, [customPrompt, product]);
 
   // ---------------------------------------------------------------------------
+  // UGC script generation
+  // ---------------------------------------------------------------------------
+
+  const generateUgcScript = useCallback(async () => {
+    setIsGeneratingScript(true);
+    try {
+      const { data, error: scriptError } = await supabase.functions.invoke('enhance-prompt', {
+        body: {
+          prompt: `Write a TikTok-style UGC video script for ${product?.name || 'this product'}`,
+          use_case: 'ugc_script',
+          product_name: product?.name,
+          product_type: product?.type,
+          product_description: product?.description || product?.short_description,
+          product_tags: product?.tags,
+          product_category: product?.category,
+        },
+      });
+
+      if (scriptError) throw scriptError;
+
+      if (data?.enhanced_prompt) {
+        setUgcScript(data.enhanced_prompt);
+        toast.success('Script generated');
+      } else {
+        toast.info('Could not generate script');
+      }
+    } catch (err) {
+      console.error('[ListingVideoStudio] UGC script error:', err);
+      toast.error('Failed to generate script');
+    } finally {
+      setIsGeneratingScript(false);
+    }
+  }, [product]);
+
+  // ---------------------------------------------------------------------------
+  // UGC video generation (3-step pipeline)
+  // ---------------------------------------------------------------------------
+
+  const generateUgcVideo = useCallback(async () => {
+    if (!ugcScript.trim()) {
+      toast.error('Please generate or write a script first');
+      return;
+    }
+    setIsGenerating(true);
+    setGeneratedVideo(null);
+    setPreviewingHistoryVideo(null);
+    setError(null);
+    startStatusCycle(UGC_GENERATION_MESSAGES);
+
+    try {
+      const productIdentity = product?.name || 'the product';
+      const creatorDesc = ugcCreatorStyle.prompt;
+
+      // ── Step 1: Generate UGC motion frame (person + product) ──────
+      console.log('[ListingVideoStudio] UGC Step 1: Generating motion frame...');
+
+      const ugcFramePrompt = [
+        `Generate a realistic selfie-style photo of a content creator holding and showing a product to the camera.`,
+        `Creator: ${creatorDesc}. They are holding ${productIdentity} naturally in one hand while filming with the other, as if recording a TikTok video.`,
+        `The product must look EXACTLY like the reference image(s) — identical shape, color, material, branding, and every visual detail.`,
+        `Camera: Front-facing smartphone camera perspective, slightly above eye level (classic selfie angle). Slight wide-angle distortion typical of phone front cameras.`,
+        `Setting: Casual home environment — bedroom, living room, or kitchen in the background. Natural window light. NOT a studio. Slightly messy/lived-in is fine — authenticity matters.`,
+        `Style: Authentic UGC aesthetic — not polished or overly lit. Phone-quality, natural skin tones, no retouching look. The person is mid-sentence talking to the camera, making eye contact, gesturing toward the product with genuine enthusiasm.`,
+        `Composition: 9:16 vertical portrait (TikTok format). Person fills about 60% of frame from chest up, product clearly visible and in focus.`,
+        `Mood: Genuine excitement and authenticity. This looks like a real person who just discovered something great and is sharing it with their followers.`,
+      ].join('\n');
+
+      let motionFrameUrl = null;
+      try {
+        const { data: imgData, error: imgError } = await supabase.functions.invoke('generate-image', {
+          body: {
+            prompt: ugcFramePrompt,
+            product_name: product?.name,
+            product_images: productReferenceImages,
+            model_key: 'nano-banana-pro',
+            style: 'photorealistic',
+            aspect_ratio: '9:16',
+            width: 1024,
+            height: 1792,
+            company_id: listing?.company_id,
+            user_id: null,
+            reference_image_url: productReferenceImages[0] || null,
+            is_physical_product: true,
+          },
+        });
+
+        if (!imgError && imgData?.url) {
+          motionFrameUrl = imgData.url;
+          console.log('[ListingVideoStudio] UGC motion frame generated:', motionFrameUrl);
+        } else {
+          console.warn('[ListingVideoStudio] UGC motion frame failed, using product image fallback');
+        }
+      } catch (frameErr) {
+        console.warn('[ListingVideoStudio] UGC motion frame error:', frameErr.message);
+      }
+
+      const videoReferenceUrl = motionFrameUrl || productReferenceImages[0] || null;
+      if (!videoReferenceUrl) {
+        throw new Error('No product image available. Upload a product image first.');
+      }
+
+      // ── Step 2: Generate video via Veo 3.1 ───────────────────────
+      console.log('[ListingVideoStudio] UGC Step 2: Generating video...');
+
+      const veoPrompt = [
+        `Authentic UGC-style TikTok video. A real person is recording themselves on their phone, talking directly to camera about a product they love.`,
+        `Script direction: "${ugcScript}"`,
+        `The person speaks naturally with genuine enthusiasm, making natural mouth movements and facial expressions as if really talking. They gesture toward the product, hold it up to show details, and occasionally look down at it then back at the camera.`,
+        `Camera: Static front-facing phone camera with very slight natural hand micro-shake for authentic feel. No cinematic camera moves — this is phone-recorded content.`,
+        `Lighting: Natural ambient room light from a nearby window. Slightly warm tones. Not studio-lit — some shadows are natural and fine.`,
+        `Style: Raw, authentic, phone-recorded look. This should look like real content a person filmed in their home. NOT polished commercial footage. Think top-performing TikTok creator content.`,
+        `The person naturally holds and shows ${productIdentity} throughout the video. Keep the product exactly as shown in the reference image.`,
+        `Pace: Natural speaking rhythm, real-time speed. The person is energetic but not rushed.`,
+      ].join(' ');
+
+      const { data, error: fnError } = await supabase.functions.invoke('generate-fashion-video', {
+        body: {
+          image_url: videoReferenceUrl,
+          prompt: veoPrompt,
+          model_key: 'veo-3.1-fast',
+          duration_seconds: 8,
+          aspect_ratio: '9:16',
+          generate_audio: false,
+          company_id: listing?.company_id,
+          user_id: null,
+        },
+      });
+
+      if (fnError) {
+        let errorMsg = fnError.message || 'Video generation failed';
+        try {
+          if (fnError.context) {
+            const errBody = await fnError.context.json();
+            errorMsg = errBody?.error || errBody?.debug_last_error || errorMsg;
+            if (errBody?.all_errors?.length) {
+              console.error('[ListingVideoStudio] UGC all API errors:', JSON.stringify(errBody.all_errors, null, 2));
+            }
+            const allStr = JSON.stringify(errBody?.all_errors || []);
+            if (allStr.includes('quota') || allStr.includes('429') || allStr.includes('rate')) {
+              errorMsg = 'API rate limit reached. Please wait a few minutes and try again.';
+            }
+          }
+        } catch { /* context parsing failed */ }
+        throw new Error(errorMsg);
+      }
+
+      if (data?.error) throw new Error(data.error);
+      if (!data?.videoUrl && !data?.url) throw new Error('No video URL returned from generation');
+
+      const videoUrl = data.videoUrl || data.url;
+      const thumbnailUrl = data.thumbnail_url || data.thumbnailUrl || motionFrameUrl || null;
+
+      const videoRecord = {
+        url: videoUrl,
+        thumbnail_url: thumbnailUrl,
+        prompt: veoPrompt,
+        preset_label: `UGC — ${ugcCreatorStyle.label}`,
+        duration: 8,
+        created_at: new Date().toISOString(),
+      };
+
+      setGeneratedVideo(videoRecord);
+
+      // Persist to history
+      try {
+        await supabase.from('product_listing_videos').insert({
+          product_id: product.id,
+          company_id: listing?.company_id,
+          channel: channel || 'generic',
+          video_url: videoUrl,
+          thumbnail_url: thumbnailUrl,
+          prompt: veoPrompt,
+          preset_label: `UGC — ${ugcCreatorStyle.label}`,
+          duration: 8,
+        });
+        loadVideoHistory();
+      } catch { /* non-critical */ }
+
+      toast.success('UGC video generated successfully');
+    } catch (err) {
+      console.error('[ListingVideoStudio] UGC generation error:', err);
+      setError(err.message || 'UGC video generation failed. Please try again.');
+      toast.error(err.message || 'Failed to generate UGC video');
+    } finally {
+      setIsGenerating(false);
+      stopStatusCycle();
+    }
+  }, [ugcScript, ugcCreatorStyle, product, listing, channel, productReferenceImages, startStatusCycle, stopStatusCycle, loadVideoHistory]);
+
+  // ---------------------------------------------------------------------------
   // Listing save
   // ---------------------------------------------------------------------------
 
@@ -925,6 +1159,174 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
             />
           ))}
         </div>
+      </div>
+
+      {/* UGC Creator Video Section */}
+      <div
+        className={cn(
+          'rounded-xl border overflow-hidden transition-all duration-200',
+          ugcMode
+            ? cn('border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.06)]', t('bg-cyan-50/60', 'bg-cyan-500/[0.04]'))
+            : cn(t('border-slate-200 bg-white', 'border-white/[0.06] bg-zinc-900/40'))
+        )}
+      >
+        {/* Header toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            setUgcMode(!ugcMode);
+            if (!ugcMode) setSelectedPreset(null);
+          }}
+          className="w-full flex items-center justify-between p-4"
+        >
+          <div className="flex items-center gap-2">
+            <Users className={cn('w-4 h-4', ugcMode ? 'text-cyan-400' : t('text-slate-400', 'text-zinc-400'))} />
+            <div className="text-left">
+              <h3 className={cn('text-sm font-semibold', t('text-slate-700', 'text-zinc-200'))}>
+                UGC Creator Video
+              </h3>
+              <p className={cn('text-xs', t('text-slate-500', 'text-zinc-500'))}>
+                TikTok-style creator talking about your product
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className="border-cyan-500/30 text-cyan-400 bg-cyan-500/10 text-[10px] font-semibold"
+            >
+              NEW
+            </Badge>
+            {ugcMode ? (
+              <ChevronUp className={cn('w-4 h-4', t('text-slate-400', 'text-zinc-500'))} />
+            ) : (
+              <ChevronDown className={cn('w-4 h-4', t('text-slate-400', 'text-zinc-500'))} />
+            )}
+          </div>
+        </button>
+
+        <AnimatePresence>
+          {ugcMode && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden"
+            >
+              <div className="px-4 pb-4 space-y-4">
+                {/* Creator style picker */}
+                <div className="space-y-2">
+                  <Label className={cn('text-xs font-medium uppercase tracking-wider', t('text-slate-500', 'text-zinc-500'))}>
+                    Creator Style
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {UGC_CREATOR_STYLES.map((style) => (
+                      <button
+                        key={style.id}
+                        type="button"
+                        onClick={() => setUgcCreatorStyle(style)}
+                        className={cn(
+                          'rounded-xl border p-2.5 text-left transition-all duration-200',
+                          ugcCreatorStyle.id === style.id
+                            ? cn('border-cyan-500/50', t('bg-cyan-50/60', 'bg-cyan-500/[0.06]'))
+                            : cn(t('border-slate-200 bg-white hover:border-slate-300', 'border-white/[0.06] bg-zinc-900/40 hover:border-white/10'))
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <User className={cn('w-3.5 h-3.5', ugcCreatorStyle.id === style.id ? 'text-cyan-400' : t('text-slate-400', 'text-zinc-500'))} />
+                          <span className={cn('text-xs font-medium', ugcCreatorStyle.id === style.id ? t('text-slate-900', 'text-white') : t('text-slate-700', 'text-zinc-300'))}>
+                            {style.label}
+                          </span>
+                        </div>
+                        <p className={cn('text-[10px] mt-1 ml-5.5', t('text-slate-500', 'text-zinc-500'))}>
+                          {style.description}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Script section */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className={cn('text-xs font-medium uppercase tracking-wider', t('text-slate-500', 'text-zinc-500'))}>
+                      Script
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={generateUgcScript}
+                      disabled={isGeneratingScript}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                        isGeneratingScript
+                          ? cn(t('text-slate-400', 'text-zinc-600'), 'cursor-not-allowed')
+                          : 'text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20'
+                      )}
+                    >
+                      {isGeneratingScript ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3" />
+                          Generate Script
+                          <CreditCostBadge credits={1} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <Textarea
+                    value={ugcScript}
+                    onChange={(e) => setUgcScript(e.target.value)}
+                    placeholder={"Hook: \"OMG you guys NEED this...\"\nProblem: relatable pain point\nSolution: introduce the product\nCTA: \"Link in bio!\""}
+                    rows={5}
+                    className={cn(
+                      'text-sm resize-none rounded-xl',
+                      t(
+                        'bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-cyan-500/40 focus:ring-cyan-500/20',
+                        'bg-zinc-950/60 border-white/[0.06] text-zinc-200 placeholder:text-zinc-600 focus:border-cyan-500/40 focus:ring-cyan-500/20'
+                      )
+                    )}
+                  />
+                  {ugcScript && (
+                    <p className={cn('text-[10px] font-mono tabular-nums', t('text-slate-400', 'text-zinc-600'))}>
+                      {ugcScript.split(/\s+/).filter(Boolean).length} words
+                    </p>
+                  )}
+                </div>
+
+                {/* Generate UGC Video button */}
+                <button
+                  type="button"
+                  onClick={generateUgcVideo}
+                  disabled={isGenerating || !ugcScript.trim()}
+                  className={cn(
+                    'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                    isGenerating || !ugcScript.trim()
+                      ? cn(t('bg-slate-100 text-slate-400', 'bg-zinc-800 text-zinc-500'), 'cursor-not-allowed')
+                      : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
+                  )}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating UGC Video...
+                    </>
+                  ) : (
+                    <>
+                      <Video className="w-4 h-4" />
+                      Generate UGC Video
+                      <CreditCostBadge credits={43} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Custom Prompt */}
