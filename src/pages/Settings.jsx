@@ -718,10 +718,10 @@ export default function Settings() {
             <GlassCard className="p-4 sticky top-6">
               {/* Profile Summary */}
               <div className={`flex items-center gap-4 p-4 mb-4 rounded-xl ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700/50')}`}>
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <div
-                    className="w-14 h-14 rounded-full"
-                    style={{ boxShadow: `0 0 0 2px ${user?.user_color || '#3B82F6'}` }}
+                    className="rounded-full border-[2.5px]"
+                    style={{ borderColor: user?.user_color || '#3B82F6' }}
                   >
                     <UserAvatar user={user} size="lg" className="w-14 h-14" />
                   </div>
@@ -801,8 +801,8 @@ export default function Settings() {
                       <div className="flex flex-col items-center gap-3">
                         {/* Avatar preview with colored ring */}
                         <div
-                          className="rounded-full p-1"
-                          style={{ boxShadow: `0 0 0 3px ${profileForm.user_color || '#3B82F6'}` }}
+                          className="rounded-full border-[3px]"
+                          style={{ borderColor: profileForm.user_color || '#3B82F6' }}
                         >
                           <UserAvatar user={{ ...user, avatar_url: profileForm.avatar_url || user?.avatar_url }} size="2xl" />
                         </div>
