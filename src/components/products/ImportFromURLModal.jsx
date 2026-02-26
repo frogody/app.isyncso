@@ -163,12 +163,13 @@ export default function ImportFromURLModal({ open, onClose, onSave }) {
         uploaded_at: img.uploaded_at,
       }));
 
-      // Create base product
-      const slug = name
+      // Create base product — append random suffix to slug for uniqueness
+      const baseSlug = name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")
-        .substring(0, 80);
+        .substring(0, 70);
+      const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 8)}`;
 
       const productPayload = {
         name: name.trim(),
