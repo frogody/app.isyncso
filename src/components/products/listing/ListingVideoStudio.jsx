@@ -130,6 +130,24 @@ const UGC_CREATOR_STYLES = [
   },
 ];
 
+const UGC_LANGUAGES = [
+  { id: 'en', label: 'English', flag: '🇺🇸' },
+  { id: 'nl', label: 'Dutch', flag: '🇳🇱' },
+  { id: 'de', label: 'German', flag: '🇩🇪' },
+  { id: 'fr', label: 'French', flag: '🇫🇷' },
+  { id: 'es', label: 'Spanish', flag: '🇪🇸' },
+  { id: 'it', label: 'Italian', flag: '🇮🇹' },
+  { id: 'pt', label: 'Portuguese', flag: '🇵🇹' },
+  { id: 'ja', label: 'Japanese', flag: '🇯🇵' },
+  { id: 'ko', label: 'Korean', flag: '🇰🇷' },
+  { id: 'zh', label: 'Chinese', flag: '🇨🇳' },
+  { id: 'hi', label: 'Hindi', flag: '🇮🇳' },
+  { id: 'ar', label: 'Arabic', flag: '🇸🇦' },
+  { id: 'tr', label: 'Turkish', flag: '🇹🇷' },
+  { id: 'pl', label: 'Polish', flag: '🇵🇱' },
+  { id: 'sv', label: 'Swedish', flag: '🇸🇪' },
+];
+
 const UGC_GENERATION_MESSAGES = [
   'Generating creator with your product...',
   'Setting up the shot...',
@@ -469,6 +487,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
   // UGC state
   const [ugcMode, setUgcMode] = useState(false);
   const [ugcCreatorStyle, setUgcCreatorStyle] = useState(UGC_CREATOR_STYLES[0]);
+  const [ugcLanguage, setUgcLanguage] = useState(UGC_LANGUAGES[0]);
   const [ugcScript, setUgcScript] = useState('');
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
 
@@ -793,7 +812,9 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
     try {
       const { data, error: scriptError } = await supabase.functions.invoke('enhance-prompt', {
         body: {
-          prompt: `Write a TikTok-style UGC video script for ${product?.name || 'this product'}`,
+          prompt: ugcLanguage.id === 'en'
+            ? `Write a TikTok-style UGC video script for ${product?.name || 'this product'}`
+            : `Write a TikTok-style UGC video script in ${ugcLanguage.label} for ${product?.name || 'this product'}. The ENTIRE script must be in ${ugcLanguage.label}.`,
           use_case: 'ugc_script',
           product_name: product?.name,
           product_type: product?.type,
@@ -817,7 +838,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
     } finally {
       setIsGeneratingScript(false);
     }
-  }, [product]);
+  }, [product, ugcLanguage]);
 
   // ---------------------------------------------------------------------------
   // UGC video generation (3-step pipeline)
@@ -892,7 +913,10 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
       const veoPrompt = [
         `Authentic UGC-style TikTok video. A real person is recording themselves on their phone, talking directly to camera about a product they love.`,
         `Script direction: "${ugcScript}"`,
-        `The person speaks naturally with genuine enthusiasm, making natural mouth movements and facial expressions as if really talking. They gesture toward the product, hold it up to show details, and occasionally look down at it then back at the camera.`,
+        ugcLanguage.id !== 'en'
+          ? `The person speaks fluently in ${ugcLanguage.label} throughout the entire video. All speech and lip movements match natural ${ugcLanguage.label} pronunciation and rhythm.`
+          : `The person speaks naturally in English throughout the video.`,
+        `The person speaks with genuine enthusiasm, making natural mouth movements and facial expressions as if really talking. They gesture toward the product, hold it up to show details, and occasionally look down at it then back at the camera.`,
         `Camera: Static front-facing phone camera with very slight natural hand micro-shake for authentic feel. No cinematic camera moves — this is phone-recorded content.`,
         `Lighting: Natural ambient room light from a nearby window. Slightly warm tones. Not studio-lit — some shadows are natural and fine.`,
         `Style: Raw, authentic, phone-recorded look. This should look like real content a person filmed in their home. NOT polished commercial footage. Think top-performing TikTok creator content.`,
@@ -972,7 +996,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
       setIsGenerating(false);
       stopStatusCycle();
     }
-  }, [ugcScript, ugcCreatorStyle, product, listing, channel, productReferenceImages, startStatusCycle, stopStatusCycle, loadVideoHistory]);
+  }, [ugcScript, ugcCreatorStyle, ugcLanguage, product, listing, channel, productReferenceImages, startStatusCycle, stopStatusCycle, loadVideoHistory]);
 
   // ---------------------------------------------------------------------------
   // Listing save
@@ -1242,6 +1266,31 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
                         <p className={cn('text-[10px] mt-1 ml-5.5', t('text-slate-500', 'text-zinc-500'))}>
                           {style.description}
                         </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Language selector */}
+                <div className="space-y-2">
+                  <Label className={cn('text-xs font-medium uppercase tracking-wider', t('text-slate-500', 'text-zinc-500'))}>
+                    Language
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {UGC_LANGUAGES.map((lang) => (
+                      <button
+                        key={lang.id}
+                        type="button"
+                        onClick={() => setUgcLanguage(lang)}
+                        className={cn(
+                          'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150',
+                          ugcLanguage.id === lang.id
+                            ? cn('border-cyan-500/50', t('bg-cyan-50/60 text-slate-900', 'bg-cyan-500/[0.08] text-white'))
+                            : cn(t('border-slate-200 bg-white text-slate-600 hover:border-slate-300', 'border-white/[0.06] bg-zinc-900/40 text-zinc-400 hover:border-white/10'))
+                        )}
+                      >
+                        <span className="text-sm leading-none">{lang.flag}</span>
+                        {lang.label}
                       </button>
                     ))}
                   </div>
