@@ -35,7 +35,7 @@ export const ENGINE_ITEMS_CONFIG = {
     icon: GraduationCap,
     id: 'learn',
     permission: "courses.view",
-    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard", "/practice", "/teamlearn"],
+    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard", "/practice", "/teamlearn", "/managecourses"],
   },
   talent: {
     title: "Talent",
@@ -67,7 +67,7 @@ export const ENGINE_ITEMS_CONFIG = {
     icon: Palette,
     id: 'create',
     permission: null,
-    matchPatterns: ["/create"],
+    matchPatterns: ["/create", "/studio", "/syncstudio", "/contentcalendar"],
   },
   reach: {
     title: "Reach",
