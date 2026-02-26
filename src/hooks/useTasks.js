@@ -21,6 +21,26 @@ export function useTasks(options = {}) {
     enableRealtime = true,
   } = options;
 
+  // Check if a task record matches the active filters (for optimistic adds & realtime)
+  const matchesFilters = useCallback((task) => {
+    if (filters.assigned_to && task.assigned_to !== filters.assigned_to) return false;
+    if (filters.status) {
+      if (Array.isArray(filters.status)) {
+        if (!filters.status.includes(task.status)) return false;
+      } else if (task.status !== filters.status) return false;
+    }
+    if (filters.priority && task.priority !== filters.priority) return false;
+    if (filters.project_id && task.project_id !== filters.project_id) return false;
+    if (filters.company_id && task.company_id !== filters.company_id) return false;
+    if (filters.created_by && task.created_by !== filters.created_by) return false;
+    if (filters.source && task.source !== filters.source) return false;
+    // Draft filter — default hides drafts
+    if (filters.is_draft === true) {
+      if (!task.is_draft) return false;
+    } else if (task.is_draft) return false;
+    return true;
+  }, [JSON.stringify(filters)]);
+
   // Build and execute query
   const fetchTasks = useCallback(async () => {
     if (!user?.id) return;
@@ -123,16 +143,23 @@ export function useTasks(options = {}) {
           setTasks(prev => {
             const exists = prev.some(t => String(t.id) === String(newRecord.id));
             if (exists) return prev;
+            // Only add if it matches the active filters
+            if (!matchesFilters(newRecord)) return prev;
             return [{ ...newRecord, id: String(newRecord.id) }, ...prev];
           });
         } else if (eventType === 'UPDATE') {
-          setTasks(prev =>
-            prev.map(t =>
-              String(t.id) === String(newRecord.id)
-                ? { ...newRecord, id: String(newRecord.id) }
-                : t
-            )
-          );
+          setTasks(prev => {
+            const normalized = { ...newRecord, id: String(newRecord.id) };
+            // If updated task no longer matches filters, remove it
+            if (!matchesFilters(newRecord)) {
+              return prev.filter(t => String(t.id) !== String(newRecord.id));
+            }
+            // If it matches but wasn't in the list, add it
+            const exists = prev.some(t => String(t.id) === String(newRecord.id));
+            if (!exists) return [normalized, ...prev];
+            // Otherwise update in place
+            return prev.map(t => String(t.id) === String(newRecord.id) ? normalized : t);
+          });
         } else if (eventType === 'DELETE') {
           setTasks(prev =>
             prev.filter(t => String(t.id) !== String(oldRecord.id))
@@ -148,7 +175,7 @@ export function useTasks(options = {}) {
         supabase.removeChannel(subscriptionRef.current);
       }
     };
-  }, [user?.id, enableRealtime]);
+  }, [user?.id, enableRealtime, matchesFilters]);
 
   // Create task
   const createTask = useCallback(async (taskData) => {
@@ -186,8 +213,10 @@ export function useTasks(options = {}) {
 
       const newTask = { ...data, id: String(data.id) };
 
-      // Optimistic add (realtime will also fire but we check for duplicates)
-      setTasks(prev => [newTask, ...prev]);
+      // Only add to local state if it matches the active filters
+      if (matchesFilters(newTask)) {
+        setTasks(prev => [newTask, ...prev]);
+      }
 
       return newTask;
     } catch (err) {
@@ -195,7 +224,7 @@ export function useTasks(options = {}) {
       toast.error('Failed to create task');
       return null;
     }
-  }, [user?.id, user?.company_id]);
+  }, [user?.id, user?.company_id, matchesFilters]);
 
   // Update task
   const updateTask = useCallback(async (id, updates) => {
