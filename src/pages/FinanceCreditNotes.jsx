@@ -347,19 +347,9 @@ export default function FinanceCreditNotes({ embedded = false }) {
     setDetailOpen(true);
   };
 
-  return (
-    <FinancePageTransition>
-      <div className="space-y-6">
-        {/* Page Header */}
-        {!embedded && (
-          <PageHeader
-            title="Credit Notes"
-            subtitle="Manage credit notes and refunds"
-            icon={<ArrowDownLeft className="h-6 w-6 text-blue-500" />}
-          />
-        )}
-
-        {/* Stats Cards */}
+  const content = (
+    <div className="space-y-6">
+      {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Total Credit Notes */}
           <Card className={`${ft('bg-white border-slate-200', 'bg-white/[0.02] border-white/[0.06]')} border rounded-xl`}>
@@ -807,6 +797,20 @@ export default function FinanceCreditNotes({ embedded = false }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className="space-y-6">
+        <PageHeader
+          title="Credit Notes"
+          subtitle="Manage credit notes and refunds"
+          icon={<ArrowDownLeft className="h-6 w-6 text-blue-500" />}
+        />
+        {content}
       </div>
     </FinancePageTransition>
   );

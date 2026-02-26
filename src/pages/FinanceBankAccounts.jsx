@@ -425,18 +425,9 @@ export default function FinanceBankAccounts({ embedded = false }) {
   };
 
   // ── Main Render ───────────────────────────────────────────────────────
-  return (
-    <FinancePageTransition>
-      <div className="space-y-6">
-        {!embedded && (
-          <PageHeader
-            title="Bank Accounts"
-            subtitle="Manage bank accounts and import bank statements"
-            icon={Landmark}
-          />
-        )}
-
-        {/* Stats Cards */}
+  const content = (
+    <div className="space-y-6">
+      {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className={`${ft('bg-white border-slate-200', 'bg-white/[0.02] border-white/[0.06]')} border rounded-xl`}>
             <CardContent className="p-5">
@@ -875,6 +866,20 @@ export default function FinanceBankAccounts({ embedded = false }) {
 
         {/* Revolut Business Sync */}
         <RevolutConnectionSettings />
+    </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className="space-y-6">
+        <PageHeader
+          title="Bank Accounts"
+          subtitle="Manage bank accounts and import bank statements"
+          icon={Landmark}
+        />
+        {content}
       </div>
     </FinancePageTransition>
   );

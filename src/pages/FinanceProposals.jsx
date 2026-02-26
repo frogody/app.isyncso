@@ -41,7 +41,7 @@ const getStatusConfig = (ft) => ({
   expired: { label: 'Expired', color: ft('bg-slate-200/50 text-slate-500 border-slate-300', 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'), icon: Clock }
 });
 
-export default function FinanceProposals() {
+export default function FinanceProposals({ embedded }) {
   const navigate = useNavigate();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
@@ -337,37 +337,9 @@ export default function FinanceProposals() {
     );
   }
 
-  return (
-    <FinancePageTransition>
-      <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <PageHeader
-            title="Proposals"
-            subtitle="Create and manage sales proposals"
-            icon={FileText}
-            color="blue"
-            actions={
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleTheme}
-                  className={ft('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')}
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
-                <Button
-                  onClick={handleCreateProposal}
-                  className="bg-blue-500 hover:bg-blue-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Proposal
-                </Button>
-              </div>
-            }
-          />
-        </div>
-
+  const content = (
+    <>
+      <div className="space-y-4">
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
@@ -794,6 +766,43 @@ export default function FinanceProposals() {
         variant="destructive"
         onConfirm={confirmDeleteProposal}
       />
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <PageHeader
+            title="Proposals"
+            subtitle="Create and manage sales proposals"
+            icon={FileText}
+            color="blue"
+            actions={
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className={ft('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')}
+                >
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </Button>
+                <Button
+                  onClick={handleCreateProposal}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Proposal
+                </Button>
+              </div>
+            }
+          />
+        </div>
+        {content}
+      </div>
     </FinancePageTransition>
   );
 }

@@ -333,17 +333,9 @@ export default function FinanceRecurringInvoices({ embedded = false }) {
   };
 
   // ------- Render -------
-  return (
-    <FinancePageTransition>
-      <div className="space-y-6">
-        {!embedded && (
-          <PageHeader
-            title="Recurring Invoices"
-            subtitle="Manage recurring invoice templates and automated billing"
-          />
-        )}
-
-        {/* Stats Cards */}
+  const content = (
+    <div className="space-y-6">
+      {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className={`${ft('bg-white border-slate-200', 'bg-white/[0.02] border-white/[0.06]')} border rounded-xl`}>
             <CardContent className="p-5">
@@ -849,6 +841,19 @@ export default function FinanceRecurringInvoices({ embedded = false }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className="space-y-6">
+        <PageHeader
+          title="Recurring Invoices"
+          subtitle="Manage recurring invoice templates and automated billing"
+        />
+        {content}
       </div>
     </FinancePageTransition>
   );

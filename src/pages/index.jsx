@@ -155,6 +155,9 @@ const FinanceBankAccounts = lazy(() => import("./FinanceBankAccounts"));
 const FinanceBankReconciliation = lazy(() => import("./FinanceBankReconciliation"));
 const FinanceBolcomPayouts = lazy(() => import("./FinanceBolcomPayouts"));
 const FinanceSmartImport = lazy(() => import("./FinanceSmartImport"));
+const FinanceReceivables = lazy(() => import("./FinanceReceivables"));
+const FinanceSettings = lazy(() => import("./FinanceSettings"));
+const FinanceBanking = lazy(() => import("./FinanceBanking"));
 const Raise = lazy(() => import("./Raise"));
 const RaiseInvestors = lazy(() => import("./RaiseInvestors"));
 const RaisePitchDecks = lazy(() => import("./RaisePitchDecks"));
@@ -532,6 +535,9 @@ const PAGES = {
     FinanceBankReconciliation: FinanceBankReconciliation,
     FinanceBolcomPayouts: FinanceBolcomPayouts,
     FinanceSmartImport: FinanceSmartImport,
+    FinanceReceivables: FinanceReceivables,
+    FinanceSettings: FinanceSettings,
+    FinanceBanking: FinanceBanking,
 
     Raise: Raise,
 
@@ -1221,6 +1227,9 @@ function PagesContent() {
                 <Route path="/FinanceBankReconciliation" element={<FinancePageWrapper><FinanceBankReconciliation /></FinancePageWrapper>} />
                 <Route path="/FinanceBolcomPayouts" element={<FinancePageWrapper><FinanceBolcomPayouts /></FinancePageWrapper>} />
                 <Route path="/FinanceSmartImport" element={<FinancePageWrapper><FinanceSmartImport /></FinancePageWrapper>} />
+                <Route path="/FinanceReceivables" element={<FinancePageWrapper><FinanceReceivables /></FinancePageWrapper>} />
+                <Route path="/FinanceSettings" element={<FinancePageWrapper><FinanceSettings /></FinancePageWrapper>} />
+                <Route path="/FinanceBanking" element={<FinancePageWrapper><FinanceBanking /></FinancePageWrapper>} />
 
                 <Route path="/Raise" element={<Raise />} />
 

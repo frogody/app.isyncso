@@ -35,7 +35,7 @@ import ContactSelector from '@/components/shared/ContactSelector';
 import CountrySelector from '@/components/finance/CountrySelector';
 import { determineTaxRulesForSale } from '@/lib/btwRules';
 
-export default function FinanceInvoices() {
+export default function FinanceInvoices({ embedded }) {
   const { user, company: userCompany } = useUser();
   const { theme, toggleTheme, ft } = useTheme();
   const [loading, setLoading] = useState(true);
@@ -617,61 +617,20 @@ export default function FinanceInvoices() {
   }, [hasPermission, permLoading]);
 
   if (loading || permLoading) {
-    return (
+    return embedded ? (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      </div>
+    ) : (
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
 
-  return (
-    <FinancePageTransition>
-    <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
-
-      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <PageHeader
-            icon={Receipt}
-            title="Invoices"
-            subtitle="Create, send, and track your invoices"
-            color="blue"
-            actions={
-              <div className="flex gap-3">
-                <button
-                  onClick={toggleTheme}
-                  className={`p-2 rounded-lg border transition-colors ${ft('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}
-                  title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBrandingModal(true)}
-                  className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}
-                >
-                  <Palette className="w-4 h-4 mr-2" />
-                  Customize Invoice
-                </Button>
-                <Button variant="outline" className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-              {canCreate && (
-                <Button
-                  className={ft('bg-blue-600 hover:bg-blue-700 text-white', 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30')}
-                  onClick={() => { resetForm(); setShowCreateModal(true); }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Invoice
-                </Button>
-              )}
-              </div>
-            }
-          />
-        </div>
-
-        {/* Stats Cards */}
+  const content = (
+    <div className="space-y-4">
+      {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Total', value: `€${stats.total.toLocaleString()}`, count: stats.count, color: 'zinc' },
@@ -905,7 +864,6 @@ export default function FinanceInvoices() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* Create/Edit Invoice Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
@@ -1591,6 +1549,57 @@ export default function FinanceInvoices() {
         onSave={() => loadBrandConfig()}
       />
     </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
+        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <PageHeader
+              icon={Receipt}
+              title="Invoices"
+              subtitle="Create, send, and track your invoices"
+              color="blue"
+              actions={
+                <div className="flex gap-3">
+                  <button
+                    onClick={toggleTheme}
+                    className={`p-2 rounded-lg border transition-colors ${ft('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}
+                    title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                  >
+                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  </button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowBrandingModal(true)}
+                    className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}
+                  >
+                    <Palette className="w-4 h-4 mr-2" />
+                    Customize Invoice
+                  </Button>
+                  <Button variant="outline" className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                  {canCreate && (
+                    <Button
+                      className={ft('bg-blue-600 hover:bg-blue-700 text-white', 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30')}
+                      onClick={() => { resetForm(); setShowCreateModal(true); }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Invoice
+                    </Button>
+                  )}
+                </div>
+              }
+            />
+          </div>
+          {content}
+        </div>
+      </div>
     </FinancePageTransition>
   );
 }

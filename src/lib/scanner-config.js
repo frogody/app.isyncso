@@ -24,11 +24,12 @@ export const SCANNER_INIT_CONFIG = {
   verbose: false,
 };
 
-// Video constraints for getUserMedia — requests HD for sharper barcode decoding.
+// Video constraints for getUserMedia — requests HD rear camera for barcode scanning.
 // Uses "ideal" so browsers that can't meet a constraint silently ignore it.
-// facingMode is NOT included here because it's already passed as the first
-// argument to .start(). Double-specifying it can cause conflicts on some devices.
+// facingMode MUST be here because when videoConstraints is present in the .start()
+// config, html5-qrcode bypasses the first argument and uses these directly.
 const VIDEO_CONSTRAINTS = {
+  facingMode: { ideal: "environment" },
   width: { ideal: 1920 },
   height: { ideal: 1080 },
 };

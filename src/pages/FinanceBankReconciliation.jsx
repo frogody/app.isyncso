@@ -635,18 +635,9 @@ export default function FinanceBankReconciliation({ embedded = false }) {
   };
 
   // ── Main Render ───────────────────────────────────────────────────────
-  return (
-    <FinancePageTransition>
-      <div className="space-y-6">
-        {!embedded && (
-          <PageHeader
-            title="Bank Reconciliation"
-            subtitle="Match bank transactions with journal entries"
-            icon={Landmark}
-          />
-        )}
-
-        {/* ── Top Bar: Account Selector + Actions ──────────────────────── */}
+  const content = (
+    <div className="space-y-6">
+      {/* ── Top Bar: Account Selector + Actions ──────────────────────── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           {/* Bank Account Selector */}
           <div className="flex items-center gap-3 flex-1">
@@ -1126,6 +1117,20 @@ export default function FinanceBankReconciliation({ embedded = false }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className="space-y-6">
+        <PageHeader
+          title="Bank Reconciliation"
+          subtitle="Match bank transactions with journal entries"
+          icon={Landmark}
+        />
+        {content}
       </div>
     </FinancePageTransition>
   );

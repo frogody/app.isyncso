@@ -570,18 +570,9 @@ export default function FinanceTaxRates({ embedded = false }) {
   );
 
   // ── Main Render ─────────────────────────────────────────────────────
-  return (
-    <FinancePageTransition>
-      <div className="space-y-6">
-        {!embedded && (
-          <PageHeader
-            title="Tax Management"
-            subtitle="Manage tax rates and track tax filing periods"
-            icon={Percent}
-          />
-        )}
-
-        {/* Tab Switcher */}
+  const content = (
+    <div className="space-y-6">
+      {/* Tab Switcher */}
         <div className="flex gap-1 p-1 rounded-lg bg-white/[0.04] w-fit">
           <button
             onClick={() => setActiveTab('rates')}
@@ -738,6 +729,20 @@ export default function FinanceTaxRates({ embedded = false }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className="space-y-6">
+        <PageHeader
+          title="Tax Management"
+          subtitle="Manage tax rates and track tax filing periods"
+          icon={Percent}
+        />
+        {content}
       </div>
     </FinancePageTransition>
   );

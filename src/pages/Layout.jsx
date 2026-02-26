@@ -496,20 +496,14 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       agent: 'finance',
       items: [
         { label: 'Dashboard', path: createPageUrl('FinanceDashboard'), icon: LayoutDashboard },
-        { label: 'Invoices', path: createPageUrl('FinanceInvoices'), icon: Receipt },
-        { label: 'Proposals', path: createPageUrl('FinanceProposals'), icon: FileText },
+        { label: 'Receivables', path: createPageUrl('FinanceReceivables'), icon: Receipt },
         { label: 'Expenses', path: createPageUrl('FinanceExpensesConsolidated'), icon: CreditCard },
-        { label: 'Ledger', path: createPageUrl('FinanceLedger'), icon: BookOpen },
         { label: 'Payables', path: createPageUrl('FinancePayables'), icon: ScrollText },
-        { label: 'Tax Rates', path: createPageUrl('FinanceTaxRates'), icon: Percent },
-        { label: 'BTW Aangifte', path: createPageUrl('FinanceBTWAangifte'), icon: Calculator },
-        { label: 'Recurring', path: createPageUrl('FinanceRecurringInvoices'), icon: Repeat },
-        { label: 'Credit Notes', path: createPageUrl('FinanceCreditNotes'), icon: ReceiptText },
-        { label: 'Bank Accounts', path: createPageUrl('FinanceBankAccounts'), icon: Landmark },
-        { label: 'Reconciliation', path: createPageUrl('FinanceBankReconciliation'), icon: Landmark },
-        { label: 'bol.com Payouts', path: createPageUrl('FinanceBolcomPayouts'), icon: Globe },
-        { label: 'Smart Import', path: createPageUrl('FinanceSmartImport'), icon: Upload },
+        { label: 'Ledger', path: createPageUrl('FinanceLedger'), icon: BookOpen },
+        { label: 'Banking', path: createPageUrl('FinanceBanking'), icon: Landmark },
+        { label: 'Settings', path: createPageUrl('FinanceSettings'), icon: SettingsIcon },
         { label: 'Reports', path: createPageUrl('FinanceReports'), icon: BarChart3 },
+        { label: 'Smart Import', path: createPageUrl('FinanceSmartImport'), icon: Upload },
       ]
     };
   }
