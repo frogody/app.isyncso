@@ -2354,15 +2354,29 @@ serve(async (req) => {
 
         let ordersSynced = 0, itemsSynced = 0, customersCreated = 0;
 
-        // Product lookup
+        // Product lookup (ID + price for fallback)
         const allEans = new Set<string>();
         for (const [, o] of orderMap) o.items.forEach(i => { if (i.ean) allEans.add(i.ean); });
         const eanProdMap = new Map<string, string>();
+        const eanPriceMap = new Map<string, number>();
         if (allEans.size > 0) {
           const arr = Array.from(allEans);
           for (let i = 0; i < arr.length; i += 100) {
-            const { data } = await supabase.from("products").select("id, ean").eq("company_id", companyId).in("ean", arr.slice(i, i + 100));
-            for (const p of (data || []) as Array<{ id: string; ean: string }>) eanProdMap.set(p.ean, p.id);
+            const { data } = await supabase.from("products").select("id, ean, base_price, price").eq("company_id", companyId).in("ean", arr.slice(i, i + 100));
+            for (const p of (data || []) as Array<{ id: string; ean: string; base_price?: number; price?: number }>) {
+              eanProdMap.set(p.ean, p.id);
+              const catalogPrice = p.base_price || p.price || 0;
+              if (catalogPrice > 0) eanPriceMap.set(p.ean, catalogPrice);
+            }
+          }
+        }
+
+        // Backfill zero-price items from product catalog
+        for (const [, o] of orderMap) {
+          for (const item of o.items) {
+            if (item.price === 0 && item.ean && eanPriceMap.has(item.ean)) {
+              item.price = eanPriceMap.get(item.ean)!;
+            }
           }
         }
 
@@ -2382,7 +2396,7 @@ serve(async (req) => {
             return {
               company_id: companyId, customer_id: null,
               order_number: `BOL-${o.orderId}`, external_reference: o.orderId,
-              order_date: o.orderDate, status: 'delivered', source: 'bolcom',
+              order_date: o.orderDate || new Date().toISOString(), status: 'delivered', source: 'bolcom',
               shipping_name: nm,
               shipping_address_line1: s ? `${s.streetName || ''} ${s.houseNumber || ''}${s.houseNumberExtension || ''}`.trim() : null,
               shipping_city: s?.city || null, shipping_postal_code: s?.zipCode || null,
@@ -2465,6 +2479,30 @@ serve(async (req) => {
                     const qty = oi.quantity || 1;
                     orderTotal += price * qty;
                     itemUpdates.push({ ean: oi.ean || oi.product?.ean || '', price, qty });
+                  }
+                }
+              }
+
+              // Last resort: use product catalog prices as fallback
+              if (orderTotal === 0 && itemUpdates.length > 0) {
+                for (const item of itemUpdates) {
+                  if (item.price === 0 && item.ean && eanPriceMap.has(item.ean)) {
+                    item.price = eanPriceMap.get(item.ean)!;
+                    orderTotal += item.price * item.qty;
+                  }
+                }
+              }
+              // If still 0 and we have no items yet, try to get items from DB and match with catalog
+              if (orderTotal === 0 && itemUpdates.length === 0) {
+                const { data: dbItems } = await supabase.from("sales_order_items")
+                  .select("ean, quantity").eq("sales_order_id", order.id);
+                if (dbItems?.length) {
+                  for (const di of dbItems) {
+                    const catalogPrice = di.ean ? eanPriceMap.get(di.ean) : undefined;
+                    if (catalogPrice && catalogPrice > 0) {
+                      orderTotal += catalogPrice * (di.quantity || 1);
+                      itemUpdates.push({ ean: di.ean, price: catalogPrice, qty: di.quantity || 1 });
+                    }
                   }
                 }
               }
