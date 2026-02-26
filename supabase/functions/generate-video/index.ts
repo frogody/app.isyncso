@@ -12,9 +12,11 @@ const GOOGLE_VEO_API_KEY = Deno.env.get("GOOGLE_VEO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Veo model IDs to try in order (fastest first)
+// Available Veo models (all support predictLongRunning)
 const MODEL_IDS = [
-  'veo-2-generate-preview',
+  'veo-3.0-fast-generate-001',
+  'veo-3.0-generate-001',
+  'veo-2.0-generate-001',
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -56,7 +58,7 @@ async function downloadImageAsBase64(url: string): Promise<{ data: string; mimeT
   return { data: b64, mimeType };
 }
 
-// Upload image to Google Files API to get a fileUri for Veo
+// Upload image to Google Files API to get a fileUri
 async function uploadToGoogleFiles(
   imageB64: string,
   mimeType: string,
@@ -92,7 +94,7 @@ async function uploadToGoogleFiles(
 
 // Deep-search any object for a video URI
 function findVideoUri(obj: any, depth = 0): string | null {
-  if (!obj || depth > 6) return null;
+  if (!obj || depth > 8) return null;
   if (typeof obj === 'string' && obj.startsWith('http') && (obj.includes('video') || obj.includes('file'))) return obj;
   if (obj.uri && typeof obj.uri === 'string') return obj.uri;
   if (obj.url && typeof obj.url === 'string') return obj.url;
@@ -123,11 +125,10 @@ serve(async (req) => {
       user_id,
     } = body;
 
-    // Accept both field names from frontend
     const duration = body.duration || body.duration_seconds || 5;
     const aspectRatio = body.aspect_ratio || '16:9';
 
-    // ── Credit check (50 credits for video generation) ─────────────
+    // ── Credit check ─────────────────────────────────────────────────
     if (user_id) {
       const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       const credit = await requireCredits(supabaseAdmin, user_id, 'generate-video', {
@@ -147,7 +148,7 @@ serve(async (req) => {
     const apiKey = GOOGLE_VEO_API_KEY || GOOGLE_API_KEY;
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'No Google API key configured. Set GOOGLE_VEO_API_KEY or GOOGLE_API_KEY.' }),
+        JSON.stringify({ error: 'No Google API key configured.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -156,210 +157,176 @@ serve(async (req) => {
 
     // ── Step 1: Prepare image (if provided) ───────────────────────────
     let googleFileUri: string | null = null;
-    let imageB64: string | null = null;
-    let imageMime = 'image/jpeg';
 
     if (image_url) {
-      console.log('Downloading product image...');
-      const img = await downloadImageAsBase64(image_url);
-      imageB64 = img.data;
-      imageMime = img.mimeType;
-      console.log(`Image downloaded: ${imageMime}, ${Math.round(imageB64.length / 1024)}KB base64`);
+      try {
+        console.log('Downloading product image...');
+        const { data: imageB64, mimeType: imageMime } = await downloadImageAsBase64(image_url);
+        console.log(`Image downloaded: ${imageMime}, ${Math.round(imageB64.length / 1024)}KB`);
 
-      console.log('Uploading image to Google Files API...');
-      googleFileUri = await uploadToGoogleFiles(imageB64, imageMime, apiKey);
+        console.log('Uploading to Google Files API...');
+        googleFileUri = await uploadToGoogleFiles(imageB64, imageMime, apiKey);
+      } catch (imgErr: any) {
+        console.warn('Image processing failed, continuing with text-only:', imgErr.message);
+      }
     }
 
-    // ── Step 2: Try Veo predictLongRunning ────────────────────────────
+    // ── Step 2: Call Veo predictLongRunning API ─────────────────────────
     let videoUrl: string | null = null;
     let usedModel = 'unknown';
     let lastApiError = '';
-
-    const safeMime = imageMime.startsWith('image/') ? imageMime : 'image/jpeg';
-
-    // Build image payload variants
-    type ImagePayload = { label: string; instance: Record<string, unknown> };
-    const imagePayloads: ImagePayload[] = [];
-
-    if (image_url && googleFileUri) {
-      imagePayloads.push({
-        label: 'fileUri',
-        instance: { prompt, image: { fileUri: googleFileUri } },
-      });
-    }
-
-    if (image_url && imageB64) {
-      imagePayloads.push({
-        label: 'bytesBase64Encoded',
-        instance: { prompt, image: { bytesBase64Encoded: imageB64, mimeType: safeMime } },
-      });
-    }
-
-    // Text-only fallback (always available)
-    imagePayloads.push({
-      label: 'textOnly',
-      instance: { prompt },
-    });
+    const allErrors: string[] = [];
 
     for (const modelId of MODEL_IDS) {
-      for (const payload of imagePayloads) {
-        try {
-          console.log(`Trying ${modelId} with ${payload.label} format...`);
+      // Build instance — with or without image
+      const instance: Record<string, unknown> = { prompt };
 
-          const veoResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey,
+      if (googleFileUri) {
+        instance.image = { fileUri: googleFileUri };
+      }
+
+      console.log(`Trying ${modelId}:predictLongRunning (image=${!!googleFileUri})...`);
+
+      try {
+        const veoResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              instances: [instance],
+              parameters: {
+                aspectRatio: aspectRatio,
+                durationSeconds: Math.min(8, Math.max(5, Number(duration) || 5)),
               },
-              body: JSON.stringify({
-                instances: [payload.instance],
-                parameters: {
-                  aspectRatio: aspectRatio,
-                  durationSeconds: Number(duration) || 5,
-                  personGeneration: 'allow_adult',
-                },
-              }),
-            }
-          );
-
-          if (!veoResponse.ok) {
-            const errText = await veoResponse.text();
-            console.error(`${modelId}/${payload.label} (${veoResponse.status}):`, errText.substring(0, 300));
-            lastApiError = `${modelId}/${payload.label} (${veoResponse.status}): ${errText.substring(0, 300)}`;
-            continue;
+            }),
           }
+        );
 
-          const veoData = await veoResponse.json();
-          console.log(`${modelId} accepted! Response keys:`, Object.keys(veoData));
-
-          // Get operation name for polling
-          const operationName = veoData.name;
-          if (!operationName) {
-            console.error(`${modelId}: no operation name, checking for immediate result...`);
-            const immediateUri = findVideoUri(veoData);
-            if (immediateUri) {
-              const videoResp = await fetch(immediateUri, {
-                headers: { 'x-goog-api-key': apiKey },
-              });
-              if (videoResp.ok) {
-                const videoBytes = new Uint8Array(await videoResp.arrayBuffer());
-                const fileName = `videos/product-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
-                videoUrl = await uploadToStorage('generated-content', fileName, videoBytes, 'video/mp4');
-                usedModel = modelId;
-                break;
-              }
-            }
-            lastApiError = `${modelId}: no operation name in response`;
-            continue;
-          }
-
-          // ── Poll for completion ──────────────────────────────────────
-          console.log(`Polling operation: ${operationName}`);
-          let attempts = 0;
-          const maxAttempts = 120; // 10 minutes max (5s intervals)
-
-          while (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            attempts++;
-
-            try {
-              const statusResponse = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/${operationName}`,
-                { headers: { 'x-goog-api-key': apiKey } }
-              );
-
-              if (!statusResponse.ok) {
-                const statusErr = await statusResponse.text();
-                console.error(`Poll error (${statusResponse.status}):`, statusErr.substring(0, 200));
-                if (statusResponse.status >= 400 && statusResponse.status < 500) break;
-                continue;
-              }
-
-              const statusData = await statusResponse.json();
-
-              if (statusData.done) {
-                console.log(`Operation complete after ${attempts * 5}s!`);
-
-                if (statusData.error) {
-                  console.error('Operation failed:', JSON.stringify(statusData.error).substring(0, 500));
-                  lastApiError = `${modelId} operation error: ${JSON.stringify(statusData.error).substring(0, 300)}`;
-                  break;
-                }
-
-                const responseStr = JSON.stringify(statusData.response || statusData);
-                console.log('Response structure:', responseStr.substring(0, 500));
-
-                // Try to find the video URI
-                const foundUri = findVideoUri(statusData.response || statusData);
-
-                if (foundUri) {
-                  console.log(`Found video URI: ${foundUri.substring(0, 100)}...`);
-                  const videoResp = await fetch(foundUri, {
-                    headers: { 'x-goog-api-key': apiKey },
-                  });
-                  if (videoResp.ok) {
-                    const videoBytes = new Uint8Array(await videoResp.arrayBuffer());
-                    console.log(`Downloaded video: ${videoBytes.length} bytes`);
-                    const fileName = `videos/product-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
-                    videoUrl = await uploadToStorage('generated-content', fileName, videoBytes, 'video/mp4');
-                    usedModel = modelId;
-                    console.log(`Video uploaded to storage: ${videoUrl}`);
-                  } else {
-                    console.error(`Failed to download video (${videoResp.status})`);
-                  }
-                } else {
-                  // Check for inline base64 video data
-                  const inlinePaths = [
-                    statusData.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.inlineData,
-                    statusData.response?.generatedSamples?.[0]?.video?.inlineData,
-                    statusData.response?.generatedSamples?.[0]?.inlineData,
-                  ];
-                  for (const inlineData of inlinePaths) {
-                    if (inlineData?.data) {
-                      console.log('Found inline base64 video data');
-                      const videoBytes = Uint8Array.from(atob(inlineData.data), c => c.charCodeAt(0));
-                      const fileName = `videos/product-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
-                      videoUrl = await uploadToStorage('generated-content', fileName, videoBytes, inlineData.mimeType || 'video/mp4');
-                      usedModel = modelId;
-                      break;
-                    }
-                  }
-
-                  if (!videoUrl) {
-                    console.error('Done but no video found in response');
-                    console.error('Full response:', responseStr.substring(0, 1000));
-                    lastApiError = `${modelId}: operation done but no video in response`;
-                  }
-                }
-                break;
-              }
-
-              if (attempts % 6 === 0) {
-                console.log(`Poll ${attempts}/${maxAttempts} (${attempts * 5}s elapsed)...`);
-              }
-            } catch (pollErr: any) {
-              console.error(`Poll exception at attempt ${attempts}:`, pollErr.message);
-            }
-          }
-
-          if (videoUrl) break;
-
-          if (attempts >= maxAttempts) {
-            lastApiError = `${modelId}/${payload.label}: timed out after ${maxAttempts * 5}s`;
-            console.error(lastApiError);
-          }
-        } catch (modelErr: any) {
-          console.error(`${modelId}/${payload.label} exception:`, modelErr.message);
-          lastApiError = `${modelId}/${payload.label} exception: ${modelErr.message}`;
+        if (!veoResponse.ok) {
+          const errText = await veoResponse.text();
+          const errMsg = `${modelId} (${veoResponse.status}): ${errText.substring(0, 400)}`;
+          console.error(errMsg);
+          lastApiError = errMsg;
+          allErrors.push(errMsg);
           continue;
         }
-      } // end payload loop
+
+        const veoData = await veoResponse.json();
+        console.log(`${modelId} accepted! Keys:`, Object.keys(veoData));
+
+        // The response is a long-running operation with a "name" field
+        const operationName = veoData.name;
+        if (!operationName) {
+          // Check for immediate result
+          const immediateUri = findVideoUri(veoData);
+          if (immediateUri) {
+            console.log('Immediate video URI found');
+            const videoResp = await fetch(immediateUri.includes('key=') ? immediateUri : `${immediateUri}?key=${apiKey}`);
+            if (videoResp.ok) {
+              const videoBytes = new Uint8Array(await videoResp.arrayBuffer());
+              const fileName = `videos/product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.mp4`;
+              videoUrl = await uploadToStorage('generated-content', fileName, videoBytes, 'video/mp4');
+              usedModel = modelId;
+            }
+          }
+          if (!videoUrl) {
+            lastApiError = `${modelId}: no operation name and no immediate result`;
+            console.error(lastApiError, JSON.stringify(veoData).substring(0, 500));
+          }
+          continue;
+        }
+
+        // ── Poll for completion ──────────────────────────────────────
+        console.log(`Polling operation: ${operationName}`);
+        const maxAttempts = 120; // 10 minutes
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          await new Promise(r => setTimeout(r, 5000));
+
+          try {
+            const pollUrl = operationName.startsWith('http')
+              ? `${operationName}${operationName.includes('?') ? '&' : '?'}key=${apiKey}`
+              : `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`;
+
+            const statusRes = await fetch(pollUrl);
+
+            if (!statusRes.ok) {
+              const statusErr = await statusRes.text();
+              console.error(`Poll ${attempt} error (${statusRes.status}):`, statusErr.substring(0, 200));
+              if (statusRes.status >= 400 && statusRes.status < 500) break;
+              continue;
+            }
+
+            const statusData = await statusRes.json();
+
+            if (statusData.done) {
+              console.log(`Operation complete after ${attempt * 5}s!`);
+
+              if (statusData.error) {
+                console.error('Operation error:', JSON.stringify(statusData.error).substring(0, 500));
+                lastApiError = `${modelId}: ${JSON.stringify(statusData.error).substring(0, 300)}`;
+                break;
+              }
+
+              // Try to find video URI in the response
+              const foundUri = findVideoUri(statusData.response || statusData);
+
+              if (foundUri) {
+                console.log(`Found video URI: ${foundUri.substring(0, 120)}`);
+                const downloadUrl = foundUri.includes('key=') ? foundUri : `${foundUri}?key=${apiKey}`;
+                const videoResp = await fetch(downloadUrl);
+                if (videoResp.ok) {
+                  const videoBytes = new Uint8Array(await videoResp.arrayBuffer());
+                  console.log(`Downloaded video: ${videoBytes.length} bytes`);
+                  const fileName = `videos/product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.mp4`;
+                  videoUrl = await uploadToStorage('generated-content', fileName, videoBytes, 'video/mp4');
+                  usedModel = modelId;
+                  console.log(`Uploaded to storage: ${videoUrl}`);
+                } else {
+                  console.error(`Video download failed: ${videoResp.status}`);
+                  lastApiError = `${modelId}: video download failed (${videoResp.status})`;
+                }
+              } else {
+                // Check for inline base64
+                const inlinePaths = [
+                  statusData.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.inlineData,
+                  statusData.response?.generatedSamples?.[0]?.video?.inlineData,
+                ];
+                for (const inlineData of inlinePaths) {
+                  if (inlineData?.data) {
+                    console.log('Found inline base64 video');
+                    const videoBytes = Uint8Array.from(atob(inlineData.data), c => c.charCodeAt(0));
+                    const fileName = `videos/product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.mp4`;
+                    videoUrl = await uploadToStorage('generated-content', fileName, videoBytes, inlineData.mimeType || 'video/mp4');
+                    usedModel = modelId;
+                    break;
+                  }
+                }
+
+                if (!videoUrl) {
+                  const respStr = JSON.stringify(statusData.response || statusData).substring(0, 1000);
+                  console.error('Done but no video found:', respStr);
+                  lastApiError = `${modelId}: done but no video in response`;
+                }
+              }
+              break;
+            }
+
+            if (attempt % 6 === 0) {
+              console.log(`Poll ${attempt}/${maxAttempts} (${attempt * 5}s)...`);
+            }
+          } catch (pollErr: any) {
+            console.error(`Poll exception ${attempt}:`, pollErr.message);
+          }
+        }
+      } catch (modelErr: any) {
+        console.error(`${modelId} exception:`, modelErr.message);
+        lastApiError = `${modelId}: ${modelErr.message}`;
+      }
 
       if (videoUrl) break;
-    } // end model loop
+    }
 
     // ── Return result ────────────────────────────────────────────────
     if (!videoUrl) {
@@ -367,6 +334,7 @@ serve(async (req) => {
         JSON.stringify({
           error: 'Video generation failed. Please try again.',
           debug_last_error: lastApiError,
+          all_errors: allErrors,
         }),
         { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
