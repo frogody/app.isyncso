@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Calendar, Clock, Zap, Target, Monitor, TrendingUp,
   RefreshCw, Loader2, Sparkles, ChevronRight, Activity, Brain,
-  FileText, CheckCircle2, LightbulbIcon, CalendarDays
+  FileText, CheckCircle2, LightbulbIcon, CalendarDays, Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from "@/api/supabaseClient";
@@ -12,6 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SyncViewSelector } from '@/components/sync/ui';
+import InfoCard from '@/components/shared/InfoCard';
+import { createPageUrl } from "@/utils";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 export default function DailyJournal() {
   const [user, setUser] = useState(null);
@@ -19,10 +23,83 @@ export default function DailyJournal() {
   const [journals, setJournals] = useState([]);
   const [selectedJournal, setSelectedJournal] = useState(null);
   const [generatingJournal, setGeneratingJournal] = useState(false);
+  const [dayLogs, setDayLogs] = useState({ commitments: [], categories: {} });
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Fetch activity logs when a journal is selected to get commitments & categories
+  useEffect(() => {
+    if (!selectedJournal?.journal_date || !user?.id) {
+      setDayLogs({ commitments: [], categories: {} });
+      return;
+    }
+    const fetchDayLogs = async () => {
+      try {
+        const { data: logs } = await db.from('desktop_activity_logs')
+          .select('commitments, semantic_category, total_minutes, app_breakdown')
+          .eq('user_id', user.id)
+          .gte('hour_start', `${selectedJournal.journal_date}T00:00:00`)
+          .lt('hour_start', `${selectedJournal.journal_date}T23:59:59`);
+
+        if (!logs || logs.length === 0) {
+          setDayLogs({ commitments: [], categories: {} });
+          return;
+        }
+
+        // Extract and deduplicate commitments
+        const allCommitments = [];
+        const seen = new Set();
+        logs.forEach(log => {
+          if (!log.commitments) return;
+          try {
+            const parsed = typeof log.commitments === 'string' ? JSON.parse(log.commitments) : log.commitments;
+            const items = Array.isArray(parsed) ? parsed : [parsed];
+            items.forEach(c => {
+              const key = c.description || c.title || c.text || (typeof c === 'string' ? c : '');
+              if (key && !seen.has(key)) {
+                seen.add(key);
+                allCommitments.push({ ...c, _display: key });
+              }
+            });
+          } catch {}
+        });
+
+        // Derive categories from app_breakdown (most reliable), fallback to semantic_category
+        const categories = {};
+        logs.forEach(log => {
+          if (log.app_breakdown && Array.isArray(log.app_breakdown) && log.app_breakdown.length > 0) {
+            log.app_breakdown.forEach(item => {
+              const cat = item.category || 'Other';
+              const mins = item.minutes || 0;
+              if (mins > 0) {
+                categories[cat] = (categories[cat] || 0) + mins;
+              }
+            });
+          } else if (log.semantic_category && log.semantic_category !== 'other') {
+            try {
+              const parsed = JSON.parse(log.semantic_category);
+              if (typeof parsed === 'object' && parsed !== null) {
+                Object.entries(parsed).forEach(([cat, mins]) => {
+                  categories[cat] = (categories[cat] || 0) + (mins || 0);
+                });
+              } else {
+                categories[log.semantic_category] = (categories[log.semantic_category] || 0) + (log.total_minutes || 1);
+              }
+            } catch {
+              categories[log.semantic_category] = (categories[log.semantic_category] || 0) + (log.total_minutes || 1);
+            }
+          }
+        });
+
+        setDayLogs({ commitments: allCommitments, categories });
+      } catch (err) {
+        console.error('Failed to fetch day logs:', err);
+      }
+    };
+    fetchDayLogs();
+  }, [selectedJournal?.journal_date, user?.id]);
 
   const loadData = async () => {
     try {
@@ -158,12 +235,12 @@ export default function DailyJournal() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className="h-[calc(100dvh-3.5rem)] bg-black p-4">
         <div className="max-w-7xl mx-auto space-y-4">
-          <Skeleton className="h-16 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className="h-12 w-full bg-zinc-800 rounded-xl" />
           <div className="flex gap-4">
-            <Skeleton className="h-[600px] w-64 bg-zinc-800 rounded-xl" />
-            <Skeleton className="h-[600px] flex-1 bg-zinc-800 rounded-xl" />
+            <Skeleton className="h-[400px] w-64 bg-zinc-800 rounded-xl" />
+            <Skeleton className="h-[400px] flex-1 bg-zinc-800 rounded-xl" />
           </div>
         </div>
       </div>
@@ -171,32 +248,45 @@ export default function DailyJournal() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className="h-[calc(100dvh-3.5rem)] bg-black relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/5 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 h-screen flex flex-col p-4">
+      <div className="relative z-10 h-[calc(100dvh-3.5rem)] flex flex-col px-4 lg:px-6 py-3">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-4"
+          className="mb-3 shrink-0"
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
-                <BookOpen className="w-5 h-5 text-cyan-400" />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                <BookOpen className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white">Daily Journals</h1>
-                <p className="text-zinc-500 mt-1">AI-powered reflections on your productivity</p>
+                <h1 className="text-base font-bold text-white">Daily Journals</h1>
+                <p className="text-zinc-500 text-xs">AI-generated daily activity reports</p>
               </div>
             </div>
+            <SyncViewSelector />
           </div>
         </motion.div>
+
+        {/* Privacy Notice */}
+        <div className="shrink-0 mb-2">
+          <InfoCard
+            title="Your activity is private"
+            icon={Shield}
+            learnMoreUrl={createPageUrl('PrivacyAIAct')}
+            className="bg-emerald-500/10 border-emerald-500/20"
+          >
+            Your employer cannot see your activity data. This is your personal productivity tool, protected by design and by law.
+          </InfoCard>
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 flex gap-4 min-h-0">
@@ -204,7 +294,7 @@ export default function DailyJournal() {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-72 flex-shrink-0 flex flex-col rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden"
+            className="w-72 flex-shrink-0 flex flex-col self-start rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden max-h-full"
           >
             <div className="p-3 border-b border-zinc-800/60">
               <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
@@ -276,6 +366,7 @@ export default function DailyJournal() {
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
                     Generate Today's Journal
+                    <CreditCostBadge credits={1} />
                   </>
                 )}
               </Button>
@@ -309,11 +400,27 @@ export default function DailyJournal() {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-zinc-100">
-                      {Math.round((selectedJournal.productivity_score || 0) * 100)}%
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => generateJournal(new Date(selectedJournal.journal_date + 'T12:00:00'))}
+                      disabled={generatingJournal}
+                      className="text-zinc-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                      title="Regenerate this journal with fresh AI insights"
+                    >
+                      {generatingJournal ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                    </Button>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-zinc-100">
+                        {Math.round((selectedJournal.productivity_score || 0) * 100)}%
+                      </div>
+                      <div className="text-xs text-zinc-500">Productivity</div>
                     </div>
-                    <div className="text-xs text-zinc-500">Productivity</div>
                   </div>
                 </div>
 
@@ -370,17 +477,105 @@ export default function DailyJournal() {
                   </div>
                 )}
 
-                {/* Personal Notes */}
+                {/* Communications */}
+                {selectedJournal.communications && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-400" />
+                      Communications
+                    </h3>
+                    <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <p className="text-xs text-blue-200/90 leading-relaxed whitespace-pre-wrap">
+                        {selectedJournal.communications}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Items */}
+                {selectedJournal.action_items && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-amber-400" />
+                      Action Items & Follow-ups
+                    </h3>
+                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <p className="text-xs text-amber-200/90 leading-relaxed whitespace-pre-wrap">
+                        {selectedJournal.action_items}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Observations */}
                 {selectedJournal.personal_notes && (
                   <div className="mb-6">
                     <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
-                      <LightbulbIcon className="w-4 h-4 text-amber-400" />
-                      Personal Notes
+                      <LightbulbIcon className="w-4 h-4 text-zinc-400" />
+                      Observations
                     </h3>
-                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <p className="text-xs text-amber-200/90 leading-relaxed">
+                    <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                      <p className="text-xs text-zinc-300 leading-relaxed">
                         {selectedJournal.personal_notes}
                       </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Commitments Detected */}
+                {dayLogs.commitments.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-amber-400" />
+                      Commitments Detected
+                      <Badge className="bg-amber-500/10 text-amber-300 border-amber-500/20 text-[10px] ml-1">
+                        {dayLogs.commitments.length}
+                      </Badge>
+                    </h3>
+                    <div className="space-y-2">
+                      {dayLogs.commitments.map((c, idx) => (
+                        <div key={idx} className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/15">
+                          <p className="text-xs text-amber-200/90">{c._display}</p>
+                          {(c.status || c.due_date) && (
+                            <div className="flex items-center gap-2 mt-1.5">
+                              {c.status && (
+                                <Badge className="bg-zinc-800/50 text-zinc-400 border-zinc-700/50 text-[10px]">
+                                  {c.status}
+                                </Badge>
+                              )}
+                              {c.due_date && (
+                                <span className="text-[10px] text-zinc-500">Due: {c.due_date}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Semantic Categories */}
+                {Object.keys(dayLogs.categories).length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-zinc-200 mb-3 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-cyan-400" />
+                      Work Categories
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(dayLogs.categories)
+                        .sort(([,a], [,b]) => b - a)
+                        .filter(([cat]) => cat !== 'other')
+                        .map(([category, mins]) => {
+                          const label = category.charAt(0).toUpperCase() + category.slice(1);
+                          const h = Math.floor(mins / 60);
+                          const m = Math.round(mins % 60);
+                          const dur = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+                          return (
+                            <Badge key={category} className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                              {label} ({dur})
+                            </Badge>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -473,6 +668,7 @@ export default function DailyJournal() {
                       <>
                         <Sparkles className="w-4 h-4 mr-2" />
                         Generate Today's Journal
+                        <CreditCostBadge credits={1} />
                       </>
                     )}
                   </Button>

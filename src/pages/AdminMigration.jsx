@@ -57,13 +57,13 @@ export default function AdminMigration() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Company Data Migration</h1>
-            <p className="text-gray-400">Normalize legacy company_data JSON to Company entity relations</p>
+            <p className="text-zinc-400">Normalize legacy company_data JSON to Company entity relations</p>
           </div>
-          <Database className="w-12 h-12 text-purple-400" />
+          <Database className="w-12 h-12 text-cyan-400" />
         </div>
 
         {/* Actions */}
-        <Card className="glass-card border-0 border-purple-500/20">
+        <Card className="glass-card border-0 border-cyan-500/20">
           <CardHeader>
             <CardTitle className="text-white">Migration Controls</CardTitle>
           </CardHeader>
@@ -80,7 +80,7 @@ export default function AdminMigration() {
               <Button
                 onClick={runMigration}
                 disabled={loading || status === 'migrating'}
-                className="bg-gradient-to-br from-purple-500/30 to-purple-600/20 border border-purple-400/50 text-purple-200"
+                className="bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 border border-cyan-400/50 text-cyan-200"
               >
                 <Play className="w-4 h-4 mr-2" />
                 {status === 'migrating' ? 'Migrating...' : 'Run Migration'}
@@ -105,7 +105,7 @@ export default function AdminMigration() {
                   <CheckCircle className="w-5 h-5 text-cyan-400" />
                   Verification Report
                 </CardTitle>
-                <Badge className={verification.migration_complete ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
+                <Badge className={verification.migration_complete ? "bg-cyan-500/20 text-cyan-300" : "bg-yellow-500/20 text-yellow-300"}>
                   {verification.migration_complete ? '✓ Complete' : '⚠ Needs Migration'}
                 </Badge>
               </div>
@@ -117,19 +117,19 @@ export default function AdminMigration() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-white/5 rounded-lg p-4">
                     <div className="text-2xl font-bold text-white">{verification.total_users}</div>
-                    <div className="text-xs text-gray-400">Total Users</div>
+                    <div className="text-xs text-zinc-400">Total Users</div>
                   </div>
-                  <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
-                    <div className="text-2xl font-bold text-green-400">{verification.users_with_company_id}</div>
-                    <div className="text-xs text-gray-400">With company_id</div>
+                  <div className="bg-cyan-500/10 rounded-lg p-4 border border-cyan-500/20">
+                    <div className="text-2xl font-bold text-cyan-400">{verification.users_with_company_id}</div>
+                    <div className="text-xs text-zinc-400">With company_id</div>
                   </div>
                   <div className="bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/20">
                     <div className="text-2xl font-bold text-yellow-400">{verification.users_with_legacy_data_only}</div>
-                    <div className="text-xs text-gray-400">Need Migration</div>
+                    <div className="text-xs text-zinc-400">Need Migration</div>
                   </div>
-                  <div className="bg-gray-500/10 rounded-lg p-4 border border-gray-500/20">
-                    <div className="text-2xl font-bold text-gray-400">{verification.users_without_company_id}</div>
-                    <div className="text-xs text-gray-400">No Company</div>
+                  <div className="bg-zinc-500/10 rounded-lg p-4 border border-zinc-500/20">
+                    <div className="text-2xl font-bold text-zinc-400">{verification.users_without_company_id}</div>
+                    <div className="text-xs text-zinc-400">No Company</div>
                   </div>
                 </div>
               </div>
@@ -140,15 +140,15 @@ export default function AdminMigration() {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="bg-white/5 rounded-lg p-4">
                     <div className="text-2xl font-bold text-white">{verification.total_companies}</div>
-                    <div className="text-xs text-gray-400">Total Companies</div>
+                    <div className="text-xs text-zinc-400">Total Companies</div>
                   </div>
                   <div className="bg-cyan-500/10 rounded-lg p-4 border border-cyan-500/20">
                     <div className="text-2xl font-bold text-cyan-400">{verification.companies_with_users}</div>
-                    <div className="text-xs text-gray-400">With Users</div>
+                    <div className="text-xs text-zinc-400">With Users</div>
                   </div>
-                  <div className="bg-orange-500/10 rounded-lg p-4 border border-orange-500/20">
-                    <div className="text-2xl font-bold text-orange-400">{verification.orphaned_companies}</div>
-                    <div className="text-xs text-gray-400">Orphaned</div>
+                  <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
+                    <div className="text-2xl font-bold text-blue-400">{verification.orphaned_companies}</div>
+                    <div className="text-xs text-zinc-400">Orphaned</div>
                   </div>
                 </div>
               </div>
@@ -163,8 +163,8 @@ export default function AdminMigration() {
                       .slice(0, 10)
                       .map(([company, count]) => (
                         <div key={company} className="flex items-center justify-between bg-white/5 rounded-lg p-3">
-                          <span className="text-gray-300">{company}</span>
-                          <Badge className="bg-purple-500/20 text-purple-300">{count} users</Badge>
+                          <span className="text-zinc-300">{company}</span>
+                          <Badge className="bg-cyan-500/20 text-cyan-300">{count} users</Badge>
                         </div>
                       ))}
                   </div>
@@ -184,8 +184,8 @@ export default function AdminMigration() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
                             <div className="text-xs text-yellow-400 font-medium mb-1">{issue.type}</div>
-                            <div className="text-sm text-gray-300">{issue.message}</div>
-                            {issue.email && <div className="text-xs text-gray-500 mt-1">{issue.email}</div>}
+                            <div className="text-sm text-zinc-300">{issue.message}</div>
+                            {issue.email && <div className="text-xs text-zinc-500 mt-1">{issue.email}</div>}
                           </div>
                           {issue.type === 'unmigrated_user' && (
                             <Badge className="bg-yellow-500/20 text-yellow-300">Needs Migration</Badge>
@@ -202,11 +202,11 @@ export default function AdminMigration() {
 
         {/* Migration Results */}
         {results && (
-          <Card className="glass-card border-0 border-purple-500/20">
+          <Card className="glass-card border-0 border-cyan-500/20">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 {status === 'complete' ? (
-                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <CheckCircle className="w-5 h-5 text-cyan-400" />
                 ) : (
                   <XCircle className="w-5 h-5 text-red-400" />
                 )}
@@ -217,29 +217,29 @@ export default function AdminMigration() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="bg-white/5 rounded-lg p-4">
                   <div className="text-2xl font-bold text-white">{results.users_processed}</div>
-                  <div className="text-xs text-gray-400">Users Processed</div>
+                  <div className="text-xs text-zinc-400">Users Processed</div>
                 </div>
-                <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
-                  <div className="text-2xl font-bold text-green-400">{results.users_migrated}</div>
-                  <div className="text-xs text-gray-400">Users Migrated</div>
+                <div className="bg-cyan-500/10 rounded-lg p-4 border border-cyan-500/20">
+                  <div className="text-2xl font-bold text-cyan-400">{results.users_migrated}</div>
+                  <div className="text-xs text-zinc-400">Users Migrated</div>
                 </div>
-                <div className="bg-gray-500/10 rounded-lg p-4 border border-gray-500/20">
-                  <div className="text-2xl font-bold text-gray-400">{results.users_skipped}</div>
-                  <div className="text-xs text-gray-400">Users Skipped</div>
+                <div className="bg-zinc-500/10 rounded-lg p-4 border border-zinc-500/20">
+                  <div className="text-2xl font-bold text-zinc-400">{results.users_skipped}</div>
+                  <div className="text-xs text-zinc-400">Users Skipped</div>
                 </div>
                 <div className="bg-cyan-500/10 rounded-lg p-4 border border-cyan-500/20">
                   <div className="text-2xl font-bold text-cyan-400">{results.companies_created}</div>
-                  <div className="text-xs text-gray-400">Companies Created</div>
+                  <div className="text-xs text-zinc-400">Companies Created</div>
                 </div>
-                <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/20">
-                  <div className="text-2xl font-bold text-purple-400">{results.companies_reused}</div>
-                  <div className="text-xs text-gray-400">Companies Reused</div>
+                <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
+                  <div className="text-2xl font-bold text-blue-400">{results.companies_reused}</div>
+                  <div className="text-xs text-zinc-400">Companies Reused</div>
                 </div>
-                <div className={`rounded-lg p-4 border ${results.errors.length > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-green-500/10 border-green-500/20'}`}>
-                  <div className={`text-2xl font-bold ${results.errors.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                <div className={`rounded-lg p-4 border ${results.errors.length > 0 ? 'bg-red-500/10 border-red-500/20' : 'bg-cyan-500/10 border-cyan-500/20'}`}>
+                  <div className={`text-2xl font-bold ${results.errors.length > 0 ? 'text-red-400' : 'text-cyan-400'}`}>
                     {results.errors.length}
                   </div>
-                  <div className="text-xs text-gray-400">Errors</div>
+                  <div className="text-xs text-zinc-400">Errors</div>
                 </div>
               </div>
 
@@ -253,7 +253,7 @@ export default function AdminMigration() {
                     {results.errors.map((error, idx) => (
                       <div key={idx} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
                         <div className="text-sm text-red-300">{error.error}</div>
-                        <div className="text-xs text-gray-500 mt-1">User: {error.email}</div>
+                        <div className="text-xs text-zinc-500 mt-1">User: {error.email}</div>
                       </div>
                     ))}
                   </div>

@@ -113,7 +113,7 @@ export default function VerifyCertificate() {
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/3bee25c45_logoisyncso1.png" 
                   alt="ISYNCSO" 
                   className="h-12 mx-auto opacity-50"
-                />
+                 loading="lazy" decoding="async" />
               </div>
             </>
           ) : null}

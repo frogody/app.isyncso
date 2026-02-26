@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { requireCredits } from '../_shared/credit-check.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -340,7 +341,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { companyName, companyDomain, entityType, entityId } = await req.json();
+    const { companyName, companyDomain, entityType, entityId, user_id } = await req.json();
 
     if (!companyName) {
       return new Response(
@@ -362,6 +363,15 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+
+    // ── Credit check (15 credits for company intelligence) ─────────
+    if (user_id) {
+      const credit = await requireCredits(supabaseAdmin, user_id, 'company-intelligence', {
+        edgeFunction: 'generateCompanyIntelligence',
+        metadata: { companyName, companyDomain },
+      });
+      if (!credit.success) return credit.errorResponse!;
+    }
 
     const normalizedName = companyName?.toLowerCase().trim()
       .replace(/\s*(inc\.?|llc\.?|ltd\.?|b\.?v\.?|n\.?v\.?|gmbh|ag|s\.?a\.?|plc|co\.?|corp\.?|limited|holding|group)\s*$/gi, '')

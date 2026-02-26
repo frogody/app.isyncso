@@ -80,7 +80,7 @@ export default function BookmarksPanel({
                     src={bookmark.sender_avatar}
                     alt=""
                     className="w-5 h-5 rounded-full"
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300">
                     {bookmark.sender_name?.charAt(0) || '?'}

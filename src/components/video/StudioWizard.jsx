@@ -137,15 +137,15 @@ function StepIndicator({ step }) {
           <div key={label} className="flex items-center gap-2">
             {i > 0 && (
               <div
-                className={`h-px w-8 ${done ? "bg-cyan-500" : "bg-zinc-700"}`}
+                className={`h-px w-8 ${done ? "bg-yellow-500" : "bg-zinc-700"}`}
               />
             )}
             <div
               className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                 active
-                  ? "bg-cyan-500/20 text-cyan-400 ring-1 ring-cyan-500/40"
+                  ? "bg-yellow-500/20 text-yellow-400 ring-1 ring-yellow-500/40"
                   : done
-                    ? "bg-cyan-500/10 text-cyan-500"
+                    ? "bg-yellow-500/10 text-yellow-500"
                     : "bg-zinc-800 text-zinc-500"
               }`}
             >
@@ -562,7 +562,7 @@ export default function StudioWizard({
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 text-white">
+    <div className="w-full px-4 lg:px-6 py-6 text-white">
       <StepIndicator step={step} />
 
       <AnimatePresence mode="wait">
@@ -578,7 +578,7 @@ export default function StudioWizard({
           >
             <GlassCard>
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-                <Clapperboard className="h-5 w-5 text-cyan-400" />
+                <Clapperboard className="h-5 w-5 text-yellow-400" />
                 Video Brief
               </h2>
 
@@ -593,7 +593,7 @@ export default function StudioWizard({
                     onChange={(e) => setBrief(e.target.value)}
                     placeholder="Describe your video concept, key messages, and desired outcome..."
                     rows={5}
-                    className="resize-none border-zinc-700 bg-zinc-900 text-white placeholder:text-zinc-500 focus:ring-cyan-500"
+                    className="resize-none border-zinc-700 bg-zinc-900 text-white placeholder:text-zinc-500 focus:ring-yellow-500"
                   />
                 </div>
 
@@ -674,7 +674,7 @@ export default function StudioWizard({
                   <Button
                     onClick={handleGenerateStoryboard}
                     disabled={generatingStoryboard || !brief.trim()}
-                    className="gap-2 bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50"
+                    className="gap-2 bg-yellow-500 hover:bg-yellow-400 text-black text-white disabled:opacity-50"
                   >
                     {generatingStoryboard ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -725,7 +725,7 @@ export default function StudioWizard({
                 <GlassCard key={shot.id} className="relative">
                   <div className="flex items-start gap-4">
                     {/* Shot number pill */}
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-500/20 text-sm font-bold text-cyan-400">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-sm font-bold text-yellow-400">
                       {shot.shot_number}
                     </div>
 
@@ -756,7 +756,7 @@ export default function StudioWizard({
                         }
                         rows={2}
                         placeholder="Shot description..."
-                        className="resize-none border-zinc-700 bg-zinc-900 text-sm text-white placeholder:text-zinc-500 focus:ring-cyan-500"
+                        className="resize-none border-zinc-700 bg-zinc-900 text-sm text-white placeholder:text-zinc-500 focus:ring-yellow-500"
                       />
 
                       {/* Meta row */}
@@ -770,7 +770,7 @@ export default function StudioWizard({
                                 camera_direction: e.target.value,
                               })
                             }
-                            className="block w-36 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-cyan-500"
+                            className="block w-36 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-yellow-500"
                             placeholder="e.g. dolly in"
                           />
                         </div>
@@ -787,7 +787,7 @@ export default function StudioWizard({
                                 duration: Number(e.target.value),
                               })
                             }
-                            className="block w-20 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-cyan-500"
+                            className="block w-20 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-white outline-none focus:ring-1 focus:ring-yellow-500"
                           />
                         </div>
 
@@ -854,7 +854,7 @@ export default function StudioWizard({
               <Button
                 onClick={handleGenerateShots}
                 disabled={generatingShots || storyboard.length === 0}
-                className="gap-2 bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50"
+                className="gap-2 bg-yellow-500 hover:bg-yellow-400 text-black text-white disabled:opacity-50"
               >
                 {generatingShots ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -884,11 +884,11 @@ export default function StudioWizard({
                 <span className="text-zinc-400">
                   {completedCount} / {shots.length} shots completed
                 </span>
-                <span className="font-medium text-cyan-400">{progressPct}%</span>
+                <span className="font-medium text-yellow-400">{progressPct}%</span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-700">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
+                  className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400"
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPct}%` }}
                   transition={{ duration: 0.4 }}
@@ -966,7 +966,7 @@ export default function StudioWizard({
               <Button
                 onClick={handleAssemble}
                 disabled={!allCompleted || assembling}
-                className="gap-2 bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50"
+                className="gap-2 bg-yellow-500 hover:bg-yellow-400 text-black text-white disabled:opacity-50"
               >
                 {assembling ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -993,7 +993,7 @@ export default function StudioWizard({
             <GlassCard className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-                  <Film className="h-5 w-5 text-cyan-400" />
+                  <Film className="h-5 w-5 text-yellow-400" />
                   Final Video
                 </h2>
                 {projectStatus && (
@@ -1033,7 +1033,7 @@ export default function StudioWizard({
                   {assembledVideoUrl && (
                     <Button
                       asChild
-                      className="gap-2 bg-cyan-600 hover:bg-cyan-500 text-white"
+                      className="gap-2 bg-yellow-500 hover:bg-yellow-400 text-black text-white"
                     >
                       <a
                         href={assembledVideoUrl}

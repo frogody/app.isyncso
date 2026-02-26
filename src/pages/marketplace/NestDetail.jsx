@@ -311,7 +311,7 @@ export default function NestDetail() {
                 src={nest.thumbnail_url}
                 alt={nest.name}
                 className="w-full h-full object-cover"
-              />
+               loading="lazy" decoding="async" />
             ) : (
               <Icon className={`w-8 h-8 ${config.color.split(' ')[0]}`} />
             )}

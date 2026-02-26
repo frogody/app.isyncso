@@ -86,6 +86,30 @@ import {
   Boxes,
   ClipboardCheck,
   RotateCcw,
+  Camera,
+  Images,
+  History,
+  Route,
+  Swords,
+  CheckSquare,
+  FileCheck,
+  ShieldAlert,
+  Globe,
+  Phone,
+  PenLine,
+  Landmark,
+  Percent,
+  Repeat,
+  ReceiptText,
+  Volume2,
+  Signal,
+  Upload,
+  Store,
+  Calculator,
+  Mic,
+  AudioLines,
+  Shirt,
+  LayoutTemplate,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -212,33 +236,47 @@ const navigationItems = [
     title: "Dashboard",
     url: createPageUrl("Dashboard"),
     icon: LayoutDashboard,
-    permission: null, // Always visible
+    permission: null,
+    alwaysVisible: true,
   },
   {
     title: "CRM",
-    url: createPageUrl("CRMContacts") + "?type=lead",
+    url: createPageUrl("CRMDashboard"),
     icon: Contact,
-    permission: null, // Always visible - base environment
-    matchPatterns: ["/crm", "/contacts-import"], // For active state matching
+    permission: null,
+    matchPatterns: ["/crm", "/contacts-import"],
+    requiresAnyApp: ['growth', 'talent'], // Contacts are relevant for sales & recruiting
   },
   {
-    title: "Projects",
-    url: createPageUrl("Projects"),
-    icon: FolderKanban,
-    permission: null, // Always visible - base environment
+    title: "Tasks",
+    url: createPageUrl("Tasks"),
+    icon: ListTodo,
+    permission: null,
+    alwaysVisible: true,
+    matchPatterns: ["/tasks", "/projects"],
   },
   {
     title: "Products",
     url: createPageUrl("Products"),
     icon: Package,
-    permission: null, // Always visible - core feature
-    matchPatterns: ["/product", "/inventory", "/stockpurchases", "/emailpoolsettings"], // Matches /products, /productdetail, /inventory*, /emailpool*, etc.
+    permission: null,
+    alwaysVisible: true,
+    matchPatterns: ["/product", "/inventory", "/stockpurchases", "/emailpoolsettings"],
+  },
+  {
+    title: "B2B Store",
+    url: createPageUrl("StoreDashboard"),
+    icon: Store,
+    permission: null,
+    alwaysVisible: true,
+    matchPatterns: ["/storedashboard", "/b2bstorebuilder", "/b2b"],
   },
   {
     title: "Inbox",
     url: createPageUrl("Inbox"),
     icon: Inbox,
-    permission: null, // Always visible - base environment
+    permission: null,
+    alwaysVisible: true,
   },
 ];
 
@@ -276,7 +314,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: GraduationCap,
     id: 'learn',
     permission: "courses.view", // Learning features
-    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard"],
+    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard", "/practice", "/teamlearn"],
   },
   talent: {
     title: "Talent",
@@ -309,6 +347,14 @@ const ENGINE_ITEMS_CONFIG = {
     id: 'create',
     permission: null, // Always visible - content creation feature
     matchPatterns: ["/create"],
+  },
+  reach: {
+    title: "Reach",
+    url: createPageUrl("ReachDashboard"),
+    icon: Signal,
+    id: 'reach',
+    permission: null, // Always visible - marketing hub
+    matchPatterns: ["/reach"],
   },
 };
 
@@ -358,27 +404,34 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   // Convert to lowercase for case-insensitive matching
   const path = pathname.toLowerCase();
 
+  // Tasks / Projects routes
+  if (path.startsWith('/tasks') || path.startsWith('/projects')) {
+    return {
+      title: 'Tasks',
+      color: 'cyan',
+      items: [
+        { label: 'Tasks', path: createPageUrl('Tasks'), icon: ListTodo, badge: stats.activeTasks },
+        { label: 'Projects', path: createPageUrl('Projects'), icon: FolderKanban },
+      ]
+    };
+  }
+
   // CRM routes - use startsWith for stricter matching
   if (path.startsWith('/crm') || path.startsWith('/contacts-import')) {
     return {
       title: 'CRM',
       color: 'cyan',
       items: [
-        { label: 'Leads', path: createPageUrl('CRMContacts') + '?type=lead', icon: Target, badge: stats.contacts },
-        { label: 'Prospects', path: createPageUrl('CRMContacts') + '?type=prospect', icon: TrendingUp },
-        { label: 'Customers', path: createPageUrl('CRMContacts') + '?type=customer', icon: UserCheck },
-        { label: 'Suppliers', path: createPageUrl('CRMContacts') + '?type=supplier', icon: Truck },
-        { label: 'Partners', path: createPageUrl('CRMContacts') + '?type=partner', icon: Handshake },
-        { label: 'Candidates', path: createPageUrl('CRMContacts') + '?type=candidate', icon: UserPlus },
-        { label: 'Targets', path: createPageUrl('CRMContacts') + '?type=target', icon: Crosshair },
-        { label: 'All Contacts', path: createPageUrl('CRMContacts'), icon: Users },
+        { label: 'Dashboard', path: createPageUrl('CRMDashboard'), icon: LayoutDashboard },
+        { label: 'Contacts', path: createPageUrl('CRMContacts'), icon: Users, badge: stats.contacts },
+        { label: 'Pipeline', path: createPageUrl('CRMPipeline'), icon: Kanban },
         { label: 'Import', path: createPageUrl('ContactsImport'), icon: FileSpreadsheet },
       ]
     };
   }
 
   // SENTINEL routes
-  if (path.startsWith('/sentinel') || path.startsWith('/aisystem') || path.startsWith('/compliance') || path.startsWith('/document') || path.startsWith('/riskassessment')) {
+  if (path.startsWith('/sentinel') || path.startsWith('/aisystem') || path.startsWith('/compliance') || path.startsWith('/document') || path.startsWith('/riskassessment') || path.startsWith('/vendorrisk') || path.startsWith('/trustcenter')) {
     return {
       title: 'SENTINEL',
       color: 'sage',
@@ -386,6 +439,12 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Dashboard', path: createPageUrl('SentinelDashboard'), icon: LayoutDashboard },
         { label: 'AI Systems', path: createPageUrl('AISystemInventory'), icon: Cpu, badge: stats.systems },
+        { label: 'Frameworks', path: createPageUrl('ComplianceFrameworks'), icon: Shield },
+        { label: 'Controls', path: createPageUrl('ComplianceControls'), icon: CheckSquare },
+        { label: 'Evidence', path: createPageUrl('ComplianceEvidence'), icon: FileCheck },
+        { label: 'Policies', path: createPageUrl('CompliancePolicies'), icon: BookOpen },
+        { label: 'Vendor Risk', path: createPageUrl('VendorRisk'), icon: ShieldAlert },
+        { label: 'Trust Center', path: createPageUrl('TrustCenter'), icon: Globe },
         { label: 'Roadmap', path: createPageUrl('ComplianceRoadmap'), icon: Map, badge: stats.tasks },
         { label: 'Documents', path: createPageUrl('DocumentGenerator'), icon: FileText },
       ]
@@ -437,45 +496,33 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       agent: 'finance',
       items: [
         { label: 'Dashboard', path: createPageUrl('FinanceDashboard'), icon: LayoutDashboard },
-        { label: 'Invoices', path: createPageUrl('FinanceInvoices'), icon: Receipt },
-        { label: 'Proposals', path: createPageUrl('FinanceProposals'), icon: FileText },
+        { label: 'Receivables', path: createPageUrl('FinanceReceivables'), icon: Receipt },
         { label: 'Expenses', path: createPageUrl('FinanceExpensesConsolidated'), icon: CreditCard },
-        { label: 'Ledger', path: createPageUrl('FinanceLedger'), icon: BookOpen },
         { label: 'Payables', path: createPageUrl('FinancePayables'), icon: ScrollText },
+        { label: 'Ledger', path: createPageUrl('FinanceLedger'), icon: BookOpen },
+        { label: 'Banking', path: createPageUrl('FinanceBanking'), icon: Landmark },
+        { label: 'Settings', path: createPageUrl('FinanceSettings'), icon: SettingsIcon },
         { label: 'Reports', path: createPageUrl('FinanceReports'), icon: BarChart3 },
+        { label: 'Smart Import', path: createPageUrl('FinanceSmartImport'), icon: Upload },
       ]
     };
   }
 
   // PRODUCTS routes
-  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases') || path.startsWith('/emailpoolsettings')) {
+  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/productdatahealth') || path.startsWith('/inventory') || path.startsWith('/stockpurchases') || path.startsWith('/warehouse')) {
     const { digitalEnabled = true, physicalEnabled = true, serviceEnabled = true } = productsSettings;
 
     // Build items list based on settings
     const items = [
-      { label: 'Overview', path: createPageUrl('Products'), icon: Package },
+      { label: 'Products', path: createPageUrl('Products'), icon: Package },
     ];
-
-    if (digitalEnabled) {
-      items.push({ label: 'Digital', path: createPageUrl('ProductsDigital'), icon: Cloud });
-    }
-    if (physicalEnabled) {
-      items.push({ label: 'Physical', path: createPageUrl('ProductsPhysical'), icon: Box });
-    }
-    if (serviceEnabled) {
-      items.push({ label: 'Services', path: createPageUrl('ProductsServices'), icon: Briefcase });
-    }
 
     // Inventory management items (only for physical products)
     if (physicalEnabled) {
-      items.push({ label: 'Receiving', path: createPageUrl('InventoryReceiving'), icon: PackageCheck });
-      items.push({ label: 'Shipping', path: createPageUrl('InventoryShipping'), icon: Truck });
-      items.push({ label: 'Pallet Builder', path: createPageUrl('PalletBuilder'), icon: Boxes });
-      items.push({ label: 'Verification', path: createPageUrl('ShipmentVerification'), icon: ClipboardCheck });
+      items.push({ label: 'Data Health', path: createPageUrl('ProductDataHealth'), icon: ShieldAlert });
+      items.push({ label: 'Warehouse', path: createPageUrl('Warehouse'), icon: Boxes });
       items.push({ label: 'Returns', path: createPageUrl('InventoryReturns'), icon: RotateCcw });
       items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });
-      items.push({ label: 'Email Pool', path: createPageUrl('EmailPoolSettings'), icon: Mail });
-      items.push({ label: 'Import', path: createPageUrl('InventoryImport'), icon: FileSpreadsheet });
     }
 
     return {
@@ -504,7 +551,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
 
   // LEARN routes
   if (path.startsWith('/learn') || path.startsWith('/course') || path.startsWith('/lesson') ||
-      path.startsWith('/certificate') || path.startsWith('/skill') || path.startsWith('/leaderboard')) {
+      path.startsWith('/certificate') || path.startsWith('/skill') || path.startsWith('/leaderboard') ||
+      path.startsWith('/practice') || path.startsWith('/teamlearn')) {
     return {
       title: 'LEARN',
       color: 'teal',
@@ -512,18 +560,40 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Dashboard', path: createPageUrl('LearnDashboard'), icon: LayoutDashboard },
         { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
+        { label: 'Learning Paths', path: createPageUrl('LearningPaths'), icon: Route },
+        { label: 'Practice', path: createPageUrl('PracticeChallenges'), icon: Swords },
         { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
+        { label: 'Team', path: createPageUrl('TeamLearningDashboard'), icon: Users },
         { label: 'Course Builder', path: createPageUrl('ManageCourses'), icon: Library },
         { label: 'AI Tools', path: createPageUrl('LearnAITools'), icon: Sparkles },
       ]
     };
   }
 
+  // B2B STORE routes
+  if (path.startsWith('/storedashboard') || path.startsWith('/b2bstorebuilder') || path.startsWith('/b2b')) {
+    return {
+      title: 'B2B STORE',
+      color: 'cyan',
+      items: [
+        { label: 'Dashboard', path: createPageUrl('StoreDashboard'), icon: LayoutDashboard },
+        { label: 'Store Builder', path: createPageUrl('B2BStoreBuilder'), icon: Palette },
+        { label: 'Orders', path: '/b2b/orders', icon: Receipt },
+        { label: 'Price Lists', path: '/b2b/price-lists', icon: Percent },
+        { label: 'Client Groups', path: '/b2b/client-groups', icon: Users },
+        { label: 'Catalog', path: '/b2b/catalog', icon: Package },
+        { label: 'Inquiries', path: '/b2b/inquiries', icon: MessageSquare },
+        { label: 'Clients', path: '/b2b/clients', icon: UserCheck },
+      ]
+    };
+  }
+
   // SYNC routes
-  if (path.startsWith('/sync') || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
+  if ((path.startsWith('/sync') && !path.startsWith('/syncstudio')) || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
     const activityItems = [
       { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
+      { label: 'Phone', path: createPageUrl('SyncPhone'), icon: Phone },
       { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
       { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
       { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
@@ -535,18 +605,41 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
-  // CREATE routes
-  if (path.startsWith('/create')) {
+  // REACH routes
+  if (path.startsWith('/reach')) {
+    return {
+      title: 'REACH',
+      color: 'cyan',
+      agent: 'reach',
+      items: [
+        { label: 'Performance', path: createPageUrl('ReachDashboard'), icon: BarChart3 },
+        { label: 'Ad Campaigns', path: createPageUrl('ReachCampaigns'), icon: Megaphone },
+        { label: 'SEO Scanner', path: createPageUrl('ReachSEO'), icon: Search },
+        { label: 'Calendar', path: createPageUrl('ReachCalendar'), icon: Calendar },
+        { label: 'Copy Studio', path: createPageUrl('ReachCopyStudio'), icon: PenLine },
+        { label: 'Brand Voice', path: createPageUrl('ReachBrandVoice'), icon: Volume2 },
+        { label: 'Settings', path: createPageUrl('ReachSettings'), icon: SettingsIcon },
+      ]
+    };
+  }
+
+  // CREATE routes (includes Sync Studio, Studio, Content Calendar)
+  if (path.startsWith('/create') || path.startsWith('/syncstudio') || path.startsWith('/studio') || path.startsWith('/contentcalendar')) {
     return {
       title: 'CREATE',
       color: 'yellow',
       agent: 'create',
       items: [
         { label: 'Dashboard', path: createPageUrl('Create'), icon: LayoutDashboard },
+        { label: 'Image', path: '/StudioImage', icon: Image },
+        { label: 'Photoshoot', path: '/StudioPhotoshoot', icon: Camera },
+        { label: 'Podcast', path: '/StudioPodcast', icon: Mic },
+        { label: 'Voice', path: '/StudioVoice', icon: AudioLines },
+        { label: 'Fashion', path: '/StudioFashionBooth', icon: Shirt },
+        { label: 'Templates', path: '/StudioTemplates', icon: LayoutTemplate },
+        { label: 'Library', path: createPageUrl('StudioLibrary'), icon: FolderOpen },
+        { label: 'Calendar', path: createPageUrl('ContentCalendar'), icon: Calendar },
         { label: 'Branding', path: createPageUrl('CreateBranding'), icon: Palette },
-        { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
-        { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
-        { label: 'Library', path: createPageUrl('CreateLibrary'), icon: FolderOpen },
       ]
     };
   }
@@ -635,55 +728,9 @@ const COLOR_CLASSES = {
   }
 };
 
-// Sidebar alignment constants
-const SIDEBAR_CONSTANTS = {
-  AVATAR_SECTION: 80,      // pt-4 (16px) + avatar (52px) + pb-3 (12px)
-  NAV_PADDING: 16,         // py-4 top padding
-  CORE_ITEM_HEIGHT: 44,    // min-h-[44px]
-  ITEM_GAP: 4,             // space-y-1
-  DIVIDER_HEIGHT: 17,      // h-px + my-2 (1px + 8px + 8px)
-  ALIGNMENT_ADJUST: -24,   // Fine-tune adjustment to align items perfectly
-};
-
-// Core nav item indices (Dashboard, CRM, Projects, Products, Inbox)
-const CORE_NAV_INDICES = {
-  crm: 1,       // CRM is 2nd in core nav
-  products: 3,  // Products is 4th in core nav
-};
-
-// Calculate offset for secondary sidebar based on config
-function calculateSecondaryNavOffset(config, visibleEngineIds = []) {
-  const { AVATAR_SECTION, NAV_PADDING, CORE_ITEM_HEIGHT, ITEM_GAP, DIVIDER_HEIGHT, ALIGNMENT_ADJUST } = SIDEBAR_CONSTANTS;
-
-  // Check if this is a core nav item (CRM, Products) or an engine app
-  const configTitle = config?.title?.toLowerCase();
-  const coreNavIndex = CORE_NAV_INDICES[configTitle];
-
-  if (coreNavIndex !== undefined) {
-    // Core nav item: align with that position
-    // Offset = avatar + nav padding + items above + adjustment
-    return AVATAR_SECTION + NAV_PADDING + (coreNavIndex * (CORE_ITEM_HEIGHT + ITEM_GAP)) + ALIGNMENT_ADJUST;
-  }
-
-  // Engine app: calculate based on engine index within VISIBLE items only
-  const agentId = config?.agent;
-  const engineIndex = agentId ? visibleEngineIds.indexOf(agentId) : 0;
-
-  // Count visible core items (5: Dashboard, CRM, Projects, Products, Inbox)
-  const CORE_ITEMS_COUNT = 5;
-
-  // Base offset: avatar + nav padding + core items (with gaps) + divider
-  const coreItemsTotal = (CORE_ITEMS_COUNT * CORE_ITEM_HEIGHT) + ((CORE_ITEMS_COUNT - 1) * ITEM_GAP);
-  const baseOffset = AVATAR_SECTION + NAV_PADDING + coreItemsTotal + DIVIDER_HEIGHT;
-
-  // Add offset for engine items before the active one + alignment adjustment
-  const engineItemsOffset = Math.max(0, engineIndex) * (CORE_ITEM_HEIGHT + ITEM_GAP);
-
-  return baseOffset + engineItemsOffset + ALIGNMENT_ADJUST;
-}
-
 // Submenu Flyout Component - Floating panel that appears on click/hover
-function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibleEngineIds = [] }) {
+// Uses navItemTop (from DOM measurement) for pixel-perfect alignment with the trigger icon
+function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, navItemTop = 0 }) {
   // Get submenu identifier (agent for engine apps, title for core items like CRM/Products)
   const submenuId = config?.agent || config?.title?.toLowerCase();
 
@@ -692,16 +739,10 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibl
 
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
 
-  // Calculate dynamic offset to align with the active primary nav item
-  // Subtract header height (title + padding + border + container padding) so first nav item aligns
-  const baseOffset = calculateSecondaryNavOffset(config, visibleEngineIds);
-  const headerHeight = 44; // title (~14px) + pb-2 (8px) + mb-2 (8px) + p-3 container (12px) + border (1px)
-  const navOffset = baseOffset - headerHeight;
-
   return (
     <div
       className="absolute left-[72px] lg:left-[80px] bg-black/95 backdrop-blur-sm border border-white/10 rounded-2xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 duration-200 hidden md:block"
-      style={{ top: `${navOffset}px` }}
+      style={{ top: `${navItemTop}px` }}
       onMouseEnter={onEnter}
       onMouseLeave={onClose}
     >
@@ -784,7 +825,7 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibl
   );
 }
 
-// Mobile Secondary Navigation Component
+// Mobile Secondary Navigation Component (inside Sheet drawer)
 function MobileSecondaryNav({ config, location }) {
   if (!config) return null;
 
@@ -799,31 +840,7 @@ function MobileSecondaryNav({ config, location }) {
       </div>
       <div className="space-y-0.5 px-1">
         {config.items.map((item) => {
-          // Parse URLs for proper comparison
-          const itemUrl = new URL(item.path, 'http://localhost');
-          const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
-
-          let isActive = false;
-
-          // Check pathname match first
-          if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
-            // If item has a 'type' query param, it must match
-            const itemType = itemUrl.searchParams.get('type');
-            const currentType = currentUrl.searchParams.get('type');
-
-            if (itemType) {
-              // Item specifies a type, must match exactly
-              isActive = itemType === currentType;
-            } else {
-              // No specific type required, pathname match is enough
-              isActive = true;
-            }
-          } else {
-            // Check if current path starts with item path (for nested routes)
-            const basePath = itemUrl.pathname.toLowerCase();
-            isActive = currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
-          }
-
+          const isActive = isSubmenuItemActive(item, location);
           const Icon = item.icon;
 
           return (
@@ -853,8 +870,75 @@ function MobileSecondaryNav({ config, location }) {
   );
 }
 
+// Shared helper: check if a submenu item is active
+function isSubmenuItemActive(item, location) {
+  const itemUrl = new URL(item.path, 'http://localhost');
+  const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
+
+  if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
+    const itemType = itemUrl.searchParams.get('type');
+    const currentType = currentUrl.searchParams.get('type');
+    if (itemType) return itemType === currentType;
+    return true;
+  }
+  const basePath = itemUrl.pathname.toLowerCase();
+  return currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
+}
+
+// Mobile Sub-Nav Strip — persistent bar below mobile header showing current section's pages
+function MobileSubNavStrip({ config, location }) {
+  if (!config) return null;
+  const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
+  const scrollRef = React.useRef(null);
+
+  // Auto-scroll active item into view
+  React.useEffect(() => {
+    if (!scrollRef.current) return;
+    const active = scrollRef.current.querySelector('[data-active="true"]');
+    if (active) {
+      active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [location.pathname, location.search]);
+
+  return (
+    <div className="md:hidden fixed top-14 sm:top-16 left-0 right-0 z-40 bg-black/90 backdrop-blur-md border-b border-white/5">
+      <div
+        ref={scrollRef}
+        className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto scrollbar-hide"
+      >
+        {config.items.map((item) => {
+          const isActive = isSubmenuItemActive(item, location);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.label}
+              to={item.path}
+              data-active={isActive}
+              className={`
+                flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0 min-h-[32px]
+                ${isActive
+                  ? `${colors.text} ${colors.bg} border ${colors.border}`
+                  : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                }
+              `}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {item.label}
+              {item.badge > 0 && (
+                <span className={`text-[9px] px-1 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text}`}>
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // Reusable Sidebar Content - must be rendered inside PermissionProvider
-function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, onEngineItemsChange, inboxUnreadCount = 0 }) {
+function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, inboxUnreadCount = 0 }) {
     const location = useLocation();
     const navigate = useNavigate();
   const [me, setMe] = React.useState(null);
@@ -875,6 +959,22 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   // Get team-based app access
   const { effectiveApps, hasTeams, isLoading: teamLoading } = useTeamAccess();
 
+  // Platform owner check — restricts certain apps (e.g. Reach) to platform_admins only
+  const [isPlatformOwner, setIsPlatformOwner] = React.useState(false);
+  React.useEffect(() => {
+    if (!me?.id) { setIsPlatformOwner(false); return; }
+    supabase
+      .from('platform_admins')
+      .select('id')
+      .eq('user_id', me.id)
+      .eq('is_active', true)
+      .maybeSingle()
+      .then(({ data }) => setIsPlatformOwner(!!data));
+  }, [me?.id]);
+
+  // Apps restricted to platform owners only
+  const PLATFORM_OWNER_ONLY_APPS = ['reach'];
+
   React.useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -891,23 +991,26 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     return () => { isMounted = false; };
   }, []);
 
-  // Memoize filtered navigation items - show all items while loading
+  // Memoize filtered navigation items - filter by permissions AND enabled apps
   const filteredNavItems = useMemo(() => {
-    // While permissions are loading, show items without permission requirements
-    if (permLoading) {
-      return navigationItems.filter(item => !item.permission);
-    }
     return navigationItems.filter(item => {
-      // No permission required - always show
-      if (!item.permission) return true;
-      // Admin link - show for RBAC admins or users with admin.access
-      if (item.isAdmin) {
-        return isAdmin || hasPermission(item.permission);
+      // Permission check
+      if (item.permission) {
+        if (permLoading) return false;
+        if (item.isAdmin) {
+          if (!isAdmin && !hasPermission(item.permission)) return false;
+        } else {
+          if (!hasPermission(item.permission)) return false;
+        }
       }
-      // Check permission
-      return hasPermission(item.permission);
+      // App-gating: hide nav items when their required apps aren't enabled
+      if (item.requiresAnyApp && item.requiresAnyApp.length > 0) {
+        const hasRequiredApp = item.requiresAnyApp.some(appId => enabledApps.includes(appId));
+        if (!hasRequiredApp) return false;
+      }
+      return true;
     });
-  }, [hasPermission, permLoading, isAdmin]);
+  }, [hasPermission, permLoading, isAdmin, enabledApps]);
 
   // Memoize filtered bottom nav items (Settings, Admin)
   const filteredBottomNavItems = useMemo(() => {
@@ -923,33 +1026,33 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     });
   }, [hasPermission, permLoading, isAdmin]);
 
-  // Memoize engine items based on company licenses + team app access
-  // Having a valid license (via effectiveApps) is sufficient — no additional RBAC check needed
+  // Memoize engine items based on company licenses + workspace settings
+  // If licensing is active (effectiveApps non-empty), respect license restrictions
+  // If no licensing (effectiveApps empty), fall back to workspace-enabled apps
   // Base apps (Dashboard, CRM, Products, Projects, Inbox) are always in core nav
   const engineItems = useMemo(() => {
     let appsToShow;
 
-    if (effectiveApps.length > 0) {
-      // Apps from company licenses + team_app_access (via get_user_effective_apps)
-      appsToShow = effectiveApps;
-    } else if (!teamLoading) {
-      // No licensed or team apps — only base apps (handled in core nav)
-      appsToShow = [];
-    } else {
+    if (teamLoading) {
       // Still loading — show nothing to avoid flash
       appsToShow = [];
+    } else if (effectiveApps.length > 0) {
+      // Licensing active — only show licensed apps that user also enabled in workspace
+      appsToShow = effectiveApps.filter(appId => enabledApps.includes(appId));
+    } else {
+      // No licensing restrictions — show whatever user enabled in workspace settings
+      appsToShow = enabledApps.filter(appId => ENGINE_ITEMS_CONFIG[appId]);
+    }
+
+    // Filter out platform-owner-only apps for regular users
+    if (!isPlatformOwner) {
+      appsToShow = appsToShow.filter(appId => !PLATFORM_OWNER_ONLY_APPS.includes(appId));
     }
 
     return appsToShow
       .map(appId => ENGINE_ITEMS_CONFIG[appId])
       .filter(Boolean);
-  }, [effectiveApps, teamLoading]);
-
-  // Report visible engine IDs to parent for submenu positioning
-  const visibleEngineIds = useMemo(() => engineItems.map(e => e.id), [engineItems]);
-  useEffect(() => {
-    onEngineItemsChange?.(visibleEngineIds);
-  }, [visibleEngineIds, onEngineItemsChange]);
+  }, [effectiveApps, enabledApps, teamLoading, isPlatformOwner]);
 
   const handleLogin = async () => {
     db.auth.redirectToLogin(window.location.href);
@@ -959,19 +1062,31 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     <div className="flex flex-col h-full relative overflow-visible">
       {/* Navigation - Mobile optimized with larger touch targets */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide scroll-smooth-ios">
-        {/* SYNC Avatar - top of sidebar: click = chat, double-click = voice */}
-        <SyncAvatarSidebarButton
-          onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
-          voiceHook={syncVoice}
-          knockHook={syncKnock}
-        />
+        {/* Mobile: user greeting */}
+        {isMobile && me && (
+          <div className="px-4 pb-3 mb-1 border-b border-white/5">
+            <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-medium">Navigation</p>
+          </div>
+        )}
+        {/* Top of sidebar: SYNC avatar for platform owners, logo for everyone else */}
+        {isPlatformOwner ? (
+          <SyncAvatarSidebarButton
+            onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
+            voiceHook={syncVoice}
+            knockHook={syncKnock}
+          />
+        ) : (
+          <div className="flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl">
+            <img src="/isyncso-logo.png" alt="iSyncSO" className="w-9 h-9 object-contain" />
+          </div>
+        )}
 
         {/* Core Navigation - filtered by permissions */}
         <div className="space-y-1">
           {filteredNavItems.map((item) => {
             const isActive = isNavItemActive(item, location.pathname);
-            // Check if this item has a secondary nav (CRM, Products)
-            const hasSecondaryNav = item.matchPatterns && (item.title === 'CRM' || item.title === 'Products');
+            // Check if this item has a secondary nav (CRM, Products, Tasks)
+            const hasSecondaryNav = item.matchPatterns && (item.title === 'CRM' || item.title === 'Products' || item.title === 'Tasks');
             const submenuId = item.title.toLowerCase();
 
             // Mobile: always use Link
@@ -1010,6 +1125,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               return (
                 <button
                   key={item.title}
+                  data-submenu-id={submenuId}
                   onClick={() => {
                     triggerActivity();
                     setOpenSubmenu?.(submenuId);
@@ -1074,6 +1190,13 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
         <div className="h-px bg-white/5 mx-2 my-2" />
 
+        {/* Mobile: Engines section label */}
+        {isMobile && engineItems.length > 0 && (
+          <div className="px-4 pt-1 pb-1">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-medium">Apps</p>
+          </div>
+        )}
+
         {/* Engine Apps - Dynamic based on user config - Mobile optimized */}
         <div className="space-y-1">
           {engineItems.map((item) => {
@@ -1131,6 +1254,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             return (
               <button
                 key={item.title}
+                data-submenu-id={item.id}
                 onClick={() => {
                   triggerActivity();
                   // Always open submenu on click
@@ -1167,6 +1291,18 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               </button>
             );
           })}
+
+          {/* Add Apps button — always visible after engine items */}
+          <Link
+            to={createPageUrl("Settings") + "?tab=workspace"}
+            onClick={triggerActivity}
+            className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[36px] p-2 rounded-xl transition-all duration-200 group relative
+              text-zinc-600 hover:text-zinc-400 hover:bg-white/5 active:bg-white/10 active:scale-[0.98] border border-dashed border-zinc-800 hover:border-zinc-700 mt-1`}
+            title="Add more apps"
+          >
+            <Plus className="w-4 h-4 flex-shrink-0 transition-colors group-hover:text-zinc-400" />
+            {isMobile && <span className="text-sm font-medium">Add apps</span>}
+          </Link>
           </div>
 
         <div className="h-px bg-white/5 mx-2 my-2" />
@@ -1205,8 +1341,8 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
       {/* Bottom Section */}
       <div className={`p-4 space-y-1 bg-gradient-to-t from-black via-black to-transparent ${isMobile ? 'pb-6' : ''}`}>
-        {/* Notifications bell */}
-        <NotificationsDropdown sidebarMode={!isMobile} />
+        {/* Notifications bell — desktop sidebar only (mobile has it in the header bar) */}
+        {!isMobile && <NotificationsDropdown sidebarMode={true} />}
 
         {/* Settings and Admin - at the bottom */}
         {filteredBottomNavItems.map((item) => {
@@ -1271,12 +1407,11 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         {/* Credits / CTA */}
         {me ? (
         <Link
-          to="#"
-          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 cursor-not-allowed opacity-70`}
-          title="Top up coming soon"
-          onClick={(e) => e.preventDefault()}
+          to="/credits"
+          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-cyan-400 hover:bg-white/5 active:bg-white/10`}
+          title={`${me.credits || 0} credits`}
         >
-          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 group-hover:border-cyan-400/60 flex items-center justify-center flex-shrink-0 transition-colors">
              <span className="text-[10px] font-bold text-cyan-400">{me.credits || 0}</span>
           </div>
           {isMobile && <span className="text-sm font-medium">Credits</span>}
@@ -1379,8 +1514,20 @@ export default function Layout({ children, currentPageName }) {
 
   // Submenu flyout state
   const [openSubmenu, setOpenSubmenu] = useState(null); // engine id or null
-  const [visibleEngineIds, setVisibleEngineIds] = useState([]);
+  const sidebarRef = useRef(null);
+  const [submenuTop, setSubmenuTop] = useState(0);
   const closeTimeoutRef = useRef(null);
+
+  // Compute flyout position from actual DOM when submenu opens
+  useEffect(() => {
+    if (!openSubmenu || !sidebarRef.current) return;
+    const trigger = sidebarRef.current.querySelector(`[data-submenu-id="${openSubmenu}"]`);
+    if (trigger) {
+      const sidebarRect = sidebarRef.current.getBoundingClientRect();
+      const triggerRect = trigger.getBoundingClientRect();
+      setSubmenuTop(triggerRect.top - sidebarRect.top);
+    }
+  }, [openSubmenu]);
 
   const handleSubmenuClose = useCallback(() => {
     closeTimeoutRef.current = setTimeout(() => {
@@ -1417,8 +1564,12 @@ export default function Layout({ children, currentPageName }) {
     loadUserAppConfig();
 
     // Listen for config updates from AppsManagerModal or Onboarding
-    const handleConfigUpdate = () => {
-      loadUserAppConfig();
+    const handleConfigUpdate = (e) => {
+      if (e.detail?.enabled_apps) {
+        setEnabledApps(e.detail.enabled_apps);
+      } else {
+        loadUserAppConfig();
+      }
     };
 
     window.addEventListener('dashboard-config-updated', handleConfigUpdate);
@@ -1495,6 +1646,27 @@ export default function Layout({ children, currentPageName }) {
             }));
           } catch (e) {
             console.warn('Failed to load GROWTH stats:', e.message);
+          }
+        }
+
+        // Projects/Tasks stats
+        if (path.startsWith('/projects') || path.startsWith('/tasks')) {
+          try {
+            const currentUser = await db.auth.me();
+            if (!isMounted || !currentUser?.id) return;
+            const { count } = await supabase
+              .from('tasks')
+              .select('id', { count: 'exact', head: true })
+              .eq('assigned_to', currentUser.id)
+              .neq('status', 'completed')
+              .neq('status', 'cancelled');
+            if (!isMounted) return;
+            setSecondaryNavStats(prev => ({
+              ...prev,
+              activeTasks: count || 0,
+            }));
+          } catch (e) {
+            console.warn('Failed to load task stats:', e.message);
           }
         }
 
@@ -3323,9 +3495,9 @@ export default function Layout({ children, currentPageName }) {
           html:not(.dark) .bg-gradient-to-l.text-white { color: #FFFFFF !important; }
           `}</style>
 
-        <div className="flex h-screen">
+        <div className="flex h-screen overflow-x-hidden">
           {/* Desktop/Tablet Sidebar with Flyout Submenu */}
-          <div className="hidden md:flex flex-col sidebar-shell w-[72px] lg:w-[80px] overflow-visible relative z-20">
+          <div ref={sidebarRef} className="hidden md:flex flex-col sidebar-shell w-[72px] lg:w-[80px] overflow-visible relative z-20">
             <SidebarContent
               currentPageName={currentPageName}
               secondaryNavConfig={secondaryNavConfig}
@@ -3335,7 +3507,6 @@ export default function Layout({ children, currentPageName }) {
               setOpenSubmenu={setOpenSubmenu}
               onSubmenuClose={handleSubmenuClose}
               onSubmenuEnter={handleSubmenuEnter}
-              onEngineItemsChange={setVisibleEngineIds}
               inboxUnreadCount={inboxUnreadCount}
             />
             {/* Submenu Flyout - positioned absolutely relative to sidebar */}
@@ -3345,89 +3516,68 @@ export default function Layout({ children, currentPageName }) {
               onClose={handleSubmenuClose}
               onEnter={handleSubmenuEnter}
               location={location}
-              visibleEngineIds={visibleEngineIds}
+              navItemTop={submenuTop}
             />
           </div>
 
           {/* Mobile Header - Only on phones (below 768px) */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
+          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-white/5 pt-safe">
             <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
-              <div className="flex items-center">
-                <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
-                  iSyncSo
-                </span>
+              <div className="flex items-center gap-2">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-gray-300 min-w-[40px] min-h-[40px] flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors rounded-xl -ml-1"
+                      aria-label="Open menu"
+                    >
+                      <Menu className="w-5 h-5" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe overflow-y-auto">
+                    <SidebarContent
+                      currentPageName={currentPageName}
+                      isMobile={true}
+                      secondaryNavConfig={secondaryNavConfig}
+                      enabledApps={enabledApps}
+                      onOpenAppsManager={() => setAppsManagerOpen(true)}
+                      inboxUnreadCount={inboxUnreadCount}
+                    />
+                  </SheetContent>
+                </Sheet>
               </div>
-              {/* Show current section badge on mobile */}
-              {secondaryNavConfig && (
-                <div className={`px-2.5 py-1 rounded-lg text-xs font-medium ${COLOR_CLASSES[secondaryNavConfig.color]?.bg || 'bg-cyan-500/10'} ${COLOR_CLASSES[secondaryNavConfig.color]?.text || 'text-cyan-400'}`}>
-                  {secondaryNavConfig.title}
-                </div>
-              )}
+              {/* Show current page / section title */}
+              <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
+                {secondaryNavConfig ? (
+                  <span className={`text-sm font-semibold truncate ${COLOR_CLASSES[secondaryNavConfig.color]?.text || 'text-cyan-400'}`}>
+                    {secondaryNavConfig.title}
+                  </span>
+                ) : (
+                  <span className="text-sm font-semibold text-zinc-200 truncate">
+                    {currentPageName?.replace(/([A-Z])/g, ' $1').trim() || 'Dashboard'}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors rounded-xl"
-                    aria-label="Open menu"
-                  >
-                    <Menu className="w-6 h-6" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe overflow-y-auto">
-                  <SidebarContent
-                    currentPageName={currentPageName}
-                    isMobile={true}
-                    secondaryNavConfig={secondaryNavConfig}
-                    enabledApps={enabledApps}
-                    onOpenAppsManager={() => setAppsManagerOpen(true)}
-                    inboxUnreadCount={inboxUnreadCount}
-                  />
-                </SheetContent>
-              </Sheet>
+                <NotificationsDropdown sidebarMode={false} />
               </div>
             </div>
           </div>
 
-          {/* Desktop Top Bar removed - notifications moved to sidebar */}
+          {/* Mobile Sub-Navigation Strip — persistent below header */}
+          <MobileSubNavStrip config={secondaryNavConfig} location={location} />
 
           {/* Main Content - Mobile optimized with safe areas */}
           <main
             id="main-content"
-            className="relative flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
+            className={`relative flex-1 md:pt-0 overflow-y-auto overflow-x-hidden transition-all duration-300 pb-safe scroll-smooth-ios ${
+              secondaryNavConfig ? 'pt-[calc(3.5rem+2.5rem)] sm:pt-[calc(4rem+2.5rem)]' : 'pt-14 sm:pt-16'
+            }`}
             role="main"
           >
-            {/* SYNC environment top tabs — bordered pill style */}
-            {secondaryNavConfig?.title === 'SYNC' && (
-              <div className="px-4 lg:px-6 pt-4">
-                <div className="inline-flex items-center gap-1 bg-zinc-900/60 border border-zinc-800/60 rounded-lg p-1.5 overflow-x-auto scrollbar-hide">
-                  {secondaryNavConfig.items.map((item) => {
-                    const Icon = item.icon;
-                    const fullUrl = location.pathname + location.search;
-                    const itemBase = item.path?.split('?')[0];
-                    const isActive = item.path?.includes('?')
-                      ? fullUrl === item.path || (fullUrl === itemBase && item.matchPath)
-                      : location.pathname === item.path;
-                    return (
-                      <Link
-                        key={item.label}
-                        to={item.path}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                          isActive
-                            ? 'bg-zinc-800/80 text-cyan-300/90'
-                            : 'text-zinc-500 hover:text-zinc-300'
-                        }`}
-                      >
-                        {Icon && <Icon className="w-4 h-4" />}
-                        {item.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* SYNC environment top tabs removed — each Sync page renders its own SyncViewSelector on the right */}
             {/* TALENT quick action buttons moved to TalentDashboard PageHeader */}
             <div className="min-h-full">
               {children}

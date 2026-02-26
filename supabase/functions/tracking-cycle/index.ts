@@ -69,9 +69,9 @@ serve(async (req) => {
   };
 
   try {
-    // Get all companies with active tracking jobs
+    // Get all companies with active tracking jobs (skip AfterShip-tracked — they get webhook updates)
     const companies = await supabaseRequest(
-      'tracking_jobs?select=company_id&status=eq.active&limit=1000'
+      'tracking_jobs?select=company_id&status=eq.active&tracking_source=neq.aftership&limit=1000'
     ) as { company_id: string }[];
 
     // Get unique company IDs
@@ -140,9 +140,9 @@ async function processCompanyTracking(companyId: string) {
   const results = { checked: 0, delivered: 0, escalated: 0, errors: [] as string[] };
   const now = new Date().toISOString();
 
-  // 1. Get jobs due for checking
+  // 1. Get jobs due for checking (skip AfterShip-tracked — they use webhooks)
   const jobsDue = await supabaseRequest(
-    `tracking_jobs?company_id=eq.${companyId}&status=eq.active&next_check_at=lte.${now}&select=*`
+    `tracking_jobs?company_id=eq.${companyId}&status=eq.active&next_check_at=lte.${now}&tracking_source=neq.aftership&select=*`
   ) as TrackingJob[];
 
   for (const job of (jobsDue || [])) {

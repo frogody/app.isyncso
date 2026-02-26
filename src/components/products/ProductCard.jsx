@@ -55,6 +55,8 @@ const TYPE_ICONS = {
 const CHANNEL_COLORS = {
   b2b: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30', label: 'B2B' },
   b2c: { bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'B2C' },
+  bolcom: { bg: 'bg-[#0000A4]/20', text: 'text-[#5B5BFF]', border: 'border-[#0000A4]/30', label: 'bol.com' },
+  shopify: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30', label: 'Shopify' },
 };
 
 export function ProductGridCard({
@@ -62,6 +64,7 @@ export function ProductGridCard({
   productType = 'digital',
   details,
   salesChannels,
+  channelInventory,
   onEdit,
   onDuplicate,
   onArchive,
@@ -103,7 +106,7 @@ export function ProductGridCard({
                   src={product.featured_image.url}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-300"
-                />
+                 loading="lazy" decoding="async" />
                 <div className="absolute inset-0 bg-black/25" />
               </>
             ) : (
@@ -141,6 +144,16 @@ export function ProductGridCard({
                 )
               )}
 
+              {/* Physical: FBB/FBR fulfilment badge */}
+              {isPhysical && (details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method) && (() => {
+                const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
+                return fm === 'FBB' ? (
+                  <Badge className="bg-[#0000A4]/20 text-[#5B5BFF] border border-[#0000A4]/30 text-xs">
+                    <Truck className="w-3 h-3 mr-1" /> bol.com Warehouse
+                  </Badge>
+                ) : null;
+              })()}
+
               {/* Physical: Channel badges */}
               {isPhysical && salesChannels?.length > 0 && salesChannels.map(ch => {
                 const style = CHANNEL_COLORS[ch];
@@ -165,6 +178,19 @@ export function ProductGridCard({
                 </Badge>
               )}
             </div>
+
+            {/* Cross-channel stock breakdown */}
+            {isPhysical && channelInventory && salesChannels?.includes('bolcom') && (
+              <div className={`flex items-center gap-2 flex-wrap text-xs mt-1 ${t('text-slate-500', 'text-zinc-500')}`}>
+                <span>Internal: {channelInventory.quantity_available ?? channelInventory.quantity_on_hand ?? '—'}</span>
+                <span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                <span>bol.com: {channelInventory.quantity_external_bolcom ?? '—'}</span>
+                {salesChannels.includes('shopify') && (
+                  <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                  <span>Shopify: {channelInventory.quantity_external_shopify ?? '—'}</span></>
+                )}
+              </div>
+            )}
 
             <div className={`flex items-center justify-between mt-4 pt-3 border-t ${t('border-slate-200', 'border-white/5')}`}>
               <div className="flex items-center gap-2">
@@ -250,6 +276,7 @@ export function ProductListRow({
   productType = 'digital',
   details,
   salesChannels,
+  channelInventory,
   onEdit,
   onDuplicate,
   onArchive,
@@ -291,7 +318,7 @@ export function ProductListRow({
                 src={product.featured_image.url}
                 alt={product.name}
                 className="w-full h-full object-cover"
-              />
+               loading="lazy" decoding="async" />
             ) : (
               <Icon className={cn(
                 "w-7 h-7",
@@ -326,6 +353,16 @@ export function ProductListRow({
                 )
               )}
 
+              {/* Physical: FBB/FBR fulfilment badge */}
+              {isPhysical && (details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method) && (() => {
+                const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
+                return fm === 'FBB' ? (
+                  <Badge className="bg-[#0000A4]/20 text-[#5B5BFF] border border-[#0000A4]/30 text-xs">
+                    <Truck className="w-3 h-3 mr-1" /> bol.com Warehouse
+                  </Badge>
+                ) : null;
+              })()}
+
               {/* Physical: Channel badges */}
               {isPhysical && salesChannels?.length > 0 && salesChannels.map(ch => {
                 const style = CHANNEL_COLORS[ch];
@@ -353,6 +390,20 @@ export function ProductListRow({
             <p className={`text-sm ${t('text-slate-500', 'text-zinc-500')} mt-0.5 truncate`}>
               {product.tagline || product.short_description || 'No description'}
             </p>
+            {/* Cross-channel stock breakdown (SH-18) */}
+            {isPhysical && channelInventory && salesChannels?.includes('bolcom') && (
+              <div className={`flex items-center gap-2 text-xs mt-0.5 ${t('text-slate-400', 'text-zinc-500')}`}>
+                <span>Internal: {channelInventory.quantity_available ?? channelInventory.quantity_on_hand ?? '—'}</span>
+                {salesChannels.includes('bolcom') && (
+                  <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                  <span>bol.com: {channelInventory.quantity_external_bolcom ?? '—'}</span></>
+                )}
+                {salesChannels.includes('shopify') && (
+                  <><span className={t('text-slate-300', 'text-zinc-600')}>|</span>
+                  <span>Shopify: {channelInventory.quantity_external_shopify ?? '—'}</span></>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Pricing / Info */}
@@ -516,7 +567,7 @@ export function ProductTableView({
               </>
             ) : (
               <>
-                <TableHead className="text-zinc-500 text-xs font-medium w-[120px]">SKU</TableHead>
+                <TableHead className="text-zinc-500 text-xs font-medium w-[140px]">EAN</TableHead>
                 <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center">Price</TableHead>
                 <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center">Stock</TableHead>
                 <TableHead className="text-zinc-500 text-xs font-medium w-[100px] text-center hidden lg:table-cell">Status</TableHead>
@@ -567,7 +618,7 @@ export function ProductTableView({
                   <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
                     <div className="w-9 h-9 rounded bg-zinc-800 border border-white/[0.06] flex items-center justify-center overflow-hidden">
                       {product.featured_image?.url ? (
-                        <img src={product.featured_image.url} alt="" className="w-full h-full object-cover" />
+                        <img src={product.featured_image.url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                       ) : (
                         <Icon className={cn("w-4 h-4", isDigital ? "text-cyan-500/40" : "text-amber-500/40")} />
                       )}
@@ -626,16 +677,16 @@ export function ProductTableView({
                   </>
                 ) : (
                   <>
-                    {/* SKU */}
+                    {/* EAN */}
                     <TableCell className="py-2">
                       {editMode ? (
                         <EditCell
-                          value={getEditValue(product.id, 'sku', details?.sku || '')}
-                          onChange={(v) => onFieldChange?.(product.id, 'sku', v)}
-                          placeholder="SKU"
+                          value={getEditValue(product.id, 'ean', product.ean || details?.barcode || '')}
+                          onChange={(v) => onFieldChange?.(product.id, 'ean', v)}
+                          placeholder="EAN"
                         />
                       ) : (
-                        <span className="text-[13px] text-zinc-400">{details?.sku || '—'}</span>
+                        <span className="text-[13px] text-zinc-400">{product.ean || details?.barcode || '—'}</span>
                       )}
                     </TableCell>
                     {/* Price */}
@@ -656,7 +707,7 @@ export function ProductTableView({
                         <span className="text-[13px] text-zinc-600">—</span>
                       )}
                     </TableCell>
-                    {/* Stock qty */}
+                    {/* Stock qty + fulfilment */}
                     <TableCell className="py-2 text-center">
                       {editMode ? (
                         <EditCell
@@ -666,17 +717,29 @@ export function ProductTableView({
                           placeholder="0"
                           className="text-center"
                         />
-                      ) : qty != null ? (
-                        <span className={cn(
-                          "text-[13px] font-medium tabular-nums",
-                          qty <= 0 ? "text-red-400" :
-                          qty <= low ? "text-amber-400" :
-                          "text-zinc-300"
-                        )}>
-                          {qty}
-                        </span>
                       ) : (
-                        <span className="text-[13px] text-zinc-600">—</span>
+                        <div className="flex flex-col items-center gap-0.5">
+                          {qty != null ? (
+                            <span className={cn(
+                              "text-[13px] font-medium tabular-nums",
+                              qty <= 0 ? "text-red-400" :
+                              qty <= low ? "text-amber-400" :
+                              "text-zinc-300"
+                            )}>
+                              {qty}
+                            </span>
+                          ) : (
+                            <span className="text-[13px] text-zinc-600">—</span>
+                          )}
+                          {(() => {
+                            const fm = details?.inventory?.fulfilment_method || details?.pricing?.fulfilment_method;
+                            return fm === 'FBB' ? (
+                              <span className="text-[10px] text-[#5B5BFF] flex items-center gap-0.5">
+                                <Truck className="w-2.5 h-2.5" /> bol.com
+                              </span>
+                            ) : null;
+                          })()}
+                        </div>
                       )}
                     </TableCell>
                     {/* Status */}

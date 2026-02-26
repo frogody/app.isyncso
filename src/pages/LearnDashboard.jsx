@@ -24,6 +24,8 @@ import { SkillProgressList } from '@/components/ui/SkillProgressBar';
 import { CourseCarousel } from '@/components/ui/CourseCarousel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import ComplianceTrainingSection from '@/components/learn/ComplianceTrainingSection';
+import AdvancedAnalytics from '@/components/learn/AdvancedAnalytics';
 
 function StatCardEnhanced({ icon: Icon, label, value, sublabel, color = 'teal', onClick, delay = 0 }) {
   const { lt } = useTheme();
@@ -123,6 +125,7 @@ export default function LearnDashboard() {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activitySessions, setActivitySessions] = useState([]);
+  const [complianceRecs, setComplianceRecs] = useState(null);
 
   // Modal states
   const [showXPModal, setShowXPModal] = useState(false);
@@ -174,6 +177,11 @@ export default function LearnDashboard() {
       setCourses(allCourses);
       setCertificates(certsData);
       setActivitySessions(sessionsData);
+      // Load compliance training recommendations - disabled (edge function not implemented)
+      // db.functions.invoke('getSentinelLearningRecommendations', { user_id: user?.id })
+      //   .then(res => { if (res?.data) setComplianceRecs(res.data); })
+      //   .catch(() => {});
+
       setSkills(skillsData.slice(0, 5).map(s => ({
         id: s.id,
         name: s.skill_name || 'Skill',
@@ -467,10 +475,24 @@ export default function LearnDashboard() {
             </div>
           </div>
 
+          {/* Compliance Training */}
+          {complianceRecs && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+              <ComplianceTrainingSection recommendations={complianceRecs} />
+            </motion.div>
+          )}
+
           {/* Recommended Courses */}
           {recommended.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <CourseCarousel courses={recommended} title="Recommended for You" color="teal" />
+            </motion.div>
+          )}
+
+          {/* Advanced Analytics */}
+          {user?.id && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+              <AdvancedAnalytics userId={user.id} />
             </motion.div>
           )}
         </div>

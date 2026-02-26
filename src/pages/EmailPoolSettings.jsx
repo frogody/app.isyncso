@@ -580,7 +580,7 @@ function SyncLogSection({ companyId }) {
 // MAIN PAGE
 // =============================================================================
 
-export default function EmailPoolSettings() {
+export default function EmailPoolSettings({ embedded = false }) {
   const { user } = useUser();
   const composio = useComposio();
   const companyId = user?.company_id;
@@ -771,20 +771,18 @@ export default function EmailPoolSettings() {
   const totalOrders = accounts.reduce((s, a) => s + (a.total_orders_synced || 0), 0);
   const totalErrors = accounts.reduce((s, a) => s + (a.total_errors || 0), 0);
 
-  return (
-    <ProductsPageTransition>
-      <div className="min-h-screen bg-black text-white">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Email Pool</h1>
-              <p className="text-sm text-zinc-500 mt-1">Auto-sync purchase orders from shared email accounts</p>
-            </div>
-            <Button className="bg-cyan-600 hover:bg-cyan-700 text-white" onClick={() => setShowAddDialog(true)}>
-              <Plus className="w-4 h-4 mr-2" /> Add Account
-            </Button>
-          </div>
+  const content = (
+    <div className={embedded ? "" : "max-w-6xl mx-auto px-4 py-6"}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className={`${embedded ? 'text-lg' : 'text-2xl'} font-bold text-white`}>Email Pool</h1>
+          <p className="text-sm text-zinc-500 mt-1">Auto-sync purchase orders from shared email accounts</p>
+        </div>
+        <Button className="bg-cyan-600 hover:bg-cyan-700 text-white" onClick={() => setShowAddDialog(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Add Account
+        </Button>
+      </div>
 
           {/* Stats Bar */}
           <div className="grid grid-cols-4 gap-4 mb-6">
@@ -866,11 +864,19 @@ export default function EmailPoolSettings() {
           {activeSection === "log" && companyId && (
             <SyncLogSection companyId={companyId} />
           )}
-        </div>
 
-        {/* Dialogs */}
-        <AddAccountDialog open={showAddDialog} onOpenChange={setShowAddDialog} onAdd={handleAddAccount} />
-        <SettingsDialog open={!!settingsAccount} onOpenChange={(open) => !open && setSettingsAccount(null)} account={settingsAccount} onSave={handleSaveSettings} />
+      {/* Dialogs */}
+      <AddAccountDialog open={showAddDialog} onOpenChange={setShowAddDialog} onAdd={handleAddAccount} />
+      <SettingsDialog open={!!settingsAccount} onOpenChange={(open) => !open && setSettingsAccount(null)} account={settingsAccount} onSave={handleSaveSettings} />
+    </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <ProductsPageTransition>
+      <div className="min-h-screen bg-black text-white">
+        {content}
       </div>
     </ProductsPageTransition>
   );

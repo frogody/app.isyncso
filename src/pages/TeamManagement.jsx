@@ -22,8 +22,10 @@ import {
   Check, X, Crown, Key, Lock, ShieldCheck, ShieldAlert,
   Eye, EyeOff, UserCog, Filter, Plus, RefreshCw, Copy,
   AlertTriangle, Info, CheckCircle, ArrowLeft, FolderPlus,
-  Boxes, ToggleLeft, ToggleRight, UserMinus
+  Boxes, ToggleLeft, ToggleRight, UserMinus, ClipboardList
 } from "lucide-react";
+import TaskLog from "@/components/tasks/TaskLog";
+import TeamMemberBadge from "@/components/shared/TeamMemberBadge";
 import { createPageUrl } from "@/utils";
 
 // Role hierarchy colors and icons
@@ -729,13 +731,13 @@ export default function TeamManagement({ embedded = false }) {
               <Boxes className="w-4 h-4 mr-2" />
               Teams
             </TabsTrigger>
-            <TabsTrigger value="roles" className="data-[state=active]:bg-zinc-800">
-              <Shield className="w-4 h-4 mr-2" />
-              Roles & Permissions
-            </TabsTrigger>
             <TabsTrigger value="invitations" className="data-[state=active]:bg-zinc-800">
               <Mail className="w-4 h-4 mr-2" />
               Invitations
+            </TabsTrigger>
+            <TabsTrigger value="tasklog" className="data-[state=active]:bg-zinc-800">
+              <ClipboardList className="w-4 h-4 mr-2" />
+              Task Log
             </TabsTrigger>
           </TabsList>
 
@@ -843,111 +845,6 @@ export default function TeamManagement({ embedded = false }) {
             </GlassCard>
           </TabsContent>
 
-          {/* ROLES & PERMISSIONS TAB */}
-          <TabsContent value="roles" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Roles List */}
-              <GlassCard className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-purple-400" />
-                    Role Hierarchy
-                  </h3>
-                  <Badge className="bg-zinc-800 text-zinc-400">
-                    {roles.length} roles
-                  </Badge>
-                </div>
-
-                <div className="space-y-3">
-                  {roles.sort((a, b) => b.hierarchy_level - a.hierarchy_level).map((role) => {
-                    const config = ROLE_CONFIG[role.name] || ROLE_CONFIG.user;
-                    const Icon = config.icon;
-
-                    return (
-                      <div
-                        key={role.id}
-                        className={`
-                          p-4 rounded-xl border cursor-pointer transition-all
-                          ${selectedRole?.id === role.id
-                            ? 'bg-zinc-800/80 border-cyan-500/50'
-                            : 'bg-zinc-800/30 border-zinc-700/50 hover:border-zinc-600'}
-                        `}
-                        onClick={() => setSelectedRole(role)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg ${config.color} flex items-center justify-center`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white font-medium capitalize">
-                                {role.name.replace('_', ' ')}
-                              </span>
-                              <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-400">
-                                Level {role.hierarchy_level}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-zinc-500">{role.description}</p>
-                          </div>
-                          <ChevronRight className={`w-5 h-5 text-zinc-500 transition-transform ${selectedRole?.id === role.id ? 'rotate-90' : ''}`} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </GlassCard>
-
-              {/* Role Permissions */}
-              <GlassCard className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Key className="w-5 h-5 text-green-400" />
-                    {selectedRole ? `${selectedRole.name.replace('_', ' ')} Permissions` : 'Select a Role'}
-                  </h3>
-                </div>
-
-                {selectedRole ? (
-                  <RolePermissionsView
-                    role={selectedRole}
-                    allPermissions={permissions}
-                    permissionCategories={PERMISSION_CATEGORIES}
-                  />
-                ) : (
-                  <div className="text-center py-12 text-zinc-500">
-                    <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                    <p>Select a role to view its permissions</p>
-                  </div>
-                )}
-              </GlassCard>
-            </div>
-
-            {/* Permission Reference */}
-            <GlassCard className="p-6">
-              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
-                <Info className="w-5 h-5 text-cyan-400" />
-                Permission Reference Guide
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(PERMISSION_CATEGORIES).map(([category, resources]) => (
-                  <div key={category}>
-                    <h4 className="text-sm font-semibold text-cyan-400 mb-3">{category}</h4>
-                    <div className="space-y-2">
-                      {resources.map(resource => (
-                        <div key={resource} className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30">
-                          <span className="text-sm text-zinc-300 capitalize">{resource}</span>
-                          <Badge variant="outline" className="text-xs border-zinc-700 text-zinc-500">
-                            {permissions.filter(p => p.resource === resource).length} actions
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </GlassCard>
-          </TabsContent>
-
           {/* INVITATIONS TAB */}
           <TabsContent value="invitations" className="space-y-4">
             <GlassCard className="p-6">
@@ -1023,6 +920,11 @@ export default function TeamManagement({ embedded = false }) {
                 </div>
               )}
             </GlassCard>
+          </TabsContent>
+
+          {/* TASK LOG TAB */}
+          <TabsContent value="tasklog" className="space-y-4">
+            <TaskLog />
           </TabsContent>
         </Tabs>
       </div>
@@ -1199,9 +1101,7 @@ export default function TeamManagement({ embedded = false }) {
                     return (
                       <div key={tm.id} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-medium text-white">
-                            {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}
-                          </div>
+                          <TeamMemberBadge member={member} size="sm" />
                           <div>
                             <div className="text-sm text-white">{member.full_name || 'Unnamed'}</div>
                             <div className="text-xs text-zinc-500">{member.email}</div>
@@ -1231,9 +1131,7 @@ export default function TeamManagement({ embedded = false }) {
                   .map(member => (
                     <div key={member.id} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-medium text-white">
-                          {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}
-                        </div>
+                        <TeamMemberBadge member={member} size="sm" />
                         <div>
                           <div className="text-sm text-white">{member.full_name || 'Unnamed'}</div>
                           <div className="text-xs text-zinc-500">{member.email}</div>
@@ -1303,15 +1201,7 @@ function UserRow({ member, roles, currentUserId, isSuperAdmin, onAssignRole, onR
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="relative">
-          <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden">
-            {member.avatar_url ? (
-              <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-zinc-400 text-lg font-semibold">
-                {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}
-              </div>
-            )}
-          </div>
+          <TeamMemberBadge member={member} size="md" />
           {isCurrentUser && (
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-cyan-500 rounded-full border-2 border-zinc-900" />
           )}
@@ -1660,12 +1550,9 @@ function TeamCard({ team, teamMembers, allApps, onEdit, onDelete, onToggleApp, o
                       return (
                         <div
                           key={tm.id}
-                          className="flex items-center gap-2 px-2 py-1 rounded-full bg-zinc-800/50 border border-zinc-700/50"
+                          className="flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-800/50 border border-zinc-700/50"
                         >
-                          <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-medium text-white">
-                            {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}
-                          </div>
-                          <span className="text-xs text-zinc-300">{member.full_name || member.email}</span>
+                          <TeamMemberBadge member={member} size="xs" showName />
                         </div>
                       );
                     })}

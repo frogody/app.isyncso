@@ -10,8 +10,9 @@ const corsHeaders = {
 };
 
 interface TwilioNumberRequest {
-  action: "search" | "purchase" | "release" | "list" | "update";
+  action: "search" | "purchase" | "release" | "list" | "update" | "setup-voice" | "configure-voice" | "call-logs" | "check-geo";
   organization_id: string;
+  call_sid?: string;
   // Search params
   country?: string;
   area_code?: string;
@@ -71,6 +72,21 @@ serve(async (req) => {
 
       case "update":
         return await updateNumber(body, supabase);
+
+      case "setup-voice":
+        return await setupVoice(supabase, twilioAuth, TWILIO_ACCOUNT_SID);
+
+      case "configure-voice":
+        return await configureVoice(body, supabase, twilioAuth, TWILIO_ACCOUNT_SID);
+
+      case "call-logs":
+        return await getCallLogs(body, twilioAuth, TWILIO_ACCOUNT_SID);
+
+      case "check-geo":
+        return await checkGeoPermissions(twilioAuth, TWILIO_ACCOUNT_SID);
+
+      case "enable-geo":
+        return await enableGeoPermission(body, twilioAuth);
 
       default:
         return new Response(
@@ -166,14 +182,20 @@ async function purchaseNumber(
     );
   }
 
-  // Webhook URL for incoming SMS
-  const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/sms-webhook`;
+  // Webhook URLs
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  const smsWebhookUrl = `${baseUrl}/functions/v1/sms-webhook`;
+  const voiceWebhookUrl = `${baseUrl}/functions/v1/voice-webhook`;
 
-  // Purchase from Twilio
+  // Purchase from Twilio with SMS + Voice webhooks
   const purchaseBody = new URLSearchParams({
     PhoneNumber: phone_number,
-    SmsUrl: webhookUrl,
+    SmsUrl: smsWebhookUrl,
     SmsMethod: "POST",
+    VoiceUrl: voiceWebhookUrl,
+    VoiceMethod: "POST",
+    StatusCallback: `${voiceWebhookUrl}?action=status`,
+    StatusCallbackMethod: "POST",
   });
 
   if (friendly_name) {
@@ -446,6 +468,349 @@ async function updateNumber(params: TwilioNumberRequest, supabase: any) {
 
   return new Response(
     JSON.stringify({ success: true, number: data }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+// One-time setup: Create Twilio API Key + TwiML Application for voice calling
+async function setupVoice(
+  supabase: any,
+  twilioAuth: string,
+  accountSid: string
+) {
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  const voiceWebhookUrl = `${baseUrl}/functions/v1/voice-webhook`;
+
+  // 1. Create API Key for signing Access Tokens
+  const keyRes = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Keys.json`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${twilioAuth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ FriendlyName: "isyncso-voice" }).toString(),
+    }
+  );
+
+  if (!keyRes.ok) {
+    const err = await keyRes.json();
+    return new Response(
+      JSON.stringify({ success: false, error: `Failed to create API Key: ${err.message}` }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const keyData = await keyRes.json();
+
+  // 2. Create TwiML Application for routing outbound calls
+  const appRes = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Applications.json`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${twilioAuth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        FriendlyName: "iSyncSO-Voice",
+        VoiceUrl: voiceWebhookUrl,
+        VoiceMethod: "POST",
+        StatusCallback: `${voiceWebhookUrl}?action=status`,
+        StatusCallbackMethod: "POST",
+      }).toString(),
+    }
+  );
+
+  if (!appRes.ok) {
+    const err = await appRes.json();
+    return new Response(
+      JSON.stringify({ success: false, error: `Failed to create TwiML App: ${err.message}` }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const appData = await appRes.json();
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: "Voice setup complete. Set these as Supabase secrets:",
+      secrets: {
+        TWILIO_API_KEY_SID: keyData.sid,
+        TWILIO_API_KEY_SECRET: keyData.secret,
+        TWILIO_TWIML_APP_SID: appData.sid,
+      },
+      instructions: [
+        `Run: npx supabase secrets set TWILIO_API_KEY_SID="${keyData.sid}" TWILIO_API_KEY_SECRET="${keyData.secret}" TWILIO_TWIML_APP_SID="${appData.sid}" --project-ref sfxpmzicgpaxfntqleig`,
+        "Then redeploy all edge functions to pick up the new secrets.",
+      ],
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+// Get call logs from Twilio (diagnostic)
+async function getCallLogs(
+  params: TwilioNumberRequest,
+  twilioAuth: string,
+  accountSid: string
+) {
+  const { call_sid } = params;
+
+  // If specific call SID provided, get that call's details
+  if (call_sid) {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls/${call_sid}.json`,
+      { headers: { "Authorization": `Basic ${twilioAuth}` } }
+    );
+    const data = await res.json();
+    return new Response(
+      JSON.stringify({
+        success: true,
+        call: {
+          sid: data.sid,
+          status: data.status,
+          direction: data.direction,
+          from: data.from,
+          to: data.to,
+          duration: data.duration,
+          start_time: data.start_time,
+          end_time: data.end_time,
+          price: data.price,
+          price_unit: data.price_unit,
+          error_code: data.error_code,
+          error_message: data.error_message,
+          uri: data.uri,
+        },
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Otherwise get recent calls
+  const res = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json?PageSize=10`,
+    { headers: { "Authorization": `Basic ${twilioAuth}` } }
+  );
+  const data = await res.json();
+  const calls = (data.calls || []).map((c: any) => ({
+    sid: c.sid,
+    status: c.status,
+    direction: c.direction,
+    from: c.from,
+    to: c.to,
+    duration: c.duration,
+    start_time: c.start_time,
+    error_code: c.error_code,
+    error_message: c.error_message,
+  }));
+
+  return new Response(
+    JSON.stringify({ success: true, calls }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+// Check geographic permissions for voice calling
+async function checkGeoPermissions(
+  twilioAuth: string,
+  accountSid: string
+) {
+  // Check Netherlands (NL) and US geo permissions using Twilio Dialing Permissions API
+  const countries = ["NL", "US", "GB", "DE"];
+  const results: Record<string, any> = {};
+
+  for (const country of countries) {
+    try {
+      const res = await fetch(
+        `https://voice.twilio.com/v1/DialingPermissions/Countries/${country}`,
+        { headers: { "Authorization": `Basic ${twilioAuth}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        results[country] = {
+          name: data.name,
+          iso_code: data.iso_code,
+          continent: data.continent,
+          low_risk_numbers_enabled: data.low_risk_numbers_enabled,
+          high_risk_special_numbers_enabled: data.high_risk_special_numbers_enabled,
+          high_risk_tollfraud_numbers_enabled: data.high_risk_tollfraud_numbers_enabled,
+        };
+      } else {
+        const errText = await res.text();
+        results[country] = { error: `HTTP ${res.status}`, body: errText.substring(0, 200) };
+      }
+    } catch (err) {
+      results[country] = { error: (err as Error).message };
+    }
+  }
+
+  // Also get the recent call list to check for errors
+  try {
+    const callRes = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json?PageSize=5&Status=failed`,
+      { headers: { "Authorization": `Basic ${twilioAuth}` } }
+    );
+    if (callRes.ok) {
+      const callData = await callRes.json();
+      results._failed_calls = (callData.calls || []).map((c: any) => ({
+        sid: c.sid,
+        to: c.to,
+        from: c.from,
+        status: c.status,
+        start_time: c.start_time,
+        error_code: c.error_code,
+        error_message: c.error_message,
+      }));
+    }
+  } catch (_) {}
+
+  // Also get recent completed/busy calls
+  try {
+    const recentRes = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json?PageSize=10`,
+      { headers: { "Authorization": `Basic ${twilioAuth}` } }
+    );
+    if (recentRes.ok) {
+      const recentData = await recentRes.json();
+      results._recent_calls = (recentData.calls || []).map((c: any) => ({
+        sid: c.sid,
+        to: c.to,
+        from: c.from,
+        status: c.status,
+        direction: c.direction,
+        duration: c.duration,
+        start_time: c.start_time,
+        error_code: c.error_code,
+        error_message: c.error_message,
+      }));
+    }
+  } catch (_) {}
+
+  return new Response(
+    JSON.stringify({ success: true, geo_permissions: results }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+// Enable geographic permission for a country
+async function enableGeoPermission(
+  params: any,
+  twilioAuth: string
+) {
+  const country = params.country_code || "NL";
+
+  // Twilio uses BulkCountryUpdates endpoint to change dialing permissions
+  const updateRequest = JSON.stringify([
+    {
+      iso_code: country,
+      low_risk_numbers_enabled: true,
+      high_risk_special_numbers_enabled: false,
+      high_risk_tollfraud_numbers_enabled: false,
+    },
+  ]);
+
+  const res = await fetch(
+    `https://voice.twilio.com/v1/DialingPermissions/BulkCountryUpdates`,
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${twilioAuth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        UpdateRequest: updateRequest,
+      }).toString(),
+    }
+  );
+
+  if (!res.ok) {
+    const errText = await res.text();
+    return new Response(
+      JSON.stringify({ success: false, error: `HTTP ${res.status}`, body: errText }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const data = await res.json();
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: `Geographic permissions enabled for ${country}`,
+      result: {
+        name: data.name,
+        iso_code: data.iso_code,
+        low_risk_numbers_enabled: data.low_risk_numbers_enabled,
+        high_risk_special_numbers_enabled: data.high_risk_special_numbers_enabled,
+        high_risk_tollfraud_numbers_enabled: data.high_risk_tollfraud_numbers_enabled,
+      },
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+// Configure VoiceUrl on an existing phone number
+async function configureVoice(
+  params: TwilioNumberRequest,
+  supabase: any,
+  twilioAuth: string,
+  accountSid: string
+) {
+  const { organization_id } = params;
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  const voiceWebhookUrl = `${baseUrl}/functions/v1/voice-webhook`;
+
+  // Get all active numbers for this org
+  const { data: numbers, error } = await supabase
+    .from("organization_phone_numbers")
+    .select("id, twilio_sid, phone_number")
+    .eq("organization_id", organization_id)
+    .eq("status", "active");
+
+  if (error || !numbers?.length) {
+    return new Response(
+      JSON.stringify({ success: false, error: "No active numbers found" }),
+      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const results = [];
+  for (const num of numbers) {
+    const updateRes = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/IncomingPhoneNumbers/${num.twilio_sid}.json`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${twilioAuth}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          VoiceUrl: voiceWebhookUrl,
+          VoiceMethod: "POST",
+          StatusCallback: `${voiceWebhookUrl}?action=status`,
+          StatusCallbackMethod: "POST",
+        }).toString(),
+      }
+    );
+
+    results.push({
+      phone_number: num.phone_number,
+      success: updateRes.ok,
+    });
+
+    // Also update capabilities to include voice
+    if (updateRes.ok) {
+      await supabase
+        .from("organization_phone_numbers")
+        .update({ capabilities: { sms: true, mms: false, voice: true } })
+        .eq("id", num.id);
+    }
+  }
+
+  return new Response(
+    JSON.stringify({ success: true, results }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }

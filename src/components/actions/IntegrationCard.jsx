@@ -124,7 +124,7 @@ export default function IntegrationCard({
                 e.target.style.display = 'none';
                 e.target.parentElement.innerHTML = `<span class="text-white font-bold text-xl">${integration.integration_name?.charAt(0) || '?'}</span>`;
               }}
-            />
+            loading="lazy" decoding="async" />
           </div>
           <div>
             <h3 className="font-semibold text-white text-lg">{integration.integration_name}</h3>

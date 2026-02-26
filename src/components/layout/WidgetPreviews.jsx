@@ -3,7 +3,8 @@ import {
   GraduationCap, BookOpen, Target, Rocket, Shield, Cpu,
   ListTodo, Zap, TrendingUp, CheckCircle, AlertTriangle,
   Flame, Award, Bell, Send, Euro, Percent, Clock, FileText, Layers,
-  CreditCard, Receipt, BadgeEuro, Users, Calendar, PieChart
+  CreditCard, Receipt, BadgeEuro, Users, Calendar, PieChart,
+  ShoppingCart, Package, AlertCircle
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
@@ -79,6 +80,18 @@ export function WidgetPreview({ widgetId, appId, size }) {
       return <RaiseInvestorsPreview />;
     case 'raise_meetings':
       return <RaiseMeetingsPreview />;
+
+    // Commerce widgets
+    case 'commerce_b2b_overview':
+      return <CommerceBToBOverviewPreview />;
+    case 'commerce_orders':
+      return <CommerceOrdersPreview />;
+    case 'commerce_revenue':
+      return <CommerceRevenuePreview />;
+    case 'commerce_products':
+      return <CommerceProductsPreview />;
+    case 'commerce_outstanding':
+      return <CommerceOutstandingPreview />;
 
     default:
       return <DefaultPreview />;
@@ -614,6 +627,92 @@ function RaiseMeetingsPreview() {
       </div>
       <div className="text-lg font-bold text-white">8</div>
       <div className="text-[10px] text-zinc-500">Meetings</div>
+    </div>
+  );
+}
+
+// COMMERCE PREVIEWS
+function CommerceBToBOverviewPreview() {
+  return (
+    <div className="space-y-2 transform scale-[0.85] origin-top-left">
+      <div className="flex items-center gap-2 mb-3">
+        <ShoppingCart className="w-4 h-4 text-cyan-400" />
+        <span className="text-xs font-medium text-zinc-300">B2B Commerce</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-1.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-center">
+          <div className="text-[10px] text-zinc-400">Revenue</div>
+          <div className="text-xs font-bold text-cyan-400">€28k</div>
+        </div>
+        <div className="p-1.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-center">
+          <div className="text-[10px] text-zinc-400">Orders</div>
+          <div className="text-xs font-bold text-cyan-400">42</div>
+        </div>
+        <div className="p-1.5 rounded bg-amber-500/10 border border-amber-500/20 text-center">
+          <div className="text-[10px] text-zinc-400">Unpaid</div>
+          <div className="text-xs font-bold text-amber-400">€3k</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CommerceOrdersPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+          <ShoppingCart className="w-4 h-4 text-cyan-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">12 active</span>
+      </div>
+      <div className="text-lg font-bold text-white">42</div>
+      <div className="text-[10px] text-zinc-500">B2B Orders</div>
+    </div>
+  );
+}
+
+function CommerceRevenuePreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+          <Euro className="w-4 h-4 text-cyan-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">+8%</span>
+      </div>
+      <div className="text-lg font-bold text-cyan-400">€28k</div>
+      <div className="text-[10px] text-zinc-500">B2B Revenue</div>
+    </div>
+  );
+}
+
+function CommerceProductsPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center">
+          <Package className="w-4 h-4 text-teal-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-400">Published</span>
+      </div>
+      <div className="text-lg font-bold text-white">156</div>
+      <div className="text-[10px] text-zinc-500">Products</div>
+    </div>
+  );
+}
+
+function CommerceOutstandingPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+          <AlertCircle className="w-4 h-4 text-amber-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">5 unpaid</span>
+      </div>
+      <div className="text-lg font-bold text-amber-400">€3.2k</div>
+      <div className="text-[10px] text-zinc-500">Outstanding</div>
     </div>
   );
 }

@@ -86,7 +86,7 @@ export default function ClientLayout() {
                     src={settings.logo_url}
                     alt={settings.portal_name}
                     className="h-8 w-auto"
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center"

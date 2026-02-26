@@ -48,7 +48,7 @@ export default function ThreadPanel({
       <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
         <div className="flex gap-3">
           {parentMessage.sender_avatar ? (
-            <img src={parentMessage.sender_avatar} alt="" className="w-9 h-9 rounded-full" />
+            <img src={parentMessage.sender_avatar} alt="" className="w-9 h-9 rounded-full"  loading="lazy" decoding="async" />
           ) : (
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-sm font-bold text-white">
               {parentMessage.sender_name?.charAt(0) || '?'}
@@ -72,7 +72,7 @@ export default function ThreadPanel({
           <div key={reply.id} className="px-4 py-3 hover:bg-zinc-800/30 transition-colors">
             <div className="flex gap-3">
               {reply.sender_avatar ? (
-                <img src={reply.sender_avatar} alt="" className="w-8 h-8 rounded-full" />
+                <img src={reply.sender_avatar} alt="" className="w-8 h-8 rounded-full"  loading="lazy" decoding="async" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white">
                   {reply.sender_name?.charAt(0) || '?'}

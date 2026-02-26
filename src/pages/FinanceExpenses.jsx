@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { db } from '@/api/supabaseClient';
+import { db, supabase } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
   CreditCard, Plus, Search, Filter, Download, Calendar, Tag, Building,
@@ -25,8 +25,11 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { useUser } from '@/components/context/UserContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
+import CountrySelector from '@/components/finance/CountrySelector';
+import { determineTaxRulesForPurchase } from '@/lib/btwRules';
 
 const EXPENSE_CATEGORIES = [
   { value: 'software', label: 'Software & Tools', color: 'blue', icon: Monitor, bgClass: 'bg-blue-500/10' },
@@ -49,6 +52,7 @@ export default function FinanceExpenses({ embedded = false }) {
   const [dateRange, setDateRange] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -59,6 +63,7 @@ export default function FinanceExpenses({ embedded = false }) {
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
   const { theme, toggleTheme, ft } = useTheme();
+  const [taxRates, setTaxRates] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -70,23 +75,45 @@ export default function FinanceExpenses({ embedded = false }) {
     notes: '',
     receipt_url: '',
     is_recurring: false,
-    tax_deductible: false
+    tax_deductible: false,
+    tax_rate: 21,
+    supplier_country: 'NL',
+    tax_mechanism: 'standard_btw',
+    self_assess_rate: 0,
+    btw_rubric: null,
   });
 
   useEffect(() => {
     loadExpenses();
+    loadTaxRates();
   }, []);
 
   const loadExpenses = async () => {
     try {
       setLoading(true);
-      const data = await db.entities.Expense?.list?.({ limit: 500 }).catch(() => []) || [];
+      const data = await db.entities.Expense?.list?.({ limit: 200 }).catch(() => []) || [];
       setExpenses(data);
     } catch (error) {
       console.error('Error loading expenses:', error);
       toast.error('Failed to load expenses');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTaxRates = async () => {
+    const companyId = user?.company_id || user?.organization_id;
+    if (!companyId) return;
+    try {
+      const { data } = await supabase
+        .from('tax_rates')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .order('rate', { ascending: true });
+      setTaxRates(data || []);
+    } catch (err) {
+      console.warn('Could not load tax rates:', err);
     }
   };
 
@@ -202,7 +229,12 @@ export default function FinanceExpenses({ embedded = false }) {
       notes: '',
       receipt_url: '',
       is_recurring: false,
-      tax_deductible: false
+      tax_deductible: false,
+      tax_rate: 21,
+      supplier_country: 'NL',
+      tax_mechanism: 'standard_btw',
+      self_assess_rate: 0,
+      btw_rubric: null,
     });
     setEditMode(false);
     setSelectedExpense(null);
@@ -219,26 +251,55 @@ export default function FinanceExpenses({ embedded = false }) {
 
     setSaving(true);
     try {
+      const amount = parseFloat(formData.amount) || 0;
+      const taxRate = parseFloat(formData.tax_rate) || 0;
+      const taxAmount = amount * (taxRate / 100);
       const expenseData = {
-        user_id: user.id, // Use user from context (guaranteed to exist)
+        user_id: user.id,
         description: formData.description,
-        amount: parseFloat(formData.amount) || 0,
+        amount,
         category: formData.category,
         vendor: formData.vendor,
         date: formData.date,
         notes: formData.notes,
         receipt_url: formData.receipt_url,
         is_recurring: formData.is_recurring,
-        tax_deductible: formData.tax_deductible
+        tax_deductible: formData.tax_deductible,
+        tax_amount: taxAmount,
+        // BTW classification
+        supplier_country: formData.supplier_country || 'NL',
+        tax_mechanism: formData.tax_mechanism || 'standard_btw',
+        self_assess_rate: formData.self_assess_rate || 0,
+        btw_rubric: formData.btw_rubric || null,
       };
 
       if (editMode && selectedExpense) {
         await db.entities.Expense.update(selectedExpense.id, expenseData);
         toast.success('Expense updated successfully');
+
+        // Post updated expense to GL
+        try {
+          const { data: glResult } = await supabase.rpc('post_expense_with_tax', { p_expense_id: selectedExpense.id });
+          if (glResult?.success && glResult?.message !== 'Expense already posted to GL') {
+            toast.success('Posted to General Ledger');
+          }
+        } catch (glErr) { console.warn('GL posting (non-critical):', glErr); }
       } else {
         const newExpense = await db.entities.Expense.create(expenseData);
         setExpenses(prev => [newExpense, ...prev]);
         toast.success('Expense added successfully');
+
+        // Post new expense to GL
+        if (newExpense?.id) {
+          try {
+            const { data: glResult } = await supabase.rpc('post_expense_with_tax', { p_expense_id: newExpense.id });
+            if (glResult?.success) {
+              toast.success('Posted to General Ledger');
+            } else if (glResult?.error) {
+              toast.info(glResult.error);
+            }
+          } catch (glErr) { console.warn('GL posting (non-critical):', glErr); }
+        }
       }
 
       setShowCreateModal(false);
@@ -252,16 +313,21 @@ export default function FinanceExpenses({ embedded = false }) {
     }
   };
 
-  const handleDeleteExpense = async (expense) => {
-    if (!confirm('Are you sure you want to delete this expense?')) return;
+  const handleDeleteExpense = (expense) => {
+    setDeleteTarget(expense);
+  };
 
+  const confirmDeleteExpense = async () => {
+    if (!deleteTarget) return;
     try {
-      await db.entities.Expense.delete(expense.id);
-      setExpenses(prev => prev.filter(e => e.id !== expense.id));
+      await db.entities.Expense.delete(deleteTarget.id);
+      setExpenses(prev => prev.filter(e => e.id !== deleteTarget.id));
       toast.success('Expense deleted');
     } catch (error) {
       console.error('Error deleting expense:', error);
       toast.error('Failed to delete expense');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -276,7 +342,12 @@ export default function FinanceExpenses({ embedded = false }) {
       notes: expense.notes || '',
       receipt_url: expense.receipt_url || '',
       is_recurring: expense.is_recurring || false,
-      tax_deductible: expense.tax_deductible || false
+      tax_deductible: expense.tax_deductible || false,
+      tax_rate: expense.tax_rate ?? 21,
+      supplier_country: expense.supplier_country || 'NL',
+      tax_mechanism: expense.tax_mechanism || 'standard_btw',
+      self_assess_rate: expense.self_assess_rate || 0,
+      btw_rubric: expense.btw_rubric || null,
     });
     setEditMode(true);
     setShowCreateModal(true);
@@ -674,14 +745,34 @@ export default function FinanceExpenses({ embedded = false }) {
                 </select>
               </div>
 
-              <div>
-                <Label className={ft('text-slate-600', 'text-zinc-300')}>Vendor</Label>
-                <Input
-                  value={formData.vendor}
-                  onChange={(e) => setFormData(prev => ({ ...prev, vendor: e.target.value }))}
-                  className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
-                  placeholder="Vendor or merchant name"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className={ft('text-slate-600', 'text-zinc-300')}>Vendor</Label>
+                  <Input
+                    value={formData.vendor}
+                    onChange={(e) => setFormData(prev => ({ ...prev, vendor: e.target.value }))}
+                    className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
+                    placeholder="Vendor or merchant name"
+                  />
+                </div>
+                <div>
+                  <CountrySelector
+                    label="Supplier Country"
+                    value={formData.supplier_country}
+                    onChange={(code) => setFormData(prev => ({ ...prev, supplier_country: code }))}
+                    onTaxRulesChange={(rules) => {
+                      if (rules) {
+                        setFormData(prev => ({
+                          ...prev,
+                          tax_mechanism: rules.mechanism,
+                          self_assess_rate: rules.selfAssessRate,
+                          btw_rubric: rules.rubric,
+                        }));
+                      }
+                    }}
+                    mode="purchase"
+                  />
+                </div>
               </div>
 
               <div>
@@ -693,6 +784,27 @@ export default function FinanceExpenses({ embedded = false }) {
                   placeholder="Additional notes..."
                   rows={2}
                 />
+              </div>
+
+              <div>
+                <Label className={`${ft('text-slate-600', 'text-zinc-300')} text-xs`}>Input Tax Rate (BTW)</Label>
+                <select
+                  value={formData.tax_rate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tax_rate: parseFloat(e.target.value) }))}
+                  className={`w-full mt-1 ${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border border-zinc-700 text-white')} rounded-md px-3 py-2 text-sm`}
+                >
+                  {taxRates.length > 0 ? (
+                    taxRates.map(tr => (
+                      <option key={tr.id} value={tr.rate}>{tr.name} ({tr.rate}%)</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value={0}>0% (No Tax)</option>
+                      <option value={9}>9% (Low BTW)</option>
+                      <option value={21}>21% (Standard BTW)</option>
+                    </>
+                  )}
+                </select>
               </div>
 
               <div className="flex gap-4">
@@ -747,6 +859,15 @@ export default function FinanceExpenses({ embedded = false }) {
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
         {content}
       </div>
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Expense"
+        description={`Are you sure you want to delete this expense (€${(deleteTarget?.amount || 0).toLocaleString()})? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDeleteExpense}
+      />
     </FinancePageTransition>
   );
 }

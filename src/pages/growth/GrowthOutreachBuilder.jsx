@@ -63,6 +63,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUser } from '@/components/context/UserContext';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { supabase } from '@/api/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { useGrowthAI } from '@/hooks/useGrowthAI';
@@ -560,18 +561,19 @@ function EmailEditor({
             {/* Preview Subject */}
             <div className="p-3 rounded-lg bg-zinc-800/50">
               <p className="text-xs text-zinc-500 mb-1">Subject</p>
-              <p
+              <SafeHTML
+                as="p"
                 className="text-white"
-                dangerouslySetInnerHTML={{ __html: renderPreview(step.subject) || '<span class="text-zinc-600">No subject</span>' }}
+                html={renderPreview(step.subject) || '<span class="text-zinc-600">No subject</span>'}
               />
             </div>
 
             {/* Preview Body */}
             <div className="p-4 rounded-lg bg-zinc-800/50">
               <p className="text-xs text-zinc-500 mb-2">Body</p>
-              <div
+              <SafeHTML
                 className="text-zinc-300 whitespace-pre-wrap"
-                dangerouslySetInnerHTML={{ __html: renderPreview(step.body) || '<span class="text-zinc-600">No content</span>' }}
+                html={renderPreview(step.body) || '<span class="text-zinc-600">No content</span>'}
               />
             </div>
 
@@ -713,7 +715,7 @@ export default function GrowthOutreachBuilder() {
           .select(`*, enrich_cells(*)`)
           .eq('workspace_id', wsId)
           .order('order_index')
-          .limit(1000);
+          .limit(200);
 
         if (rowsError) throw rowsError;
 

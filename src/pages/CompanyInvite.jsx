@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { logger } from '@/utils/logger';
 import { db } from "@/api/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,11 +83,11 @@ export default function CompanyInvite() {
         email: currentUser.email
       });
 
-      alert(`Successfully joined ${company.name}!`);
+      toast.success(`Successfully joined ${company.name}!`);
       navigate(createPageUrl("Dashboard"));
     } catch (err) {
-      console.error("Failed to join company:", err);
-      alert("Failed to join company: " + err.message);
+      logger.error("[CompanyInvite] Failed to join company:", err);
+      toast.error("Failed to join company. Please try again.");
     } finally {
       setJoining(false);
     }
@@ -151,7 +153,7 @@ export default function CompanyInvite() {
               <div className="flex items-center gap-3 mb-3">
                 {company.logo_url ? (
                   <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center overflow-hidden">
-                    <img src={company.logo_url} alt={company.name} className="w-full h-full object-contain p-2" />
+                    <img src={company.logo_url} alt={company.name} className="w-full h-full object-contain p-2"  loading="lazy" decoding="async" />
                   </div>
                 ) : (
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center">

@@ -44,7 +44,7 @@ export default function PinnedMessagesPanel({
             >
               <div className="flex items-center gap-2 mb-2">
                 {message.sender_avatar ? (
-                  <img src={message.sender_avatar} alt="" className="w-5 h-5 rounded-full" />
+                  <img src={message.sender_avatar} alt="" className="w-5 h-5 rounded-full"  loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">
                     {message.sender_name?.charAt(0) || '?'}

@@ -15,6 +15,8 @@ import { prefersReducedMotion } from "@/lib/animations";
 // Contact type definitions
 const CONTACT_TYPES = [
   { id: 'all', label: 'All Contacts' },
+  { id: 'contact', label: 'Contacts' },
+  { id: 'company', label: 'Companies' },
   { id: 'lead', label: 'Leads' },
   { id: 'prospect', label: 'Prospects' },
   { id: 'customer', label: 'Customers' },
@@ -23,6 +25,17 @@ const CONTACT_TYPES = [
   { id: 'candidate', label: 'Candidates' },
   { id: 'target', label: 'Targets' },
   { id: 'recruitment_client', label: 'Recruitment Clients' },
+];
+
+// Tab bar items for in-page type filtering (Products pattern)
+const CRM_TABS = [
+  { id: 'all', label: 'All', icon: Layers },
+  { id: 'lead', label: 'Leads', icon: Target },
+  { id: 'prospect', label: 'Prospects', icon: TrendingUp },
+  { id: 'customer', label: 'Customers', icon: UserCheck },
+  { id: 'company', label: 'Companies', icon: Building2 },
+  { id: 'supplier', label: 'Suppliers', icon: Truck },
+  { id: 'partner', label: 'Partners', icon: Handshake },
 ];
 import {
   Plus, Search, Filter, Mail, Phone, Building, Building2, MapPin, MoreVertical, X,
@@ -33,7 +46,8 @@ import {
   ArrowDownRight, Minus, PieChart, LineChart, Send, PhoneCall, Video,
   UserPlus, Settings2, Zap, Sparkles, Award, AlertCircle, ArrowRight,
   Table2, RefreshCw, Copy, Link2, Linkedin, Twitter, SlidersHorizontal,
-  ChevronLeft, Home, Layers, GripVertical, Hash, Loader2, Sun, Moon
+  ChevronLeft, Home, Layers, GripVertical, Hash, Loader2, Sun, Moon,
+  UserCheck, Truck, Handshake
 } from "lucide-react";
 import { enrichContact, mapEnrichedDataToContact } from "@/components/integrations/ExploriumAPI";
 import { QuickAddContactModal } from "@/components/crm/QuickAddContactModal";
@@ -43,6 +57,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -71,6 +86,33 @@ const PIPELINE_STAGES = [
   { id: "won", label: "Won", color: "bg-cyan-400", textColor: "text-cyan-300", bgColor: "bg-cyan-500/30", borderColor: "border-cyan-500/50" },
   { id: "lost", label: "Lost", color: "bg-zinc-700", textColor: "text-zinc-500", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-600/30" },
 ];
+
+// Contact types that use the sales pipeline stages
+const PIPELINE_TYPES = ['lead', 'prospect', 'target', 'contact'];
+const usesPipeline = (type) => PIPELINE_TYPES.includes(type);
+
+// Entity detection: company vs person
+const ALWAYS_COMPANY_TYPES = ['company', 'supplier'];
+const ALWAYS_PERSON_TYPES = ['lead', 'prospect', 'target', 'contact', 'candidate', 'recruitment_client'];
+const isCompanyEntity = (contact) => {
+  if (ALWAYS_COMPANY_TYPES.includes(contact.contact_type)) return true;
+  if (ALWAYS_PERSON_TYPES.includes(contact.contact_type)) return false;
+  // Auto-detect for customer/partner: company if name matches company_name or no real person name
+  const name = (contact.name || '').trim();
+  const company = (contact.company_name || '').trim();
+  if (!name || (company && name === company)) return true;
+  return false;
+};
+
+// Relationship labels per non-pipeline contact type
+const RELATIONSHIP_LABELS = {
+  partner: ['Carrier', 'Fulfillment/3PL', 'Technology', 'Marketing', 'Reseller', 'Integration', 'Consulting'],
+  supplier: ['Wholesale', 'Distributor', 'Manufacturer', 'Dropship', 'Packaging', 'Services', 'Logistics', 'Rent/Lease', 'Utilities', 'Insurance'],
+  customer: ['Retail', 'Wholesale', 'Direct', 'Enterprise', 'Marketplace'],
+  company: ['Distributor', 'Manufacturer', 'Retailer', 'Agency'],
+  recruitment_client: ['Retained', 'Contingency', 'RPO'],
+  candidate: ['Active', 'Passive', 'Referral'],
+};
 
 const CONTACT_SOURCES = [
   { id: "website", label: "Website" },
@@ -104,10 +146,15 @@ const emptyContact = {
   twitter_url: "",
   deal_value: "",
   score: 50,
+  relationship_label: "",
   tags: [],
   notes: "",
   next_follow_up: null,
   is_starred: false,
+  // Business detail fields
+  vat_number: "",
+  billing_address: "",
+  location_country: "",
   // Recruitment client fields
   is_recruitment_client: false,
   recruitment_fee_percentage: "",
@@ -172,10 +219,14 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 flex items-center justify-center flex-shrink-0 ring-2 ${crt('ring-slate-200', 'ring-zinc-800')}`}>
-            <span className="text-cyan-400/80 font-semibold">
-              {contact.name?.charAt(0)?.toUpperCase() || "?"}
-            </span>
+          <div className={`w-11 h-11 rounded-full ${isCompanyEntity(contact) ? 'bg-gradient-to-br from-blue-500/20 to-blue-400/10' : 'bg-gradient-to-br from-cyan-500/20 to-cyan-400/10'} flex items-center justify-center flex-shrink-0 ring-2 ${crt('ring-slate-200', 'ring-zinc-800')}`}>
+            {isCompanyEntity(contact) ? (
+              <Building2 className="w-5 h-5 text-blue-400/80" />
+            ) : (
+              <span className="text-cyan-400/80 font-semibold">
+                {contact.name?.charAt(0)?.toUpperCase() || "?"}
+              </span>
+            )}
           </div>
           <div>
             <h4 className={`font-medium ${crt('text-slate-900', 'text-white')} group-hover:text-cyan-400 transition-colors`}>
@@ -208,14 +259,26 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
 
       {/* Stage Badge */}
       <div className="flex items-center justify-between mb-3">
-        <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
-          {stageConfig.label}
-        </Badge>
-        <LeadScoreIndicator score={contact.score || 50} crt={crt} />
+        {usesPipeline(contact.contact_type) ? (
+          <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
+            {stageConfig.label}
+          </Badge>
+        ) : contact.relationship_label ? (
+          <Badge variant="outline" className="text-xs border-violet-500/30 bg-violet-500/10 text-violet-400">
+            {contact.relationship_label}
+          </Badge>
+        ) : (
+          <span className={`text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>
+            {CONTACT_TYPES.find(t => t.id === contact.contact_type)?.label || contact.contact_type}
+          </span>
+        )}
+        {usesPipeline(contact.contact_type) && (
+          <LeadScoreIndicator score={contact.score || 50} crt={crt} />
+        )}
       </div>
 
       {/* Deal Value */}
-      {contact.deal_value && (
+      {usesPipeline(contact.contact_type) && contact.deal_value && (
         <div className="flex items-center justify-between text-sm mb-3">
           <span className={crt('text-slate-400', 'text-zinc-500')}>Deal Value</span>
           <span className="font-semibold text-cyan-400/80">€{parseFloat(contact.deal_value).toLocaleString()}</span>
@@ -314,7 +377,7 @@ function PipelineCard({ contact, index, onEdit, onDelete, crt: crtProp }) {
               </DropdownMenu>
             </div>
 
-            {contact.deal_value && (
+            {usesPipeline(contact.contact_type) && contact.deal_value && (
               <div className="flex items-center gap-1 text-sm font-medium text-cyan-400/80 ml-6 mb-2">
                 <Euro className="w-3.5 h-3.5" />
                 {parseFloat(contact.deal_value).toLocaleString()}
@@ -326,7 +389,9 @@ function PipelineCard({ contact, index, onEdit, onDelete, crt: crtProp }) {
                 {contact.email && <Mail className={`w-3 h-3 ${crt('text-slate-500', 'text-zinc-600')}`} />}
                 {contact.phone && <Phone className={`w-3 h-3 ${crt('text-slate-500', 'text-zinc-600')}`} />}
               </div>
-              <LeadScoreIndicator score={contact.score || 50} crt={crt} />
+              {usesPipeline(contact.contact_type) && (
+                <LeadScoreIndicator score={contact.score || 50} crt={crt} />
+              )}
             </div>
           </div>
         </motion.div>
@@ -432,21 +497,35 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
-            <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Stage</div>
-            <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
-              {stageConfig.label}
-            </Badge>
+            <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>{usesPipeline(contact?.contact_type) ? 'Stage' : 'Type'}</div>
+            {usesPipeline(contact?.contact_type) ? (
+              <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
+                {stageConfig.label}
+              </Badge>
+            ) : contact?.relationship_label ? (
+              <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-400">
+                {contact.relationship_label}
+              </Badge>
+            ) : (
+              <span className={`text-sm font-medium ${crt('text-slate-700', 'text-zinc-300')}`}>
+                {CONTACT_TYPES.find(t => t.id === contact?.contact_type)?.label || contact?.contact_type}
+              </span>
+            )}
           </div>
+          {usesPipeline(contact?.contact_type) && (
           <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
             <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Score</div>
             <LeadScoreIndicator score={contact.score || 50} crt={crt} />
           </div>
+          )}
+          {usesPipeline(contact?.contact_type) && (
           <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
             <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Deal Value</div>
             <div className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>
               €{parseFloat(contact.deal_value || 0).toLocaleString()}
             </div>
           </div>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -740,8 +819,8 @@ export default function CRMContacts() {
   const { user } = useUser();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const selectedContactType = searchParams.get('type') || 'all';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedContactType = searchParams.get('tab') || searchParams.get('type') || 'all';
 
   // Permission checks
   const canCreate = hasPermission('users.create');
@@ -839,9 +918,16 @@ export default function CRMContacts() {
 
   const loadContacts = async () => {
     if (!user?.id) return;
+    const orgId = user.organization_id || user.company_id;
+    if (!orgId) return;
     try {
-      // Use owner_id which is the actual column name in the prospects table
-      const prospects = await db.entities.Prospect.filter({ owner_id: user.id });
+      // Load ALL prospects for the organization (CRM is company-wide, not per-user)
+      const { data: prospects, error: prospectError } = await supabase
+        .from('prospects')
+        .select('*')
+        .eq('organization_id', orgId)
+        .order('updated_date', { ascending: false });
+      if (prospectError) throw prospectError;
       const contactList = prospects.map(p => ({
         id: p.id,
         name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",
@@ -882,8 +968,13 @@ export default function CRMContacts() {
         active_projects_count: p.active_projects_count || 0,
         total_placements: p.total_placements || 0,
         total_revenue_generated: p.total_revenue_generated || 0,
+        // Business detail fields
+        vat_number: p.vat_number || '',
+        billing_address: p.billing_address || '',
+        location_country: p.location_country || '',
         // Company linking
         crm_company_id: p.crm_company_id,
+        relationship_label: p.relationship_label || '',
       }));
       setContacts(contactList);
 
@@ -937,27 +1028,6 @@ export default function CRMContacts() {
   }, [contacts]);
 
   const filteredContacts = useMemo(() => {
-    // If supplier view is selected, show suppliers instead
-    if (selectedContactType === 'supplier') {
-      return (suppliers || []).map(s => ({
-        id: s.id,
-        name: s.name,
-        email: s.contact?.email,
-        phone: s.contact?.phone,
-        company_name: s.name,
-        website: s.website,
-        location: s.address?.country || '',
-        stage: 'won',
-        contact_type: 'supplier',
-        is_supplier: true,
-      })).filter(c => {
-        const matchesSearch = !searchQuery ||
-          c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.email?.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch;
-      });
-    }
-
     return (contacts || []).filter(c => {
       const matchesSearch = !searchQuery ||
         c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1073,6 +1143,7 @@ export default function CRMContacts() {
         stage: formData.stage || 'new',
         source: formData.source || null,
         contact_type: formData.contact_type || 'lead',
+        relationship_label: formData.relationship_label || null,
         linkedin_url: formData.linkedin_url || null,
         twitter_url: formData.twitter_url || null,
         website: formData.website || null,
@@ -1085,6 +1156,10 @@ export default function CRMContacts() {
         notes: formData.notes || null,
         is_starred: formData.is_starred || false,
         next_follow_up: formData.next_follow_up || null,
+        // Business detail fields
+        vat_number: formData.vat_number || null,
+        billing_address: formData.billing_address || null,
+        location_country: formData.location_country || null,
         // Recruitment client fields
         is_recruitment_client: formData.contact_type === 'recruitment_client' ? true : (formData.is_recruitment_client || false),
         recruitment_fee_percentage: formData.recruitment_fee_percentage ? parseFloat(formData.recruitment_fee_percentage) : null,
@@ -1218,9 +1293,45 @@ export default function CRMContacts() {
     }
   };
 
-  const handleViewContact = (contact) => {
-    // Navigate to full-page profile instead of sheet
-    navigate(createPageUrl('CRMContactProfile') + `?id=${contact.id}`);
+  const handleViewContact = async (contact) => {
+    if (!isCompanyEntity(contact)) {
+      navigate(createPageUrl('CRMContactProfile') + `?id=${contact.id}`);
+      return;
+    }
+
+    // Company entity — route to CRMCompanyProfile
+    if (contact.crm_company_id) {
+      navigate(createPageUrl('CRMCompanyProfile') + `?id=${contact.crm_company_id}`);
+      return;
+    }
+
+    // No crm_company_id yet — create one via RPC
+    try {
+      const { data: companyId, error } = await supabase.rpc('find_or_create_crm_company', {
+        p_organization_id: user.organization_id,
+        p_owner_id: user.id,
+        p_name: contact.company_name || contact.name,
+        p_domain: contact.website ? contact.website.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '') : null,
+        p_linkedin_url: contact.linkedin_url || null,
+        p_industry: contact.industry || null,
+        p_company_size: contact.company_size || null,
+      });
+
+      if (error) throw error;
+
+      // Link the prospect to the new company
+      await supabase.from('prospects').update({ crm_company_id: companyId }).eq('id', contact.id);
+
+      // Update local state so re-clicking doesn't re-create
+      setContacts(prev => prev.map(c => c.id === contact.id ? { ...c, crm_company_id: companyId } : c));
+
+      navigate(createPageUrl('CRMCompanyProfile') + `?id=${companyId}`);
+    } catch (err) {
+      console.error('Error creating company record:', err);
+      toast.error('Failed to open company profile');
+      // Fallback to contact profile
+      navigate(createPageUrl('CRMContactProfile') + `?id=${contact.id}`);
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -1237,6 +1348,32 @@ export default function CRMContacts() {
     } catch (error) {
       console.error("Bulk delete failed:", error);
       toast.error("Failed to delete contacts");
+    }
+  };
+
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const [bulkMoveType, setBulkMoveType] = useState('supplier');
+  const [bulkMoveLabel, setBulkMoveLabel] = useState('');
+
+  const handleBulkMove = async () => {
+    if (selectedContacts.length === 0) return;
+    try {
+      const updateData = {
+        contact_type: bulkMoveType,
+        relationship_label: bulkMoveLabel || null,
+        stage: PIPELINE_TYPES.includes(bulkMoveType) ? 'new' : null,
+      };
+      await Promise.all(selectedContacts.map(id =>
+        supabase.from('prospects').update(updateData).eq('id', id)
+      ));
+      toast.success(`${selectedContacts.length} contacts moved to ${bulkMoveType}${bulkMoveLabel ? ` (${bulkMoveLabel})` : ''}`);
+      setSelectedContacts([]);
+      setBulkMoveOpen(false);
+      setBulkMoveLabel('');
+      loadContacts();
+    } catch (error) {
+      console.error("Bulk move failed:", error);
+      toast.error("Failed to move contacts");
     }
   };
 
@@ -1286,13 +1423,21 @@ export default function CRMContacts() {
   // Get current type label for display
   const currentTypeLabel = CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'Contacts';
 
+  const handleTabChange = (tabId) => {
+    setSearchParams(tabId === 'all' ? {} : { tab: tabId }, { replace: true });
+    // Reset stage filter when switching to a non-pipeline tab
+    if (!usesPipeline(tabId) && tabId !== 'all') {
+      setStageFilter('all');
+    }
+  };
+
   return (
     <CRMPageTransition>
     <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 sm:mb-6">
         <div>
-          <h1 className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>{currentTypeLabel}</h1>
+          <h1 className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>Contacts</h1>
           <p className={`text-xs ${crt('text-slate-500', 'text-zinc-400')}`}>
             {filteredContacts.length} {selectedContactType === 'all' ? 'contacts' : currentTypeLabel.toLowerCase()} in pipeline
           </p>
@@ -1352,13 +1497,35 @@ export default function CRMContacts() {
 
           <Button onClick={() => {
             setEditingContact(null);
-            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
-            setFormData({ ...emptyContact, contact_type: preselectedType });
+            const preselectedType = selectedContactType !== 'all' ? selectedContactType : 'contact';
+            setFormData({ ...emptyContact, contact_type: preselectedType, stage: usesPipeline(preselectedType) ? 'new' : null });
             setShowModal(true);
           }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
             <Plus className="w-4 h-4 mr-1" /> Add Contact
           </Button>
         </div>
+      </div>
+
+      {/* Contact Type Tab Bar */}
+      <div className={`flex items-center gap-1 p-1 rounded-xl mb-4 sm:mb-6 overflow-x-auto ${crt('bg-slate-100 border border-slate-200', 'bg-zinc-900/60 border border-zinc-800/60')}`}>
+        {CRM_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = selectedContactType === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex-1 justify-center whitespace-nowrap ${
+                isActive
+                  ? crt('bg-white text-slate-900 shadow-sm', 'bg-zinc-800 text-white shadow-sm')
+                  : crt('text-slate-500 hover:text-slate-700 hover:bg-slate-50', 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50')
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-500' : ''}`} />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
         {/* Analytics Dashboard */}
@@ -1452,6 +1619,7 @@ export default function CRMContacts() {
 
           {/* Filters - horizontal scroll on mobile */}
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:overflow-visible sm:flex-wrap scrollbar-hide">
+            {(selectedContactType === 'all' || usesPipeline(selectedContactType)) && (
             <Select value={stageFilter} onValueChange={setStageFilter}>
               <SelectTrigger className={`w-[130px] sm:w-40 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} flex-shrink-0 h-10`}>
                 <SelectValue placeholder="Stage" />
@@ -1461,6 +1629,7 @@ export default function CRMContacts() {
                 {PIPELINE_STAGES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
+            )}
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
               <SelectTrigger className={`w-[130px] sm:w-40 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} flex-shrink-0 h-10`}>
                 <SelectValue placeholder="Source" />
@@ -1491,6 +1660,45 @@ export default function CRMContacts() {
             {selectedContacts.length > 0 && (
               <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                 <span className={`text-xs sm:text-sm ${crt('text-slate-500', 'text-zinc-400')} whitespace-nowrap`}>{selectedContacts.length} selected</span>
+                <Popover open={bulkMoveOpen} onOpenChange={setBulkMoveOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={`${crt('text-slate-500 border-slate-300 hover:bg-slate-100', 'text-zinc-400 border-zinc-600 hover:bg-zinc-800')} h-10`}>
+                      <ArrowRight className="w-4 h-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Move to</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className={`w-64 p-3 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}`} align="end">
+                    <div className="space-y-3">
+                      <p className={`text-xs font-medium ${crt('text-slate-500', 'text-zinc-400')}`}>Move {selectedContacts.length} contacts to:</p>
+                      <Select value={bulkMoveType} onValueChange={(v) => { setBulkMoveType(v); setBulkMoveLabel(''); }}>
+                        <SelectTrigger className={`w-full ${crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                          {CONTACT_TYPES.filter(t => t.id !== 'all').map(t => (
+                            <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {RELATIONSHIP_LABELS[bulkMoveType] && (
+                        <Select value={bulkMoveLabel || '_none'} onValueChange={(v) => setBulkMoveLabel(v === '_none' ? '' : v)}>
+                          <SelectTrigger className={`w-full ${crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}`}>
+                            <SelectValue placeholder="Label (optional)" />
+                          </SelectTrigger>
+                          <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                            <SelectItem value="_none">No label</SelectItem>
+                            {RELATIONSHIP_LABELS[bulkMoveType].map(label => (
+                              <SelectItem key={label} value={label}>{label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <Button size="sm" className="w-full bg-cyan-600 hover:bg-cyan-700 text-white" onClick={handleBulkMove}>
+                        Move {selectedContacts.length} contacts
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Button variant="outline" size="sm" onClick={handleBulkDelete} className={`${crt('text-slate-500 border-slate-300 hover:bg-slate-100', 'text-zinc-400 border-zinc-600 hover:bg-zinc-800')} h-10`}>
                   <Trash2 className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Delete</span>
@@ -1501,7 +1709,7 @@ export default function CRMContacts() {
         </div>
 
         {/* Content Views */}
-        {viewMode === "pipeline" ? (
+        {viewMode === "pipeline" && (selectedContactType === 'all' || usesPipeline(selectedContactType)) ? (
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-3 px-3 sm:-mx-4 sm:px-4 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide">
               {PIPELINE_STAGES.map(stage => (
@@ -1517,7 +1725,7 @@ export default function CRMContacts() {
               ))}
             </div>
           </DragDropContext>
-        ) : viewMode === "grid" ? (
+        ) : viewMode === "grid" || (viewMode === "pipeline" && !usesPipeline(selectedContactType)) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {paginatedContacts.map(contact => (
               <ContactCard
@@ -1536,8 +1744,8 @@ export default function CRMContacts() {
                 <p className={`${crt('text-slate-400', 'text-zinc-500')} mb-6`}>Try adjusting your filters or add a new contact</p>
                 <Button onClick={() => {
                   setEditingContact(null);
-                  const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
-                  setFormData({ ...emptyContact, contact_type: preselectedType });
+                  const preselectedType = selectedContactType !== 'all' ? selectedContactType : 'contact';
+                  setFormData({ ...emptyContact, contact_type: preselectedType, stage: usesPipeline(preselectedType) ? 'new' : null });
                   setShowModal(true);
                 }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
                   <Plus className="w-4 h-4 mr-1" /> Add Contact
@@ -1574,7 +1782,7 @@ export default function CRMContacts() {
                     </th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Contact</th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden sm:table-cell`}>Company</th>
-                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Stage</th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>{selectedContactType === 'all' || usesPipeline(selectedContactType) ? 'Stage' : 'Label'}</th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden md:table-cell`}>Score</th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Value</th>
                     <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden lg:table-cell`}>Source</th>
@@ -1599,8 +1807,12 @@ export default function CRMContacts() {
                         </td>
                         <td className="py-1 px-2">
                           <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => handleViewContact(contact)}>
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500/15 to-cyan-400/10 flex items-center justify-center flex-shrink-0">
-                              <span className="text-cyan-400/80 text-[9px] font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
+                            <div className={`w-6 h-6 rounded-full ${isCompanyEntity(contact) ? 'bg-gradient-to-br from-blue-500/15 to-blue-400/10' : 'bg-gradient-to-br from-cyan-500/15 to-cyan-400/10'} flex items-center justify-center flex-shrink-0`}>
+                              {isCompanyEntity(contact) ? (
+                                <Building2 className="w-3 h-3 text-blue-400/80" />
+                              ) : (
+                                <span className="text-cyan-400/80 text-[9px] font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
+                              )}
                             </div>
                             <div className="min-w-0">
                               <div className={`font-medium ${crt('text-slate-900', 'text-white')} hover:text-cyan-400 transition-colors text-xs truncate max-w-[120px]`}>{contact.name}</div>
@@ -1623,17 +1835,33 @@ export default function CRMContacts() {
                           {contact.job_title && <div className={`text-[10px] ${crt('text-slate-400', 'text-zinc-500')} truncate max-w-[120px]`}>{contact.job_title}</div>}
                         </td>
                         <td className="py-1 px-2">
-                          <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-[10px] py-px px-1.5 whitespace-nowrap`}>
-                            {stageConfig.label}
-                          </Badge>
+                          {usesPipeline(contact.contact_type) ? (
+                            <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-[10px] py-px px-1.5 whitespace-nowrap`}>
+                              {stageConfig.label}
+                            </Badge>
+                          ) : contact.relationship_label ? (
+                            <Badge variant="outline" className="text-[10px] py-px px-1.5 whitespace-nowrap border-violet-500/30 bg-violet-500/10 text-violet-400">
+                              {contact.relationship_label}
+                            </Badge>
+                          ) : (
+                            <span className={`text-[10px] ${crt('text-slate-400', 'text-zinc-600')}`}>—</span>
+                          )}
                         </td>
                         <td className="py-1 px-2 hidden md:table-cell">
-                          <LeadScoreIndicator score={contact.score || 50} size="xs" />
+                          {usesPipeline(contact.contact_type) ? (
+                            <LeadScoreIndicator score={contact.score || 50} size="xs" />
+                          ) : (
+                            <span className={`text-[10px] ${crt('text-slate-400', 'text-zinc-600')}`}>—</span>
+                          )}
                         </td>
                         <td className="py-1 px-2">
-                          <span className={`font-medium ${crt('text-slate-900', 'text-white')} text-xs whitespace-nowrap`}>
-                            {contact.deal_value ? `€${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
-                          </span>
+                          {usesPipeline(contact.contact_type) ? (
+                            <span className={`font-medium ${crt('text-slate-900', 'text-white')} text-xs whitespace-nowrap`}>
+                              {contact.deal_value ? `€${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] ${crt('text-slate-400', 'text-zinc-600')}`}>—</span>
+                          )}
                         </td>
                         <td className="py-1 px-2 hidden lg:table-cell">
                           <span className={`text-[11px] ${crt('text-slate-500', 'text-zinc-400')} capitalize whitespace-nowrap`}>{contact.source?.replace(/_/g, ' ') || "-"}</span>
@@ -1770,20 +1998,28 @@ export default function CRMContacts() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Contact Type</label>
-                <Select value={formData.contact_type} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_type: v }))}>
+                <Select value={formData.contact_type} onValueChange={(v) => {
+                  const shouldHaveStage = usesPipeline(v);
+                  setFormData(prev => ({
+                    ...prev,
+                    contact_type: v,
+                    stage: shouldHaveStage ? (prev.stage || 'new') : null,
+                  }));
+                }}>
                   <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
-                    {CONTACT_TYPES.filter(t => t.id !== 'all' && t.id !== 'supplier').map(t => (
+                    {CONTACT_TYPES.filter(t => t.id !== 'all').map(t => (
                       <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              {usesPipeline(formData.contact_type) && (
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Stage</label>
-                <Select value={formData.stage} onValueChange={(v) => setFormData(prev => ({ ...prev, stage: v }))}>
+                <Select value={formData.stage || 'new'} onValueChange={(v) => setFormData(prev => ({ ...prev, stage: v }))}>
                   <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                     <SelectValue />
                   </SelectTrigger>
@@ -1792,9 +2028,27 @@ export default function CRMContacts() {
                   </SelectContent>
                 </Select>
               </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            {!usesPipeline(formData.contact_type) && RELATIONSHIP_LABELS[formData.contact_type] && (
+            <div>
+              <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Label</label>
+              <Select value={formData.relationship_label || '_none'} onValueChange={(v) => setFormData(prev => ({ ...prev, relationship_label: v === '_none' ? '' : v }))}>
+                <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
+                  <SelectValue placeholder="Select a label..." />
+                </SelectTrigger>
+                <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                  <SelectItem value="_none">No label</SelectItem>
+                  {RELATIONSHIP_LABELS[formData.contact_type].map(label => (
+                    <SelectItem key={label} value={label}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            )}
+
+            <div className={`grid ${usesPipeline(formData.contact_type) ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Source</label>
                 <Select value={formData.source} onValueChange={(v) => setFormData(prev => ({ ...prev, source: v }))}>
@@ -1806,6 +2060,7 @@ export default function CRMContacts() {
                   </SelectContent>
                 </Select>
               </div>
+              {usesPipeline(formData.contact_type) && (
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Lead Score</label>
                 <Input
@@ -1817,8 +2072,52 @@ export default function CRMContacts() {
                   className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
+              )}
+              <div>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Location</label>
+                <Input
+                  placeholder="New York, NY"
+                  value={formData.location}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
+                />
+              </div>
             </div>
 
+            {!usesPipeline(formData.contact_type) && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>VAT Number</label>
+                <Input
+                  placeholder="e.g. PT503638471"
+                  value={formData.vat_number}
+                  onChange={(e) => setFormData(prev => ({ ...prev, vat_number: e.target.value }))}
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
+                />
+              </div>
+              <div>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Country</label>
+                <Input
+                  placeholder="e.g. PT, DE, NL"
+                  value={formData.location_country}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location_country: e.target.value }))}
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
+                />
+              </div>
+              <div className="col-span-2">
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Billing Address</label>
+                <Textarea
+                  placeholder="Full billing address"
+                  value={formData.billing_address}
+                  onChange={(e) => setFormData(prev => ({ ...prev, billing_address: e.target.value }))}
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
+                  rows={2}
+                />
+              </div>
+            </div>
+            )}
+
+            {usesPipeline(formData.contact_type) && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Deal Value ($)</label>
@@ -1830,16 +2129,8 @@ export default function CRMContacts() {
                   className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
-              <div>
-                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Location</label>
-                <Input
-                  placeholder="New York, NY"
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
-                />
-              </div>
             </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>

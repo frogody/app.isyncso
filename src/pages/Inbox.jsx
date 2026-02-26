@@ -1,13 +1,22 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Hash, Lock, Users, Pin, Search, Info,
   Loader2, MessageSquare, Inbox as InboxIcon, Keyboard,
   RefreshCw, AtSign, Bookmark, Wifi, WifiOff, Bell, BellOff,
-  Menu, ArrowLeft
+  Menu, ArrowLeft, Video, UserPlus, BarChart3, Sparkles,
+  MoreHorizontal
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db, supabase } from '@/api/supabaseClient';
+import {
+  TabBar,
+  CalendarSidebarContent,
+  CallsSidebarContent,
+  CalendarMainContent,
+  CallsMainContent,
+} from '@/components/inbox/InboxHub';
 import { useUser } from '@/components/context/UserContext';
 import { usePermissions } from '@/components/context/PermissionContext';
 import {
@@ -41,11 +50,48 @@ import WorkspaceSettingsModal from '@/components/inbox/WorkspaceSettingsModal';
 import KeyboardShortcutsModal from '@/components/inbox/KeyboardShortcutsModal';
 import DeleteChannelDialog from '@/components/inbox/DeleteChannelDialog';
 import ForwardMessageModal from '@/components/inbox/ForwardMessageModal';
+import TaskModal from '@/components/tasks/TaskModal';
 import BookmarksPanel from '@/components/inbox/BookmarksPanel';
+import ChannelSettingsPanel from '@/components/inbox/ChannelSettingsPanel';
+
+// Feature components (wired from built subsystems)
+import UniversalSearch from '@/components/inbox/search/UniversalSearch';
+import { SyncBriefing } from '@/components/inbox/briefing';
+import { GuestInviteModal } from '@/components/inbox/guests';
+import { CreatePollModal } from '@/components/inbox/messages';
+import SmartReply from '@/components/inbox/smart/SmartReply';
+import { CatchUpButton } from '@/components/inbox/digests';
+import { ChannelDigest } from '@/components/inbox/digests';
+import { SentimentBadge, SentimentIndicator, SentimentPanel, SentimentAlert, useSentimentTracking } from '@/components/inbox/sentiment';
+import { useVideoCall } from '@/components/inbox/video';
+import { VideoCallRoom, CallBanner, CallEndScreen } from '@/components/inbox/video';
 
 export default function InboxPage() {
   const { user } = useUser();
   const { isAdmin } = usePermissions();
+
+  // Platform owner check — only platform_admins see ALL support channels
+  const [isPlatformOwner, setIsPlatformOwner] = useState(false);
+  useEffect(() => {
+    if (!user?.id) { setIsPlatformOwner(false); return; }
+    supabase
+      .from('platform_admins')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle()
+      .then(({ data }) => setIsPlatformOwner(!!data));
+  }, [user?.id]);
+
+  // ========================================
+  // COMMUNICATION HUB TAB STATE (URL-aware)
+  // ========================================
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const callParam = searchParams.get('call');
+  const [activeHubTab, setActiveHubTab] = useState(
+    tabParam && ['chat', 'calendar', 'calls'].includes(tabParam) ? tabParam : 'chat'
+  );
 
   // ========================================
   // REALTIME HOOKS (replacing polling)
@@ -79,11 +125,11 @@ export default function InboxPage() {
 
   // Callback for new message notifications
   const handleNewMessageNotification = useCallback((message) => {
-    // Find channel info for the notification (use raw hook data, not resolved names)
-    const allChannels = [...realtimeChannels, ...realtimeDMs, ...realtimeSupportChannels];
-    const channel = allChannels.find(c => c.id === message.channel_id);
+    // Find channel info for the notification
+    const allCh = [...realtimeChannels, ...realtimeDMs];
+    const channel = allCh.find(c => c.id === message.channel_id);
     notifyNewMessage(message, channel);
-  }, [realtimeChannels, realtimeDMs, realtimeSupportChannels, notifyNewMessage]);
+  }, [realtimeChannels, realtimeDMs, notifyNewMessage]);
 
   // Realtime messages subscription (changes when selectedChannel changes)
   const {
@@ -152,6 +198,37 @@ export default function InboxPage() {
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [messageToForward, setMessageToForward] = useState(null);
 
+  // Create Task from message modal state
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskFromMessage, setTaskFromMessage] = useState(null);
+
+  const handleCreateTaskFromMessage = (message) => {
+    setTaskFromMessage({
+      title: (message.content || '').slice(0, 60),
+      description: message.content || '',
+      source: 'inbox',
+      source_ref_id: message.id,
+    });
+    setShowTaskModal(true);
+  };
+
+  const handleSaveTaskFromMessage = async (formData) => {
+    try {
+      const { error } = await supabase.from('tasks').insert({
+        ...formData,
+        source: 'inbox',
+        source_ref_id: taskFromMessage?.source_ref_id || null,
+        created_by: user?.id,
+        company_id: user?.company_id || null,
+      });
+      if (error) throw error;
+      toast.success('Task created from message');
+    } catch (err) {
+      console.error('Failed to create task:', err);
+      toast.error('Failed to create task');
+    }
+  };
+
   // Team members (still loaded once)
   const [teamMembers, setTeamMembers] = useState([]);
 
@@ -196,6 +273,51 @@ export default function InboxPage() {
   const [channelToDelete, setChannelToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Channel settings panel state
+  const [channelSettingsOpen, setChannelSettingsOpen] = useState(false);
+  const [settingsChannel, setSettingsChannel] = useState(null);
+
+  // Feature modal states
+  const [showUniversalSearch, setShowUniversalSearch] = useState(false);
+  const [showGuestInvite, setShowGuestInvite] = useState(false);
+  const [showCreatePoll, setShowCreatePoll] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(false);
+  const [showDigest, setShowDigest] = useState(false);
+
+  // Video call hook
+  const videoCall = useVideoCall(user?.id, user?.company_id, user?.full_name);
+
+  // Auto-join call from URL param (e.g. /Inbox?tab=calls&call=SYN-XXX-XXX)
+  const autoJoinAttempted = useRef(false);
+  useEffect(() => {
+    if (callParam && user?.id && !videoCall.isInCall && !autoJoinAttempted.current) {
+      autoJoinAttempted.current = true;
+      setActiveHubTab('calls');
+      videoCall.joinCall(callParam).catch(() => {});
+    }
+  }, [callParam, user?.id, videoCall.isInCall]);
+
+  // Post-call wrap-up state
+  const [callEndData, setCallEndData] = useState(null);
+
+  // Sentiment tracking for current channel
+  const sentimentMessages = useMemo(() => {
+    if (!selectedChannel?.id || !realtimeMessages?.length) return {};
+    return { [selectedChannel.id]: realtimeMessages };
+  }, [selectedChannel?.id, realtimeMessages]);
+
+  const sentimentData = useSentimentTracking({
+    messages: sentimentMessages,
+    channels: realtimeChannels,
+  });
+
+  // Sentiment panel state
+  const [showSentimentPanel, setShowSentimentPanel] = useState(false);
+  const [sentimentTimeRange, setSentimentTimeRange] = useState('7d');
+
+  // Header overflow menu
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+
   // Mobile UI State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -217,6 +339,10 @@ export default function InboxPage() {
         e.preventDefault();
         setShowKeyboardShortcuts(prev => !prev);
       }
+      if (cmdKey && e.key === 'k' && !e.shiftKey) {
+        e.preventDefault();
+        setShowUniversalSearch(true);
+      }
       if (cmdKey && e.key === 'n' && !e.shiftKey) {
         e.preventDefault();
         setShowCreateChannel(true);
@@ -228,8 +354,11 @@ export default function InboxPage() {
       if (e.key === 'Escape') {
         setActivePanel(null);
         setShowKeyboardShortcuts(false);
+        setShowUniversalSearch(false);
         setActiveThread(null);
         setMobileMenuOpen(false);
+        setChannelSettingsOpen(false);
+        setSettingsChannel(null);
       }
     };
 
@@ -296,14 +425,21 @@ export default function InboxPage() {
     createDefaultChannels();
   }, [channelsLoading, realtimeChannels.length, user, rtCreateChannel]);
 
-  // Auto-create support channel for each user (once)
+  // Auto-create support channel for each user (once) — check DB directly
   const supportChannelCreatedRef = useRef(false);
   useEffect(() => {
     const ensureSupportChannel = async () => {
       if (channelsLoading || !user || supportChannelCreatedRef.current) return;
-      if (realtimeSupportChannels.some(c => c.user_id === user.id)) return;
       supportChannelCreatedRef.current = true;
       try {
+        // Check if this user already has a support channel
+        const { data: existing } = await supabase
+          .from('channels')
+          .select('id')
+          .eq('type', 'support')
+          .eq('user_id', user.id)
+          .limit(1);
+        if (existing && existing.length > 0) return;
         await supabase.from('channels').insert({
           name: `Support - ${user.full_name || user.email}`,
           type: 'support',
@@ -316,12 +452,12 @@ export default function InboxPage() {
       }
     };
     ensureSupportChannel();
-  }, [channelsLoading, user, realtimeSupportChannels]);
+  }, [channelsLoading, user]);
 
-  // For admins: load ALL support channels (not just their own)
+  // For platform owners: load ALL support channels (not just their own)
   const [allSupportChannels, setAllSupportChannels] = useState([]);
   useEffect(() => {
-    if (!isAdmin || !user) return;
+    if (!isPlatformOwner || !user) return;
     const loadAllSupport = async () => {
       try {
         const { data } = await supabase
@@ -358,13 +494,13 @@ export default function InboxPage() {
       }).subscribe();
 
     return () => { supabase.removeChannel(sub); };
-  }, [isAdmin, user]);
+  }, [isPlatformOwner, user]);
 
-  // Merge support channels: admins see all, regular users see their own
+  // Merge support channels: only platform owners see the support section
   const supportChannels = useMemo(() => {
-    if (isAdmin) return allSupportChannels;
-    return realtimeSupportChannels;
-  }, [isAdmin, allSupportChannels, realtimeSupportChannels]);
+    if (isPlatformOwner) return allSupportChannels;
+    return []; // Only platform owners (David & Gody) see support channels
+  }, [isPlatformOwner, allSupportChannels]);
 
   // Resolve support channel names for admins (show the user's name, not "Support - X")
   const resolvedSupportChannels = useMemo(() => {
@@ -686,6 +822,12 @@ export default function InboxPage() {
     }
   }, [selectedChannel, rtUpdateChannel]);
 
+  // Open channel settings panel
+  const handleOpenChannelSettings = useCallback((channel) => {
+    setSettingsChannel(channel);
+    setChannelSettingsOpen(true);
+  }, []);
+
   // Helpers
   const getChannelMembers = useCallback(() => {
     if (!selectedChannel) return [];
@@ -707,11 +849,183 @@ export default function InboxPage() {
     setMobileMenuOpen(false);
   }, []);
 
-  const headerActions = useMemo(() => [
-    { icon: Users, panel: 'members', title: 'Members' },
-    { icon: Pin, panel: 'pinned', title: 'Pinned Messages', highlight: pinnedMessages.length > 0 },
+  // Handle poll submission
+  const handlePollSubmit = useCallback(async (pollData) => {
+    if (!selectedChannel || !user) return;
+    try {
+      await rtSendMessage({
+        content: `📊 **Poll: ${pollData.question}**`,
+        type: 'text',
+        sender_name: user.full_name || user.email,
+        sender_avatar: user.avatar_url,
+        mentions: [],
+        metadata: {
+          message_format: 'poll',
+          poll: {
+            question: pollData.question,
+            options: pollData.options.filter(o => o.trim()).map((text, i) => ({ id: String(i), text, votes: [] })),
+            multi_select: pollData.multiSelect,
+            expires_at: pollData.deadline || null,
+          }
+        }
+      });
+      setShowCreatePoll(false);
+      toast.success('Poll created');
+    } catch (error) {
+      console.error('Failed to create poll:', error);
+      toast.error('Failed to create poll');
+    }
+  }, [selectedChannel, user, rtSendMessage]);
+
+  // Poll vote handler - updates message metadata
+  const handlePollVote = useCallback(async (messageId, optionId) => {
+    if (!user?.id) return;
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.poll) return;
+      const poll = { ...msg.metadata.poll };
+      poll.options = poll.options.map(opt => {
+        const votes = [...(opt.votes || [])];
+        const idx = votes.indexOf(user.id);
+        if (opt.id === optionId) {
+          if (idx === -1) votes.push(user.id);
+          else votes.splice(idx, 1);
+        } else if (!poll.multi_select && idx !== -1) {
+          votes.splice(idx, 1);
+        }
+        return { ...opt, votes };
+      });
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, poll }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, poll } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Vote failed:', e);
+    }
+  }, [user?.id, realtimeMessages, setMessages]);
+
+  // Decision support handler
+  const handleDecisionSupport = useCallback(async (messageId, optionId) => {
+    if (!user?.id) return;
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.decision) return;
+      const decision = { ...msg.metadata.decision };
+      decision.options = decision.options.map(opt => {
+        const supporters = [...(opt.supporters || [])];
+        if (opt.id === optionId) {
+          const idx = supporters.indexOf(user.id);
+          if (idx === -1) supporters.push(user.id);
+          else supporters.splice(idx, 1);
+        }
+        return { ...opt, supporters };
+      });
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, decision }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, decision } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Support failed:', e);
+    }
+  }, [user?.id, realtimeMessages, setMessages]);
+
+  // Decision finalize handler
+  const handleDecisionDecide = useCallback(async (messageId, optionId) => {
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.decision) return;
+      const decision = { ...msg.metadata.decision, status: 'decided', selected_option: optionId };
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, decision }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, decision } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Decide failed:', e);
+    }
+  }, [realtimeMessages, setMessages]);
+
+  // Action item toggle complete handler
+  const handleToggleComplete = useCallback(async (messageId) => {
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.action_item) return;
+      const action_item = { ...msg.metadata.action_item };
+      action_item.status = action_item.status === 'done' ? 'pending' : 'done';
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, action_item }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, action_item } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Toggle complete failed:', e);
+    }
+  }, [realtimeMessages, setMessages]);
+
+  // Action item assign handler
+  const handleAssignActionItem = useCallback(async (messageId, assigneeId) => {
+    try {
+      const msg = realtimeMessages.find(m => m.id === messageId);
+      if (!msg?.metadata?.action_item) return;
+      const action_item = { ...msg.metadata.action_item, assignee: assigneeId };
+      await supabase.from('messages').update({
+        metadata: { ...msg.metadata, action_item }
+      }).eq('id', messageId);
+      setMessages(prev => prev.map(m => m.id === messageId
+        ? { ...m, metadata: { ...m.metadata, action_item } }
+        : m
+      ));
+    } catch (e) {
+      console.error('Assign failed:', e);
+    }
+  }, [realtimeMessages, setMessages]);
+
+  // Start video call for current channel
+  const handleStartCall = useCallback(async () => {
+    if (!selectedChannel || !user) return;
+    try {
+      await videoCall.createCall({
+        title: `Call in ${selectedChannel.name || 'DM'}`,
+        channelId: selectedChannel.id,
+      });
+      toast.success('Call started');
+    } catch (error) {
+      console.error('Failed to start call:', error);
+      toast.error('Failed to start call');
+    }
+  }, [selectedChannel, user, videoCall]);
+
+  // Get last message from another user (for SmartReply)
+  const lastOtherMessage = useMemo(() => {
+    if (!user?.id || !realtimeMessages.length) return null;
+    for (let i = realtimeMessages.length - 1; i >= 0; i--) {
+      if (realtimeMessages[i].sender_id !== user.id) return realtimeMessages[i];
+    }
+    return null;
+  }, [realtimeMessages, user?.id]);
+
+  // Primary: always visible in header. Overflow: behind "more" menu.
+  const primaryActions = useMemo(() => [
     { icon: Search, panel: 'search', title: 'Search' },
-    { icon: Info, panel: 'details', title: 'Channel Details' }
+    { icon: Users, panel: 'members', title: 'Members' },
+    { icon: Video, action: handleStartCall, title: 'Start Call' },
+  ], [handleStartCall]);
+
+  const overflowActions = useMemo(() => [
+    { icon: Pin, panel: 'pinned', title: 'Pinned Messages', highlight: pinnedMessages.length > 0 },
+    { icon: Bookmark, panel: 'bookmarks', title: 'Saved Items' },
+    { icon: UserPlus, action: () => setShowGuestInvite(true), title: 'Invite Guest' },
+    { icon: Info, panel: 'details', title: 'Channel Details' },
   ], [pinnedMessages.length]);
 
   // Loading state
@@ -727,54 +1041,103 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="h-screen bg-black flex overflow-hidden relative">
-      {/* Mobile Overlay */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Channel Sidebar - Desktop always visible, mobile as drawer */}
-      <div
-        className={`
-          fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
-          transform transition-transform duration-300 ease-out
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}
-      >
-        <ChannelSidebar
-          channels={realtimeChannels}
-          directMessages={resolvedDMs}
-          supportChannels={resolvedSupportChannels}
-          selectedChannel={selectedChannel}
-          onSelectChannel={handleSelectChannel}
-          onCreateChannel={() => setShowCreateChannel(true)}
-          onCreateDM={() => setShowNewDM(true)}
-          user={user}
-          unreadCounts={unreadCounts}
-          onArchiveChannel={handleArchiveChannel}
-          onDeleteChannel={handleDeleteChannelClick}
-          onOpenSettings={() => setShowWorkspaceSettings(true)}
-          isConnected={isConnected}
-          onClose={() => setMobileMenuOpen(false)}
-          isAdmin={isAdmin}
+    <div className="h-screen bg-black flex flex-col overflow-hidden relative">
+      {/* Communication Hub View Switcher - full width at top */}
+      <div className="shrink-0 px-3 sm:px-4 pt-3 pb-2 bg-black border-b border-zinc-800/40">
+        <TabBar
+          activeTab={activeHubTab}
+          onTabChange={(tab) => {
+            setActiveHubTab(tab);
+            if (tab !== 'chat') setMobileMenuOpen(false);
+          }}
         />
+      </div>
+
+      {/* Content area: sidebar + main */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Overlay */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Communication Hub Sidebar - Desktop always visible, mobile as drawer */}
+        <div
+          className={`
+            fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
+            transform transition-transform duration-300 ease-out
+            flex flex-col
+            ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          `}
+          style={{ top: mobileMenuOpen ? 0 : undefined }}
+        >
+          {/* Sidebar content switches based on tab */}
+          {activeHubTab === 'chat' ? (
+            <ChannelSidebar
+            channels={realtimeChannels}
+            directMessages={resolvedDMs}
+            supportChannels={resolvedSupportChannels}
+            selectedChannel={selectedChannel}
+            onSelectChannel={handleSelectChannel}
+            onCreateChannel={() => setShowCreateChannel(true)}
+            onCreateDM={() => setShowNewDM(true)}
+            user={user}
+            unreadCounts={unreadCounts}
+            onArchiveChannel={handleArchiveChannel}
+            onDeleteChannel={handleDeleteChannelClick}
+            onOpenSettings={() => setShowWorkspaceSettings(true)}
+            onOpenChannelSettings={handleOpenChannelSettings}
+            isConnected={isConnected}
+            onClose={() => setMobileMenuOpen(false)}
+            isAdmin={isAdmin}
+          />
+        ) : (
+          <div className="w-[280px] lg:w-[280px] h-full bg-zinc-900/95 border-r border-zinc-800/60 flex flex-col overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeHubTab}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.15 }}
+                className="flex-1 overflow-hidden flex flex-col"
+              >
+                {activeHubTab === 'calendar' && <CalendarSidebarContent />}
+                {activeHubTab === 'calls' && <CallsSidebarContent />}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-black">
-        {selectedChannel ? (
+        {activeHubTab !== 'chat' ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeHubTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col"
+            >
+              {activeHubTab === 'calendar' && <CalendarMainContent />}
+              {activeHubTab === 'calls' && <CallsMainContent />}
+            </motion.div>
+          </AnimatePresence>
+        ) : selectedChannel ? (
           <>
             {/* Channel Header */}
-            <header className="h-11 sm:h-12 border-b border-zinc-800/60 px-3 sm:px-5 flex items-center justify-between bg-zinc-900/50">
-              <div className="flex items-center gap-2 sm:gap-3">
+            <header className="h-14 border-b border-zinc-800/60 px-4 sm:px-5 flex items-center justify-between bg-zinc-900/50">
+              <div className="flex items-center gap-3 min-w-0">
                 {/* Mobile Menu Button */}
                 <button
                   onClick={() => setMobileMenuOpen(true)}
@@ -785,99 +1148,155 @@ export default function InboxPage() {
                 </button>
 
                 {selectedChannel.type === 'special' ? (
-                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
                     {selectedChannel.id === 'threads' ? (
-                      <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
+                      <MessageSquare className="w-4 h-4 text-zinc-400" />
                     ) : selectedChannel.id === 'mentions' ? (
-                      <AtSign className="w-3.5 h-3.5 text-zinc-400" />
+                      <AtSign className="w-4 h-4 text-zinc-400" />
                     ) : (
-                      <Bookmark className="w-3.5 h-3.5 text-zinc-400" />
+                      <Bookmark className="w-4 h-4 text-zinc-400" />
                     )}
                   </div>
                 ) : selectedChannel.type === 'dm' ? (
-                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300 flex-shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-300 flex-shrink-0">
                     {selectedChannel.name?.charAt(0)?.toUpperCase()}
                   </div>
                 ) : selectedChannel.type === 'private' ? (
-                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                    <Lock className="w-3.5 h-3.5 text-zinc-400" />
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Lock className="w-4 h-4 text-zinc-400" />
                   </div>
                 ) : (
-                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                    <Hash className="w-3.5 h-3.5 text-zinc-400" />
+                  <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Hash className="w-4 h-4 text-zinc-400" />
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h2 className="font-medium text-white text-sm truncate">{selectedChannelDisplayName}</h2>
+                  <h2 className="font-semibold text-white text-sm truncate">{selectedChannelDisplayName}</h2>
                   {selectedChannel.description && (
-                    <p className="text-[11px] text-zinc-500 max-w-[150px] sm:max-w-md truncate hidden sm:block">{selectedChannel.description}</p>
+                    <p className="text-[11px] text-zinc-500 max-w-[200px] sm:max-w-md truncate">{selectedChannel.description}</p>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-0.5 sm:gap-1">
-                {selectedChannel.type !== 'special' && headerActions.map((item, index) => (
+              <div className="flex items-center gap-1.5">
+                {/* Sentiment indicator - subtle */}
+                {selectedChannel.type !== 'special' && sentimentData?.sentiment && (
+                  <SentimentIndicator
+                    sentiment={sentimentData.sentiment}
+                    onExpand={() => setShowSentimentPanel(true)}
+                  />
+                )}
+
+                {/* Catch Up button - AI digest */}
+                {selectedChannel.type !== 'special' && (
+                  <CatchUpButton
+                    compact
+                    unreadCount={unreadCounts[selectedChannel?.id] || 0}
+                    onClick={() => setShowDigest(true)}
+                  />
+                )}
+
+                {/* Primary actions — always visible */}
+                {selectedChannel.type !== 'special' && primaryActions.map((item) => (
                   <button
-                    key={item.panel}
-                    onClick={() => togglePanel(item.panel)}
-                    className={`p-1.5 rounded-md transition-all ${
-                      activePanel === item.panel
-                        ? 'bg-zinc-800 text-zinc-200'
+                    key={item.panel || item.title}
+                    onClick={() => item.action ? item.action() : togglePanel(item.panel)}
+                    className={`p-2 rounded-lg transition-all ${
+                      item.panel && activePanel === item.panel
+                        ? 'bg-zinc-800 text-white'
                         : 'text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300'
-                    } ${index >= 2 ? 'hidden sm:block' : ''}`}
+                    }`}
                     title={item.title}
                   >
                     <item.icon className="w-4 h-4" />
                   </button>
                 ))}
 
-                <div className="w-px h-4 bg-zinc-800 mx-1 hidden sm:block" />
+                {/* Overflow menu — secondary actions */}
+                {selectedChannel.type !== 'special' && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowHeaderMenu(prev => !prev)}
+                      className={`p-2 rounded-lg transition-all ${
+                        showHeaderMenu
+                          ? 'bg-zinc-800 text-white'
+                          : 'text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300'
+                      }`}
+                      title="More actions"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                    <AnimatePresence>
+                      {showHeaderMenu && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setShowHeaderMenu(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                            transition={{ duration: 0.12 }}
+                            className="absolute right-0 top-full mt-1 z-50 w-56 rounded-xl bg-zinc-900 border border-zinc-800/80 shadow-2xl py-1.5 overflow-hidden"
+                          >
+                            {overflowActions.map((item) => (
+                              <button
+                                key={item.panel || item.title}
+                                onClick={() => {
+                                  item.action ? item.action() : togglePanel(item.panel);
+                                  setShowHeaderMenu(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                                  item.panel && activePanel === item.panel
+                                    ? 'text-white bg-zinc-800/60'
+                                    : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
+                                }`}
+                              >
+                                <item.icon className="w-4 h-4 flex-shrink-0" />
+                                <span>{item.title}</span>
+                                {item.highlight && (
+                                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                                )}
+                              </button>
+                            ))}
 
-                {/* Notification toggle */}
-                {notificationsSupported && (
-                  <button
-                    onClick={async () => {
-                      if (notificationPermission === 'granted') {
-                        toast.info('Notifications are enabled');
-                      } else if (notificationPermission === 'denied') {
-                        toast.error('Notifications are blocked. Please enable them in browser settings.');
-                      } else {
-                        const granted = await requestNotificationPermission();
-                        if (granted) {
-                          toast.success('Notifications enabled!');
-                        }
-                      }
-                    }}
-                    className={`p-1.5 rounded-md transition-all ${
-                      notificationPermission === 'granted'
-                        ? 'text-cyan-400 hover:bg-zinc-800/80'
-                        : notificationPermission === 'denied'
-                        ? 'text-red-400/60 hover:bg-zinc-800/80'
-                        : 'text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300'
-                    }`}
-                    title={
-                      notificationPermission === 'granted'
-                        ? 'Notifications enabled'
-                        : notificationPermission === 'denied'
-                        ? 'Notifications blocked'
-                        : 'Enable notifications'
-                    }
-                  >
-                    {notificationPermission === 'granted' ? (
-                      <Bell className="w-4 h-4" />
-                    ) : (
-                      <BellOff className="w-4 h-4" />
-                    )}
-                  </button>
+                            <div className="h-px bg-zinc-800/60 my-1" />
+
+                            {/* Notification toggle */}
+                            {notificationsSupported && (
+                              <button
+                                onClick={async () => {
+                                  if (notificationPermission !== 'granted' && notificationPermission !== 'denied') {
+                                    const granted = await requestNotificationPermission();
+                                    if (granted) toast.success('Notifications enabled!');
+                                  }
+                                  setShowHeaderMenu(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 transition-colors"
+                              >
+                                {notificationPermission === 'granted' ? (
+                                  <Bell className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                                ) : (
+                                  <BellOff className="w-4 h-4 flex-shrink-0" />
+                                )}
+                                <span>{notificationPermission === 'granted' ? 'Notifications on' : 'Enable notifications'}</span>
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => {
+                                setShowKeyboardShortcuts(true);
+                                setShowHeaderMenu(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 transition-colors"
+                            >
+                              <Keyboard className="w-4 h-4 flex-shrink-0" />
+                              <span>Keyboard shortcuts</span>
+                            </button>
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 )}
-
-                <button
-                  onClick={() => setShowKeyboardShortcuts(true)}
-                  className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300 transition-all hidden sm:block"
-                  title="Keyboard shortcuts (⌘/)"
-                >
-                  <Keyboard className="w-4 h-4" />
-                </button>
               </div>
             </header>
 
@@ -917,25 +1336,73 @@ export default function InboxPage() {
                 setShowForwardModal(true);
               }}
               isBookmarked={isBookmarked}
+              onVote={handlePollVote}
+              onDecide={handleDecisionDecide}
+              onSupport={handleDecisionSupport}
+              onToggleComplete={handleToggleComplete}
+              onAssign={handleAssignActionItem}
+              onCreateTask={handleCreateTaskFromMessage}
             />
 
-            {/* Message Input - hide for special views */}
-            {selectedChannel.type !== 'special' && (
-              <MessageInput
-                channelName={selectedChannel.type === 'dm' ? selectedChannelDisplayName : selectedChannel.name}
-                channelId={selectedChannel.id}
-                onSend={handleSendMessage}
-                members={[user, ...teamMembers].filter(Boolean)}
-                channels={realtimeChannels}
-                onTyping={startTyping}
-                onStopTyping={stopTyping}
-                typingText={getTypingText()}
-                typingUsers={typingUsers}
-                isMuted={isMuted}
-                rateLimits={rateLimits}
-                checkRateLimit={checkRateLimit}
-                slowmodeSeconds={slowmodeSeconds}
+            {/* Sentiment alert banner */}
+            {sentimentData?.alerts?.length > 0 && selectedChannel?.type !== 'special' && (
+              <SentimentAlert
+                alert={sentimentData.alerts[0]}
+                onDismiss={() => {}}
+                onViewDetails={() => setShowSentimentPanel(true)}
               />
+            )}
+
+            {/* Smart Reply suggestions + Message Input - hide for special views */}
+            {selectedChannel.type !== 'special' && (
+              <div>
+                {/* Smart Reply pills */}
+                <SmartReply
+                  lastMessage={lastOtherMessage}
+                  onSelectReply={(text) => {
+                    // Insert the smart reply text into the message input
+                    // We'll use a ref-based approach or just send directly
+                    handleSendMessage({ content: text, type: 'text' });
+                  }}
+                  onDismiss={() => {}}
+                />
+
+                {/* Quick action bar: Poll + Briefing */}
+                <div className="flex items-center gap-1 px-3 sm:px-5 py-1">
+                  <button
+                    onClick={() => setShowCreatePoll(true)}
+                    className="flex items-center gap-1 px-2 py-1 text-[11px] text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 rounded-md transition-colors"
+                    title="Create Poll"
+                  >
+                    <BarChart3 className="w-3 h-3" />
+                    <span className="hidden sm:inline">Poll</span>
+                  </button>
+                  <button
+                    onClick={() => setShowBriefing(true)}
+                    className="flex items-center gap-1 px-2 py-1 text-[11px] text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800/60 rounded-md transition-colors"
+                    title="Sync Briefing"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span className="hidden sm:inline">Briefing</span>
+                  </button>
+                </div>
+
+                <MessageInput
+                  channelName={selectedChannel.type === 'dm' ? selectedChannelDisplayName : selectedChannel.name}
+                  channelId={selectedChannel.id}
+                  onSend={handleSendMessage}
+                  members={[user, ...teamMembers].filter(Boolean)}
+                  channels={realtimeChannels}
+                  onTyping={startTyping}
+                  onStopTyping={stopTyping}
+                  typingText={getTypingText()}
+                  typingUsers={typingUsers}
+                  isMuted={isMuted}
+                  rateLimits={rateLimits}
+                  checkRateLimit={checkRateLimit}
+                  slowmodeSeconds={slowmodeSeconds}
+                />
+              </div>
             )}
           </>
         ) : (
@@ -1061,7 +1528,27 @@ export default function InboxPage() {
             onDeleteChannel={handleDeleteChannelClick}
           />
         )}
+
+        {channelSettingsOpen && settingsChannel && (
+          <ChannelSettingsPanel
+            channel={settingsChannel}
+            onClose={() => {
+              setChannelSettingsOpen(false);
+              setSettingsChannel(null);
+            }}
+            onUpdateChannel={(updates) => {
+              handleUpdateChannel(updates);
+              // Also update the settings channel locally
+              setSettingsChannel(prev => ({ ...prev, ...updates }));
+            }}
+            onArchiveChannel={handleArchiveChannel}
+            onDeleteChannel={handleDeleteChannelClick}
+            user={user}
+            teamMembers={teamMembers}
+          />
+        )}
       </AnimatePresence>
+      </div>
 
       {/* Modals */}
       <CreateChannelModal
@@ -1111,6 +1598,202 @@ export default function InboxPage() {
         directMessages={resolvedDMs}
         currentUser={user}
       />
+
+      {/* Create Task from Message */}
+      <TaskModal
+        open={showTaskModal}
+        onOpenChange={(open) => {
+          setShowTaskModal(open);
+          if (!open) setTaskFromMessage(null);
+        }}
+        task={taskFromMessage}
+        onSave={handleSaveTaskFromMessage}
+      />
+
+      {/* Universal Search (Cmd+K) */}
+      <UniversalSearch
+        open={showUniversalSearch}
+        onClose={() => setShowUniversalSearch(false)}
+        onResultSelect={(result) => {
+          setShowUniversalSearch(false);
+          // Navigate to the result's channel/message
+          if (result?.channel_id) {
+            const channel = [...realtimeChannels, ...resolvedDMs].find(c => c.id === result.channel_id);
+            if (channel) setSelectedChannel(channel);
+          }
+        }}
+      />
+
+      {/* Guest Invite Modal */}
+      <GuestInviteModal
+        open={showGuestInvite}
+        onClose={() => setShowGuestInvite(false)}
+        channel={selectedChannel}
+      />
+
+      {/* Create Poll Modal */}
+      <CreatePollModal
+        isOpen={showCreatePoll}
+        onClose={() => setShowCreatePoll(false)}
+        onSubmit={handlePollSubmit}
+      />
+
+      {/* Sync Morning Briefing Overlay */}
+      <AnimatePresence>
+        {showBriefing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowBriefing(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl bg-zinc-900 border border-zinc-800/60 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SyncBriefing />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Channel Digest / Catch Me Up overlay */}
+      <AnimatePresence>
+        {showDigest && selectedChannel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowDigest(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-zinc-900 border border-zinc-800/60 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ChannelDigest
+                channelId={selectedChannel.id}
+                channelName={selectedChannel.name}
+                onClose={() => setShowDigest(false)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sentiment Panel overlay */}
+      <AnimatePresence>
+        {showSentimentPanel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowSentimentPanel(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl bg-zinc-900 border border-zinc-800/60 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SentimentPanel
+                data={sentimentData?.trend || []}
+                onClose={() => setShowSentimentPanel(false)}
+                timeRange={sentimentTimeRange}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Video Call Room overlay */}
+      {videoCall.isInCall && (
+        <div className="fixed inset-0 z-[70] bg-black">
+          <VideoCallRoom
+            call={videoCall.currentCall}
+            participants={videoCall.participants}
+            user={user}
+            localStream={videoCall.localStream}
+            screenStream={videoCall.screenStream}
+            remoteStreams={videoCall.remoteStreams}
+            isMuted={videoCall.isMuted}
+            isCameraOff={videoCall.isCameraOff}
+            isScreenSharing={videoCall.isScreenSharing}
+            isLocalSpeaking={videoCall.isLocalSpeaking}
+            onToggleMute={() => videoCall.toggleMute()}
+            onToggleCamera={() => videoCall.toggleCamera()}
+            onToggleScreenShare={() => videoCall.toggleScreenShare()}
+            onLeave={(transcript) => {
+              const callData = videoCall.currentCall;
+              const parts = videoCall.participants;
+              videoCall.leaveCall();
+              if (transcript && transcript.trim().length > 20) {
+                setCallEndData({
+                  callTitle: callData?.title,
+                  callDuration: callData?.started_at
+                    ? `${Math.round((Date.now() - new Date(callData.started_at).getTime()) / 60000)} min`
+                    : null,
+                  participants: parts.map(p => ({ name: p.display_name || p.user_id, role: 'participant' })),
+                  transcript,
+                  callId: callData?.id,
+                });
+              }
+            }}
+            onEndCall={(transcript) => {
+              const callData = videoCall.currentCall;
+              const parts = videoCall.participants;
+              videoCall.endCall();
+              if (transcript && transcript.trim().length > 20) {
+                setCallEndData({
+                  callTitle: callData?.title,
+                  callDuration: callData?.started_at
+                    ? `${Math.round((Date.now() - new Date(callData.started_at).getTime()) / 60000)} min`
+                    : null,
+                  participants: parts.map(p => ({ name: p.display_name || p.user_id, role: 'participant' })),
+                  transcript,
+                  callId: callData?.id,
+                });
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* Post-call wrap-up screen */}
+      <AnimatePresence>
+        {callEndData && (
+          <CallEndScreen
+            callTitle={callEndData.callTitle}
+            callDuration={callEndData.callDuration}
+            participants={callEndData.participants}
+            transcript={callEndData.transcript}
+            callId={callEndData.callId}
+            userId={user?.id}
+            onDismiss={() => setCallEndData(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Call banner (shown when active call exists in channel) */}
+      {videoCall.currentCall && !videoCall.isInCall && (
+        <CallBanner
+          title={videoCall.currentCall.title || 'Video call in progress'}
+          participantCount={videoCall.participants.length}
+          onJoin={() => videoCall.joinCall(videoCall.currentCall.id)}
+        />
+      )}
     </div>
   );
 }

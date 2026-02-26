@@ -3,6 +3,7 @@
  */
 
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 import type { Customer, CustomerInsert, CustomerUpdate } from '../schema';
 
 export async function listCustomers(companyId: string): Promise<Customer[]> {
@@ -60,14 +61,20 @@ export async function deleteCustomer(id: string): Promise<void> {
 }
 
 export async function searchCustomers(companyId: string, query: string): Promise<Customer[]> {
-  const { data, error } = await supabase
+  const cleanSearch = sanitizeSearchInput(query);
+
+  let q = supabase
     .from('customers')
     .select('*')
     .eq('company_id', companyId)
-    .or(`name.ilike.%${query}%,email.ilike.%${query}%,contact_name.ilike.%${query}%`)
     .order('name')
     .limit(20);
 
+  if (cleanSearch) {
+    q = q.or(`name.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%,contact_name.ilike.%${cleanSearch}%`);
+  }
+
+  const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }

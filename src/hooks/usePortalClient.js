@@ -131,8 +131,10 @@ export function usePortalClient() {
 
         if (currentSession?.user) {
           const clientResult = await fetchClientData(currentSession.user.id, currentSession.user.email);
-          // If there's a session but no portal client, sign out to prevent stale auth locks
-          if (!clientResult && isMounted) {
+          // If there's a session but no portal client, sign out to prevent stale auth locks.
+          // BUT: skip sign-out in preview mode (builder iframe) to avoid logging out the admin.
+          const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+          if (!clientResult && isMounted && !isPreview) {
             await supabase.auth.signOut();
             setSession(null);
           }

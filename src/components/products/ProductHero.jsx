@@ -157,7 +157,7 @@ export default function ProductHero({
                 src={product.featured_image.url}
                 alt={product.name}
                 className="w-full aspect-video object-cover"
-              />
+               loading="lazy" decoding="async" />
             ) : (
               <div className="w-full aspect-video bg-gradient-to-br from-cyan-900/30 to-blue-900/30 flex items-center justify-center">
                 <div className="text-center">

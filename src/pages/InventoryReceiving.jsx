@@ -46,18 +46,39 @@ import {
 } from "@/lib/db/queries";
 import { exportSessionCSV, exportSessionPDF } from "@/components/receiving/SessionExport";
 import { Html5Qrcode } from "html5-qrcode";
+import { SCANNER_CONFIG, SCANNER_INIT_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
 
 // Barcode scanner component with camera support for mobile devices
+// Beep feedback using Web Audio API
+const playBeep = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 1200;
+    gain.gain.value = 0.3;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch {}
+};
+
 function BarcodeScanner({ onScan, isActive }) {
   const { t } = useTheme();
   const inputRef = useRef(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  const bufferRef = useRef(""); // Ref-based buffer for hardware scanner reliability
+  const lastKeystrokeRef = useRef(0);
+  const lastScanRef = useRef({ text: '', time: 0 });
   const [manualEntry, setManualEntry] = useState("");
   const [scanMode, setScanMode] = useState("manual"); // "manual" or "camera"
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [hasCamera, setHasCamera] = useState(false);
+  const [lastScanned, setLastScanned] = useState(null);
+  const [scanFlash, setScanFlash] = useState(false);
 
   // Check if device has camera on mount
   useEffect(() => {
@@ -89,46 +110,30 @@ function BarcodeScanner({ onScan, isActive }) {
     setIsScanning(true);
 
     try {
-      const html5QrCode = new Html5Qrcode("barcode-scanner-region");
+      const html5QrCode = new Html5Qrcode("barcode-scanner-region", SCANNER_INIT_CONFIG);
       html5QrCodeRef.current = html5QrCode;
 
-      const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 150 },
-        aspectRatio: 1.777778,
-        formatsToSupport: [
-          0,  // QR_CODE
-          1,  // AZTEC
-          2,  // CODABAR
-          3,  // CODE_39
-          4,  // CODE_93
-          5,  // CODE_128
-          6,  // DATA_MATRIX
-          7,  // MAXICODE
-          8,  // ITF
-          9,  // EAN_13
-          10, // EAN_8
-          11, // PDF_417
-          12, // RSS_14
-          13, // RSS_EXPANDED
-          14, // UPC_A
-          15, // UPC_E
-          16, // UPC_EAN_EXTENSION
-        ],
-      };
-
       await html5QrCode.start(
-        { facingMode: "environment" }, // Use back camera
-        config,
-        (decodedText, decodedResult) => {
-          // Successfully scanned
-          stopCameraScanner();
+        { facingMode: "environment" },
+        SCANNER_CONFIG,
+        (decodedText) => {
+          // Continuous scanning with cooldown to prevent duplicates
+          const now = Date.now();
+          const last = lastScanRef.current;
+          if (decodedText === last.text && now - last.time < 1500) return;
+          lastScanRef.current = { text: decodedText, time: now };
+          // Feedback
+          playBeep();
+          navigator.vibrate?.(100);
+          setScanFlash(true);
+          setTimeout(() => setScanFlash(false), 300);
+          setLastScanned(decodedText);
           onScan(decodedText);
         },
-        (errorMessage) => {
-          // Scan error - ignore, keep scanning
-        }
+        () => {}
       );
+
+      optimizeCameraAfterStart("barcode-scanner-region").catch(() => {});
     } catch (err) {
       console.error("Camera scanner error:", err);
       setIsScanning(false);
@@ -181,17 +186,33 @@ function BarcodeScanner({ onScan, isActive }) {
 
   const handleManualSubmit = (e) => {
     e.preventDefault();
-    if (manualEntry.trim()) {
-      onScan(manualEntry.trim());
+    // Use ref buffer for hardware scanner reliability (state may lag behind fast input)
+    const value = (bufferRef.current || manualEntry).trim();
+    if (value) {
+      onScan(value);
       setManualEntry("");
+      bufferRef.current = "";
     }
   };
 
-  // Handle barcode scanner input (fast sequential keypresses from hardware scanner)
-  const handleKeyPress = useCallback((e) => {
-    if (e.key === "Enter" && manualEntry.trim()) {
-      onScan(manualEntry.trim());
-      setManualEntry("");
+  // Handle input changes — keep ref buffer in sync for hardware scanner
+  const handleInputChange = useCallback((e) => {
+    const val = e.target.value;
+    setManualEntry(val);
+    bufferRef.current = val;
+    lastKeystrokeRef.current = Date.now();
+  }, []);
+
+  // Handle Enter key from hardware scanner or keyboard
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const value = (bufferRef.current || manualEntry).trim();
+      if (value) {
+        onScan(value);
+        setManualEntry("");
+        bufferRef.current = "";
+      }
     }
   }, [manualEntry, onScan]);
 
@@ -247,27 +268,21 @@ function BarcodeScanner({ onScan, isActive }) {
               <div
                 id="barcode-scanner-region"
                 ref={scannerRef}
-                className="rounded-xl overflow-hidden bg-black"
+                className={`rounded-xl overflow-hidden bg-black transition-all duration-300 ${scanFlash ? 'ring-4 ring-green-500' : ''}`}
                 style={{ minHeight: "280px" }}
               />
 
-              {/* Scanning overlay */}
-              {isScanning && (
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="relative">
-                    <div
-                      className="absolute left-0 right-0 h-0.5 bg-cyan-500 shadow-lg shadow-cyan-500/50 animate-pulse"
-                      style={{ width: "250px", marginLeft: "-125px", left: "50%" }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Instructions */}
+              {/* Instructions + last scanned */}
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                <p className="text-white text-sm text-center">
-                  Point the camera at the barcode
-                </p>
+                {lastScanned ? (
+                  <p className="text-green-400 text-sm text-center font-mono truncate">
+                    {lastScanned}
+                  </p>
+                ) : (
+                  <p className="text-white text-sm text-center">
+                    Point the camera at the barcode
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -319,8 +334,8 @@ function BarcodeScanner({ onScan, isActive }) {
               inputMode="numeric"
               placeholder="EAN / Barcode..."
               value={manualEntry}
-              onChange={(e) => setManualEntry(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               className={`flex-1 ${t('bg-white border-gray-200', 'bg-zinc-900/50 border-white/10')}`}
               autoFocus={isActive && scanMode === "manual"}
             />
@@ -677,7 +692,7 @@ function SessionTimer({ startedAt }) {
   return <span>{elapsed}</span>;
 }
 
-export default function InventoryReceiving() {
+export default function InventoryReceiving({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, t } = useTheme();
   const [scanResult, setScanResult] = useState(null);
@@ -930,15 +945,16 @@ export default function InventoryReceiving() {
     }
   };
 
-  return (
-    <PermissionGuard permission="inventory.manage" showMessage>
-      <ProductsPageTransition>
-        <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
+  const pageContent = (
+    <>
+        <div className={embedded ? "space-y-4" : "max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4"}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            {!embedded && (
             <div>
               <h1 className={`text-lg font-bold ${t('text-gray-900', 'text-white')}`}>Receiving</h1>
               <p className={`text-xs ${t('text-gray-600', 'text-zinc-400')}`}>Scan and receive incoming inventory</p>
             </div>
+            )}
             <div className="flex items-center gap-2">
               {!activeSession && (
                 <Button
@@ -1364,6 +1380,15 @@ export default function InventoryReceiving() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </>
+  );
+
+  if (embedded) return pageContent;
+
+  return (
+    <PermissionGuard permission="inventory.manage" showMessage>
+      <ProductsPageTransition>
+        {pageContent}
       </ProductsPageTransition>
     </PermissionGuard>
   );

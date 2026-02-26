@@ -196,7 +196,7 @@ export default function FinanceJournalEntries({ embedded = false }) {
       setLoading(true);
       const [entryData, acctData, typeData] = await Promise.all([
         db.entities.JournalEntry?.list?.({ limit: 500 }).catch(() => []),
-        db.entities.Account?.list?.({ limit: 1000 }).catch(() => []),
+        db.entities.Account?.list?.({ limit: 200 }).catch(() => []),
         db.entities.AccountType?.list?.({ limit: 10 }).catch(() => []),
       ]);
       setEntries(entryData || []);

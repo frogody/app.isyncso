@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCredits, refundCredits } from '../_shared/credit-check.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +19,7 @@ interface EnrichRequest {
   action: "full_enrich" | "match_contact" | "enrich_contact" | "match_business" | "enrich_business";
   contact_id?: string;
   business_id?: string;
+  user_id?: string;
 }
 
 serve(async (req) => {
@@ -44,6 +46,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") || "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
     );
+
+    // ── Credit check (5 credits for enrichment) ────────────────────
+    if (body.user_id) {
+      const credit = await requireCredits(supabaseAdmin, body.user_id, 'explorium-enrich', {
+        edgeFunction: 'explorium-enrich',
+        metadata: { action: body.action, linkedin: body.linkedin, email: body.email },
+      });
+      if (!credit.success) return credit.errorResponse!;
+    }
 
     // Match prospect by LinkedIn, email, or name+company
     // Updated to use new Explorium API endpoints (/v1/prospects/ instead of /v1/contacts/)

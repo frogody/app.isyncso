@@ -20,9 +20,11 @@ import {
   DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Subscription } from '@/api/entities';
+import { useUser } from '@/components/context/UserContext';
 import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
 
@@ -54,11 +56,14 @@ export default function FinanceSubscriptions({ embedded = false }) {
   const [sortBy, setSortBy] = useState('name');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { theme, toggleTheme, ft } = useTheme();
+  const companyId = user?.company_id || user?.organization_id;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -69,7 +74,9 @@ export default function FinanceSubscriptions({ embedded = false }) {
     next_billing_date: '',
     description: '',
     website_url: '',
-    status: 'active'
+    status: 'active',
+    tax_rate: '21',
+    tax_mechanism: 'standard_btw'
   });
 
   useEffect(() => {
@@ -105,7 +112,10 @@ export default function FinanceSubscriptions({ embedded = false }) {
     active.forEach(sub => {
       const cycle = BILLING_CYCLES.find(c => c.value === sub.billing_cycle);
       if (cycle) {
-        monthlyTotal += ((sub.amount || 0) * cycle.multiplier) / 12;
+        const effectiveAmount = sub.amount_type === 'variable'
+          ? (sub.estimated_amount || sub.amount || 0)
+          : (sub.amount || 0);
+        monthlyTotal += (effectiveAmount * cycle.multiplier) / 12;
       }
     });
 
@@ -156,7 +166,9 @@ export default function FinanceSubscriptions({ embedded = false }) {
       next_billing_date: '',
       description: '',
       website_url: '',
-      status: 'active'
+      status: 'active',
+      tax_rate: '21',
+      tax_mechanism: 'standard_btw'
     });
     setEditMode(false);
     setSelectedSubscription(null);
@@ -164,16 +176,27 @@ export default function FinanceSubscriptions({ embedded = false }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user?.id) {
+      toast.error('You must be logged in');
+      return;
+    }
     setSaving(true);
 
     try {
+      const amount = parseFloat(formData.amount) || 0;
+      const taxRate = parseFloat(formData.tax_rate) || 0;
       const data = {
         ...formData,
-        amount: parseFloat(formData.amount) || 0
+        amount,
+        tax_rate: taxRate,
+        tax_amount: Math.round(amount * (taxRate / 100) * 100) / 100,
+        user_id: user.id,
+        company_id: companyId,
       };
 
       if (editMode && selectedSubscription) {
-        await Subscription.update(selectedSubscription.id, data);
+        const { user_id, company_id, ...updateData } = data;
+        await Subscription.update(selectedSubscription.id, updateData);
         toast.success('Subscription updated');
       } else {
         await Subscription.create(data);
@@ -202,20 +225,28 @@ export default function FinanceSubscriptions({ embedded = false }) {
       next_billing_date: subscription.next_billing_date?.split('T')[0] || '',
       description: subscription.description || '',
       website_url: subscription.website_url || '',
-      status: subscription.status || 'active'
+      status: subscription.status || 'active',
+      tax_rate: subscription.tax_rate?.toString() || '21',
+      tax_mechanism: subscription.tax_mechanism || 'standard_btw'
     });
     setEditMode(true);
     setShowCreateModal(true);
   };
 
-  const handleDelete = async (subscription) => {
-    if (!confirm('Delete this subscription?')) return;
+  const handleDelete = (subscription) => {
+    setDeleteTarget(subscription);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await Subscription.delete(subscription.id);
+      await Subscription.delete(deleteTarget.id);
       toast.success('Subscription deleted');
       loadSubscriptions();
     } catch (error) {
       toast.error('Failed to delete subscription');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -422,10 +453,27 @@ export default function FinanceSubscriptions({ embedded = false }) {
 
                           <div className="flex items-center gap-4">
                             <div className="text-right">
-                              <p className={`text-lg font-semibold ${ft('text-slate-900', 'text-white')}`}>
-                                {formatCurrency(subscription.amount)}
+                              <div className="flex items-center justify-end gap-2">
+                                {subscription.amount_type === 'variable' && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                    Variable
+                                  </span>
+                                )}
+                                <p className={`text-lg font-semibold ${ft('text-slate-900', 'text-white')}`}>
+                                  {subscription.amount_type === 'variable'
+                                    ? `~${formatCurrency(subscription.estimated_amount || subscription.amount)}`
+                                    : formatCurrency(subscription.amount)
+                                  }
+                                </p>
+                              </div>
+                              <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+                                per {subscription.billing_cycle}
+                                {subscription.tax_rate > 0 && (
+                                  subscription.tax_mechanism?.includes('reverse_charge')
+                                    ? ` · ${subscription.tax_rate}% BTW (self-assessed)`
+                                    : ` · ${subscription.tax_rate}% BTW`
+                                )}
                               </p>
-                              <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>per {subscription.billing_cycle}</p>
                             </div>
 
                             {canCreate && (
@@ -552,6 +600,27 @@ export default function FinanceSubscriptions({ embedded = false }) {
                     />
                   </div>
                   <div>
+                    <Label className={ft('text-slate-600', 'text-zinc-300')}>BTW / Tax Rate (%)</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.tax_rate}
+                        onChange={(e) => setFormData({...formData, tax_rate: e.target.value})}
+                        placeholder="21"
+                        className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
+                      />
+                    </div>
+                    {formData.amount && parseFloat(formData.tax_rate) > 0 && (
+                      <p className={`text-xs mt-1 ${ft('text-slate-400', 'text-zinc-500')}`}>
+                        BTW: {formatCurrency((parseFloat(formData.amount) || 0) * (parseFloat(formData.tax_rate) || 0) / 100)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
                     <Label className={ft('text-slate-600', 'text-zinc-300')}>Category</Label>
                     <select
                       value={formData.category}
@@ -563,16 +632,15 @@ export default function FinanceSubscriptions({ embedded = false }) {
                       ))}
                     </select>
                   </div>
-                </div>
-
-                <div>
-                  <Label className={ft('text-slate-600', 'text-zinc-300')}>Next Billing Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.next_billing_date}
-                    onChange={(e) => setFormData({...formData, next_billing_date: e.target.value})}
-                    className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
-                  />
+                  <div>
+                    <Label className={ft('text-slate-600', 'text-zinc-300')}>Next Billing Date</Label>
+                    <Input
+                      type="date"
+                      value={formData.next_billing_date}
+                      onChange={(e) => setFormData({...formData, next_billing_date: e.target.value})}
+                      className={`${ft('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} mt-1`}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -606,6 +674,15 @@ export default function FinanceSubscriptions({ embedded = false }) {
       <div className={`min-h-screen ${ft('bg-slate-50', 'bg-black')}`}>
         {content}
       </div>
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Subscription"
+        description={`Are you sure you want to delete this subscription? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </FinancePageTransition>
   );
 }

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/api/supabaseClient';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 // Activity type configurations
 const ACTIVITY_TYPES = {
@@ -88,6 +89,7 @@ const formatRelativeTime = (dateString) => {
 };
 
 const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) => {
+  const { t } = useTheme();
   const navigate = useNavigate();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -277,27 +279,27 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
 
   if (loading) {
     return (
-      <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
+      <div className={`rounded-xl ${t("bg-white", "bg-zinc-900/50")} border ${t("border-gray-200", "border-zinc-800")} p-4`}>
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 text-zinc-400 animate-spin" />
+          <Loader2 className={`w-6 h-6 ${t("text-gray-500", "text-zinc-400")} animate-spin`} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 overflow-hidden">
+    <div className={`rounded-xl ${t("bg-white", "bg-zinc-900/50")} border ${t("border-gray-200", "border-zinc-800")} overflow-hidden`}>
       {/* Header */}
       {showHeader && (
-        <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
+        <div className={`px-4 py-3 border-b ${t("border-gray-200", "border-zinc-800")} ${t("bg-white", "bg-zinc-900/50")}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center">
-                <Activity className="w-4 h-4 text-zinc-400" />
+              <div className={`w-8 h-8 rounded-lg ${t("bg-gray-100", "bg-zinc-800")} flex items-center justify-center`}>
+                <Activity className={`w-4 h-4 ${t("text-gray-500", "text-zinc-400")}`} />
               </div>
               <div>
-                <h3 className="text-white font-medium text-sm">Recent Activity</h3>
-                <p className="text-xs text-zinc-500">What's happening in your pipeline</p>
+                <h3 className={`${t("text-gray-900", "text-white")} font-medium text-sm`}>Recent Activity</h3>
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>What's happening in your pipeline</p>
               </div>
             </div>
 
@@ -306,7 +308,7 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
               size="sm"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="text-zinc-500 hover:text-white hover:bg-zinc-800"
+              className={`${t("text-gray-400", "text-zinc-500")} ${t("hover:text-gray-900", "hover:text-white")} ${t("hover:bg-gray-100", "hover:bg-zinc-800")}`}
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
@@ -318,14 +320,14 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
       <div className="max-h-[400px] overflow-y-auto">
         {activities.length === 0 ? (
           <div className="py-12 text-center">
-            <Activity className="w-10 h-10 mx-auto mb-3 text-zinc-700" />
-            <p className="text-sm text-zinc-500">No recent activity</p>
-            <p className="text-xs text-zinc-600 mt-1">
+            <Activity className={`w-10 h-10 mx-auto mb-3 ${t("text-gray-300", "text-zinc-700")}`} />
+            <p className={`text-sm ${t("text-gray-400", "text-zinc-500")}`}>No recent activity</p>
+            <p className={`text-xs ${t("text-gray-300", "text-zinc-600")} mt-1`}>
               Activity will appear here as you use the platform
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-zinc-800/50">
+          <div className={`divide-y ${t("divide-gray-100", "divide-zinc-800/50")}`}>
             <AnimatePresence mode="popLayout">
               {activities.map((activity, index) => {
                 const config = ACTIVITY_TYPES[activity.type] || ACTIVITY_TYPES.candidate_matched;
@@ -339,7 +341,7 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ delay: index * 0.03 }}
                     onClick={() => handleActivityClick(activity)}
-                    className="w-full px-4 py-3 flex items-start gap-3 hover:bg-zinc-800/30 transition-colors text-left group"
+                    className={`w-full px-4 py-3 flex items-start gap-3 ${t("hover:bg-gray-50", "hover:bg-zinc-800/30")} transition-colors text-left group`}
                   >
                     {/* Icon */}
                     <div className={`w-8 h-8 rounded-lg ${config.bgColor} flex items-center justify-center flex-shrink-0 mt-0.5`}>
@@ -348,19 +350,19 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white group-hover:text-white/90 line-clamp-2">
+                      <p className={`text-sm ${t("text-gray-900", "text-white")} ${t("group-hover:text-gray-700", "group-hover:text-white/90")} line-clamp-2`}>
                         {activity.description}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Clock className="w-3 h-3 text-zinc-600" />
-                        <span className="text-xs text-zinc-500">
+                        <Clock className={`w-3 h-3 ${t("text-gray-300", "text-zinc-600")}`} />
+                        <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
                           {formatRelativeTime(activity.timestamp)}
                         </span>
                       </div>
                     </div>
 
                     {/* Arrow */}
-                    <ChevronRight className="w-4 h-4 text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1" />
+                    <ChevronRight className={`w-4 h-4 ${t("text-gray-300", "text-zinc-600")} opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1`} />
                   </motion.button>
                 );
               })}
@@ -371,10 +373,10 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
 
       {/* Footer */}
       {activities.length > 0 && (
-        <div className="px-4 py-2 border-t border-zinc-800 bg-zinc-900/30">
+        <div className={`px-4 py-2 border-t ${t("border-gray-200", "border-zinc-800")} ${t("bg-gray-50", "bg-zinc-900/30")}`}>
           <button
             onClick={() => navigate('/talent/activity')}
-            className="text-xs text-zinc-500 hover:text-red-400 transition-colors flex items-center gap-1 w-full justify-center"
+            className={`text-xs ${t("text-gray-400", "text-zinc-500")} hover:text-red-400 transition-colors flex items-center gap-1 w-full justify-center`}
           >
             View All Activity
             <ChevronRight className="w-3 h-3" />

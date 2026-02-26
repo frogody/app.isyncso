@@ -116,7 +116,7 @@ function getSeverityIcon(severity) {
 // MAIN PAGE
 // =============================================================================
 
-export default function ShipmentVerification() {
+export default function ShipmentVerification({ embedded = false }) {
   const { t, theme, toggleTheme } = useTheme();
   const { user } = useUser();
   const companyId = user?.company_id;
@@ -229,10 +229,10 @@ export default function ShipmentVerification() {
     }
   };
 
-  return (
-    <PermissionGuard permission="inventory.manage" showMessage>
-      <div className={`min-h-screen ${t("bg-gray-50", "bg-zinc-950")} ${t("text-gray-900", "text-white")} p-6`}>
+  const pageContent = (
+      <div className={embedded ? "space-y-4" : `min-h-screen ${t("bg-gray-50", "bg-zinc-950")} ${t("text-gray-900", "text-white")} p-6`}>
         {/* Header */}
+        {!embedded && (
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <ClipboardCheck className={`w-7 h-7 ${t("text-cyan-600", "text-cyan-400")}`} />
@@ -242,6 +242,7 @@ export default function ShipmentVerification() {
             {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </Button>
         </div>
+        )}
 
         {/* Shipment Selector */}
         <div className={`${t("bg-white", "bg-zinc-900/60")} ${t("border-gray-200", "border-zinc-800")} border rounded-xl p-4 mb-6`}>
@@ -530,6 +531,13 @@ export default function ShipmentVerification() {
           </DialogContent>
         </Dialog>
       </div>
+  );
+
+  if (embedded) return pageContent;
+
+  return (
+    <PermissionGuard permission="inventory.manage" showMessage>
+      {pageContent}
     </PermissionGuard>
   );
 }

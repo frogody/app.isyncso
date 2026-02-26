@@ -95,7 +95,7 @@ export default function FinanceAccounts({ embedded = false }) {
     try {
       setLoading(true);
       const [acctData, typeData] = await Promise.all([
-        db.entities.Account?.list?.({ limit: 1000 }).catch(() => []),
+        db.entities.Account?.list?.({ limit: 200 }).catch(() => []),
         db.entities.AccountType?.list?.({ limit: 10 }).catch(() => []),
       ]);
       setAccounts(acctData || []);

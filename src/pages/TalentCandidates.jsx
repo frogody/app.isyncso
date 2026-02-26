@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -36,10 +37,16 @@ import {
   Package,
   Zap,
   AlertTriangle,
+  Ban,
+  ShieldAlert,
+  Linkedin,
+  ChevronRight,
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal, SearchFilterBar } from "@/components/talent";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
 import EnrichmentProgress from "@/components/talent/EnrichmentProgress";
 import { useCandidateFilters, extractFilterOptions, countActiveFilters, getDefaultFilters } from "@/hooks/useCandidateFilters";
@@ -99,7 +106,7 @@ const CandidateAvatar = ({ name, image, size = "md" }) => {
         src={image}
         alt={name}
         className={`${sizes[size]} rounded-full object-cover ring-2 ring-white/10`}
-      />
+       loading="lazy" decoding="async" />
     );
   }
 
@@ -113,7 +120,7 @@ const CandidateAvatar = ({ name, image, size = "md" }) => {
 };
 
 // Candidate Card (Grid View)
-const CandidateCard = ({ candidate, isSelected, isFocused, onToggle, onClick, onEdit }) => {
+const CandidateCard = ({ candidate, isSelected, isFocused, onToggle, onClick, onEdit, t }) => {
   return (
     <motion.div
       variants={itemVariants}
@@ -126,7 +133,7 @@ const CandidateCard = ({ candidate, isSelected, isFocused, onToggle, onClick, on
           checked={isSelected}
           onCheckedChange={() => onToggle(candidate.id)}
           onClick={(e) => e.stopPropagation()}
-          className="border-zinc-600 bg-zinc-800/80"
+          className={t("border-gray-300 bg-white", "border-zinc-600 bg-zinc-800/80")}
         />
       </div>
       <GlassCard className={`p-4 hover:border-red-500/30 transition-all duration-300 ${isFocused ? "ring-1 ring-red-500/50 border-red-500/30" : ""}`} onClick={onClick}>
@@ -134,25 +141,25 @@ const CandidateCard = ({ candidate, isSelected, isFocused, onToggle, onClick, on
           <div className="flex items-center gap-3 ml-6">
             <CandidateAvatar name={`${candidate.first_name} ${candidate.last_name}`} image={candidate.profile_image_url} size="lg" />
             <div>
-              <h3 className="font-semibold text-white">{`${candidate.first_name} ${candidate.last_name}`}</h3>
-              <p className="text-sm text-white/60">{candidate.job_title}</p>
+              <h3 className={`font-semibold ${t("text-gray-900", "text-white")}`}>{`${candidate.first_name} ${candidate.last_name}`}</h3>
+              <p className={`text-sm ${t("text-gray-500", "text-white/60")}`}>{candidate.job_title}</p>
             </div>
           </div>
           <IntelligenceGauge score={candidate.intelligence_score || 0} size="sm" />
         </div>
 
         <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-sm text-white/60">
+          <div className={`flex items-center gap-2 text-sm ${t("text-gray-500", "text-white/60")}`}>
             <Building2 className="w-4 h-4" />
             <span className="truncate">{candidate.company_name || "Not specified"}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-white/60">
+          <div className={`flex items-center gap-2 text-sm ${t("text-gray-500", "text-white/60")}`}>
             <MapPin className="w-4 h-4" />
             <span className="truncate">{candidate.person_home_location || "Not specified"}</span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-white/10">
+        <div className={`flex items-center justify-between pt-3 border-t ${t("border-gray-200", "border-white/10")}`}>
           <div className="flex items-center gap-2">
             <IntelligenceLevelBadge level={candidate.intelligence_level || "Low"} />
             <ApproachBadge approach={candidate.recommended_approach || "nurture"} />
@@ -167,7 +174,7 @@ const CandidateCard = ({ candidate, isSelected, isFocused, onToggle, onClick, on
               e.stopPropagation();
               onEdit(candidate);
             }}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+            className={`p-1.5 rounded-lg ${t("hover:bg-gray-100 text-gray-400 hover:text-gray-900", "hover:bg-white/10 text-white/40 hover:text-white")} transition-colors`}
           >
             <Edit className="w-4 h-4" />
           </button>
@@ -178,11 +185,11 @@ const CandidateCard = ({ candidate, isSelected, isFocused, onToggle, onClick, on
 };
 
 // Candidate Row (Table View)
-const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onEdit }) => {
+const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onEdit, t }) => {
   return (
     <motion.tr
       variants={itemVariants}
-      className={`cursor-pointer border-b border-white/5 last:border-0 h-9 ${
+      className={`cursor-pointer border-b ${t("border-gray-100", "border-white/5")} last:border-0 h-9 ${
         isFocused ? "ring-1 ring-red-500/50 bg-red-500/5" : ""
       }`}
       data-candidate-row
@@ -191,18 +198,18 @@ const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onE
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onToggle(candidate.id)}
-          className="border-zinc-600 w-3.5 h-3.5"
+          className={`${t("border-gray-300", "border-zinc-600")} w-3.5 h-3.5`}
         />
       </td>
       <td className="py-1 px-2" onClick={onClick}>
         <div className="flex items-center gap-1.5">
           <CandidateAvatar name={`${candidate.first_name} ${candidate.last_name}`} image={candidate.profile_image_url} size="xs" />
-          <span className="font-medium text-white text-xs truncate max-w-[140px]">{`${candidate.first_name} ${candidate.last_name}`}</span>
+          <span className={`font-medium ${t("text-gray-900", "text-white")} text-xs truncate max-w-[140px]`}>{`${candidate.first_name} ${candidate.last_name}`}</span>
         </div>
       </td>
       <td className="py-1 px-2" onClick={onClick}>
-        <p className="text-white/70 text-xs truncate max-w-[200px]">{candidate.job_title || "—"}</p>
-        <p className="text-[10px] text-white/40 truncate max-w-[200px]">{candidate.company_name || ""}</p>
+        <p className={`${t("text-gray-600", "text-white/70")} text-xs truncate max-w-[200px]`}>{candidate.job_title || "\u2014"}</p>
+        <p className={`text-[10px] ${t("text-gray-400", "text-white/40")} truncate max-w-[200px]`}>{candidate.company_name || ""}</p>
       </td>
       <td className="py-1 px-2" onClick={onClick}>
         <div className="flex items-center gap-1.5">
@@ -220,8 +227,8 @@ const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onE
           size="xs"
         />
       </td>
-      <td className="py-1 px-2 text-white/50 text-[11px] truncate max-w-[150px]" onClick={onClick}>
-        {candidate.person_home_location || "—"}
+      <td className={`py-1 px-2 ${t("text-gray-500", "text-white/50")} text-[11px] truncate max-w-[150px]`} onClick={onClick}>
+        {candidate.person_home_location || "\u2014"}
       </td>
       <td className="py-1 px-2">
         <div className="flex items-center">
@@ -230,7 +237,7 @@ const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onE
               e.stopPropagation();
               onClick();
             }}
-            className="p-0.5 rounded hover:bg-white/10 transition-colors text-white/40 hover:text-white"
+            className={`p-0.5 rounded ${t("hover:bg-gray-100 text-gray-400 hover:text-gray-900", "hover:bg-white/10 text-white/40 hover:text-white")} transition-colors`}
           >
             <Eye className="w-3 h-3" />
           </button>
@@ -239,7 +246,7 @@ const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onE
               e.stopPropagation();
               onEdit(candidate);
             }}
-            className="p-0.5 rounded hover:bg-white/10 transition-colors text-white/40 hover:text-white"
+            className={`p-0.5 rounded ${t("hover:bg-gray-100 text-gray-400 hover:text-gray-900", "hover:bg-white/10 text-white/40 hover:text-white")} transition-colors`}
           >
             <Edit className="w-3 h-3" />
           </button>
@@ -251,6 +258,7 @@ const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onE
 
 export default function TalentCandidates() {
   const { user } = useUser();
+  const { t } = useTheme();
   const navigate = useNavigate();
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -261,6 +269,10 @@ export default function TalentCandidates() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 24;
+  const [excludedCount, setExcludedCount] = useState(0);
+  const [excludedCandidates, setExcludedCandidates] = useState([]);
+  const [showExcludedModal, setShowExcludedModal] = useState(false);
+  const [loadingExcluded, setLoadingExcluded] = useState(false);
 
   // Extract filter options from candidates
   const filterOptions = useMemo(() => extractFilterOptions(candidates), [candidates]);
@@ -443,20 +455,68 @@ export default function TalentCandidates() {
 
     setLoading(true);
     try {
+      // Select only columns needed for list view — skip large JSONB blobs
+      // (work_history, education, intelligence_factors, company_intelligence, etc.)
       const { data, error } = await supabase
         .from("candidates")
-        .select("*")
+        .select("id, first_name, last_name, job_title, company_name, person_home_location, profile_image_url, intelligence_score, intelligence_level, recommended_approach, last_intelligence_update, email, phone, skills, linkedin_profile, outreach_stage, contact_status, intelligence_urgency, years_experience, created_date, updated_date, excluded_reason")
         .eq("organization_id", user.organization_id)
         .is("excluded_reason", null)
         .order("created_date", { ascending: false });
 
       if (error) throw error;
       setCandidates(data || []);
+
+      // Fetch excluded candidates count
+      const { count, error: countErr } = await supabase
+        .from("candidates")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", user.organization_id)
+        .not("excluded_reason", "is", null);
+
+      if (!countErr) setExcludedCount(count || 0);
     } catch (err) {
       console.error("Error fetching candidates:", err);
       toast.error("Failed to load candidates");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadExcludedCandidates = async () => {
+    setLoadingExcluded(true);
+    try {
+      const { data, error } = await supabase
+        .from("candidates")
+        .select("id, first_name, last_name, job_title, company_name, linkedin_profile, excluded_reason, excluded_at, excluded_client_id")
+        .eq("organization_id", user.organization_id)
+        .not("excluded_reason", "is", null)
+        .order("excluded_at", { ascending: false });
+
+      if (error) throw error;
+
+      const clientIds = [...new Set((data || []).map(c => c.excluded_client_id).filter(Boolean))];
+      let clientMap = {};
+      if (clientIds.length > 0) {
+        const { data: clientData } = await supabase
+          .from("prospects")
+          .select("id, company")
+          .in("id", clientIds);
+        if (clientData) {
+          clientMap = clientData.reduce((acc, c) => { acc[c.id] = c.company; return acc; }, {});
+        }
+      }
+
+      setExcludedCandidates((data || []).map(c => ({
+        ...c,
+        excluded_client_name: clientMap[c.excluded_client_id] || "Unknown Client"
+      })));
+      setShowExcludedModal(true);
+    } catch (err) {
+      console.error("Failed to load excluded candidates:", err);
+      toast.error("Failed to load excluded candidates");
+    } finally {
+      setLoadingExcluded(false);
     }
   };
 
@@ -614,7 +674,7 @@ export default function TalentCandidates() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black relative">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
         <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <div className="flex items-center justify-between">
             <Skeleton className="h-10 w-64" />
@@ -631,7 +691,7 @@ export default function TalentCandidates() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         <PageHeader
           title="Candidates"
@@ -661,6 +721,26 @@ export default function TalentCandidates() {
           }
         />
 
+        {/* Excluded Candidates Notice */}
+        {excludedCount > 0 && (
+          <button
+            onClick={loadExcludedCandidates}
+            disabled={loadingExcluded}
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg bg-red-500/5 border border-red-500/20 hover:bg-red-500/10 hover:border-red-500/30 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-md bg-red-500/20 flex items-center justify-center">
+                <Ban className="w-3.5 h-3.5 text-red-400" />
+              </div>
+              <span className="text-sm text-red-400 font-medium">
+                {loadingExcluded ? "Loading..." : `${excludedCount} candidate${excludedCount !== 1 ? "s" : ""} ruled out`}
+              </span>
+              <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>based on your existing clients</span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-red-400/40 group-hover:text-red-400 transition-colors" />
+          </button>
+        )}
+
       {/* Smart Search & Filters */}
       <SearchFilterBar
         onSearch={setSearchQuery}
@@ -675,7 +755,7 @@ export default function TalentCandidates() {
       {/* Results summary and view controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <p className="text-sm text-zinc-400">
+          <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>
             Showing {filteredCandidates.length} of {candidates.length} candidates
             {activeFilterCount > 0 && (
               <button
@@ -691,7 +771,7 @@ export default function TalentCandidates() {
               variant="ghost"
               size="sm"
               onClick={selectAllVisible}
-              className="text-zinc-400 hover:text-white"
+              className={t("text-gray-500 hover:text-gray-900", "text-zinc-400 hover:text-white")}
             >
               Select Page
             </Button>
@@ -705,11 +785,11 @@ export default function TalentCandidates() {
 
         <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1">
+          <div className={`flex items-center gap-1 ${t("bg-gray-100", "bg-zinc-800")} rounded-lg p-1`}>
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-lg transition-colors ${
-                viewMode === "grid" ? "bg-red-500/20 text-red-400" : "text-zinc-400 hover:text-white"
+                viewMode === "grid" ? "bg-red-500/20 text-red-400" : t("text-gray-500 hover:text-gray-900", "text-zinc-400 hover:text-white")
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -717,7 +797,7 @@ export default function TalentCandidates() {
             <button
               onClick={() => setViewMode("table")}
               className={`p-2 rounded-lg transition-colors ${
-                viewMode === "table" ? "bg-red-500/20 text-red-400" : "text-zinc-400 hover:text-white"
+                viewMode === "table" ? "bg-red-500/20 text-red-400" : t("text-gray-500 hover:text-gray-900", "text-zinc-400 hover:text-white")
               }`}
             >
               <List className="w-4 h-4" />
@@ -732,7 +812,7 @@ export default function TalentCandidates() {
             variant="ghost"
             size="icon"
             onClick={fetchCandidates}
-            className="h-9 w-9 text-zinc-400 hover:text-white hover:bg-zinc-800"
+            className={`h-9 w-9 ${t("text-gray-400 hover:text-gray-900 hover:bg-gray-100", "text-zinc-400 hover:text-white hover:bg-zinc-800")}`}
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -756,6 +836,7 @@ export default function TalentCandidates() {
               onToggle={toggleCandidate}
               onClick={() => handleCandidateClick(candidate)}
               onEdit={setEditingCandidate}
+              t={t}
             />
           ))}
         </motion.div>
@@ -764,7 +845,7 @@ export default function TalentCandidates() {
           <div className="overflow-x-auto" ref={tableRef}>
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/10">
+                <tr className={`border-b ${t("border-gray-200", "border-white/10")}`}>
                   <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider w-8">
                     <Checkbox
                       checked={selectedIds.size === paginatedCandidates.length && paginatedCandidates.length > 0}
@@ -772,16 +853,16 @@ export default function TalentCandidates() {
                         if (checked) selectAllVisible();
                         else deselectAll();
                       }}
-                      className="border-zinc-600 w-3.5 h-3.5"
+                      className={`${t("border-gray-300", "border-zinc-600")} w-3.5 h-3.5`}
                     />
                   </th>
-                  <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Candidate</th>
-                  <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Position</th>
-                  <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Score</th>
-                  <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Approach</th>
-                  <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Intel</th>
-                  <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Location</th>
-                  <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider w-12"></th>
+                  <th className={`text-left py-1.5 px-2 text-[10px] font-medium ${t("text-gray-400", "text-white/40")} uppercase tracking-wider`}>Candidate</th>
+                  <th className={`text-left py-1.5 px-2 text-[10px] font-medium ${t("text-gray-400", "text-white/40")} uppercase tracking-wider`}>Position</th>
+                  <th className={`text-left py-1.5 px-2 text-[10px] font-medium ${t("text-gray-400", "text-white/40")} uppercase tracking-wider`}>Score</th>
+                  <th className={`text-left py-1.5 px-2 text-[10px] font-medium ${t("text-gray-400", "text-white/40")} uppercase tracking-wider`}>Approach</th>
+                  <th className={`text-left py-1.5 px-2 text-[10px] font-medium ${t("text-gray-400", "text-white/40")} uppercase tracking-wider`}>Intel</th>
+                  <th className={`text-left py-1.5 px-2 text-[10px] font-medium ${t("text-gray-400", "text-white/40")} uppercase tracking-wider`}>Location</th>
+                  <th className={`text-left py-1.5 px-2 text-[10px] font-medium ${t("text-gray-400", "text-white/40")} uppercase tracking-wider w-12`}></th>
                 </tr>
               </thead>
               <motion.tbody variants={containerVariants} initial="hidden" animate="visible">
@@ -794,6 +875,7 @@ export default function TalentCandidates() {
                     onToggle={toggleCandidate}
                     onClick={() => handleCandidateClick(candidate)}
                     onEdit={setEditingCandidate}
+                    t={t}
                   />
                 ))}
               </motion.tbody>
@@ -805,15 +887,15 @@ export default function TalentCandidates() {
       {/* Empty State */}
       {filteredCandidates.length === 0 && !loading && (
         <GlassCard className="p-12 text-center">
-          <Users className="w-12 h-12 text-white/20 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No candidates found</h3>
-          <p className="text-white/60 mb-6">
+          <Users className={`w-12 h-12 ${t("text-gray-300", "text-white/20")} mx-auto mb-4`} />
+          <h3 className={`text-lg font-medium ${t("text-gray-900", "text-white")} mb-2`}>No candidates found</h3>
+          <p className={`${t("text-gray-500", "text-white/60")} mb-6`}>
             {searchQuery || Object.values(filters).some(Boolean)
               ? "Try adjusting your filters or search query"
               : "Start building your talent pool by purchasing a talent nest"}
           </p>
           <div className="flex justify-center gap-3">
-            <Button onClick={() => setShowAddModal(true)} variant="outline" className="border-zinc-700">
+            <Button onClick={() => setShowAddModal(true)} variant="outline" className={t("border-gray-200", "border-zinc-700")}>
               <Plus className="w-4 h-4 mr-2" />
               Add Manually
             </Button>
@@ -838,10 +920,10 @@ export default function TalentCandidates() {
                       <Zap className="w-5 h-5 text-red-400" />
                     </div>
                     <div>
-                      <p className="text-white font-medium">
+                      <p className={`${t("text-gray-900", "text-white")} font-medium`}>
                         {readyCandidates.length} candidates with Intel Ready
                       </p>
-                      <p className="text-zinc-400 text-sm">
+                      <p className={`${t("text-gray-500", "text-zinc-400")} text-sm`}>
                         Launch a campaign to match these candidates to your open roles
                       </p>
                     </div>
@@ -864,7 +946,7 @@ export default function TalentCandidates() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-white/60">
+          <p className={`text-sm ${t("text-gray-500", "text-white/60")}`}>
             Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
             {Math.min(currentPage * itemsPerPage, filteredCandidates.length)} of{" "}
             {filteredCandidates.length} candidates
@@ -873,7 +955,7 @@ export default function TalentCandidates() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`px-3 py-1.5 rounded-lg ${t("bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900", "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white")} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
             >
               Previous
             </button>
@@ -884,7 +966,7 @@ export default function TalentCandidates() {
                 className={`w-8 h-8 rounded-lg transition-colors ${
                   currentPage === page
                     ? "bg-red-500/20 text-red-400"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                    : t("bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900", "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white")
                 }`}
               >
                 {page}
@@ -893,7 +975,7 @@ export default function TalentCandidates() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`px-3 py-1.5 rounded-lg ${t("bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900", "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white")} disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
             >
               Next
             </button>
@@ -926,19 +1008,19 @@ export default function TalentCandidates() {
 
       {/* Bulk Delete Confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+        <AlertDialogContent className={t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")}>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white flex items-center gap-2">
+            <AlertDialogTitle className={`${t("text-gray-900", "text-white")} flex items-center gap-2`}>
               <AlertTriangle className="w-5 h-5 text-red-400" />
               Delete Candidates
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400">
+            <AlertDialogDescription className={t("text-gray-500", "text-zinc-400")}>
               Are you sure you want to delete {selectedIds.size} selected candidate(s)?
               This will also delete all related outreach tasks. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700">
+            <AlertDialogCancel className={t("bg-gray-100 border-gray-200 text-gray-900 hover:bg-gray-200", "bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700")}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -987,6 +1069,76 @@ export default function TalentCandidates() {
         context="candidates"
         loading={bulkLoading}
       />
+
+      {/* Excluded Candidates Modal */}
+      <Dialog open={showExcludedModal} onOpenChange={setShowExcludedModal}>
+        <DialogContent className={`${t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")} max-w-2xl p-0 overflow-hidden max-h-[80vh]`}>
+          <div className={`px-6 py-4 border-b ${t("border-gray-200", "border-zinc-800")} bg-gradient-to-r from-red-500/10 to-red-600/10`}>
+            <DialogTitle className={`text-base font-semibold ${t("text-gray-900", "text-white")} flex items-center gap-2`}>
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <Ban className="w-4 h-4 text-red-400" />
+              </div>
+              Ruled Out Candidates
+              <Badge className="ml-2 bg-red-500/20 text-red-400 border-0 text-xs">
+                {excludedCandidates.length}
+              </Badge>
+            </DialogTitle>
+            <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-1 ml-10`}>
+              These candidates are blocked because they work for one of your clients
+            </p>
+          </div>
+
+          <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
+            {excludedCandidates.length === 0 ? (
+              <div className="p-8 text-center">
+                <p className={t("text-gray-400", "text-zinc-500")}>No excluded candidates found</p>
+              </div>
+            ) : (
+              <div className={`divide-y ${t("divide-gray-200", "divide-zinc-800/50")}`}>
+                {excludedCandidates.map((candidate) => (
+                  <div key={candidate.id} className={`px-6 py-3 ${t("hover:bg-gray-50", "hover:bg-zinc-800/30")} transition-colors`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} truncate`}>
+                            {[candidate.first_name, candidate.last_name].filter(Boolean).join(" ") || "Unknown"}
+                          </p>
+                          {candidate.linkedin_profile && (
+                            <a
+                              href={candidate.linkedin_profile}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 flex-shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Linkedin className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {candidate.job_title && (
+                            <span className={`text-xs ${t("text-gray-500", "text-zinc-400")} truncate`}>{candidate.job_title}</span>
+                          )}
+                          {candidate.job_title && candidate.company_name && (
+                            <span className={t("text-gray-300", "text-zinc-600")}>&middot;</span>
+                          )}
+                          {candidate.company_name && (
+                            <span className={`text-xs ${t("text-gray-400", "text-zinc-500")} truncate`}>{candidate.company_name}</span>
+                          )}
+                        </div>
+                      </div>
+                      <Badge className="bg-red-500/10 text-red-400 border border-red-500/20 text-[10px] px-2 py-0.5 flex-shrink-0">
+                        <ShieldAlert className="w-3 h-3 mr-1" />
+                        {candidate.excluded_client_name}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

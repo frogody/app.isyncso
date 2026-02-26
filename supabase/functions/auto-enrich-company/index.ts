@@ -38,10 +38,10 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingCompany) {
-      // Company already exists — just link the user
+      // Company already exists — link the user (both company_id and organization_id)
       await supabaseAdmin
         .from("users")
-        .update({ company_id: existingCompany.id })
+        .update({ company_id: existingCompany.id, organization_id: existingCompany.id })
         .eq("id", user_id)
         .is("company_id", null);
 
@@ -179,7 +179,7 @@ serve(async (req) => {
       if (raceCompany) {
         await supabaseAdmin
           .from("users")
-          .update({ company_id: raceCompany.id })
+          .update({ company_id: raceCompany.id, organization_id: raceCompany.id })
           .eq("id", user_id)
           .is("company_id", null);
 
@@ -192,10 +192,10 @@ serve(async (req) => {
       throw insertError;
     }
 
-    // Step 5: Link user to new company
+    // Step 5: Link user to new company (both company_id and organization_id)
     await supabaseAdmin
       .from("users")
-      .update({ company_id: newCompany.id })
+      .update({ company_id: newCompany.id, organization_id: newCompany.id })
       .eq("id", user_id)
       .is("company_id", null);
 
@@ -251,7 +251,7 @@ async function createBasicCompany(
     if (existing) {
       await supabaseAdmin
         .from("users")
-        .update({ company_id: existing.id })
+        .update({ company_id: existing.id, organization_id: existing.id })
         .eq("id", userId)
         .is("company_id", null);
 
@@ -265,7 +265,7 @@ async function createBasicCompany(
 
   await supabaseAdmin
     .from("users")
-    .update({ company_id: newCompany.id })
+    .update({ company_id: newCompany.id, organization_id: newCompany.id })
     .eq("id", userId)
     .is("company_id", null);
 

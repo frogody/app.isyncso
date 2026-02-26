@@ -295,7 +295,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
               <AvatarImage src={user.avatar_url} />
-              <AvatarFallback className="bg-red-500/20 text-red-400">
+              <AvatarFallback className="bg-cyan-500/20 text-cyan-400">
                 {(user.full_name || user.name || user.email)?.[0]?.toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -328,7 +328,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
               <RoleBadge role={user.role} />
               <StatusBadge isActive={user.is_active_recently} isPlatformAdmin={user.is_platform_admin} />
               {user.platform_admin_role && (
-                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+                <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
                   {user.platform_admin_role.replace('_', ' ')}
                 </Badge>
               )}
@@ -402,7 +402,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                 <Label className="text-zinc-400 text-xs mb-2 block">RBAC Roles</Label>
                 <div className="flex flex-wrap gap-2">
                   {user.rbac_roles.map((role, idx) => (
-                    <Badge key={idx} className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                    <Badge key={idx} className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                       {role.role_name || role.role_id}
                     </Badge>
                   ))}
@@ -424,7 +424,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                         key={app.slug}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-800/30"
                       >
-                        <CheckCircle className="w-3 h-3 text-green-400" />
+                        <CheckCircle className="w-3 h-3 text-cyan-400" />
                         <span className="text-white text-xs">{app.name}</span>
                       </div>
                     ))}
@@ -462,7 +462,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                         key={app.slug}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-800/30"
                       >
-                        <CheckCircle className="w-3 h-3 text-green-400" />
+                        <CheckCircle className="w-3 h-3 text-cyan-400" />
                         <span className="text-white text-xs">{app.name}</span>
                       </div>
                     ))}
@@ -576,7 +576,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                             className={cn(
                               'text-[10px] px-1.5 py-px',
                               license.status === 'active'
-                                ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
                                 : license.status === 'expired'
                                 ? 'bg-red-500/20 text-red-400 border-red-500/30'
                                 : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
@@ -673,7 +673,7 @@ function UserDetailModal({ user, open, onClose, onUpdate, adminRole }) {
                 <Button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="bg-red-500 hover:bg-red-600 text-white"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
                 >
                   {isSaving ? (
                     <>
@@ -729,6 +729,10 @@ export default function AdminUsers() {
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
   const [userToDeactivate, setUserToDeactivate] = useState(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
@@ -838,6 +842,28 @@ export default function AdminUsers() {
     }
   };
 
+  // Hard-delete user
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    try {
+      await adminApi(`/users/${userToDelete.id}/hard-delete`, {
+        method: 'POST',
+        body: JSON.stringify({ confirm_email: deleteConfirmEmail }),
+      });
+      toast.success('User permanently deleted');
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      setDeleteConfirmEmail('');
+      fetchUsers();
+      fetchStats();
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete user');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Refresh data
   const handleRefresh = () => {
     fetchUsers();
@@ -880,14 +906,14 @@ export default function AdminUsers() {
           title="Active (30 days)"
           value={stats.active_users_30d?.toLocaleString()}
           icon={UserCheck}
-          color="green"
+          color="cyan"
           isLoading={isStatsLoading}
         />
         <StatCard
           title="New This Month"
           value={stats.new_users_month?.toLocaleString()}
           icon={UserPlus}
-          color="purple"
+          color="cyan"
           isLoading={isStatsLoading}
         />
         <StatCard
@@ -984,7 +1010,7 @@ export default function AdminUsers() {
         <CardHeader className="border-b border-zinc-800 py-2 px-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-white flex items-center gap-1.5 text-sm">
-              <Users className="w-4 h-4 text-red-400" />
+              <Users className="w-4 h-4 text-cyan-400" />
               Users ({totalCount})
             </CardTitle>
           </div>
@@ -1033,7 +1059,7 @@ export default function AdminUsers() {
                             <div className="flex items-center gap-1.5">
                               <Avatar className="w-6 h-6">
                                 <AvatarImage src={user.avatar_url} />
-                                <AvatarFallback className="bg-red-500/20 text-red-400 text-[9px]">
+                                <AvatarFallback className="bg-cyan-500/20 text-cyan-400 text-[9px]">
                                   {(user.full_name || user.name || user.email)?.[0]?.toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
@@ -1126,6 +1152,22 @@ export default function AdminUsers() {
                                     >
                                       <Trash2 className="w-3 h-3 mr-1.5" />
                                       Deactivate
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {canDeactivate && (
+                                  <>
+                                    <DropdownMenuSeparator className="bg-zinc-700" />
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setUserToDelete(user);
+                                        setDeleteConfirmEmail('');
+                                        setIsDeleteModalOpen(true);
+                                      }}
+                                      className="text-red-500 hover:text-red-400 focus:text-red-400 text-xs font-medium"
+                                    >
+                                      <X className="w-3 h-3 mr-1.5" />
+                                      Delete Permanently
                                     </DropdownMenuItem>
                                   </>
                                 )}
@@ -1231,6 +1273,77 @@ export default function AdminUsers() {
                 <>
                   <Trash2 className="w-4 h-4 mr-2" />
                   Deactivate
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hard Delete Confirmation Modal */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={(open) => {
+        setIsDeleteModalOpen(open);
+        if (!open) { setUserToDelete(null); setDeleteConfirmEmail(''); }
+      }}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-500">
+              <AlertCircle className="w-5 h-5" />
+              Permanently Delete User
+            </DialogTitle>
+            <DialogDescription className="text-zinc-400 space-y-2">
+              <p>
+                This will <span className="text-red-400 font-semibold">permanently delete</span>{' '}
+                <span className="text-white font-medium">
+                  {userToDelete?.full_name || userToDelete?.name || userToDelete?.email}
+                </span>{' '}
+                and all their data. This action cannot be undone.
+              </p>
+              <p className="text-xs text-zinc-500">
+                This removes their profile, app configs, roles, team memberships, SYNC sessions, integrations, credits, and authentication account.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 mt-2">
+            <Label className="text-zinc-400 text-xs">
+              Type the user's email to confirm: <span className="text-red-400 font-mono">{userToDelete?.email}</span>
+            </Label>
+            <Input
+              value={deleteConfirmEmail}
+              onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+              placeholder="Type email address here..."
+              className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-600 text-sm"
+              autoComplete="off"
+            />
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setUserToDelete(null);
+                setDeleteConfirmEmail('');
+              }}
+              className="border-zinc-700 text-zinc-300"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteUser}
+              disabled={isDeleting || deleteConfirmEmail.toLowerCase() !== (userToDelete?.email || '').toLowerCase()}
+              className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-30"
+            >
+              {isDeleting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <X className="w-4 h-4 mr-2" />
+                  Delete Forever
                 </>
               )}
             </Button>

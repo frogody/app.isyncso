@@ -17,7 +17,6 @@ import TechnicalDocTemplate from '@/components/sentinel/TechnicalDocTemplate';
 import DeclarationOfConformity from '@/components/sentinel/DeclarationOfConformity';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import type { AISystemRecord } from '@/tokens/sentinel';
-import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
@@ -288,7 +287,6 @@ export default function DocumentGenerator() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link to={createPageUrl('SentinelDashboard')}>
               <SentinelButton variant="secondary" icon={<ArrowLeft className="w-4 h-4" />}>
                 Dashboard

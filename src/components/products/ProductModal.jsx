@@ -90,7 +90,7 @@ export default function ProductModal({
   product = null, // null for new, object for edit
   onSave
 }) {
-  const { user } = useUser();
+  const { user, companyId } = useUser();
   const { t } = useTheme();
   const isEdit = !!product;
   const [loading, setLoading] = useState(false);
@@ -409,7 +409,8 @@ export default function ProductModal({
         const { data } = await supabase
           .from('product_sales_channels')
           .select('channel')
-          .eq('product_id', product.id);
+          .eq('product_id', product.id)
+          .eq('company_id', user?.company_id);
         setProductChannels((data || []).map(r => r.channel));
       } catch (e) {
         console.warn('Failed to load channels:', e);
@@ -640,7 +641,7 @@ export default function ProductModal({
       return;
     }
 
-    if (!isEdit && !user?.company_id) {
+    if (!isEdit && !companyId && !user?.company_id) {
       toast.error('Unable to create product: company not found');
       return;
     }
@@ -653,7 +654,7 @@ export default function ProductModal({
         slug: formData.slug,
         type: productType,
         status: formData.status || 'draft',
-        company_id: user?.company_id,
+        company_id: companyId || user?.company_id,
         tagline: formData.tagline || null,
         description: formData.description || null,
         short_description: formData.short_description || null,
@@ -750,7 +751,8 @@ export default function ProductModal({
         const { data: existingChannels, error: readChErr } = await supabase
           .from('product_sales_channels')
           .select('channel')
-          .eq('product_id', savedProduct.id);
+          .eq('product_id', savedProduct.id)
+          .eq('company_id', user.company_id);
         if (readChErr) console.error('Failed to read existing channels:', readChErr);
         const oldChannels = (existingChannels || []).map(r => r.channel);
         const added = productChannels.filter(ch => !oldChannels.includes(ch));
@@ -761,6 +763,7 @@ export default function ProductModal({
             .from('product_sales_channels')
             .delete()
             .eq('product_id', savedProduct.id)
+            .eq('company_id', user.company_id)
             .in('channel', removed);
         }
         if (added.length > 0) {
@@ -1103,7 +1106,7 @@ export default function ProductModal({
                     featuredImage={formData.featured_image}
                     onImagesChange={(images) => setFormData(prev => ({ ...prev, gallery: images }))}
                     onFeaturedChange={(image) => setFormData(prev => ({ ...prev, featured_image: image }))}
-                    maxImages={10}
+                    maxImages={50}
                   />
                 </div>
 

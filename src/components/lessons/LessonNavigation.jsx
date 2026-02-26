@@ -17,9 +17,10 @@ export default function LessonNavigation({
   const dropdownRef = useRef(null);
   const scrollContainerRef = useRef(null);
 
+  const lessons = sortedLessons || [];
   const canGoPrev = currentIndex > 0;
   const canGoNext = currentIndex < totalLessons - 1;
-  const currentLesson = sortedLessons[currentIndex] || sortedLessons[0];
+  const currentLesson = lessons[currentIndex] || lessons[0];
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -42,8 +43,8 @@ export default function LessonNavigation({
     }
   }, [currentIndex]);
 
-  const completedCount = Array.from(completedLessons).filter(id =>
-    sortedLessons.some(l => l.id === id)
+  const completedCount = Array.from(completedLessons || []).filter(id =>
+    lessons.some(l => l.id === id)
   ).length;
 
   return (
@@ -70,7 +71,7 @@ export default function LessonNavigation({
           className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide max-w-[200px] sm:max-w-[300px]"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {sortedLessons.map((lesson, i) => {
+          {lessons.map((lesson, i) => {
             const isCompleted = completedLessons.has(lesson.id);
             const isCurrent = i === currentIndex;
 
@@ -119,7 +120,7 @@ export default function LessonNavigation({
                   </p>
                 </div>
                 <div className="p-1">
-                  {sortedLessons.map((lesson, i) => {
+                  {lessons.map((lesson, i) => {
                     const isCompleted = completedLessons.has(lesson.id);
                     const isCurrent = i === currentIndex;
 

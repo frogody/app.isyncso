@@ -540,6 +540,61 @@ export async function completeShipping(
     await db.updateShippingTask(taskId, { tracking_url: trackingUrl });
   }
 
+  // Register with AfterShip for real-time tracking (non-blocking)
+  try {
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/aftership-register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        trackingJobId: trackingJob.id,
+        trackingNumber: trackTraceCode,
+        carrier,
+        orderNumber: fullTask?.sales_orders?.order_number,
+        companyId: shippingTask.company_id,
+      }),
+    });
+  } catch (err) {
+    console.error('[completeShipping] AfterShip registration failed (non-blocking):', err);
+  }
+
+  // Auto-push Shopify fulfillment if order source is 'shopify' and auto_fulfill is on
+  if (shippingTask.sales_order_id) {
+    try {
+      const { supabase: sb } = await import('@/api/supabaseClient');
+      const { data: salesOrder } = await sb
+        .from('sales_orders')
+        .select('source, shopify_order_id, company_id')
+        .eq('id', shippingTask.sales_order_id)
+        .single();
+
+      if (salesOrder?.source === 'shopify' && salesOrder.shopify_order_id) {
+        const { data: creds } = await sb
+          .from('shopify_credentials')
+          .select('auto_fulfill')
+          .eq('company_id', salesOrder.company_id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (creds?.auto_fulfill) {
+          await callShopifyApi('createFulfillment', {
+            companyId: salesOrder.company_id,
+            orderId: salesOrder.shopify_order_id,
+            trackingNumber: trackTraceCode,
+            trackingCompany: carrier,
+            trackingUrl,
+          }).catch((err: unknown) => {
+            console.error('Shopify auto-fulfill failed (non-blocking):', err);
+          });
+        }
+      }
+    } catch {
+      // Non-blocking — don't fail shipping if Shopify push fails
+    }
+  }
+
   return {
     shippingTask,
     trackingJob,
@@ -1010,7 +1065,7 @@ export async function processReturnItem(
   action: 'restock' | 'dispose' | 'inspect',
   userId?: string
 ): Promise<ReturnItem> {
-  const item = (await db.listReturnItems('')).find((i) => i.id === itemId);
+  const item = await db.getReturnItem(itemId);
   if (!item) throw new Error('Return item not found');
 
   if (action === 'restock') {
@@ -1174,4 +1229,120 @@ export async function sendBolcomHandlingResult(
   });
   if (!result.success) throw new Error(result.error || 'Failed to send handling result');
   return result.data as { processStatusId: string };
+}
+
+// =============================================================================
+// SHOPIFY INTEGRATION (Phase SH)
+// =============================================================================
+
+/**
+ * Call the shopify-api edge function with a given action
+ */
+async function callShopifyApi(action: string, params: Record<string, unknown>): Promise<{
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/shopify-api`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ action, ...params }),
+  });
+
+  return response.json();
+}
+
+/**
+ * Initiate Shopify OAuth flow — returns the authorization URL
+ */
+export async function initiateShopifyOAuth(
+  companyId: string,
+  shopDomain: string
+): Promise<{ authUrl: string }> {
+  const result = await callShopifyApi('initiateOAuth', { companyId, shopDomain });
+  if (!result.success) throw new Error(result.error || 'Failed to initiate OAuth');
+  return result.data as { authUrl: string };
+}
+
+/**
+ * Test Shopify connection for a company
+ */
+export async function testShopifyConnection(
+  companyId: string
+): Promise<{ connected: boolean; shopName?: string }> {
+  const result = await callShopifyApi('testConnection', { companyId });
+  if (!result.success) throw new Error(result.error || 'Connection test failed');
+  return result.data as { connected: boolean; shopName?: string };
+}
+
+/**
+ * Disconnect Shopify — removes webhooks, deactivates credentials and mappings
+ */
+export async function disconnectShopify(companyId: string): Promise<void> {
+  const result = await callShopifyApi('disconnect', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to disconnect');
+}
+
+/**
+ * Sync Shopify products — fetch all products, match by EAN/SKU
+ */
+export async function syncShopifyProducts(
+  companyId: string
+): Promise<{ mapped: number; unmapped: number }> {
+  const result = await callShopifyApi('syncProducts', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to sync products');
+  return result.data as { mapped: number; unmapped: number };
+}
+
+/**
+ * Set inventory level for a single product on Shopify
+ */
+export async function setShopifyInventoryLevel(
+  companyId: string,
+  inventoryItemId: number,
+  locationId: number,
+  available: number
+): Promise<void> {
+  const result = await callShopifyApi('setInventoryLevel', {
+    companyId,
+    inventoryItemId,
+    locationId,
+    available,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to set inventory level');
+}
+
+/**
+ * Push fulfillment with tracking to Shopify for an order
+ */
+export async function createShopifyFulfillment(
+  companyId: string,
+  shopifyOrderId: number,
+  trackingNumber: string,
+  trackingCompany?: string,
+  trackingUrl?: string
+): Promise<{ fulfillmentId: number }> {
+  const result = await callShopifyApi('createFulfillment', {
+    companyId,
+    orderId: shopifyOrderId,
+    trackingNumber,
+    trackingCompany,
+    trackingUrl,
+  });
+  if (!result.success) throw new Error(result.error || 'Failed to create fulfillment');
+  return result.data as { fulfillmentId: number };
+}
+
+/**
+ * Batch update inventory levels on Shopify for multiple products
+ */
+export async function batchUpdateShopifyInventory(
+  companyId: string
+): Promise<{ synced: number; errors: number }> {
+  const result = await callShopifyApi('batchInventoryUpdate', { companyId });
+  if (!result.success) throw new Error(result.error || 'Failed to batch update inventory');
+  return result.data as { synced: number; errors: number };
 }

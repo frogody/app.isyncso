@@ -139,7 +139,7 @@ export default function ProductInquiryModal({
                         src={product.featured_image.url}
                         alt={product.name}
                         className="w-full h-full object-cover"
-                      />
+                       loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Package className={`w-6 h-6 ${t('text-slate-400', 'text-zinc-600')}`} />

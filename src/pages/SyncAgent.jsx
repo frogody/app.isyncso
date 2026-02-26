@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon, Mic } from 'lucide-react';
 import SyncVoiceMode from '@/components/sync/SyncVoiceMode';
 import { useTheme } from '@/contexts/GlobalThemeContext';
-import { SyncPageTransition } from '@/components/sync/ui';
+import { SyncPageTransition, SyncViewSelector } from '@/components/sync/ui';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -219,7 +219,7 @@ function ImageCard({ url }) {
             setIsLoading(false);
             setHasError(true);
           }}
-        />
+        loading="lazy" decoding="async" />
 
         {/* Hover overlay with actions */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
@@ -262,7 +262,7 @@ function ImageCard({ url }) {
               src={url}
               alt="Generated image"
               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            />
+             loading="lazy" decoding="async" />
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               <Button
                 size="sm"
@@ -2011,7 +2011,19 @@ export default function SyncAgent() {
     <div ref={pageRef} className={`h-[calc(100dvh-3.5rem)] flex flex-col ${syt('bg-slate-50', 'bg-black')} ${syt('text-slate-900', 'text-white')} overflow-hidden`}>
       {/* Top bar */}
       <div className="shrink-0 z-20">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-1.5 px-4 lg:px-6 py-2">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-1.5 px-4 lg:px-6 py-2">
+          {/* Left: title + action buttons */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center border', syt('bg-slate-100 border-slate-200', 'bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border-cyan-500/20'))}>
+                <Brain className={cn('w-4 h-4', syt('text-slate-600', 'text-cyan-400'))} />
+              </div>
+              <div>
+                <h1 className={cn('text-base font-bold', syt('text-slate-900', 'text-white'))}>SYNC Agent</h1>
+                <p className={cn('text-xs', syt('text-slate-500', 'text-zinc-500'))}>Your AI assistant</p>
+              </div>
+            </div>
+            <div className={cn('w-px h-6', syt('bg-slate-200', 'bg-zinc-800'))} />
           <button
             className={cn(
               'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
@@ -2107,6 +2119,9 @@ export default function SyncAgent() {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
+          {/* Right: view selector */}
+          <SyncViewSelector />
         </div>
       </div>
 
@@ -2153,7 +2168,7 @@ export default function SyncAgent() {
         <div
           data-animate
           className={cn(
-            'flex flex-col min-h-0 rounded-2xl',
+            'flex flex-col justify-end min-h-0 rounded-2xl',
             syt(
               'bg-gradient-to-b from-white/60 to-slate-50/40 ring-1 ring-slate-200/60',
               'bg-gradient-to-b from-zinc-900/40 to-zinc-950/40 ring-1 ring-white/[0.04]'
@@ -2162,7 +2177,7 @@ export default function SyncAgent() {
           style={{ opacity: 0 }}
         >
           {/* Messages */}
-          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto px-4 pt-5 pb-3">
+          <div ref={scrollerRef} className="min-h-0 max-h-full overflow-y-auto px-4 pt-5 pb-3">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
                   <div className="relative mb-8">
@@ -2206,7 +2221,7 @@ export default function SyncAgent() {
                   </div>
                 </div>
               ) : (
-                <>
+                <div className="space-y-3">
                   {messages.map((m, idx) => (
                     <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} highlightBorders={highlightBorders} />
                   ))}
@@ -2264,33 +2279,33 @@ export default function SyncAgent() {
                       </Button>
                     </div>
                   )}
-                </>
+
+                  {/* Suggestion chips — inside scroll area, right after messages */}
+                  {messages.length > 0 && messages.length <= 4 && !isSending && (
+                    <div className="pt-2">
+                      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                        {suggestions.map((s, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => { setInput(s.action); setTimeout(() => send(), 100); }}
+                            className={cn(
+                              'shrink-0 px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all duration-200',
+                              syt(
+                                'bg-slate-100 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 ring-1 ring-slate-200/80',
+                                'bg-white/[0.04] text-zinc-400 hover:bg-cyan-500/10 hover:text-cyan-400 ring-1 ring-white/[0.06]'
+                              )
+                            )}
+                          >
+                            {s.isOrchestration && <Sparkles className="inline w-3 h-3 mr-1 opacity-50" />}
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-
-          {/* Suggestion chips — shown when few messages */}
-          {messages.length > 0 && messages.length <= 4 && !isSending && (
-            <div className="shrink-0 px-4 pb-2">
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                {suggestions.map((s, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => { setInput(s.action); setTimeout(() => send(), 100); }}
-                    className={cn(
-                      'shrink-0 px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all duration-200',
-                      syt(
-                        'bg-slate-100 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 ring-1 ring-slate-200/80',
-                        'bg-white/[0.04] text-zinc-400 hover:bg-cyan-500/10 hover:text-cyan-400 ring-1 ring-white/[0.06]'
-                      )
-                    )}
-                  >
-                    {s.isOrchestration && <Sparkles className="inline w-3 h-3 mr-1 opacity-50" />}
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Input Area */}
           <div className="shrink-0 px-3 pb-3 pt-1">
@@ -2334,7 +2349,10 @@ export default function SyncAgent() {
             </div>
             <div className={cn('px-3 pt-1.5 flex items-center justify-between text-[10px]', syt('text-slate-400', 'text-zinc-600'))}>
               <span>Enter to send · Shift+Enter for newline</span>
-              <span className="tabular-nums">{input.length}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-zinc-500">1 credit per message</span>
+                <span className="tabular-nums">{input.length}</span>
+              </div>
             </div>
           </div>
         </div>

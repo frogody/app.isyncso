@@ -9,6 +9,7 @@ import {
   Send, Package, ShoppingCart, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -270,7 +271,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, onCheckDup
                   src={expense.original_file_url}
                   alt="Invoice"
                   className="w-full max-h-64 object-contain bg-zinc-950"
-                />
+                 loading="lazy" decoding="async" />
               </div>
               <Button
                 variant="link"
@@ -968,7 +969,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                     src={previewUrl}
                     alt="Preview"
                     className="max-h-48 mx-auto rounded-lg object-contain"
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <div className="flex items-center justify-center py-8">
                     <FileText className="w-16 h-16 text-cyan-400" />
@@ -1043,23 +1044,26 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
           <Button variant="outline" onClick={handleClose} disabled={isUploading}>
             Cancel
           </Button>
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
-            className="bg-cyan-600 hover:bg-cyan-700"
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload & Process
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleUpload}
+              disabled={!selectedFile || isUploading}
+              className="bg-cyan-600 hover:bg-cyan-700"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload & Process
+                </>
+              )}
+            </Button>
+            <CreditCostBadge credits={1} />
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

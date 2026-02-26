@@ -203,13 +203,31 @@ export default function Learn() {
     }).slice(0, 3);
   }, [courses, userProgress]);
 
-  // Recommended courses
+  // AI-powered recommendations with fallback
+  const [aiRecommendations, setAiRecommendations] = useState(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    db.functions.invoke('recommendations/nextCourse', { user_id: user.id })
+      .then(res => {
+        if (res?.data?.recommendations) setAiRecommendations(res.data.recommendations);
+      })
+      .catch(() => {}); // Silently fall back to static recommendations
+  }, [user?.id]);
+
   const recommendedCourses = useMemo(() => {
+    // Use AI recommendations if available, matching them to loaded courses
+    if (aiRecommendations?.length > 0) {
+      const aiCourseIds = aiRecommendations.map(r => r.course_id);
+      const matched = courses.filter(c => aiCourseIds.includes(c.id)).slice(0, 4);
+      if (matched.length > 0) return matched;
+    }
+    // Fallback: show un-enrolled template courses
     const progressCourseIds = userProgress.map(p => p.course_id);
     return courses
       .filter(c => c.is_template === true && c.is_published !== false && !progressCourseIds.includes(c.id))
       .slice(0, 4);
-  }, [courses, userProgress]);
+  }, [courses, userProgress, aiRecommendations]);
 
   const loading = userLoading || dataLoading;
 

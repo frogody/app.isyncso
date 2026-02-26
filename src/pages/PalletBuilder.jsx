@@ -21,6 +21,7 @@ import {
   CheckCircle2, Clock, Scale, Loader2, Download,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
+import { SCANNER_CONFIG, SCANNER_INIT_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,16 +53,36 @@ import BolcomReplenishmentDialog from "@/components/inventory/BolcomReplenishmen
 // BARCODE SCANNER (same pattern as InventoryReceiving)
 // =============================================================================
 
+// Beep feedback using Web Audio API
+const playBeep = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 1200;
+    gain.gain.value = 0.3;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch {}
+};
+
+// WAREHOUSE_FORMATS imported from @/lib/scanner-config
+
 function BarcodeScanner({ onScan, isActive }) {
   const { t } = useTheme();
   const inputRef = useRef(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  const lastScanRef = useRef({ text: '', time: 0 });
   const [manualEntry, setManualEntry] = useState("");
   const [scanMode, setScanMode] = useState("manual");
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [hasCamera, setHasCamera] = useState(false);
+  const [lastScanned, setLastScanned] = useState(null);
+  const [scanFlash, setScanFlash] = useState(false);
 
   useEffect(() => {
     const checkCamera = async () => {
@@ -103,17 +124,28 @@ function BarcodeScanner({ onScan, isActive }) {
     setCameraError(null);
     setIsScanning(true);
     try {
-      const qr = new Html5Qrcode("pallet-scanner-region");
+      const qr = new Html5Qrcode("pallet-scanner-region", SCANNER_INIT_CONFIG);
       html5QrCodeRef.current = qr;
       await qr.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 150 }, formatsToSupport: [5, 9, 10, 11, 12] },
+        SCANNER_CONFIG,
         (decodedText) => {
-          stopCameraScanner();
+          // Continuous scanning with cooldown to prevent duplicates
+          const now = Date.now();
+          const last = lastScanRef.current;
+          if (decodedText === last.text && now - last.time < 1500) return;
+          lastScanRef.current = { text: decodedText, time: now };
+          playBeep();
+          navigator.vibrate?.(100);
+          setScanFlash(true);
+          setTimeout(() => setScanFlash(false), 300);
+          setLastScanned(decodedText);
           onScan(decodedText);
         },
         () => {}
       );
+
+      optimizeCameraAfterStart("pallet-scanner-region").catch(() => {});
     } catch (err) {
       setCameraError(err.message || "Camera failed");
       setIsScanning(false);
@@ -173,8 +205,17 @@ function BarcodeScanner({ onScan, isActive }) {
           </Button>
         </div>
       ) : (
-        <div>
-          <div id="pallet-scanner-region" ref={scannerRef} className="rounded-lg overflow-hidden" />
+        <div className="relative">
+          <div
+            id="pallet-scanner-region"
+            ref={scannerRef}
+            className={`rounded-lg overflow-hidden transition-all duration-300 ${scanFlash ? 'ring-4 ring-green-500' : ''}`}
+          />
+          {lastScanned && (
+            <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+              <p className="text-green-400 text-xs text-center font-mono truncate">{lastScanned}</p>
+            </div>
+          )}
           {cameraError && (
             <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
               <CameraOff className="w-3 h-3" /> {cameraError}
@@ -190,7 +231,7 @@ function BarcodeScanner({ onScan, isActive }) {
 // MAIN PAGE
 // =============================================================================
 
-export default function PalletBuilder() {
+export default function PalletBuilder({ embedded = false }) {
   const { t, theme, toggleTheme } = useTheme();
   const { user } = useUser();
   const companyId = user?.company_id;
@@ -491,20 +532,20 @@ export default function PalletBuilder() {
   };
 
   // Print label handlers (P3-10)
-  const handlePrintLabel = (pallet, index) => {
+  const handlePrintLabel = async (pallet, index) => {
     if (!activeShipment) return;
     try {
-      generateSinglePalletLabel(pallet, activeShipment, index, pallets.length);
+      await generateSinglePalletLabel(pallet, activeShipment, index, pallets.length);
       toast.success(`Label generated for ${pallet.pallet_code}`);
     } catch (err) {
       toast.error("Failed to generate label: " + err.message);
     }
   };
 
-  const handlePrintAllLabels = () => {
+  const handlePrintAllLabels = async () => {
     if (!activeShipment || pallets.length === 0) return;
     try {
-      generateBatchPalletLabels(pallets, activeShipment);
+      await generateBatchPalletLabels(pallets, activeShipment);
       toast.success(`${pallets.length} label(s) generated`);
     } catch (err) {
       toast.error("Failed to generate labels: " + err.message);
@@ -575,13 +616,13 @@ export default function PalletBuilder() {
   // RENDER
   // ------------------------------------------------------------------
 
-  return (
-    <PermissionGuard permission="inventory.manage">
-      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} transition-colors`}>
-        <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
+  const pageContent = (
+      <div className={embedded ? "" : `min-h-screen ${t("bg-gray-50", "bg-black")} transition-colors`}>
+        <div className={embedded ? "space-y-4" : "max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4"}>
 
           {/* Header */}
           <div className="flex items-center justify-between">
+            {!embedded && (
             <div>
               <h1 className={`text-2xl font-bold ${t("text-gray-900", "text-white")} flex items-center gap-3`}>
                 <Boxes className="w-7 h-7 text-cyan-400" />
@@ -591,6 +632,7 @@ export default function PalletBuilder() {
                 Build pallets within shipments for packing and shipping
               </p>
             </div>
+            )}
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => setShowNewShipmentDialog(true)}
@@ -1362,6 +1404,13 @@ export default function PalletBuilder() {
 
         </div>
       </div>
+  );
+
+  if (embedded) return pageContent;
+
+  return (
+    <PermissionGuard permission="inventory.manage">
+      {pageContent}
     </PermissionGuard>
   );
 }

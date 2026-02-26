@@ -2,12 +2,13 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MoreHorizontal, Reply, Smile, Bookmark, Share, Pin, Edit2,
-  Trash2, MessageSquare, Loader2, Forward,
+  Trash2, MessageSquare, Loader2, Forward, ListTodo,
   ChevronDown, ChevronUp, Send, CornerDownRight, CheckCheck, BookmarkCheck
 } from 'lucide-react';
 import FilePreview from './FilePreview';
 import { format, isToday, isYesterday } from 'date-fns';
 import { AVAILABLE_AGENTS } from './AgentMentionHandler';
+import { PollMessage, DecisionMessage, ActionItemMessage, VoiceNote, EntityCard } from './messages';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,7 +83,13 @@ function MessageBubble({
   readStatusText,
   onBookmark,
   onForward,
-  isBookmarked = false
+  isBookmarked = false,
+  onVote,
+  onDecide,
+  onSupport,
+  onToggleComplete,
+  onAssign,
+  onCreateTask,
 }) {
   const [showActions, setShowActions] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -250,11 +257,11 @@ function MessageBubble({
                   src={message.sender_avatar}
                   alt=""
                   className="w-3.5 h-3.5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-zinc-950"
-                />
+                 loading="lazy" decoding="async" />
               )}
             </div>
           ) : message.sender_avatar ? (
-            <img src={message.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50" />
+            <img src={message.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50"  loading="lazy" decoding="async" />
           ) : (
             <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
               {message.sender_name?.charAt(0) || '?'}
@@ -323,6 +330,56 @@ function MessageBubble({
                 </p>
               ) : null}
               {renderAttachment()}
+
+              {/* Special message formats */}
+              {message.metadata?.message_format === 'poll' && message.metadata?.poll && (
+                <div className="mt-2">
+                  <PollMessage
+                    messageId={message.id}
+                    poll={message.metadata.poll}
+                    currentUserId={currentUserId}
+                    onVote={onVote}
+                  />
+                </div>
+              )}
+              {message.metadata?.message_format === 'decision' && message.metadata?.decision && (
+                <div className="mt-2">
+                  <DecisionMessage
+                    messageId={message.id}
+                    decision={message.metadata.decision}
+                    currentUserId={currentUserId}
+                    onSupport={onSupport}
+                    onDecide={onDecide}
+                  />
+                </div>
+              )}
+              {message.metadata?.message_format === 'action_item' && message.metadata?.action_item && (
+                <div className="mt-2">
+                  <ActionItemMessage
+                    messageId={message.id}
+                    actionItem={message.metadata.action_item}
+                    onToggleComplete={onToggleComplete}
+                    onAssign={onAssign}
+                  />
+                </div>
+              )}
+              {message.metadata?.message_format === 'voice' && message.metadata?.voice && (
+                <div className="mt-2">
+                  <VoiceNote
+                    audioUrl={message.metadata.voice.audioUrl || message.file_url}
+                    duration={message.metadata.voice.duration}
+                    transcript={message.metadata.voice.transcript}
+                    senderName={message.sender_name}
+                  />
+                </div>
+              )}
+              {message.metadata?.entities?.length > 0 && (
+                <div className="mt-2 space-y-1.5">
+                  {message.metadata.entities.map((entity, i) => (
+                    <EntityCard key={entity.id || i} entity={entity} />
+                  ))}
+                </div>
+              )}
             </div>
           );
         })()}
@@ -344,7 +401,7 @@ function MessageBubble({
                   {readReceipts.map((reader) => (
                     <div key={reader.user_id} className="flex items-center gap-2">
                       {reader.user_avatar ? (
-                        <img src={reader.user_avatar} alt="" className="w-5 h-5 rounded-full" />
+                        <img src={reader.user_avatar} alt="" className="w-5 h-5 rounded-full"  loading="lazy" decoding="async" />
                       ) : (
                         <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300">
                           {reader.user_name?.charAt(0) || '?'}
@@ -415,7 +472,7 @@ function MessageBubble({
                       >
                         <div className="flex-shrink-0">
                           {reply.sender_avatar ? (
-                            <img src={reply.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50" />
+                            <img src={reply.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50"  loading="lazy" decoding="async" />
                           ) : (
                             <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
                               {reply.sender_name?.charAt(0) || '?'}
@@ -438,7 +495,7 @@ function MessageBubble({
                     <div className="flex gap-2.5 pt-2">
                       <div className="flex-shrink-0">
                         {currentUser?.avatar_url ? (
-                          <img src={currentUser.avatar_url} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50" />
+                          <img src={currentUser.avatar_url} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50"  loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
                             {currentUser?.full_name?.charAt(0) || '?'}
@@ -562,6 +619,14 @@ function MessageBubble({
                 >
                   <Forward className="w-4 h-4 mr-2" /> Forward message
                 </DropdownMenuItem>
+                {onCreateTask && (
+                  <DropdownMenuItem
+                    onClick={() => onCreateTask(message)}
+                    className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
+                  >
+                    <ListTodo className="w-4 h-4 mr-2" /> Create task
+                  </DropdownMenuItem>
+                )}
                 {isOwn && (
                   <>
                     <DropdownMenuSeparator className="bg-zinc-700" />
@@ -609,7 +674,13 @@ export default function MessageList({
   getReadStatusText,
   onBookmark,
   onForward,
-  isBookmarked
+  isBookmarked,
+  onVote,
+  onDecide,
+  onSupport,
+  onToggleComplete,
+  onAssign,
+  onCreateTask,
 }) {
   const userMap = React.useMemo(() => {
     const map = {};
@@ -787,6 +858,12 @@ export default function MessageList({
                   onBookmark={onBookmark}
                   onForward={onForward}
                   isBookmarked={isBookmarked?.(message.id)}
+                  onVote={onVote}
+                  onDecide={onDecide}
+                  onSupport={onSupport}
+                  onToggleComplete={onToggleComplete}
+                  onAssign={onAssign}
+                  onCreateTask={onCreateTask}
                 />
               );
             })}

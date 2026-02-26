@@ -114,6 +114,22 @@ const tableNameMap = {
   'Invoice': 'invoices',
   'Subscription': 'subscriptions',
 
+  // === Bookkeeping (Chart of Accounts & General Ledger) ===
+  'AccountType': 'account_types',
+  'Account': 'accounts',
+  'FiscalPeriod': 'fiscal_periods',
+  'JournalEntry': 'journal_entries',
+  'JournalEntryLine': 'journal_entry_lines',
+
+  // === Accounts Payable (Vendors & Bills) ===
+  'Vendor': 'vendors',
+  'Bill': 'bills',
+  'BillLineItem': 'bill_line_items',
+  'BillPayment': 'bill_payments',
+
+  // === Financial Reports ===
+  'SavedReport': 'saved_reports',
+
   // === Raise (Fundraising) ===
   'RaiseCampaign': 'raise_campaigns',
   'RaiseInvestor': 'raise_investors',
@@ -139,6 +155,7 @@ const tableNameMap = {
 
   // === CREATE (Content Creation) ===
   'BrandAssets': 'brand_assets',
+  'BrandBuilderProject': 'brand_projects',
   'GeneratedContent': 'generated_content',
   'RenderJob': 'render_jobs',
   'VideoProject': 'video_projects',
@@ -151,6 +168,17 @@ const tableNameMap = {
 
   // === Tasks ===
   'Task': 'tasks',
+
+  // === Reach (Marketing Hub) ===
+  'BrandVoiceProfile': 'brand_voice_profiles',
+  'ReachCampaign': 'reach_campaigns',
+  'ReachAdVariant': 'reach_ad_variants',
+  'ReachScheduledPost': 'reach_scheduled_posts',
+  'ReachSEOReport': 'reach_seo_reports',
+  'ReachCopyOutput': 'reach_copy_outputs',
+  'ReachSocialConnection': 'reach_social_connections',
+  'ReachPerformanceMetric': 'reach_performance_metrics',
+  'ReachInsight': 'reach_insights',
 };
 
 /**
@@ -440,6 +468,22 @@ export const entities = {
   Invoice: createEntityWrapper('Invoice'),
   Subscription: createEntityWrapper('Subscription'),
 
+  // === Bookkeeping (Chart of Accounts & General Ledger) ===
+  AccountType: createEntityWrapper('AccountType'),
+  Account: createEntityWrapper('Account'),
+  FiscalPeriod: createEntityWrapper('FiscalPeriod'),
+  JournalEntry: createEntityWrapper('JournalEntry'),
+  JournalEntryLine: createEntityWrapper('JournalEntryLine'),
+
+  // === Accounts Payable (Vendors & Bills) ===
+  Vendor: createEntityWrapper('Vendor'),
+  Bill: createEntityWrapper('Bill'),
+  BillLineItem: createEntityWrapper('BillLineItem'),
+  BillPayment: createEntityWrapper('BillPayment'),
+
+  // === Financial Reports ===
+  SavedReport: createEntityWrapper('SavedReport'),
+
   // === Raise (Fundraising) ===
   RaiseCampaign: createEntityWrapper('RaiseCampaign'),
   RaiseInvestor: createEntityWrapper('RaiseInvestor'),
@@ -464,6 +508,7 @@ export const entities = {
 
   // === CREATE (Content Creation) ===
   BrandAssets: createEntityWrapper('BrandAssets'),
+  BrandBuilderProject: createEntityWrapper('BrandBuilderProject'),
   GeneratedContent: createEntityWrapper('GeneratedContent'),
   RenderJob: createEntityWrapper('RenderJob'),
   VideoProject: createEntityWrapper('VideoProject'),
@@ -904,7 +949,8 @@ export const integrations = {
     },
 
     async UploadPrivateFile({ file, bucket = 'private' }) {
-      const path = `${Date.now()}_${file.name}`;
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${Date.now()}_${sanitizedName}`;
       return storage.upload(bucket, path, file);
     }
   }

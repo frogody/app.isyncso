@@ -165,10 +165,44 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
     }
   }, [selectedProject, fetchRoles]);
 
-  // Auto-generate campaign name
+  // Auto-generate campaign name + auto-fill role context from role data
   useEffect(() => {
     if (selectedProject && selectedRole) {
       setCampaignName(`${selectedRole.title} - ${selectedProject.title || selectedProject.name || "Outreach"}`);
+
+      // Auto-fill role context from the role's scraped/entered data
+      const skills = Array.isArray(selectedRole.required_skills) ? selectedRole.required_skills : [];
+      const preferredSkills = Array.isArray(selectedRole.preferred_skills) ? selectedRole.preferred_skills : [];
+      const description = selectedRole.description || "";
+      const location = selectedRole.location_requirements || "";
+      const salary = selectedRole.salary_range || "";
+      const seniority = selectedRole.seniority_level || "";
+
+      // Build perfect fit criteria from requirements + seniority
+      const fitParts = [];
+      if (skills.length > 0) fitParts.push(skills.join(", "));
+      if (seniority) fitParts.push(`${seniority} level`);
+      if (location) fitParts.push(`Based in or near ${location}`);
+
+      // Build selling points from description
+      const storyParts = [];
+      if (description) storyParts.push(description);
+      if (salary) storyParts.push(`Compensation: ${salary}`);
+
+      // Build unique aspects
+      const uniqueParts = [];
+      if (location) uniqueParts.push(`Location: ${location}`);
+      if (selectedRole.remote_policy) uniqueParts.push(`Remote policy: ${selectedRole.remote_policy}`);
+      if (selectedRole.employment_type) uniqueParts.push(`Type: ${selectedRole.employment_type.replace('_', ' ')}`);
+
+      setRoleContext(prev => ({
+        perfect_fit_criteria: prev.perfect_fit_criteria || fitParts.join(". "),
+        selling_points: prev.selling_points || storyParts.join(". "),
+        must_haves: prev.must_haves || skills.join("\n"),
+        nice_to_haves: prev.nice_to_haves || preferredSkills.join("\n"),
+        compensation_range: prev.compensation_range || salary,
+        unique_aspects: prev.unique_aspects || uniqueParts.join(". "),
+      }));
     }
   }, [selectedProject, selectedRole]);
 
@@ -636,7 +670,11 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                         {roles.map((role) => (
                           <div
                             key={role.id}
-                            onClick={() => setSelectedRole(role)}
+                            onClick={() => {
+                              setSelectedRole(role);
+                              // Reset role context so auto-fill re-triggers for new role
+                              setRoleContext({ perfect_fit_criteria: "", selling_points: "", must_haves: "", nice_to_haves: "", compensation_range: "", unique_aspects: "" });
+                            }}
                             className={`p-3 rounded-lg border cursor-pointer transition-all ${
                               selectedRole?.id === role.id
                                 ? "border-red-500 bg-red-500/10"

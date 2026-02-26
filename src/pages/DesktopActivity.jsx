@@ -28,9 +28,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Copy, Check, ExternalLink } from 'lucide-react';
+import { Copy, Check, ExternalLink, Shield } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { SyncViewSelector } from '@/components/sync/ui';
+import InfoCard from '@/components/shared/InfoCard';
 
 // App icon mapping
 const APP_ICONS = {
@@ -84,13 +86,15 @@ export default function DesktopActivity() {
   const [searchParams] = useSearchParams();
   const urlTab = searchParams.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(urlTab);
-  const [dateRange, setDateRange] = useState('7d');
+  const [dateRange, setDateRange] = useState('90d');
 
   useEffect(() => {
     setActiveTab(urlTab);
   }, [urlTab]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [journals, setJournals] = useState([]);
+  const [hasAnyData, setHasAnyData] = useState(false);
+  const [lastActivityDate, setLastActivityDate] = useState(null);
   const [stats, setStats] = useState({
     totalMinutes: 0,
     avgFocusScore: 0,
@@ -102,19 +106,24 @@ export default function DesktopActivity() {
   const [generatingJournal, setGeneratingJournal] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
+  const [expandedOcr, setExpandedOcr] = useState(new Set());
 
-  const DOWNLOAD_URL = "https://github.com/frogody/sync.desktop/releases/download/v1.0.0/SYNC.Desktop-1.0.0-arm64.dmg";
-  const BYPASS_COMMAND = "xattr -cr ~/Downloads/SYNC.Desktop*.dmg && open ~/Downloads/SYNC.Desktop*.dmg";
+  const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.1.0/SYNC.Desktop-2.1.0-arm64.dmg";
+  const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.1.0/SYNC.Desktop-2.1.0-x64.dmg";
+  const INSTALL_SCRIPT_URL = "https://github.com/frogody/sync.desktop/releases/download/v2.1.0/install-macos.command";
+  const INSTALL_COMMAND = `curl -fsSL ${INSTALL_SCRIPT_URL} | bash`;
 
   const handleDownload = () => {
-    // Start the download
-    window.open(DOWNLOAD_URL, '_blank');
-    // Show the installation guide
+    // Auto-detect architecture and download the right DMG
+    const ua = navigator.userAgent || "";
+    const platform = navigator.platform || "";
+    const isArm = platform.includes("ARM") || ua.includes("ARM64") || ua.includes("Apple");
+    window.open(isArm ? DOWNLOAD_URL_ARM64 : DOWNLOAD_URL_INTEL, '_blank');
     setShowInstallModal(true);
   };
 
   const copyCommand = () => {
-    navigator.clipboard.writeText(BYPASS_COMMAND);
+    navigator.clipboard.writeText(INSTALL_COMMAND);
     setCopiedCommand(true);
     toast.success('Command copied to clipboard');
     setTimeout(() => setCopiedCommand(false), 2000);
@@ -141,8 +150,11 @@ export default function DesktopActivity() {
       case '90d':
         startDate.setDate(endDate.getDate() - 90);
         break;
+      case 'all':
+        startDate = new Date('2025-01-01');
+        break;
       default:
-        startDate.setDate(endDate.getDate() - 7);
+        startDate.setDate(endDate.getDate() - 90);
     }
 
     return { startDate, endDate };
@@ -165,6 +177,25 @@ export default function DesktopActivity() {
 
       if (logsError) throw logsError;
       setActivityLogs(logs || []);
+
+      // Check if any activity data exists at all (regardless of date range)
+      if (!logs || logs.length === 0) {
+        const { data: anyLogs } = await db.from('desktop_activity_logs')
+          .select('hour_start')
+          .eq('user_id', userData.id)
+          .order('hour_start', { ascending: false })
+          .limit(1);
+        if (anyLogs && anyLogs.length > 0) {
+          setHasAnyData(true);
+          setLastActivityDate(new Date(anyLogs[0].hour_start));
+        } else {
+          setHasAnyData(false);
+          setLastActivityDate(null);
+        }
+      } else {
+        setHasAnyData(true);
+        setLastActivityDate(null);
+      }
 
       // Fetch journals
       const { data: journalData, error: journalError } = await db.from('daily_journals')
@@ -354,6 +385,25 @@ export default function DesktopActivity() {
     return 'from-zinc-500 to-zinc-600';
   };
 
+  const parseCommitments = (raw) => {
+    if (!raw) return null;
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return typeof raw === 'string' && raw.trim() ? [{ description: raw }] : null;
+    }
+  };
+
+  const toggleOcrExpand = (logId) => {
+    setExpandedOcr(prev => {
+      const next = new Set(prev);
+      if (next.has(logId)) next.delete(logId);
+      else next.add(logId);
+      return next;
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black p-5">
@@ -371,56 +421,101 @@ export default function DesktopActivity() {
   const maxDailyMinutes = Math.max(...stats.dailyBreakdown.map(d => d.minutes), 1);
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="w-full px-4 lg:px-6 py-4 space-y-5">
-        {/* Header */}
-        <PageHeader
-          title="Activity"
-          subtitle="Track your productivity across all devices"
-          color="cyan"
-          actions={
-            <>
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700/60 text-zinc-200">
-                  <SelectValue placeholder="Date range" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="1d">Today</SelectItem>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="90d">Last 90 days</SelectItem>
-                </SelectContent>
-              </Select>
+    <div className="bg-black">
+      <div className="w-full px-4 lg:px-6 py-3 space-y-4">
+        {/* Header row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-base font-bold text-white">Activity</h1>
+              <p className="text-xs text-zinc-400">Track your productivity across all devices</p>
+            </div>
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-28 h-8 text-xs bg-zinc-800/50 border-zinc-700/60 text-zinc-200">
+                <SelectValue placeholder="Date range" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                <SelectItem value="1d">Today</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+                <SelectItem value="all">All time</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200 text-xs h-8"
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              Desktop App
+            </Button>
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              variant="outline"
+              size="sm"
+              className="border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-200 h-8 w-8 p-0"
+            >
+              {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            </Button>
+          </div>
+          <SyncViewSelector />
+        </div>
 
-              <Button
-                onClick={handleDownload}
-                variant="outline"
-                className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Get Desktop App
-              </Button>
-
-              <Button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                variant="outline"
-                className="border-zinc-700/60 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-200"
-              >
-                {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              </Button>
-            </>
-          }
-        />
+        {/* Privacy Notice */}
+        <InfoCard
+          title="Your activity is private"
+          icon={Shield}
+          learnMoreUrl={createPageUrl('PrivacyAIAct')}
+          className="bg-emerald-500/10 border-emerald-500/20"
+        >
+          Your employer cannot see your activity data. This is your personal productivity tool, protected by design and by law.
+        </InfoCard>
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* TabsList removed — navigation handled by Layout SYNC top tabs */}
+          <TabsList className="bg-zinc-900/60 border border-zinc-800/50 p-0.5 rounded-lg">
+            <TabsTrigger value="overview" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Overview</TabsTrigger>
+            <TabsTrigger value="timeline" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Timeline</TabsTrigger>
+            <TabsTrigger value="context" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Context</TabsTrigger>
+            <TabsTrigger value="apps" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Apps</TabsTrigger>
+            <TabsTrigger value="journals" className="text-xs px-3 py-1.5 data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 rounded-md">Journals</TabsTrigger>
+          </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-5 space-y-5">
+            {/* No data in current range — suggest widening */}
+            {activityLogs.length === 0 && hasAnyData && lastActivityDate && (
+              <GlassCard hover={false} animated={true} className="p-5" glow="cyan">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
+                    <Calendar className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-semibold text-white mb-1">No activity in this period</h3>
+                    <p className="text-sm text-zinc-400">
+                      Your last tracked activity was on{' '}
+                      <span className="text-cyan-400 font-medium">
+                        {lastActivityDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </span>.
+                      Try selecting a wider date range to see your data.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setDateRange('90d')}
+                    variant="outline"
+                    className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 flex-shrink-0"
+                  >
+                    Show Last 90 Days
+                  </Button>
+                </div>
+              </GlassCard>
+            )}
+
             {/* Download SYNC Desktop Banner */}
-            {activityLogs.length === 0 && (
+            {activityLogs.length === 0 && !hasAnyData && (
               <GlassCard hover={false} animated={true} className="p-5" glow="cyan">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                   <div className="flex items-start gap-5">
@@ -428,47 +523,59 @@ export default function DesktopActivity() {
                       <Download className="w-7 h-7 text-cyan-400" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-white mb-2">Download SYNC Desktop</h2>
+                      <h2 className="text-lg font-bold text-white mb-1">Download SYNC Desktop v2.0.2</h2>
                       <p className="text-zinc-400 mb-4 max-w-xl text-sm">
-                        Unlock powerful productivity tracking with the SYNC Desktop companion app.
-                        Get detailed insights into your work patterns and let SYNC understand your context.
+                        Your AI productivity companion. Reads what you're working on, detects commitments you make,
+                        and gives SYNC real context to help you — all encrypted locally.
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-zinc-300">
-                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                            <Activity className="w-3 h-3 text-cyan-400" />
-                          </div>
-                          <span>Automatic activity tracking</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-zinc-300">
-                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                            <Target className="w-3 h-3 text-cyan-400" />
-                          </div>
-                          <span>Focus score calculation</span>
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm">
                         <div className="flex items-center gap-2 text-zinc-300">
                           <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                             <Brain className="w-3 h-3 text-cyan-400" />
                           </div>
-                          <span>AI-generated daily journals</span>
+                          <span>Deep context awareness</span>
                         </div>
                         <div className="flex items-center gap-2 text-zinc-300">
                           <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                             <MessageSquare className="w-3 h-3 text-cyan-400" />
                           </div>
-                          <span>Context-aware SYNC chat</span>
+                          <span>Commitment detection</span>
                         </div>
                         <div className="flex items-center gap-2 text-zinc-300">
                           <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                            <Clock className="w-3 h-3 text-cyan-400" />
+                            <Activity className="w-3 h-3 text-cyan-400" />
                           </div>
-                          <span>Hourly productivity summaries</span>
+                          <span>Smart activity classification</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Zap className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Context switch detection</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Target className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Skill signal tracking</span>
                         </div>
                         <div className="flex items-center gap-2 text-zinc-300">
                           <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                             <Sparkles className="w-3 h-3 text-cyan-400" />
                           </div>
-                          <span>Floating avatar widget</span>
+                          <span>Daily journals & focus scores</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Code className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>File & document monitoring</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Laptop className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>AES-256 encrypted, privacy-first</span>
                         </div>
                       </div>
                     </div>
@@ -561,8 +668,8 @@ export default function DesktopActivity() {
                 ) : (
                   <div className="space-y-3">
                     {stats.dailyBreakdown.slice(-7).map((day, i) => (
-                      <div key={day.date} className="flex items-center gap-4">
-                        <div className="w-20 text-xs text-zinc-500 text-right">
+                      <div key={day.date} className="flex items-center gap-2 sm:gap-4">
+                        <div className="w-14 sm:w-20 text-[11px] sm:text-xs text-zinc-500 text-right">
                           {formatDate(day.date)}
                         </div>
                         <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative">
@@ -692,17 +799,17 @@ export default function DesktopActivity() {
           <TabsContent value="journals" className="mt-5">
             <div className="space-y-4">
               {/* Quick Actions Header */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
                     <Sparkles className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-white">Daily Journals</h3>
-                    <p className="text-xs text-zinc-500">AI-powered productivity reflections</p>
+                    <p className="text-xs text-zinc-500">AI-generated daily activity reports</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <Button
                     onClick={() => generateJournal(new Date())}
                     disabled={generatingJournal}
@@ -855,19 +962,83 @@ export default function DesktopActivity() {
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                  {activityLogs.slice(0, 50).map((log, i) => (
+                  {activityLogs.slice(0, 50).map((log, i) => {
+                    // Generate a meaningful activity summary from the data
+                    const apps = Array.isArray(log.app_breakdown)
+                      ? log.app_breakdown.sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
+                      : [];
+                    const topApp = apps[0];
+                    const topAppName = topApp?.appName || topApp?.app || '';
+
+                    // Derive categories with time
+                    const catMins = {};
+                    apps.forEach(item => {
+                      const cat = item.category || 'Other';
+                      catMins[cat] = (catMins[cat] || 0) + (item.minutes || 0);
+                    });
+                    const sortedCats = Object.entries(catMins).sort(([,a], [,b]) => b - a);
+                    const topCategory = sortedCats[0]?.[0] || 'Other';
+
+                    // Extract meaningful context from OCR if available
+                    let contextHint = '';
+                    if (log.ocr_text) {
+                      const ocrText = log.ocr_text;
+                      const patterns = [
+                        /(?:src|lib|components|pages|services)\/[\w/.-]+/i,
+                        /(?:pull request|PR|issue|commit)\s*#?\d*/i,
+                        /(?:Subject|Re):\s*[^\n]{5,60}/i,
+                        /(?:meeting|standup|sync|call|huddle)\b/i,
+                      ];
+                      for (const pattern of patterns) {
+                        const match = ocrText.match(pattern);
+                        if (match) {
+                          contextHint = match[0].trim().slice(0, 80);
+                          break;
+                        }
+                      }
+                    }
+
+                    // Use rich activities_summary from desktop if available, else build from categories
+                    let summaryLine = log.activities_summary || '';
+                    if (!summaryLine) {
+                      const primaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
+                      const lowerTopCat = (topCategory || '').toLowerCase();
+                      if (lowerTopCat.includes('development') || lowerTopCat === 'coding') {
+                        summaryLine = `Development work in ${primaryApps.join(', ')}`;
+                        if (contextHint) summaryLine += ` — ${contextHint}`;
+                      } else if (lowerTopCat.includes('communication') || lowerTopCat === 'chatting') {
+                        summaryLine = `Communication via ${primaryApps.join(', ')}`;
+                      } else if (lowerTopCat.includes('meeting')) {
+                        summaryLine = `In meetings (${primaryApps.join(', ')})`;
+                      } else if (lowerTopCat.includes('browsing')) {
+                        summaryLine = `Browsing and research`;
+                        if (contextHint) summaryLine += ` — ${contextHint}`;
+                      } else if (lowerTopCat.includes('design')) {
+                        summaryLine = `Design work in ${primaryApps.join(', ')}`;
+                      } else if (lowerTopCat.includes('productivity')) {
+                        summaryLine = `Productivity tasks in ${primaryApps.join(', ')}`;
+                      } else if (lowerTopCat.includes('entertainment')) {
+                        summaryLine = `Entertainment and media`;
+                      } else if (primaryApps.length > 0) {
+                        summaryLine = `Working in ${primaryApps.join(', ')}`;
+                      }
+                    }
+
+                    const commitments = parseCommitments(log.commitments);
+
+                    return (
                     <motion.div
                       key={log.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.02 }}
-                      className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-all border border-zinc-700/30"
+                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-all border border-zinc-700/30"
                     >
                       <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center flex-shrink-0">
                         <Clock className="w-5 h-5 text-cyan-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                           <span className="text-sm font-medium text-white">
                             {new Date(log.hour_start).toLocaleString('en-US', {
                               weekday: 'short',
@@ -883,31 +1054,59 @@ export default function DesktopActivity() {
                           <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                             {Math.round((log.focus_score || 0) * 100)}% focus
                           </Badge>
+                          {topCategory && topCategory !== 'Other' && (
+                            <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                              {topCategory}
+                            </Badge>
+                          )}
                         </div>
-                        {log.app_breakdown && (Array.isArray(log.app_breakdown) ? log.app_breakdown.length > 0 : Object.keys(log.app_breakdown).length > 0) && (
+
+                        {/* Activity summary line */}
+                        {summaryLine && (
+                          <p className="text-sm text-zinc-300 mt-1.5">{summaryLine}</p>
+                        )}
+
+                        {/* Category breakdown */}
+                        {sortedCats.length > 1 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
-                            {(Array.isArray(log.app_breakdown)
-                              ? log.app_breakdown
-                                  .sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
-                                  .slice(0, 5)
-                                  .map(item => ({ app: item.appName || item.app, mins: item.minutes || 0 }))
-                              : Object.entries(log.app_breakdown)
-                                  .sort(([,a], [,b]) => b - a)
-                                  .slice(0, 5)
-                                  .map(([app, mins]) => ({ app, mins }))
-                            ).map(({ app, mins }) => (
-                                <Badge
-                                  key={app}
-                                  className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs"
-                                >
-                                  {app}: {mins}m
-                                </Badge>
-                              ))}
+                            {sortedCats.slice(0, 4).map(([cat, mins]) => (
+                              <Badge key={cat} className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs">
+                                {cat}: {Math.round(mins * 10) / 10}m
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Commitments / action items */}
+                        {commitments && commitments.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {commitments.map((c, ci) => (
+                              <Badge key={ci} className="bg-amber-500/10 text-amber-200/90 border-amber-500/20 text-xs">
+                                {c.description || c.title || c.text || (typeof c === 'string' ? c : JSON.stringify(c))}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Screen content (collapsed by default, no raw dump) */}
+                        {log.ocr_text && (
+                          <button
+                            onClick={() => toggleOcrExpand(log.id)}
+                            className="mt-2 text-[11px] text-zinc-500 hover:text-cyan-400 transition-colors flex items-center gap-1"
+                          >
+                            <FileText className="w-3 h-3" />
+                            {expandedOcr.has(log.id) ? 'Hide screen content' : 'Show screen content'}
+                          </button>
+                        )}
+                        {log.ocr_text && expandedOcr.has(log.id) && (
+                          <div className="mt-1.5 p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-700/30">
+                            <p className="text-xs text-zinc-400 whitespace-pre-wrap">{log.ocr_text}</p>
                           </div>
                         )}
                       </div>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </GlassCard>
@@ -948,15 +1147,25 @@ export default function DesktopActivity() {
                         </Badge>
                       </div>
                       <div className="space-y-2">
-                        {['Morning (6-12)', 'Afternoon (12-18)', 'Evening (18-24)'].map((period, i) => {
-                          const value = 20 + Math.random() * 60; // Placeholder - will be real data
+                        {[
+                          { label: 'Morning (6-12)', min: 6, max: 12 },
+                          { label: 'Afternoon (12-18)', min: 12, max: 18 },
+                          { label: 'Evening (18-24)', min: 18, max: 24 },
+                        ].map(({ label, min, max }) => {
+                          const periodLogs = activityLogs.filter(log => {
+                            const h = new Date(log.hour_start).getHours();
+                            return h >= min && h < max;
+                          });
+                          const avgFocus = periodLogs.length > 0
+                            ? periodLogs.reduce((sum, l) => sum + (l.focus_score || 0), 0) / periodLogs.length * 100
+                            : 0;
                           return (
-                            <div key={period}>
+                            <div key={label}>
                               <div className="flex justify-between text-sm mb-1">
-                                <span className="text-zinc-400">{period}</span>
-                                <span className="text-cyan-300">{Math.round(value)}%</span>
+                                <span className="text-zinc-400">{label}</span>
+                                <span className="text-cyan-300">{Math.round(avgFocus)}%</span>
                               </div>
-                              <Progress value={value} className="h-2 bg-zinc-800" />
+                              <Progress value={avgFocus} className="h-2 bg-zinc-800" />
                             </div>
                           );
                         })}
@@ -974,47 +1183,76 @@ export default function DesktopActivity() {
                   Category Breakdown
                 </h3>
                 <div className="space-y-3">
-                  {stats.topApps.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Monitor className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                      <p className="text-zinc-500">No category data yet</p>
-                    </div>
-                  ) : (
-                    <>
-                      {['Development', 'Communication', 'Browsing', 'Writing'].map((category, i) => {
-                        const categoryApps = stats.topApps.filter(app => {
-                          const appName = app.appName?.toLowerCase() || '';
-                          if (category === 'Development') return appName.includes('code') || appName.includes('terminal');
-                          if (category === 'Communication') return appName.includes('slack') || appName.includes('mail');
-                          if (category === 'Browsing') return appName.includes('chrome') || appName.includes('safari');
-                          if (category === 'Writing') return appName.includes('notion') || appName.includes('docs');
-                          return false;
+                  {(() => {
+                    const categoryCounts = {};
+                    let totalWithCategory = 0;
+                    activityLogs.forEach(log => {
+                      // Primary: derive from app_breakdown categories (most reliable)
+                      if (log.app_breakdown && Array.isArray(log.app_breakdown) && log.app_breakdown.length > 0) {
+                        log.app_breakdown.forEach(item => {
+                          const cat = item.category || 'Other';
+                          const mins = item.minutes || 0;
+                          if (mins > 0) {
+                            categoryCounts[cat] = (categoryCounts[cat] || 0) + mins;
+                            totalWithCategory += mins;
+                          }
                         });
-                        const totalMins = categoryApps.reduce((sum, app) => sum + (app.minutes || 0), 0);
-                        const percentage = stats.totalMinutes > 0 ? (totalMins / stats.totalMinutes) * 100 : 0;
+                        return;
+                      }
+                      // Fallback: try semantic_category as JSON breakdown, then plain string
+                      if (log.semantic_category) {
+                        try {
+                          const parsed = JSON.parse(log.semantic_category);
+                          if (typeof parsed === 'object' && parsed !== null) {
+                            Object.entries(parsed).forEach(([cat, mins]) => {
+                              categoryCounts[cat] = (categoryCounts[cat] || 0) + (mins || 0);
+                              totalWithCategory += (mins || 0);
+                            });
+                            return;
+                          }
+                        } catch {}
+                        categoryCounts[log.semantic_category] = (categoryCounts[log.semantic_category] || 0) + (log.total_minutes || 1);
+                        totalWithCategory += (log.total_minutes || 1);
+                      }
+                    });
+                    const categories = Object.entries(categoryCounts)
+                      .sort(([,a], [,b]) => b - a);
 
-                        const colors = {
-                          'Development': 'from-blue-500 to-cyan-500',
-                          'Communication': 'from-cyan-500 to-cyan-400',
-                          'Browsing': 'from-cyan-500 to-blue-500',
-                          'Writing': 'from-blue-500 to-blue-400'
-                        };
+                    if (categories.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Monitor className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+                          <p className="text-zinc-500">No category data yet</p>
+                          <p className="text-xs text-zinc-600 mt-1">Categories appear as SYNC Desktop analyzes your work</p>
+                        </div>
+                      );
+                    }
 
-                        return (
-                          <div key={category} className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${colors[category]}`} />
-                            <div className="flex-1">
-                              <div className="flex justify-between text-sm mb-1">
-                                <span className="text-zinc-300">{category}</span>
-                                <span className="text-zinc-400">{Math.round(percentage)}%</span>
-                              </div>
-                              <Progress value={percentage} className="h-1.5 bg-zinc-800" />
+                    const gradients = [
+                      'from-blue-500 to-cyan-500',
+                      'from-cyan-500 to-cyan-400',
+                      'from-cyan-500 to-blue-500',
+                      'from-blue-500 to-blue-400',
+                      'from-cyan-400 to-blue-400',
+                      'from-blue-400 to-cyan-300',
+                    ];
+
+                    return categories.map(([category, mins], i) => {
+                      const percentage = totalWithCategory > 0 ? (mins / totalWithCategory) * 100 : 0;
+                      return (
+                        <div key={category} className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${gradients[i % gradients.length]}`} />
+                          <div className="flex-1">
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-zinc-300">{category}</span>
+                              <span className="text-zinc-400">{Math.round(percentage)}%</span>
                             </div>
+                            <Progress value={percentage} className="h-1.5 bg-zinc-800" />
                           </div>
-                        );
-                      })}
-                    </>
-                  )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </GlassCard>
             </div>
@@ -1039,8 +1277,57 @@ export default function DesktopActivity() {
                 <div className="space-y-4">
                   {activityLogs.slice(0, 10).map((log, i) => {
                     const apps = Array.isArray(log.app_breakdown)
-                      ? log.app_breakdown
+                      ? log.app_breakdown.sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
                       : Object.entries(log.app_breakdown || {}).map(([appName, minutes]) => ({ appName, minutes }));
+
+                    // Derive categories
+                    const ctxCatMins = {};
+                    apps.forEach(item => {
+                      const cat = item.category || 'Other';
+                      ctxCatMins[cat] = (ctxCatMins[cat] || 0) + (item.minutes || 0);
+                    });
+                    const ctxSortedCats = Object.entries(ctxCatMins).sort(([,a], [,b]) => b - a);
+                    const ctxTopCat = ctxSortedCats.find(([c]) => c !== 'Other' && c !== 'System')?.[0] || ctxSortedCats[0]?.[0];
+
+                    // Use rich activities_summary from desktop if available, else build from categories
+                    let ctxSummary = log.activities_summary || '';
+                    if (!ctxSummary) {
+                      const ctxPrimaryApps = apps.slice(0, 3).map(a => a.appName || a.app).filter(Boolean);
+                      const lowerCat = (ctxTopCat || '').toLowerCase();
+                      if (lowerCat.includes('development') || lowerCat === 'coding') {
+                        ctxSummary = `Development work in ${ctxPrimaryApps.join(', ')}`;
+                      } else if (lowerCat.includes('communication') || lowerCat === 'chatting') {
+                        ctxSummary = `Communication via ${ctxPrimaryApps.join(', ')}`;
+                      } else if (lowerCat.includes('meeting')) {
+                        ctxSummary = `In meetings (${ctxPrimaryApps.join(', ')})`;
+                      } else if (lowerCat.includes('browsing')) {
+                        ctxSummary = `Browsing and research`;
+                      } else if (lowerCat.includes('design')) {
+                        ctxSummary = `Design work in ${ctxPrimaryApps.join(', ')}`;
+                      } else if (lowerCat.includes('productivity')) {
+                        ctxSummary = `Productivity tasks in ${ctxPrimaryApps.join(', ')}`;
+                      } else if (ctxPrimaryApps.length > 0) {
+                        ctxSummary = `Working in ${ctxPrimaryApps.join(', ')}`;
+                      }
+                    }
+
+                    // Parse semantic_category properly
+                    let parsedCategories = null;
+                    if (log.semantic_category && log.semantic_category !== 'other') {
+                      try {
+                        const parsed = JSON.parse(log.semantic_category);
+                        if (typeof parsed === 'object' && parsed !== null) {
+                          parsedCategories = Object.entries(parsed).sort(([,a], [,b]) => b - a);
+                        }
+                      } catch {
+                        // Plain string
+                        if (log.semantic_category !== 'other') {
+                          parsedCategories = [[log.semantic_category, log.total_minutes || 1]];
+                        }
+                      }
+                    }
+
+                    const commitments = parseCommitments(log.commitments);
 
                     return (
                       <motion.div
@@ -1050,7 +1337,7 @@ export default function DesktopActivity() {
                         transition={{ delay: i * 0.05 }}
                         className="p-4 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:border-cyan-700/40 transition-all group"
                       >
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start justify-between mb-2">
                           <div>
                             <div className="text-sm font-medium text-white">
                               {new Date(log.hour_start).toLocaleString('en-US', {
@@ -1060,53 +1347,77 @@ export default function DesktopActivity() {
                                 hour: 'numeric',
                               })}
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
                               <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                                 {formatDuration(log.total_minutes)}
                               </Badge>
                               <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                                 {Math.round((log.focus_score || 0) * 100)}% focus
                               </Badge>
+                              {ctxTopCat && ctxTopCat !== 'Other' && (
+                                <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/30 text-xs">
+                                  {ctxTopCat}
+                                </Badge>
+                              )}
                             </div>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-cyan-300 hover:text-cyan-200"
-                          >
-                            <BookOpen className="w-4 h-4 mr-1" />
-                            View Details
-                          </Button>
                         </div>
 
-                        {/* App breakdown */}
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {apps.slice(0, 5).map((app, j) => (
-                            <div key={j} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30">
-                              <Monitor className="w-3 h-3 text-zinc-400" />
-                              <span className="text-xs text-zinc-300">{app.appName || 'Unknown'}</span>
-                              <span className="text-xs text-zinc-500">{app.minutes || app}m</span>
+                        {/* Activity summary */}
+                        {ctxSummary && (
+                          <p className="text-sm text-zinc-300 mb-3">{ctxSummary}</p>
+                        )}
+
+                        {/* Category breakdown (from app_breakdown or semantic_category) */}
+                        {ctxSortedCats.length > 1 && (
+                          <div className="flex flex-wrap gap-1.5 mb-3">
+                            {ctxSortedCats.slice(0, 4).map(([cat, mins]) => (
+                              <Badge key={cat} className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs">
+                                {cat}: {Math.round(mins * 10) / 10}m
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Commitments / action items */}
+                        {commitments && commitments.length > 0 && (
+                          <div className="mb-3 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                            <div className="text-xs text-amber-300/70 mb-1.5 flex items-center gap-1">
+                              <Target className="w-3 h-3" />
+                              Commitments
                             </div>
-                          ))}
-                        </div>
-
-                        {/* Context preview (will show OCR/semantic data when available) */}
-                        {log.semantic_category && (
-                          <div className="mt-3 pt-3 border-t border-zinc-700/40">
-                            <div className="flex items-center gap-2 text-sm text-zinc-400">
-                              <Brain className="w-4 h-4 text-cyan-400" />
-                              <span>Category: <span className="text-cyan-300">{log.semantic_category}</span></span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {commitments.map((c, ci) => (
+                                <Badge key={ci} className="bg-amber-500/10 text-amber-200/90 border-amber-500/20 text-xs">
+                                  {c.description || c.title || c.text || (typeof c === 'string' ? c : 'Commitment detected')}
+                                </Badge>
+                              ))}
                             </div>
                           </div>
                         )}
 
+                        {/* Screen content (hidden by default) */}
                         {log.ocr_text && (
-                          <div className="mt-2 p-3 rounded-lg bg-zinc-900/60 border border-zinc-700/30">
-                            <div className="text-xs text-zinc-500 mb-1 flex items-center gap-1">
-                              <FileText className="w-3 h-3" />
-                              Screen Content Preview
-                            </div>
-                            <p className="text-sm text-zinc-400 line-clamp-2">{log.ocr_text}</p>
+                          <button
+                            onClick={() => toggleOcrExpand(`ctx-${log.id}`)}
+                            className="mt-1 text-[11px] text-zinc-500 hover:text-cyan-400 transition-colors flex items-center gap-1"
+                          >
+                            <FileText className="w-3 h-3" />
+                            {expandedOcr.has(`ctx-${log.id}`) ? 'Hide screen content' : 'Show screen content'}
+                          </button>
+                        )}
+                        {log.ocr_text && expandedOcr.has(`ctx-${log.id}`) && (
+                          <div className="mt-1.5 p-2.5 rounded-lg bg-zinc-900/60 border border-zinc-700/30">
+                            <p className="text-xs text-zinc-400 whitespace-pre-wrap">{log.ocr_text}</p>
+                          </div>
+                        )}
+
+                        {log.screen_captures && (
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <Monitor className="w-3 h-3 text-zinc-500" />
+                            <span className="text-[10px] text-zinc-500">
+                              {Array.isArray(log.screen_captures) ? log.screen_captures.length : log.screen_captures} screen capture{(Array.isArray(log.screen_captures) ? log.screen_captures.length : log.screen_captures) !== 1 ? 's' : ''}
+                            </span>
                           </div>
                         )}
                       </motion.div>
@@ -1138,8 +1449,10 @@ export default function DesktopActivity() {
               <div>
                 <h4 className="font-medium text-zinc-200 mb-1">Download Started</h4>
                 <p className="text-sm text-zinc-400">
-                  The download should begin automatically. If not,
-                  <a href={DOWNLOAD_URL} className="text-cyan-400 hover:underline ml-1">click here</a>.
+                  Your DMG is downloading. If it didn't start,{' '}
+                  <a href={DOWNLOAD_URL_ARM64} className="text-cyan-400 hover:underline">Apple Silicon</a>
+                  {' · '}
+                  <a href={DOWNLOAD_URL_INTEL} className="text-cyan-400 hover:underline">Intel Mac</a>
                 </p>
               </div>
             </div>
@@ -1149,58 +1462,74 @@ export default function DesktopActivity() {
               <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
                 <span className="text-cyan-400 font-bold text-sm">2</span>
               </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-zinc-200 mb-1">Open Terminal & Run This Command</h4>
-                <p className="text-sm text-zinc-400 mb-3">
-                  macOS blocks apps from unidentified developers. Run this command to bypass:
-                </p>
-                <div className="relative">
-                  <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 pr-12 text-sm text-cyan-300 overflow-x-auto">
-                    {BYPASS_COMMAND}
-                  </pre>
-                  <Button
-                    onClick={copyCommand}
-                    size="sm"
-                    variant="ghost"
-                    className="absolute right-2 top-2 h-8 w-8 p-0 hover:bg-zinc-700"
-                  >
-                    {copiedCommand ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-zinc-400" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-zinc-500 mt-2">
-                  Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">Cmd + Space</kbd>, type "Terminal", press Enter, then paste the command.
+              <div>
+                <h4 className="font-medium text-zinc-200 mb-1">Open DMG & Drag to Applications</h4>
+                <p className="text-sm text-zinc-400">
+                  Double-click the downloaded <code className="text-cyan-300 bg-zinc-800 px-1 rounded">.dmg</code> file, then drag SYNC Desktop into the Applications folder.
                 </p>
               </div>
             </div>
 
-            {/* Step 3 */}
+            {/* Step 3 — Gatekeeper */}
             <div className="flex gap-4">
-              <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
-                <span className="text-cyan-400 font-bold text-sm">3</span>
+              <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-amber-400 font-bold text-sm">3</span>
               </div>
               <div>
-                <h4 className="font-medium text-zinc-200 mb-1">Drag to Applications</h4>
-                <p className="text-sm text-zinc-400">
-                  When the disk image opens, drag SYNC Desktop to Applications.
+                <h4 className="font-medium text-zinc-200 mb-1">Allow the App to Open</h4>
+                <p className="text-sm text-zinc-400 mb-2">
+                  macOS will block the first launch because the app isn't from the App Store. To allow it:
+                </p>
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3 space-y-2">
+                  <p className="text-sm text-zinc-300">
+                    <strong className="text-amber-300">Option A:</strong> Open <strong>System Settings → Privacy & Security</strong>, scroll down and click <strong>"Open Anyway"</strong> next to the SYNC Desktop message.
+                  </p>
+                  <p className="text-sm text-zinc-300">
+                    <strong className="text-amber-300">Option B:</strong> In Finder, <strong>right-click</strong> SYNC Desktop in Applications → click <strong>"Open"</strong> → confirm <strong>"Open"</strong> again.
+                  </p>
+                </div>
+                <p className="text-xs text-zinc-500 mt-2">
+                  You only need to do this once. After that the app opens normally.
                 </p>
               </div>
             </div>
 
-            {/* Step 4 */}
+            {/* Step 4 — Sign In */}
             <div className="flex gap-4">
               <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
                 <span className="text-cyan-400 font-bold text-sm">4</span>
               </div>
               <div>
-                <h4 className="font-medium text-zinc-200 mb-1">Launch & Connect</h4>
+                <h4 className="font-medium text-zinc-200 mb-1">Grant Permissions & Sign In</h4>
                 <p className="text-sm text-zinc-400">
-                  Open SYNC Desktop from Applications and sign in with your iSyncSO account.
+                  Grant Accessibility permission when prompted, then click "Sign in with iSyncSO" to connect your account.
                 </p>
               </div>
+            </div>
+
+            {/* Terminal alternative */}
+            <div className="pt-3 border-t border-zinc-800">
+              <h4 className="text-sm font-medium text-zinc-300 mb-2">Or install via Terminal</h4>
+              <div className="relative">
+                <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 pr-12 text-sm text-cyan-300 overflow-x-auto whitespace-pre-wrap break-all">
+                  {INSTALL_COMMAND}
+                </pre>
+                <Button
+                  onClick={copyCommand}
+                  size="sm"
+                  variant="ghost"
+                  className="absolute right-2 top-2 h-8 w-8 p-0 hover:bg-zinc-700"
+                >
+                  {copiedCommand ? (
+                    <Check className="w-4 h-4 text-green-400" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-zinc-400" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-zinc-500 mt-2">
+                Downloads, installs, and launches automatically — no DMG required.
+              </p>
             </div>
 
             {/* Help link */}

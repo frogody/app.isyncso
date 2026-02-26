@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Box, Plus, Search, Filter, Grid3X3, List, Table2, Tag, Eye, Edit2,
-  Barcode, Package, Truck, Building2, Euro, AlertTriangle,
+  Barcode, Package, Truck, Building2, Euro, AlertTriangle, Link2,
   ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle,
-  Sun, Moon, Pencil, Save, X
+  Pencil, Save, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, PhysicalProduct, ProductCategory, Supplier } from "@/api/entities";
 import { supabase } from '@/api/supabaseClient';
-import { ProductModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
+import { sanitizeSearchInput } from '@/utils/validation';
+import { ProductModal, ImportFromURLModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -57,10 +58,11 @@ function getStockStatus(inventory) {
 
 export default function ProductsPhysical() {
   const { user } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [physicalProducts, setPhysicalProducts] = useState({});
+  const [inventoryData, setInventoryData] = useState({});
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export default function ProductsPhysical() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('table');
   const [channelsMap, setChannelsMap] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -83,6 +85,7 @@ export default function ProductsPhysical() {
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
   // Debounce search input (300ms)
@@ -265,11 +268,15 @@ export default function ProductsPhysical() {
         .from('products')
         .select('*', { count: 'exact' })
         .eq('type', 'physical')
+        .eq('company_id', user.company_id)
         .order('created_at', { ascending: false });
 
       // Server-side search
       if (debouncedSearch.trim()) {
-        query = query.or(`name.ilike.%${debouncedSearch.trim()}%,ean.ilike.%${debouncedSearch.trim()}%,sku.ilike.%${debouncedSearch.trim()}%,tagline.ilike.%${debouncedSearch.trim()}%`);
+        const cleanSearch = sanitizeSearchInput(debouncedSearch.trim());
+        if (cleanSearch) {
+          query = query.or(`name.ilike.%${cleanSearch}%,ean.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%,tagline.ilike.%${cleanSearch}%`);
+        }
       }
 
       // Server-side status filter
@@ -287,7 +294,8 @@ export default function ProductsPhysical() {
         const { data: channelProducts } = await supabase
           .from('product_sales_channels')
           .select('product_id')
-          .eq('channel', channelFilter);
+          .eq('channel', channelFilter)
+          .eq('company_id', user.company_id);
         const channelProductIds = (channelProducts || []).map(c => c.product_id);
         if (channelProductIds.length > 0) {
           query = query.in('id', channelProductIds);
@@ -335,9 +343,22 @@ export default function ProductsPhysical() {
           chMap[ch.product_id].push(ch.channel);
         });
         setChannelsMap(chMap);
+
+        // Fetch cross-channel inventory data (SH-18)
+        const { data: invData } = await supabase
+          .from('inventory')
+          .select('product_id, quantity_on_hand, quantity_available, quantity_external_shopify')
+          .in('product_id', productIds)
+          .eq('company_id', user?.company_id);
+        const invMap = {};
+        (invData || []).forEach(inv => {
+          invMap[inv.product_id] = inv;
+        });
+        setInventoryData(invMap);
       } else {
         setPhysicalProducts({});
         setChannelsMap({});
+        setInventoryData({});
       }
     } catch (error) {
       console.error('Failed to load physical products:', error);
@@ -402,12 +423,11 @@ export default function ProductsPhysical() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className={`rounded-full ${t('text-slate-600 hover:bg-slate-200', 'text-zinc-400 hover:bg-zinc-800')}`}
+              variant="outline"
+              onClick={() => setImportModalOpen(true)}
+              className={t('border-slate-200 text-slate-700 hover:bg-slate-50', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              <Link2 className="w-4 h-4 mr-2" /> Import from URL
             </Button>
             <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> New Physical Product
@@ -500,6 +520,8 @@ export default function ProductsPhysical() {
                 <SelectItem value="all">All Channels</SelectItem>
                 <SelectItem value="b2b">B2B</SelectItem>
                 <SelectItem value="b2c">B2C</SelectItem>
+                <SelectItem value="bolcom">bol.com</SelectItem>
+                <SelectItem value="shopify">Shopify</SelectItem>
               </SelectContent>
             </Select>
 
@@ -576,6 +598,7 @@ export default function ProductsPhysical() {
                       productType="physical"
                       details={physicalProducts[product.id]}
                       salesChannels={channelsMap[product.id]}
+                      channelInventory={inventoryData[product.id]}
                       index={index}
                       onEdit={handleEditProduct}
                       onArchive={handleArchiveProduct}
@@ -616,6 +639,7 @@ export default function ProductsPhysical() {
                       productType="physical"
                       details={physicalProducts[product.id]}
                       salesChannels={channelsMap[product.id]}
+                      channelInventory={inventoryData[product.id]}
                       index={index}
                       onEdit={handleEditProduct}
                       onArchive={handleArchiveProduct}
@@ -736,6 +760,13 @@ export default function ProductsPhysical() {
           onClose={() => setModalOpen(false)}
           productType="physical"
           product={editingProduct}
+          onSave={handleProductSaved}
+        />
+
+        {/* Import from URL Modal */}
+        <ImportFromURLModal
+          open={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
           onSave={handleProductSaved}
         />
       </div>

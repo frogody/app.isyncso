@@ -130,7 +130,7 @@ export default function MediaGallery({
                     alt={currentMedia.alt || `Image ${selectedIndex + 1}`}
                     className="w-full h-full object-contain cursor-pointer"
                     onClick={() => openLightbox(selectedIndex)}
-                  />
+                  loading="lazy" decoding="async" />
                 ) : (
                   <div className={`w-full h-full flex items-center justify-center ${t('bg-slate-100', 'bg-zinc-900')}`}>
                     <ImageIcon className={`w-16 h-16 ${t('text-slate-400', 'text-zinc-600')}`} />
@@ -194,7 +194,7 @@ export default function MediaGallery({
                       src={media.thumbnail}
                       alt=""
                       className="w-full h-full object-cover"
-                    />
+                     loading="lazy" decoding="async" />
                   ) : null}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                     <Play className="w-6 h-6 text-white" />
@@ -205,7 +205,7 @@ export default function MediaGallery({
                   src={media.url}
                   alt=""
                   className="w-full h-full object-cover"
-                />
+                 loading="lazy" decoding="async" />
               )}
             </button>
           ))}
@@ -244,7 +244,7 @@ export default function MediaGallery({
                 src={currentMedia.url}
                 alt={currentMedia.alt || ''}
                 className="max-w-full max-h-full object-contain"
-              />
+               loading="lazy" decoding="async" />
             )}
 
             {currentMedia?.caption && (

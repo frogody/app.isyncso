@@ -27,6 +27,7 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useUser } from '@/components/context/UserContext';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
@@ -40,7 +41,7 @@ const getStatusConfig = (ft) => ({
   expired: { label: 'Expired', color: ft('bg-slate-200/50 text-slate-500 border-slate-300', 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'), icon: Clock }
 });
 
-export default function FinanceProposals() {
+export default function FinanceProposals({ embedded }) {
   const navigate = useNavigate();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
@@ -55,6 +56,7 @@ export default function FinanceProposals() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -69,8 +71,8 @@ export default function FinanceProposals() {
     try {
       setLoading(true);
       const [proposalData, prospectData] = await Promise.all([
-        Proposal.list?.({ limit: 500 }).catch(() => []) || [],
-        Prospect.list?.({ limit: 500 }).catch(() => []) || []
+        Proposal.list?.({ limit: 200 }).catch(() => []) || [],
+        Prospect.list?.({ limit: 200 }).catch(() => []) || []
       ]);
       setProposals(proposalData);
       setProspects(prospectData);
@@ -164,16 +166,21 @@ export default function FinanceProposals() {
     }
   };
 
-  const handleDeleteProposal = async (proposal) => {
-    if (!confirm('Are you sure you want to delete this proposal?')) return;
+  const handleDeleteProposal = (proposal) => {
+    setDeleteTarget(proposal);
+  };
 
+  const confirmDeleteProposal = async () => {
+    if (!deleteTarget) return;
     try {
-      await Proposal.delete(proposal.id);
-      setProposals(prev => prev.filter(p => p.id !== proposal.id));
+      await Proposal.delete(deleteTarget.id);
+      setProposals(prev => prev.filter(p => p.id !== deleteTarget.id));
       toast.success('Proposal deleted');
     } catch (error) {
       console.error('Error deleting proposal:', error);
       toast.error('Failed to delete proposal');
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -330,37 +337,9 @@ export default function FinanceProposals() {
     );
   }
 
-  return (
-    <FinancePageTransition>
-      <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <PageHeader
-            title="Proposals"
-            subtitle="Create and manage sales proposals"
-            icon={FileText}
-            color="blue"
-            actions={
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleTheme}
-                  className={ft('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')}
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
-                <Button
-                  onClick={handleCreateProposal}
-                  className="bg-blue-500 hover:bg-blue-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Proposal
-                </Button>
-              </div>
-            }
-          />
-        </div>
-
+  const content = (
+    <>
+      <div className="space-y-4">
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
@@ -776,6 +755,53 @@ export default function FinanceProposals() {
             )}
           </DialogContent>
         </Dialog>
+      </div>
+
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Proposal"
+        description={`Are you sure you want to delete this proposal? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDeleteProposal}
+      />
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <FinancePageTransition>
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <PageHeader
+            title="Proposals"
+            subtitle="Create and manage sales proposals"
+            icon={FileText}
+            color="blue"
+            actions={
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className={ft('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')}
+                >
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </Button>
+                <Button
+                  onClick={handleCreateProposal}
+                  className="bg-blue-500 hover:bg-blue-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Proposal
+                </Button>
+              </div>
+            }
+          />
+        </div>
+        {content}
       </div>
     </FinancePageTransition>
   );

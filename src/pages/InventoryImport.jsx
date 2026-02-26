@@ -12,6 +12,7 @@ import { Product, PhysicalProduct, Supplier } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { ProductsPageTransition } from '@/components/products/ui';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 import { FileUploader } from '@/components/import/FileUploader';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
@@ -790,13 +791,13 @@ export default function InventoryImport() {
                     {importResults.toEnrich > 0 && (
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-purple-500/10 border border-purple-500/20 text-purple-400">
                         <Sparkles className="w-3 h-3" />
-                        <span>{importResults.toEnrich} products queued for AI enrichment</span>
+                        <span>{importResults.toEnrich} products queued for AI enrichment</span> <CreditCostBadge credits={2} />
                       </div>
                     )}
                     {importResults.suppliersCreated > 0 && (
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
                         <Building2 className="w-3 h-3" />
-                        <span>{importResults.suppliersCreated} suppliers queued for AI enrichment</span>
+                        <span>{importResults.suppliersCreated} suppliers queued for AI enrichment</span> <CreditCostBadge credits={2} />
                       </div>
                     )}
                   </div>

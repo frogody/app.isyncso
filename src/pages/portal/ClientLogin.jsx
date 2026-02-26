@@ -183,7 +183,7 @@ export default function ClientLogin() {
               src={portalSettings.logo_url}
               alt={portalSettings.portal_name || 'Portal'}
               className="h-12 mx-auto mb-4"
-            />
+             loading="lazy" decoding="async" />
           ) : (
             <div
               className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, Scale, FileSpreadsheet, Clock } from 'lucide-react';
+import { BarChart3, TrendingUp, Scale, FileSpreadsheet, Clock, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { FinancePageTransition } from '@/components/finance/ui/FinancePageTransition';
@@ -7,10 +7,12 @@ import FinanceReportPL from './FinanceReportPL';
 import FinanceReportBS from './FinanceReportBS';
 import FinanceReportTB from './FinanceReportTB';
 import FinanceReportAging from './FinanceReportAging';
+import FinanceReportCashFlow from './FinanceReportCashFlow';
 
 const TABS = [
   { id: 'pl', label: 'Profit & Loss', icon: TrendingUp },
   { id: 'balance-sheet', label: 'Balance Sheet', icon: Scale },
+  { id: 'cash-flow', label: 'Cash Flow', icon: Wallet },
   { id: 'trial-balance', label: 'Trial Balance', icon: FileSpreadsheet },
   { id: 'aging', label: 'Aging', icon: Clock },
 ];
@@ -76,6 +78,7 @@ export default function FinanceReports() {
           {/* Tab Content */}
           {activeTab === 'pl' && <FinanceReportPL embedded />}
           {activeTab === 'balance-sheet' && <FinanceReportBS embedded />}
+          {activeTab === 'cash-flow' && <FinanceReportCashFlow embedded />}
           {activeTab === 'trial-balance' && <FinanceReportTB embedded />}
           {activeTab === 'aging' && <FinanceReportAging embedded />}
         </div>

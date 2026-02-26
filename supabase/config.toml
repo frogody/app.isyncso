@@ -1,3 +1,6 @@
+[functions.task-pixel]
+verify_jwt = false
+
 [functions.raise-chat]
 verify_jwt = false
 
@@ -8,6 +11,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-video]
+verify_jwt = false
+
+[functions.generate-fashion-video]
 verify_jwt = false
 
 [functions.enhance-prompt]
@@ -41,6 +47,12 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generateCampaignOutreach]
+verify_jwt = false
+
+[functions.audit-listing]
+verify_jwt = false
+
+[functions.plan-listing-fix]
 verify_jwt = false
 
 [functions.analyzeCampaignProject]
@@ -161,4 +173,166 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.bolcom-webhooks]
+verify_jwt = false
+
+[functions.sync-studio-import-catalog]
+verify_jwt = false
+
+[functions.sync-studio-generate-plans]
+verify_jwt = false
+
+[functions.sync-studio-approve-plan]
+verify_jwt = false
+
+[functions.sync-studio-update-plan]
+verify_jwt = false
+
+[functions.sync-studio-execute-photoshoot]
+verify_jwt = false
+
+[functions.sync-studio-job-progress]
+verify_jwt = false
+
+[functions.sync-studio-regenerate-shot]
+verify_jwt = false
+
+[functions.sync-studio-export-zip]
+verify_jwt = false
+
+[functions.sync-studio-publish-bol]
+verify_jwt = false
+
+[functions.shopify-api]
+verify_jwt = false
+
+[functions.shopify-webhooks]
+verify_jwt = false
+
+[functions.publish-listing]
+verify_jwt = false
+
+[functions.commander-chat]
+verify_jwt = false
+
+[functions.github-integration]
+verify_jwt = false
+
+[functions.health-runner]
+verify_jwt = false
+
+[functions.generate-social-post]
+verify_jwt = false
+
+[functions.digest-channel]
+verify_jwt = false
+
+[functions.transcribe-audio]
+verify_jwt = false
+
+[functions.generate-listing-copy]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.create-billing-portal]
+verify_jwt = false
+
+[functions.generate-podcast]
+verify_jwt = false
+
+[functions.sync-meeting-wrapup]
+verify_jwt = false
+
+[functions.smart-compose]
+verify_jwt = false
+
+[functions.twilio-token]
+verify_jwt = false
+
+[functions.voice-webhook]
+verify_jwt = false
+
+[functions.scheduling-orchestrator]
+verify_jwt = false
+
+[functions.reach-analyze-brand-voice]
+verify_jwt = false
+
+[functions.reach-generate-copy]
+verify_jwt = false
+
+[functions.reach-seo-scan]
+verify_jwt = false
+
+[functions.reach-publish-post]
+verify_jwt = false
+
+[functions.reach-generate-ad-copy]
+verify_jwt = false
+
+[functions.reach-generate-ad-image]
+verify_jwt = false
+
+[functions.reach-generate-ad-video]
+verify_jwt = false
+
+[functions.reach-fetch-metrics]
+verify_jwt = false
+
+[functions.reach-generate-insights]
+verify_jwt = false
+
+[functions.scrape-product-url]
+verify_jwt = false
+
+[functions.store-builder-ai]
+verify_jwt = false
+
+[functions.manage-custom-domain]
+verify_jwt = false
+
+[functions.b2b-order-webhook]
+verify_jwt = false
+
+[functions.b2b-checkout-otp]
+verify_jwt = false
+
+[functions.b2b-create-order]
+verify_jwt = false
+
+[functions.b2b-portal-api]
+verify_jwt = false
+
+[functions.aftership-register]
+verify_jwt = false
+
+[functions.aftership-webhooks]
+verify_jwt = false
+
+[functions.tracking-checkpoint-manual]
+verify_jwt = false
+
+[functions.product-feed-sync]
+verify_jwt = false
+
+[functions.generate-brand-strategy]
+verify_jwt = false
+
+[functions.generate-verbal-identity]
+verify_jwt = false
+
+[functions.generate-visual-language]
+verify_jwt = false
+
+[functions.vendor-research]
+verify_jwt = false
+
+[functions.email-invoice-import]
+verify_jwt = false
+
+[functions.revolut-sync]
+verify_jwt = false
+
+[functions.finance-ai-accountant]
 verify_jwt = false

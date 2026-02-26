@@ -94,39 +94,19 @@ const COLOR_LABELS = {
   text: 'Text',
 };
 
-// --- Collapsible Section ---
-function Section({ icon: Icon, title, defaultOpen = true, children }) {
-  const [open, setOpen] = useState(defaultOpen);
+// --- Section Card (always visible) ---
+function Section({ icon: Icon, title, children }) {
   const { ct } = useTheme();
 
   return (
     <div className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className={`w-full flex items-center gap-3 px-5 py-4 text-left ${ct('hover:bg-slate-50', 'hover:bg-white/[0.02]')} transition-colors`}
-      >
+      <div className="flex items-center gap-3 px-5 py-4">
         <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
           <Icon className="w-4 h-4 text-yellow-400" />
         </div>
-        <span className={`${ct('text-slate-900', 'text-white')} font-semibold text-sm flex-1`}>{title}</span>
-        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className={`w-4 h-4 ${ct('text-slate-500', 'text-zinc-500')}`} />
-        </motion.div>
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-5 pb-5 pt-1">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <span className={`${ct('text-slate-900', 'text-white')} font-semibold text-sm`}>{title}</span>
+      </div>
+      <div className="px-5 pb-5 pt-1">{children}</div>
     </div>
   );
 }
@@ -145,7 +125,7 @@ function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uplo
       <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')}`}>{label}</p>
       {logo ? (
         <div className={`relative group aspect-video ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')} flex items-center justify-center overflow-hidden`}>
-          <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain" />
+          <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain"  loading="lazy" decoding="async" />
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <label className="cursor-pointer">
               <input type="file" accept="image/*" onChange={(e) => onUpload(e, logoType)} className="hidden" disabled={uploading} />
@@ -463,7 +443,7 @@ export default function CreateBranding() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')} flex items-center justify-center`}>
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
       </div>
     );
@@ -474,7 +454,7 @@ export default function CreateBranding() {
 
   return (
     <CreatePageTransition>
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
         <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ---- Header Row ---- */}
@@ -531,6 +511,36 @@ export default function CreateBranding() {
             </div>
           </div>
 
+          {/* ---- AI Brand Builder CTA ---- */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <a
+              href="/create/brand-builder/new"
+              className={`group block rounded-[20px] ${ct('bg-gradient-to-r from-yellow-50 to-amber-50', 'bg-gradient-to-r from-yellow-400/[0.06] to-amber-400/[0.04]')} border ${ct('border-yellow-200', 'border-yellow-500/20')} p-5 transition-all hover:border-yellow-400/40 hover:shadow-[0_0_30px_-10px_rgba(234,179,8,0.15)]`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-400/15 border border-yellow-400/25 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')} flex items-center gap-2`}>
+                      AI Brand Builder
+                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-yellow-400 text-black rounded-full">New</span>
+                    </h3>
+                    <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} mt-0.5`}>
+                      Generate a complete brand identity in 8 steps — colors, typography, logo system, voice, and more.
+                    </p>
+                  </div>
+                </div>
+                <ChevronLeft className={`w-4 h-4 ${ct('text-slate-400', 'text-zinc-500')} rotate-180 group-hover:translate-x-1 transition-transform`} />
+              </div>
+            </a>
+          </motion.div>
+
           {/* ---- Live Brand Preview ---- */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -542,7 +552,7 @@ export default function CreateBranding() {
               {/* Logo */}
               <div className={`w-16 h-16 rounded-xl ${ct('bg-slate-100', 'bg-zinc-800/60')} border ${ct('border-slate-200', 'border-zinc-700/40')} flex items-center justify-center overflow-hidden shrink-0`}>
                 {primaryLogo ? (
-                  <img src={primaryLogo.url} alt="Logo" className="max-w-full max-h-full object-contain" />
+                  <img src={primaryLogo.url} alt="Logo" className="max-w-full max-h-full object-contain"  loading="lazy" decoding="async" />
                 ) : (
                   <ImageIcon className={`w-5 h-5 ${ct('text-slate-400', 'text-zinc-600')}`} />
                 )}

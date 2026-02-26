@@ -150,7 +150,7 @@ export default function AutocompletePopup({
             onClick={() => onSelect(item)}
           >
             {item.avatar_url ? (
-              <img src={item.avatar_url} alt="" className="w-6 h-6 rounded-full" />
+              <img src={item.avatar_url} alt="" className="w-6 h-6 rounded-full"  loading="lazy" decoding="async" />
             ) : (
               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white">
                 {item.full_name?.charAt(0) || item.email?.charAt(0)}

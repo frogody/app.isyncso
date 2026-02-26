@@ -229,7 +229,7 @@ export default function PortalBranding() {
                     src={settings.logo_url}
                     alt="Logo"
                     className={`h-16 w-auto rounded-lg ${st('bg-slate-200', 'bg-zinc-800')}`}
-                  />
+                   loading="lazy" decoding="async" />
                   <button
                     onClick={() => setSettings((prev) => ({ ...prev, logo_url: '' }))}
                     className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"

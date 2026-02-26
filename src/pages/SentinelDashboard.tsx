@@ -19,7 +19,6 @@ import QuickActions from '@/components/sentinel/QuickActions';
 import RiskClassificationBadge from '@/components/sentinel/RiskClassificationBadge';
 import type { RiskClassification } from '@/tokens/sentinel';
 import { MOTION_VARIANTS } from '@/tokens/sentinel';
-import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
 
@@ -83,7 +82,6 @@ export default function SentinelDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link to={createPageUrl('AISystemInventory')}>
               <SentinelButton icon={<Plus className="w-4 h-4" />}>
                 Register AI System

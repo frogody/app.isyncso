@@ -81,11 +81,30 @@ export default function FinanceReportTB({ embedded = false }) {
     setLoading(true);
     setGenerated(false);
     try {
+      // Check if COA is initialized
+      const { count } = await supabase.from('accounts').select('id', { count: 'exact', head: true }).eq('company_id', user.company_id);
+      if (!count || count === 0) {
+        toast.error('Initialize your Chart of Accounts first (Ledger > Chart of Accounts)');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.rpc('get_trial_balance', {
         p_company_id: user.company_id,
         p_as_of_date: asOfDate,
       });
-      if (error) throw error;
+
+      if (error) {
+        console.error('[FinanceReportTB] get_trial_balance error:', error);
+        if (error.message?.includes('404') || error.code === 'PGRST202') {
+          toast.error('Trial Balance report function not available. Please contact support.');
+          setReportData([]);
+          setGenerated(true);
+          return;
+        }
+        throw error;
+      }
+
       setReportData(data || []);
       setGenerated(true);
     } catch (err) {

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/api/supabaseClient';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const STORAGE_KEY = 'talent_onboarding_dismissed';
 
@@ -72,6 +73,7 @@ const TalentOnboardingChecklist = ({
   onCreateProject,
   onAddRole,
 }) => {
+  const { t } = useTheme();
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(false);
   const [completionState, setCompletionState] = useState({
@@ -222,7 +224,7 @@ const TalentOnboardingChecklist = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3 }}
-        className="relative overflow-hidden rounded-xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 border border-zinc-800 p-4 mb-4"
+        className={`relative overflow-hidden rounded-xl ${t("bg-gradient-to-br from-white via-white to-gray-50", "bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800")} border ${t("border-gray-200", "border-zinc-800")} p-4 mb-4`}
       >
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -235,13 +237,13 @@ const TalentOnboardingChecklist = ({
                 <Rocket className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-semibold flex items-center gap-2">
+                <h3 className={`${t("text-gray-900", "text-white")} font-semibold flex items-center gap-2`}>
                   Get Started
-                  <span className="text-sm font-normal text-zinc-400">
+                  <span className={`text-sm font-normal ${t("text-gray-500", "text-zinc-400")}`}>
                     ({completedCount}/{totalCount} complete)
                   </span>
                 </h3>
-                <p className="text-xs text-zinc-500">
+                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
                   Complete these steps to set up your recruiting workflow
                 </p>
               </div>
@@ -251,14 +253,14 @@ const TalentOnboardingChecklist = ({
               variant="ghost"
               size="sm"
               onClick={handleDismiss}
-              className="text-zinc-500 hover:text-white hover:bg-zinc-800"
+              className={`${t("text-gray-400", "text-zinc-500")} ${t("hover:text-gray-900", "hover:text-white")} ${t("hover:bg-gray-100", "hover:bg-zinc-800")}`}
             >
               <X className="w-4 h-4" />
             </Button>
           </div>
 
           {/* Progress bar */}
-          <div className="h-1.5 bg-zinc-800 rounded-full mb-4 overflow-hidden">
+          <div className={`h-1.5 ${t("bg-gray-200", "bg-zinc-800")} rounded-full mb-4 overflow-hidden`}>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
@@ -288,8 +290,8 @@ const TalentOnboardingChecklist = ({
                     ${isComplete
                       ? 'bg-red-500/10 border border-red-500/20 cursor-default'
                       : isNextStep
-                        ? 'bg-zinc-800/80 border border-red-500/30 hover:border-red-500/50 cursor-pointer'
-                        : 'bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 cursor-pointer'
+                        ? `${t("bg-gray-100", "bg-zinc-800/80")} border border-red-500/30 hover:border-red-500/50 cursor-pointer`
+                        : `${t("bg-gray-50", "bg-zinc-800/50")} border ${t("border-gray-200", "border-zinc-700/50")} ${t("hover:border-gray-300", "hover:border-zinc-600")} cursor-pointer`
                     }
                   `}
                 >
@@ -300,7 +302,7 @@ const TalentOnboardingChecklist = ({
                       ? 'bg-red-500 text-white'
                       : isNextStep
                         ? 'bg-red-500 text-white'
-                        : 'bg-zinc-700 text-zinc-400'
+                        : `${t("bg-gray-300", "bg-zinc-700")} ${t("text-gray-500", "text-zinc-400")}`
                     }
                   `}>
                     {isComplete ? (
@@ -316,11 +318,11 @@ const TalentOnboardingChecklist = ({
                     }`} />
                     <div className="min-w-0 flex-1">
                       <p className={`text-sm font-medium leading-tight ${
-                        isComplete ? 'text-red-400 line-through' : 'text-white'
+                        isComplete ? 'text-red-400 line-through' : t("text-gray-900", "text-white")
                       }`}>
                         {item.title}
                       </p>
-                      <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">
+                      <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-0.5 line-clamp-2`}>
                         {item.description}
                       </p>
                     </div>
@@ -341,7 +343,7 @@ const TalentOnboardingChecklist = ({
           <div className="mt-3 text-center">
             <button
               onClick={handleDismiss}
-              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+              className={`text-xs ${t("text-gray-300", "text-zinc-600")} ${t("hover:text-gray-500", "hover:text-zinc-400")} transition-colors`}
             >
               I know what I'm doing, hide this
             </button>

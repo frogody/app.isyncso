@@ -20,7 +20,7 @@ import {
   CheckCircle, Globe, Linkedin, Clock, Target, Shield, Loader2,
   ChevronRight, Award, Zap, LogOut, MapPin, Calendar, Cpu,
   Euro, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
-  UserCog, ExternalLink, ShoppingBag
+  UserCog, ExternalLink, ShoppingBag, Store, Radio, CreditCard, Rss
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,28 +30,40 @@ import { usePermissions } from "@/components/context/PermissionContext";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { toast } from "sonner";
+import { logger } from '@/utils/logger';
 import PortalBranding from "@/components/settings/PortalBranding";
 import AppsManagerModal from "@/components/layout/AppsManagerModal";
 import TeamManagement from "@/pages/TeamManagement";
 import Integrations from "@/pages/Integrations";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { LayoutGrid, Sun, Moon } from "lucide-react";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SettingsPageTransition } from '@/components/settings/ui';
 import BolcomSettings from "@/components/settings/BolcomSettings";
+import ShopifySettings from "@/components/settings/ShopifySettings";
+import ProductFeedSettings from "@/components/settings/ProductFeedSettings";
+import FeedMasterRules from "@/components/settings/FeedMasterRules";
+import EmailPoolSettings from "@/pages/EmailPoolSettings";
+import BillingSettings from "@/pages/BillingSettings";
+import AvatarSelector from "@/components/shared/AvatarSelector";
+import UserAvatar from "@/components/shared/UserAvatar";
+import ColorPicker from "@/components/shared/ColorPicker";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateCompany, updateSettings, isLoading: userLoading } = useUser();
   const { theme, toggleTheme, st } = useTheme();
   const { isAdmin, isSuperAdmin } = usePermissions();
   const [saving, setSaving] = useState(false);
+  const [activeChannel, setActiveChannel] = useState('bolcom');
   const [refreshingCompany, setRefreshingCompany] = useState(false);
   const [settings, setSettings] = useState(null);
-  const [activeTab, setActiveTab] = useState("profile");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || "profile");
 
   const [profileForm, setProfileForm] = useState({
     full_name: "",
     avatar_url: "",
+    user_color: "",
     linkedin_url: "",
     job_title: "",
     phone: "",
@@ -99,7 +111,13 @@ export default function Settings() {
     funding_stage: "",
     funding_data: null,
     data_completeness: 0,
-    tech_stack_count: 0
+    tech_stack_count: 0,
+    // Identity fields for smart invoice import
+    vat_number: "",
+    kvk_number: "",
+    legal_address: "",
+    hq_address: "",
+    hq_postal_code: ""
   });
 
   const [invitations, setInvitations] = useState([]);
@@ -140,6 +158,7 @@ export default function Settings() {
       setProfileForm({
         full_name: user.full_name || "",
         avatar_url: user.avatar_url || "",
+        user_color: user.user_color || "#3B82F6",
         linkedin_url: user.linkedin_url || "",
         job_title: user.job_title || "",
         phone: user.phone || "",
@@ -188,7 +207,13 @@ export default function Settings() {
           funding_stage: company.funding_stage || "",
           funding_data: company.funding_data || null,
           data_completeness: company.data_completeness || 0,
-          tech_stack_count: company.tech_stack_count || (Array.isArray(company.tech_stack) ? company.tech_stack.length : 0)
+          tech_stack_count: company.tech_stack_count || (Array.isArray(company.tech_stack) ? company.tech_stack.length : 0),
+          // Identity fields
+          vat_number: company.vat_number || "",
+          kvk_number: company.kvk_number || "",
+          legal_address: company.legal_address || "",
+          hq_address: company.hq_address || "",
+          hq_postal_code: company.hq_postal_code || ""
         });
 
         if (user.company_id) {
@@ -200,19 +225,6 @@ export default function Settings() {
     }
   }, [user, userSettings, company]);
 
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const { file_url } = await db.integrations.Core.UploadFile({ file });
-      setProfileForm(prev => ({ ...prev, avatar_url: file_url }));
-      await db.auth.updateMe({ avatar_url: file_url });
-      toast.success('Avatar updated!');
-    } catch (error) {
-      console.error("Failed to upload avatar:", error);
-      toast.error('Failed to upload avatar');
-    }
-  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -310,13 +322,32 @@ export default function Settings() {
         hq_country: companyData.hq_country,
         phone: companyData.phone,
         email: companyData.email,
+        vat_number: companyData.vat_number,
+        kvk_number: companyData.kvk_number,
+        hq_address: companyData.hq_address,
+        hq_postal_code: companyData.hq_postal_code,
+        legal_address: companyData.hq_address && companyData.hq_postal_code && companyData.hq_city
+          ? `${companyData.hq_address}, ${companyData.hq_postal_code} ${companyData.hq_city}`
+          : companyData.legal_address,
       };
 
       if (company?.id) {
         await updateCompany(editableFields);
         toast.success('Company profile updated!');
+      } else if (user?.company_id) {
+        // User has company_id but company wasn't loaded — update directly
+        await db.entities.Company.update(user.company_id, editableFields);
+        toast.success('Company profile updated!');
       } else {
-        const newCompany = await db.entities.Company.create(editableFields);
+        if (!user?.organization_id) {
+          toast.error('No organization found. Please contact support.');
+          return;
+        }
+        // Include organization_id for RLS policy compliance
+        const newCompany = await db.entities.Company.create({
+          ...editableFields,
+          organization_id: user.organization_id,
+        });
         await db.auth.updateMe({ company_id: newCompany.id });
         toast.success('Company profile created!');
         window.location.reload();
@@ -511,7 +542,8 @@ export default function Settings() {
       setInvitations(invitations.filter(i => i.id !== id));
       toast.success('Invitation revoked');
     } catch (error) {
-      console.error("Failed to revoke invite:", error);
+      logger.error("[Settings] Failed to revoke invite:", error);
+      toast.error("Failed to revoke invitation.");
     }
   };
 
@@ -626,8 +658,10 @@ export default function Settings() {
     { id: 'portal', label: 'Client Portal', icon: ExternalLink, color: 'green' },
     { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan' },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan' },
-    { id: 'bolcom', label: 'bol.com', icon: ShoppingBag, color: 'cyan' },
+    { id: 'channels', label: 'Channels', icon: Radio, color: 'cyan' },
+    { id: 'email-pool', label: 'Email Pool', icon: Mail, color: 'cyan' },
     { id: 'workspace', label: 'Workspace', icon: LayoutGrid, color: 'cyan' },
+    { id: 'billing', label: 'Billing', icon: CreditCard, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(isSuperAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
   ];
@@ -685,14 +719,12 @@ export default function Settings() {
               {/* Profile Summary */}
               <div className={`flex items-center gap-4 p-4 mb-4 rounded-xl ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700/50')}`}>
                 <div className="relative">
-                  <div className={`w-14 h-14 rounded-full overflow-hidden border-2 ${st('border-slate-200', 'border-zinc-700/50')}`}>
-                    <img 
-                      src={profileForm.avatar_url || user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=0e7490&color=fff&size=128`}
-                      alt="Avatar"
-                      className="w-full h-full object-cover" 
-                    />
+                  <div
+                    className="w-14 h-14 rounded-full"
+                    style={{ boxShadow: `0 0 0 2px ${user?.user_color || '#3B82F6'}` }}
+                  >
+                    <UserAvatar user={user} size="lg" className="w-14 h-14" />
                   </div>
-                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-cyan-500/70 border-2 ${st('border-white', 'border-zinc-900')}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className={`${st('text-slate-800', 'text-zinc-100')} font-semibold truncate`}>{user?.full_name || 'User'}</h3>
@@ -766,20 +798,52 @@ export default function Settings() {
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-6 mb-6">
-                      <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload').click()}>
-                        <div className={`w-24 h-24 rounded-2xl overflow-hidden border-2 border-cyan-500/30 ${st('bg-slate-200', 'bg-zinc-800')}`}>
-                          <img 
-                            src={profileForm.avatar_url || user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=0e7490&color=fff&size=128`}
-                            alt="Avatar"
-                            className="w-full h-full object-cover" 
-                          />
+                      <div className="flex flex-col items-center gap-3">
+                        {/* Avatar preview with colored ring */}
+                        <div
+                          className="rounded-full p-1"
+                          style={{ boxShadow: `0 0 0 3px ${profileForm.user_color || '#3B82F6'}` }}
+                        >
+                          <UserAvatar user={{ ...user, avatar_url: profileForm.avatar_url || user?.avatar_url }} size="2xl" />
                         </div>
-                        <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera className="w-6 h-6 text-white" />
-                        </div>
-                        <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
+                        <span className={`text-xs ${st('text-slate-500', 'text-zinc-500')}`}>Your team color</span>
+                        <ColorPicker
+                          selected={profileForm.user_color}
+                          onSelect={(hex) => setProfileForm(prev => ({ ...prev, user_color: hex }))}
+                        />
                       </div>
 
+                      <div className="flex-1 space-y-4">
+                        {/* Avatar selector */}
+                        <div>
+                          <Label className={`${st('text-slate-500', 'text-zinc-400')} text-sm mb-2 block`}>Choose Avatar</Label>
+                          <AvatarSelector
+                            selected={profileForm.avatar_url ? { id: profileForm.avatar_url, url: profileForm.avatar_url } : null}
+                            onSelect={async (avatar) => {
+                              if (avatar.file) {
+                                try {
+                                  const { url } = await db.integrations.Core.UploadFile({ file: avatar.file, bucket: 'avatars' });
+                                  if (url) {
+                                    setProfileForm(prev => ({ ...prev, avatar_url: url }));
+                                    await db.auth.updateMe({ avatar_url: url });
+                                    toast.success('Avatar uploaded!');
+                                  }
+                                } catch (error) {
+                                  console.error("Failed to upload avatar:", error);
+                                  toast.error('Failed to upload avatar');
+                                }
+                              } else {
+                                const url = avatar.url || avatar.id;
+                                setProfileForm(prev => ({ ...prev, avatar_url: url }));
+                              }
+                            }}
+                            allowUpload
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-6 mb-6">
                       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label className={`${st('text-slate-500', 'text-zinc-400')} text-sm`}>Display Name</Label>
@@ -1143,7 +1207,7 @@ export default function Settings() {
                       <div className="relative group cursor-pointer" onClick={() => companyLogoInputRef.current?.click()}>
                         <div className={`w-20 h-20 rounded-2xl bg-white flex items-center justify-center overflow-hidden border ${st('border-slate-200', 'border-zinc-700')}`}>
                           {companyData.logo_url ? (
-                            <img src={companyData.logo_url} alt="Logo" className="w-full h-full object-contain p-2" />
+                            <img src={companyData.logo_url} alt="Logo" className="w-full h-full object-contain p-2"  loading="lazy" decoding="async" />
                           ) : (
                             <Building2 className={`w-8 h-8 ${st('text-slate-400', 'text-zinc-400')}`} />
                           )}
@@ -1230,6 +1294,40 @@ export default function Settings() {
                           <Mail className="w-3 h-3" /> Email
                         </Label>
                         <Input value={companyData.email} onChange={(e) => setCompanyData({...companyData, email: e.target.value})} placeholder="info@company.com" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                    </div>
+
+                    {/* Legal / Identity Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <FileText className="w-3 h-3" /> VAT Number
+                        </Label>
+                        <Input value={companyData.vat_number} onChange={(e) => setCompanyData({...companyData, vat_number: e.target.value})} placeholder="NL001234567B01" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <Shield className="w-3 h-3" /> KVK Number
+                        </Label>
+                        <Input value={companyData.kvk_number} onChange={(e) => setCompanyData({...companyData, kvk_number: e.target.value})} placeholder="12345678" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <MapPin className="w-3 h-3" /> Street Address
+                        </Label>
+                        <Input value={companyData.hq_address} onChange={(e) => setCompanyData({...companyData, hq_address: e.target.value})} placeholder="Keizersgracht 1" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <MapPin className="w-3 h-3" /> Postal Code
+                        </Label>
+                        <Input value={companyData.hq_postal_code} onChange={(e) => setCompanyData({...companyData, hq_postal_code: e.target.value})} placeholder="1015 AA" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <Building2 className="w-3 h-3" /> City
+                        </Label>
+                        <Input value={companyData.hq_city} onChange={(e) => setCompanyData({...companyData, hq_city: e.target.value})} placeholder="Amsterdam" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
                       </div>
                     </div>
 
@@ -1472,15 +1570,57 @@ export default function Settings() {
                 </motion.div>
               )}
 
-              {/* BOL.COM TAB */}
-              {activeTab === 'bolcom' && (
+              {/* CHANNELS TAB */}
+              {activeTab === 'channels' && (
                 <motion.div
-                  key="bolcom"
+                  key="channels"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                 >
-                  <BolcomSettings />
+                  <div className="flex items-center gap-2 mb-6">
+                    {[
+                      { id: 'bolcom', label: 'bol.com', icon: ShoppingBag },
+                      { id: 'shopify', label: 'Shopify', icon: Store },
+                      { id: 'feeds', label: 'Product Feeds', icon: Rss },
+                    ].map(ch => (
+                      <button
+                        key={ch.id}
+                        onClick={() => setActiveChannel(ch.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                          activeChannel === ch.id
+                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40'
+                            : st('bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200',
+                                 'bg-zinc-800/60 text-zinc-400 border border-zinc-700/40 hover:bg-zinc-700/60')
+                        }`}
+                      >
+                        <ch.icon className="w-4 h-4" />
+                        {ch.label}
+                      </button>
+                    ))}
+                  </div>
+                  {activeChannel === 'bolcom' && <BolcomSettings />}
+                  {activeChannel === 'shopify' && <ShopifySettings />}
+                  {activeChannel === 'feeds' && (
+                    <div className="space-y-8">
+                      <ProductFeedSettings />
+                      <div className="border-t border-zinc-700/30 pt-6">
+                        <FeedMasterRules />
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* EMAIL POOL TAB */}
+              {activeTab === 'email-pool' && (
+                <motion.div
+                  key="email-pool"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <EmailPoolSettings embedded />
                 </motion.div>
               )}
 
@@ -1493,6 +1633,18 @@ export default function Settings() {
                   exit={{ opacity: 0, y: -20 }}
                 >
                   <AppsManagerModal embedded />
+                </motion.div>
+              )}
+
+              {/* BILLING TAB */}
+              {activeTab === 'billing' && (
+                <motion.div
+                  key="billing"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <BillingSettings embedded />
                 </motion.div>
               )}
 

@@ -82,7 +82,7 @@ export default function RideSelector({ onSelectRide, selectedRide }) {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <div className="w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-7 h-7" />
+          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-7 h-7"  loading="lazy" decoding="async" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-white">Claude Rides</h2>
@@ -112,7 +112,7 @@ export default function RideSelector({ onSelectRide, selectedRide }) {
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
                   {ride.image ? (
-                    <img src={ride.image} alt={ride.name} className="w-6 h-6 object-contain" />
+                    <img src={ride.image} alt={ride.name} className="w-6 h-6 object-contain"  loading="lazy" decoding="async" />
                   ) : (
                     <Icon className="w-6 h-6 text-orange-400/80" />
                   )}

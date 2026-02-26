@@ -45,6 +45,8 @@ import {
   CheckCircle2,
   Settings,
   BadgeCheck,
+  FileText,
+  DollarSign,
 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
@@ -57,6 +59,7 @@ import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
 import { CompanyIntelligenceReport } from "@/components/shared/CompanyIntelligenceReport";
 import { fullEnrichFromLinkedIn } from "@/lib/explorium-api";
 import { usePanelPreferences } from "@/hooks/usePanelPreferences";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { EnrichmentOptionsPopover } from "./EnrichmentOptionsPopover";
 import { EnrichmentButtons } from "./EnrichmentButtons";
 import PanelCustomizationModal from "./PanelCustomizationModal";
@@ -80,6 +83,7 @@ import { createPageUrl } from "@/utils";
 // Copy button with feedback
 const CopyButton = ({ value }) => {
   const [copied, setCopied] = useState(false);
+  const { t } = useTheme();
 
   const handleCopy = async (e) => {
     e.stopPropagation();
@@ -92,39 +96,43 @@ const CopyButton = ({ value }) => {
   return (
     <button
       onClick={handleCopy}
-      className="p-1 hover:bg-zinc-700 rounded transition-colors"
+      className={`p-1 ${t("hover:bg-gray-200", "hover:bg-zinc-700")} rounded transition-colors`}
       title="Copy"
     >
       {copied ? (
         <Check className="w-3.5 h-3.5 text-red-400" />
       ) : (
-        <Copy className="w-3.5 h-3.5 text-zinc-500 hover:text-zinc-300" />
+        <Copy className={`w-3.5 h-3.5 ${t("text-gray-400", "text-zinc-500")} ${t("hover:text-gray-700", "hover:text-zinc-300")}`} />
       )}
     </button>
   );
 };
 
 // Section component
-const Section = ({ title, children, className = "" }) => (
-  <div className={className}>
-    <h4 className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">
-      {title}
-    </h4>
-    {children}
-  </div>
-);
+const Section = ({ title, children, className = "" }) => {
+  const { t } = useTheme();
+  return (
+    <div className={className}>
+      <h4 className={`text-xs font-medium ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider mb-3`}>
+        {title}
+      </h4>
+      {children}
+    </div>
+  );
+};
 
 // Expandable Text component
 const ExpandableText = ({ text, maxLength = 200 }) => {
   const [expanded, setExpanded] = useState(false);
-  if (!text) return <span className="text-zinc-500">—</span>;
+  const { t } = useTheme();
+  if (!text) return <span className={t("text-gray-400", "text-zinc-500")}>—</span>;
 
   const shouldTruncate = text.length > maxLength;
   const displayText = expanded || !shouldTruncate ? text : `${text.substring(0, maxLength)}...`;
 
   return (
     <div>
-      <p className="text-sm text-zinc-300 leading-relaxed">{displayText}</p>
+      <p className={`text-sm ${t("text-gray-700", "text-zinc-300")} leading-relaxed`}>{displayText}</p>
       {shouldTruncate && (
         <button
           onClick={() => setExpanded(!expanded)}
@@ -139,10 +147,11 @@ const ExpandableText = ({ text, maxLength = 200 }) => {
 
 // Urgency Badge
 const UrgencyBadge = ({ level }) => {
+  const { t } = useTheme();
   const config = {
     high: { bg: "bg-red-500/20", text: "text-red-400", label: "High Priority" },
     medium: { bg: "bg-red-400/20", text: "text-red-300", label: "Medium Priority" },
-    low: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Low Priority" },
+    low: { bg: t("bg-gray-200", "bg-zinc-500/20"), text: t("text-gray-500", "text-zinc-400"), label: "Low Priority" },
   };
   const c = config[level?.toLowerCase()] || config.medium;
   return (
@@ -155,6 +164,7 @@ const UrgencyBadge = ({ level }) => {
 
 // Satisfaction Badge - parses "Switching Likelihood: High/Medium/Low" from analysis text
 const SatisfactionBadge = ({ level }) => {
+  const { t } = useTheme();
   let switchingLikelihood = "Medium";
   if (level) {
     const match = level.match(/Switching Likelihood:\s*(High|Medium|Low)/i);
@@ -168,7 +178,7 @@ const SatisfactionBadge = ({ level }) => {
   if (lowerLevel === "high") {
     config = { bg: "bg-red-500/20", text: "text-red-400", icon: Smile, label: "Open to Move" };
   } else if (lowerLevel === "low") {
-    config = { bg: "bg-zinc-500/20", text: "text-zinc-400", icon: Frown, label: "Not Looking" };
+    config = { bg: t("bg-gray-200", "bg-zinc-500/20"), text: t("text-gray-500", "text-zinc-400"), icon: Frown, label: "Not Looking" };
   } else {
     config = { bg: "bg-red-400/20", text: "text-red-300", icon: Meh, label: "Considering" };
   }
@@ -183,14 +193,15 @@ const SatisfactionBadge = ({ level }) => {
 
 // Analysis Card
 const AnalysisCard = ({ icon: Icon, title, content, maxLength = 300 }) => {
+  const { t } = useTheme();
   if (!content) return null;
   return (
-    <div className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-4">
+    <div className={`${t("bg-gray-50", "bg-zinc-800/30")} border ${t("border-gray-200", "border-zinc-700/30")} rounded-xl p-4`}>
       <div className="flex items-center gap-2 mb-3">
         <div className="p-2 rounded-lg bg-red-500/10">
           <Icon className="w-4 h-4 text-red-400" />
         </div>
-        <h3 className="text-sm font-semibold text-white">{title}</h3>
+        <h3 className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>{title}</h3>
       </div>
       <ExpandableText text={content} maxLength={maxLength} />
     </div>
@@ -199,13 +210,14 @@ const AnalysisCard = ({ icon: Icon, title, content, maxLength = 300 }) => {
 
 // Info row component
 const InfoRow = ({ icon: Icon, label, value, copyable, link }) => {
+  const { t } = useTheme();
   if (!value) return null;
 
   return (
-    <div className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
+    <div className={`flex items-center justify-between py-2 border-b ${t("border-gray-200", "border-zinc-800")} last:border-0`}>
       <div className="flex items-center gap-2 text-sm">
-        <Icon className="w-4 h-4 text-zinc-500" />
-        <span className="text-zinc-400">{label}</span>
+        <Icon className={`w-4 h-4 ${t("text-gray-400", "text-zinc-500")}`} />
+        <span className={t("text-gray-500", "text-zinc-400")}>{label}</span>
       </div>
       <div className="flex items-center gap-2">
         {link ? (
@@ -218,7 +230,7 @@ const InfoRow = ({ icon: Icon, label, value, copyable, link }) => {
             View <ExternalLink className="w-3 h-3" />
           </a>
         ) : (
-          <span className="text-sm text-white">{value}</span>
+          <span className={`text-sm ${t("text-gray-900", "text-white")}`}>{value}</span>
         )}
         {copyable && value && <CopyButton value={value} />}
       </div>
@@ -227,51 +239,58 @@ const InfoRow = ({ icon: Icon, label, value, copyable, link }) => {
 };
 
 // Experience item component
-const ExperienceItem = ({ title, company, location, start_date, end_date, description }) => (
-  <div className="py-3 border-b border-zinc-800 last:border-0">
-    <div className="flex items-start justify-between">
-      <div>
-        <div className="font-medium text-white">{title}</div>
-        <div className="text-sm text-zinc-400 flex items-center gap-2">
-          <Building2 className="w-3 h-3" />
-          {company}
-          {location && (
-            <>
-              <span className="text-zinc-600">•</span>
-              <MapPin className="w-3 h-3" />
-              {location}
-            </>
-          )}
+const ExperienceItem = ({ title, company, location, start_date, end_date, description }) => {
+  const { t } = useTheme();
+  return (
+    <div className={`py-3 border-b ${t("border-gray-200", "border-zinc-800")} last:border-0`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <div className={`font-medium ${t("text-gray-900", "text-white")}`}>{title}</div>
+          <div className={`text-sm ${t("text-gray-500", "text-zinc-400")} flex items-center gap-2`}>
+            <Building2 className="w-3 h-3" />
+            {company}
+            {location && (
+              <>
+                <span className={t("text-gray-300", "text-zinc-600")}>•</span>
+                <MapPin className="w-3 h-3" />
+                {location}
+              </>
+            )}
+          </div>
+        </div>
+        <div className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>
+          {start_date} - {end_date || "Present"}
         </div>
       </div>
-      <div className="text-xs text-zinc-500">
-        {start_date} - {end_date || "Present"}
-      </div>
+      {description && (
+        <p className={`text-sm ${t("text-gray-500", "text-zinc-400")} mt-2 leading-relaxed`}>{description}</p>
+      )}
     </div>
-    {description && (
-      <p className="text-sm text-zinc-400 mt-2 leading-relaxed">{description}</p>
-    )}
-  </div>
-);
+  );
+};
 
 // Education item component
-const EducationItem = ({ degree, field, school, year }) => (
-  <div className="py-2 border-b border-zinc-800 last:border-0">
-    <div className="flex items-start justify-between">
-      <div>
-        <div className="font-medium text-white">{degree} {field && `in ${field}`}</div>
-        <div className="text-sm text-zinc-400 flex items-center gap-1">
-          <GraduationCap className="w-3 h-3" />
-          {school}
+const EducationItem = ({ degree, field, school, year }) => {
+  const { t } = useTheme();
+  return (
+    <div className={`py-2 border-b ${t("border-gray-200", "border-zinc-800")} last:border-0`}>
+      <div className="flex items-start justify-between">
+        <div>
+          <div className={`font-medium ${t("text-gray-900", "text-white")}`}>{degree} {field && `in ${field}`}</div>
+          <div className={`text-sm ${t("text-gray-500", "text-zinc-400")} flex items-center gap-1`}>
+            <GraduationCap className="w-3 h-3" />
+            {school}
+          </div>
         </div>
+        {year && <div className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{year}</div>}
       </div>
-      {year && <div className="text-xs text-zinc-500">{year}</div>}
     </div>
-  </div>
-);
+  );
+};
 
 // Score bar component
 const ScoreBar = ({ label, score, color = "red" }) => {
+  const { t } = useTheme();
   const colorClasses = {
     red: "bg-red-500",
     green: "bg-red-500",
@@ -284,10 +303,10 @@ const ScoreBar = ({ label, score, color = "red" }) => {
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
-        <span className="text-zinc-400">{label}</span>
-        <span className="text-white font-medium">{score || 0}%</span>
+        <span className={t("text-gray-500", "text-zinc-400")}>{label}</span>
+        <span className={`${t("text-gray-900", "text-white")} font-medium`}>{score || 0}%</span>
       </div>
-      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+      <div className={`h-2 ${t("bg-gray-200", "bg-zinc-800")} rounded-full overflow-hidden`}>
         <motion.div
           className={`h-full ${colorClasses[color]}`}
           initial={{ width: 0 }}
@@ -301,6 +320,7 @@ const ScoreBar = ({ label, score, color = "red" }) => {
 
 // Reasoning block component
 const ReasoningBlock = ({ title, items, content, color = "cyan" }) => {
+  const { t } = useTheme();
   const colorStyles = {
     green: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400" },
     yellow: { bg: "bg-red-400/10", border: "border-red-400/20", text: "text-red-400" },
@@ -316,14 +336,14 @@ const ReasoningBlock = ({ title, items, content, color = "cyan" }) => {
       {items ? (
         <ul className="space-y-1">
           {items.map((item, i) => (
-            <li key={i} className="text-sm text-zinc-300 flex items-start gap-2">
-              <ChevronRight className="w-3 h-3 mt-1 flex-shrink-0 text-zinc-500" />
+            <li key={i} className={`text-sm ${t("text-gray-700", "text-zinc-300")} flex items-start gap-2`}>
+              <ChevronRight className={`w-3 h-3 mt-1 flex-shrink-0 ${t("text-gray-400", "text-zinc-500")}`} />
               {item}
             </li>
           ))}
         </ul>
       ) : content ? (
-        <p className="text-sm text-zinc-300">{content}</p>
+        <p className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>{content}</p>
       ) : null}
     </div>
   );
@@ -331,6 +351,7 @@ const ReasoningBlock = ({ title, items, content, color = "cyan" }) => {
 
 // Quick Stats component for header
 const QuickStats = ({ candidate }) => {
+  const { t } = useTheme();
   // Use database fields if available, otherwise calculate from experience
   const calculateYearsAtCompany = () => {
     // ISS-012 FIX: Cross-check DB field against experience data to catch bad values
@@ -415,21 +436,21 @@ const QuickStats = ({ candidate }) => {
   return (
     <div className="flex items-center gap-4 mt-3 text-xs">
       {yearsAtCompany !== null && (
-        <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
+        <div className={`flex items-center gap-1.5 px-2 py-1 ${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg`}>
           <Calendar className="w-3 h-3 text-red-400" />
-          <span className="text-zinc-300">{yearsAtCompany}y at company</span>
+          <span className={t("text-gray-700", "text-zinc-300")}>{yearsAtCompany}y at company</span>
         </div>
       )}
       {timesPromoted > 0 && (
-        <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
+        <div className={`flex items-center gap-1.5 px-2 py-1 ${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg`}>
           <TrendingUp className="w-3 h-3 text-red-400" />
-          <span className="text-zinc-300">{timesPromoted}x promoted</span>
+          <span className={t("text-gray-700", "text-zinc-300")}>{timesPromoted}x promoted</span>
         </div>
       )}
       {companyChanges > 0 && (
-        <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
+        <div className={`flex items-center gap-1.5 px-2 py-1 ${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg`}>
           <ArrowUpRight className="w-3 h-3 text-red-400" />
-          <span className="text-zinc-300">{companyChanges} company changes</span>
+          <span className={t("text-gray-700", "text-zinc-300")}>{companyChanges} company changes</span>
         </div>
       )}
     </div>
@@ -438,15 +459,16 @@ const QuickStats = ({ candidate }) => {
 
 // Company Tab
 const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
+  const { t } = useTheme();
   const companyIntel = candidate.company_intelligence || {};
   const hasCompanyData = companyIntel && Object.keys(companyIntel).length > 0;
 
   if (!hasCompanyData && !candidate.current_company) {
     return (
       <div className="text-center py-8">
-        <Building2 className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-        <p className="text-zinc-400">No company data available</p>
-        <p className="text-sm text-zinc-500 mt-1">
+        <Building2 className={`w-12 h-12 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-3`} />
+        <p className={t("text-gray-500", "text-zinc-400")}>No company data available</p>
+        <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} mt-1`}>
           Company intelligence will appear here when available
         </p>
       </div>
@@ -462,8 +484,8 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
             {candidate.current_company?.charAt(0)?.toUpperCase() || "?"}
           </div>
           <div className="flex-1">
-            <div className="text-lg font-medium text-white">{candidate.current_company || "Unknown Company"}</div>
-            <div className="flex items-center gap-3 mt-1 text-sm text-zinc-400">
+            <div className={`text-lg font-medium ${t("text-gray-900", "text-white")}`}>{candidate.current_company || "Unknown Company"}</div>
+            <div className={`flex items-center gap-3 mt-1 text-sm ${t("text-gray-500", "text-zinc-400")}`}>
               {companyIntel.industry && (
                 <span className="flex items-center gap-1">
                   <Layers className="w-3.5 h-3.5" />
@@ -490,7 +512,7 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
       {/* Technology Stack */}
       {isSectionEnabled('company', 'tech_stack') && companyIntel.tech_stack && companyIntel.tech_stack.length > 0 && (
         <Section title="Technology Stack">
-          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
+          <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-4 border ${t("border-gray-200", "border-zinc-700/30")}`}>
             <div className="flex flex-wrap gap-2">
               {companyIntel.tech_stack.map((tech, i) => (
                 <span
@@ -509,10 +531,10 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
       {/* Employee Ratings */}
       {isSectionEnabled('company', 'employee_ratings') && companyIntel.employee_ratings && (
         <Section title="Employee Ratings">
-          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30 space-y-3">
+          <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-4 border ${t("border-gray-200", "border-zinc-700/30")} space-y-3`}>
             {companyIntel.employee_ratings.overall && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Overall Rating</span>
+                <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>Overall Rating</span>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -521,12 +543,12 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
                         className={`w-4 h-4 ${
                           star <= Math.round(companyIntel.employee_ratings.overall)
                             ? "text-red-400 fill-red-400"
-                            : "text-zinc-600"
+                            : t("text-gray-300", "text-zinc-600")
                         }`}
                       />
                     ))}
                   </div>
-                  <span className="text-white font-medium">
+                  <span className={`${t("text-gray-900", "text-white")} font-medium`}>
                     {companyIntel.employee_ratings.overall.toFixed(1)}
                   </span>
                 </div>
@@ -551,31 +573,31 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
       {/* Funding Information */}
       {isSectionEnabled('company', 'funding_info') && companyIntel.funding && (
         <Section title="Funding Information">
-          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30 space-y-3">
+          <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-4 border ${t("border-gray-200", "border-zinc-700/30")} space-y-3`}>
             {companyIntel.funding.total_raised && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400 flex items-center gap-1">
+                <span className={`text-sm ${t("text-gray-500", "text-zinc-400")} flex items-center gap-1`}>
                   <Euro className="w-4 h-4" />
                   Total Raised
                 </span>
-                <span className="text-white font-medium">{companyIntel.funding.total_raised}</span>
+                <span className={`${t("text-gray-900", "text-white")} font-medium`}>{companyIntel.funding.total_raised}</span>
               </div>
             )}
             {companyIntel.funding.last_round && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Last Round</span>
-                <span className="text-white">{companyIntel.funding.last_round}</span>
+                <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>Last Round</span>
+                <span className={t("text-gray-900", "text-white")}>{companyIntel.funding.last_round}</span>
               </div>
             )}
             {companyIntel.funding.last_round_date && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Round Date</span>
-                <span className="text-white">{companyIntel.funding.last_round_date}</span>
+                <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>Round Date</span>
+                <span className={t("text-gray-900", "text-white")}>{companyIntel.funding.last_round_date}</span>
               </div>
             )}
             {companyIntel.funding.investors && companyIntel.funding.investors.length > 0 && (
-              <div className="pt-2 border-t border-zinc-700/50">
-                <div className="text-xs text-zinc-500 mb-2">Key Investors</div>
+              <div className={`pt-2 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
+                <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} mb-2`}>Key Investors</div>
                 <div className="flex flex-wrap gap-1.5">
                   {companyIntel.funding.investors.map((investor, i) => (
                     <span
@@ -604,12 +626,12 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
                 <div className="flex items-start gap-2">
                   <Newspaper className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-sm text-white font-medium">{news.headline}</div>
+                    <div className={`text-sm ${t("text-gray-900", "text-white")} font-medium`}>{news.headline}</div>
                     {news.date && (
-                      <div className="text-xs text-zinc-500 mt-1">{news.date}</div>
+                      <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-1`}>{news.date}</div>
                     )}
                     {news.summary && (
-                      <p className="text-xs text-zinc-400 mt-1">{news.summary}</p>
+                      <p className={`text-xs ${t("text-gray-500", "text-zinc-400")} mt-1`}>{news.summary}</p>
                     )}
                   </div>
                 </div>
@@ -622,8 +644,8 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
       {/* Company Profile Summary */}
       {isSectionEnabled('company', 'company_profile') && companyIntel.description && (
         <Section title="Company Profile">
-          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
-            <p className="text-sm text-zinc-300 leading-relaxed">{companyIntel.description}</p>
+          <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-4 border ${t("border-gray-200", "border-zinc-700/30")}`}>
+            <p className={`text-sm ${t("text-gray-700", "text-zinc-300")} leading-relaxed`}>{companyIntel.description}</p>
           </div>
         </Section>
       )}
@@ -631,12 +653,12 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
       {/* Growth Signals */}
       {isSectionEnabled('company', 'growth_signals') && companyIntel.growth_signals && companyIntel.growth_signals.length > 0 && (
         <Section title="Growth Signals">
-          <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+          <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-3 border ${t("border-gray-200", "border-zinc-700/30")}`}>
             <ul className="space-y-2">
               {companyIntel.growth_signals.map((signal, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm">
                   <Zap className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-zinc-300">{signal}</span>
+                  <span className={t("text-gray-700", "text-zinc-300")}>{signal}</span>
                 </li>
               ))}
             </ul>
@@ -649,6 +671,7 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
 
 // Activity item component
 const ActivityItem = ({ type, campaign_name, timestamp, details, message_preview }) => {
+  const { t } = useTheme();
   const typeConfig = {
     matched: { icon: Target, label: "Matched to campaign", color: "text-red-400" },
     outreach_generated: { icon: Sparkles, label: "Outreach generated", color: "text-red-400" },
@@ -658,7 +681,7 @@ const ActivityItem = ({ type, campaign_name, timestamp, details, message_preview
     interview_scheduled: { icon: Calendar, label: "Interview scheduled", color: "text-red-400" },
   };
 
-  const config = typeConfig[type] || { icon: History, label: type, color: "text-zinc-400" };
+  const config = typeConfig[type] || { icon: History, label: type, color: t("text-gray-500", "text-zinc-400") };
   const Icon = config.icon;
 
   const formatTime = (ts) => {
@@ -677,28 +700,30 @@ const ActivityItem = ({ type, campaign_name, timestamp, details, message_preview
 
   return (
     <div className="relative pl-10 pb-4">
-      <div className="absolute left-2 w-5 h-5 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center z-10">
+      <div className={`absolute left-2 w-5 h-5 rounded-full ${t("bg-gray-100", "bg-zinc-800")} border-2 ${t("border-gray-200", "border-zinc-700")} flex items-center justify-center z-10`}>
         <Icon className={`w-3 h-3 ${config.color}`} />
       </div>
-      <div className="bg-zinc-800/50 rounded-lg p-3 border border-zinc-700/30">
+      <div className={`${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg p-3 border ${t("border-gray-200", "border-zinc-700/30")}`}>
         <div className="flex justify-between items-start">
           <div className={`font-medium text-sm ${config.color}`}>{config.label}</div>
-          <div className="text-xs text-zinc-500">{formatTime(timestamp)}</div>
+          <div className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{formatTime(timestamp)}</div>
         </div>
         {campaign_name && (
-          <div className="text-sm text-zinc-400 mt-1">Campaign: {campaign_name}</div>
+          <div className={`text-sm ${t("text-gray-500", "text-zinc-400")} mt-1`}>Campaign: {campaign_name}</div>
         )}
         {message_preview && (
-          <div className="text-xs text-zinc-500 mt-2 italic truncate">"{message_preview}"</div>
+          <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-2 italic truncate`}>"{message_preview}"</div>
         )}
-        {details && <div className="text-xs text-zinc-500 mt-2">{details}</div>}
+        {details && <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-2`}>{details}</div>}
       </div>
     </div>
   );
 };
 
 // Profile Tab
-const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
+const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => {
+  const { t } = useTheme();
+  return (
   <div className="space-y-6">
     {/* Analysis Cards Section */}
     {isSectionEnabled('profile', 'analysis_cards') && (
@@ -712,15 +737,39 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
         <AnalysisCard
           icon={Briefcase}
           title="Job Satisfaction Analysis"
-          content={candidate.job_satisfaction_analysis}
+          content={candidate.job_satisfaction_analysis || candidate.job_satisfaction}
           maxLength={300}
         />
+        {candidate.job_satisfaction_reasoning && (
+          <AnalysisCard
+            icon={Lightbulb}
+            title="Satisfaction Reasoning"
+            content={candidate.job_satisfaction_reasoning}
+            maxLength={300}
+          />
+        )}
         <AnalysisCard
           icon={Award}
           title="Experience Analysis"
-          content={candidate.experience_analysis}
+          content={candidate.experience_report || candidate.experience_analysis}
           maxLength={300}
         />
+        {candidate.market_position && (
+          <AnalysisCard
+            icon={DollarSign}
+            title="Market Position"
+            content={candidate.market_position}
+            maxLength={300}
+          />
+        )}
+        {candidate.salary_intelligence && (
+          <AnalysisCard
+            icon={Euro}
+            title="Salary Intelligence"
+            content={candidate.salary_intelligence}
+            maxLength={300}
+          />
+        )}
       </div>
     )}
 
@@ -733,7 +782,7 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
       if (!hasContactData) return null;
       return (
         <Section title="Contact Information">
-          <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+          <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-3 border ${t("border-gray-200", "border-zinc-700/30")}`}>
             <InfoRow icon={Mail} label="Email" value={candidate.verified_email || candidate.email} copyable />
             {candidate.personal_email && candidate.personal_email !== (candidate.verified_email || candidate.email) && (
               <InfoRow icon={Mail} label="Personal Email" value={candidate.personal_email} copyable />
@@ -774,11 +823,11 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
 
             {/* Enrichment status indicator */}
             {candidate.enriched_at && (
-              <div className="mt-3 pt-3 border-t border-zinc-700/50">
+              <div className={`mt-3 pt-3 border-t ${t("border-gray-200", "border-zinc-700/50")}`}>
                 <div className="flex items-center gap-2 text-xs text-red-400">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Verified via {candidate.enrichment_source || "Explorium"}</span>
-                  <span className="text-zinc-500">• {new Date(candidate.enriched_at).toLocaleDateString()}</span>
+                  <span className={t("text-gray-400", "text-zinc-500")}>• {new Date(candidate.enriched_at).toLocaleDateString()}</span>
                 </div>
               </div>
             )}
@@ -790,8 +839,8 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
     {/* Professional Summary */}
     {isSectionEnabled('profile', 'professional_summary') && candidate.summary && (
       <Section title="Professional Summary">
-        <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
-          <p className="text-zinc-300 text-sm leading-relaxed">{candidate.summary}</p>
+        <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-4 border ${t("border-gray-200", "border-zinc-700/30")}`}>
+          <p className={`${t("text-gray-700", "text-zinc-300")} text-sm leading-relaxed`}>{candidate.summary}</p>
         </div>
       </Section>
     )}
@@ -829,22 +878,22 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
             return (
               <div
                 key={i}
-                className="flex gap-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:bg-zinc-800/50 transition-colors"
+                className={`flex gap-3 p-3 ${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg border ${t("border-gray-200", "border-zinc-700/30")} ${t("hover:bg-gray-100", "hover:bg-zinc-800/50")} transition-colors`}
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center border border-red-500/30 flex-shrink-0">
                   <Briefcase className="w-4 h-4 text-red-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-white">{jobTitle || 'Unknown Position'}</p>
-                  <p className="text-sm text-zinc-400">{companyName || 'Unknown Company'}</p>
+                  <p className={`font-medium ${t("text-gray-900", "text-white")}`}>{jobTitle || 'Unknown Position'}</p>
+                  <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>{companyName || 'Unknown Company'}</p>
                   {(job.start_date || job.end_date) && (
-                    <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+                    <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-1 flex items-center gap-1`}>
                       <Calendar className="w-3 h-3" />
                       {job.start_date} - {job.end_date || 'Present'}
                     </p>
                   )}
                   {description && (
-                    <p className="text-sm text-zinc-500 mt-2 line-clamp-2">{description}</p>
+                    <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} mt-2 line-clamp-2`}>{description}</p>
                   )}
                 </div>
               </div>
@@ -868,17 +917,17 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
             return (
               <div
                 key={i}
-                className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30"
+                className={`p-3 ${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg border ${t("border-gray-200", "border-zinc-700/30")}`}
               >
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center border border-red-500/30 flex-shrink-0">
                     <GraduationCap className="w-4 h-4 text-red-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white">{displayDegree}</p>
-                    <p className="text-sm text-zinc-400">{schoolName || 'Unknown Institution'}</p>
+                    <p className={`font-medium ${t("text-gray-900", "text-white")}`}>{displayDegree}</p>
+                    <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>{schoolName || 'Unknown Institution'}</p>
                     {(edu.year || edu.end_date || edu.graduation_year) && (
-                      <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+                      <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-1 flex items-center gap-1`}>
                         <Calendar className="w-3 h-3" />
                         {edu.year || edu.end_date || edu.graduation_year}
                       </p>
@@ -904,15 +953,15 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
             return (
               <div
                 key={i}
-                className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30"
+                className={`flex items-center gap-3 p-3 ${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg border ${t("border-gray-200", "border-zinc-700/30")}`}
               >
                 <BadgeCheck className="w-5 h-5 text-red-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
+                  <p className={`text-sm font-medium ${t("text-gray-900", "text-white")} truncate`}>
                     {certName}
                   </p>
-                  {certIssuer && <p className="text-xs text-zinc-500">{certIssuer}</p>}
-                  {certDate && <p className="text-xs text-zinc-600">{certDate}</p>}
+                  {certIssuer && <p className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{certIssuer}</p>}
+                  {certDate && <p className={`text-xs ${t("text-gray-300", "text-zinc-600")}`}>{certDate}</p>}
                 </div>
               </div>
             );
@@ -944,7 +993,7 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
     {/* Experience (Legacy - from original candidate data) */}
     {isSectionEnabled('profile', 'experience') && candidate.experience && candidate.experience.length > 0 && (
       <Section title="Experience">
-        <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+        <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-3 border ${t("border-gray-200", "border-zinc-700/30")}`}>
           {candidate.experience.map((exp, i) => (
             <ExperienceItem key={i} {...exp} />
           ))}
@@ -955,39 +1004,41 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
     {/* Additional Info */}
     {isSectionEnabled('profile', 'additional_info') && (candidate.years_experience || candidate.current_salary || candidate.desired_salary || candidate.notice_period) && (
       <Section title="Additional Information">
-        <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30 space-y-2">
+        <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-3 border ${t("border-gray-200", "border-zinc-700/30")} space-y-2`}>
           {candidate.years_experience && (
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-400">Years of Experience</span>
-              <span className="text-white">{candidate.years_experience}</span>
+              <span className={t("text-gray-500", "text-zinc-400")}>Years of Experience</span>
+              <span className={t("text-gray-900", "text-white")}>{candidate.years_experience}</span>
             </div>
           )}
           {candidate.current_salary && (
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-400">Current Salary</span>
-              <span className="text-white">{'\u20AC'}{candidate.current_salary.toLocaleString()}</span>
+              <span className={t("text-gray-500", "text-zinc-400")}>Current Salary</span>
+              <span className={t("text-gray-900", "text-white")}>{'\u20AC'}{candidate.current_salary.toLocaleString()}</span>
             </div>
           )}
           {candidate.desired_salary && (
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-400">Desired Salary</span>
-              <span className="text-white">{'\u20AC'}{candidate.desired_salary.toLocaleString()}</span>
+              <span className={t("text-gray-500", "text-zinc-400")}>Desired Salary</span>
+              <span className={t("text-gray-900", "text-white")}>{'\u20AC'}{candidate.desired_salary.toLocaleString()}</span>
             </div>
           )}
           {candidate.notice_period && (
             <div className="flex justify-between text-sm">
-              <span className="text-zinc-400">Notice Period</span>
-              <span className="text-white">{candidate.notice_period}</span>
+              <span className={t("text-gray-500", "text-zinc-400")}>Notice Period</span>
+              <span className={t("text-gray-900", "text-white")}>{candidate.notice_period}</span>
             </div>
           )}
         </div>
       </Section>
     )}
   </div>
-);
+  );
+};
 
 // Intelligence Tab
 const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = () => true }) => {
+  const { t } = useTheme();
   const hasIntel = candidate.intelligence_score != null;
 
   return (
@@ -997,7 +1048,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
         <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded-lg border border-red-500/20">
           <IntelligenceGauge score={candidate.intelligence_score || 0} size="lg" />
           <div className="flex-1">
-            <div className="text-lg font-medium text-white">Flight Risk Score</div>
+            <div className={`text-lg font-medium ${t("text-gray-900", "text-white")}`}>Flight Risk Score</div>
             <div className="flex items-center gap-2 mt-1">
               <IntelligenceLevelBadge level={candidate.intelligence_level || "Low"} />
               {candidate.recommended_approach && (
@@ -1005,7 +1056,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
               )}
             </div>
             {candidate.last_intelligence_update && (
-              <div className="text-xs text-zinc-500 mt-2">
+              <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-2`}>
                 Last updated: {new Date(candidate.last_intelligence_update).toLocaleDateString()}
               </div>
             )}
@@ -1021,7 +1072,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2">
                   <Lightbulb className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-zinc-300 text-sm leading-relaxed">
+                  <p className={`${t("text-gray-700", "text-zinc-300")} text-sm leading-relaxed`}>
                     {candidate.best_outreach_angle}
                   </p>
                 </div>
@@ -1041,18 +1092,18 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                         ? "bg-red-500/10 border-red-500/20"
                         : signal.urgency === "medium"
                         ? "bg-red-400/10 border-red-400/20"
-                        : "bg-zinc-800/50 border-zinc-700/30"
+                        : t("bg-gray-100/50 border-gray-200", "bg-zinc-800/50 border-zinc-700/30")
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-white">{signal.trigger}</span>
+                      <span className={`text-sm ${t("text-gray-900", "text-white")}`}>{signal.trigger}</span>
                       <span
                         className={`text-xs px-2 py-0.5 rounded ${
                           signal.urgency === "high"
                             ? "bg-red-500/20 text-red-400"
                             : signal.urgency === "medium"
                             ? "bg-red-400/20 text-red-400"
-                            : "bg-zinc-700 text-zinc-400"
+                            : t("bg-gray-200 text-gray-500", "bg-zinc-700 text-zinc-400")
                         }`}
                       >
                         {signal.urgency} urgency
@@ -1067,12 +1118,12 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
           {/* Outreach Hooks */}
           {isSectionEnabled('intelligence', 'outreach_hooks') && candidate.outreach_hooks && candidate.outreach_hooks.length > 0 && (
             <Section title="Outreach Hooks">
-              <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+              <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-3 border ${t("border-gray-200", "border-zinc-700/30")}`}>
                 <ul className="space-y-2">
                   {candidate.outreach_hooks.map((hook, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
                       <Target className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                      <span className="text-zinc-300">{hook}</span>
+                      <span className={t("text-gray-700", "text-zinc-300")}>{hook}</span>
                     </li>
                   ))}
                 </ul>
@@ -1083,12 +1134,12 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
           {/* Key Insights */}
           {isSectionEnabled('intelligence', 'key_insights') && candidate.key_insights && candidate.key_insights.length > 0 && (
             <Section title="Key Insights">
-              <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+              <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-3 border ${t("border-gray-200", "border-zinc-700/30")}`}>
                 <ul className="space-y-2">
                   {candidate.key_insights.map((insight, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
                       <Sparkles className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                      <span className="text-zinc-300">{insight}</span>
+                      <span className={t("text-gray-700", "text-zinc-300")}>{insight}</span>
                     </li>
                   ))}
                 </ul>
@@ -1099,12 +1150,12 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
           {/* Company Pain Points */}
           {isSectionEnabled('intelligence', 'employer_pain_points') && candidate.company_pain_points && candidate.company_pain_points.length > 0 && (
             <Section title="Employer Pain Points">
-              <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+              <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-3 border ${t("border-gray-200", "border-zinc-700/30")}`}>
                 <ul className="space-y-2">
                   {candidate.company_pain_points.map((point, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
                       <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                      <span className="text-zinc-300">{point}</span>
+                      <span className={t("text-gray-700", "text-zinc-300")}>{point}</span>
                     </li>
                   ))}
                 </ul>
@@ -1118,7 +1169,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
                   <Brain className="w-5 h-5 text-red-400 flex-shrink-0" />
-                  <p className="text-xs text-zinc-400">Skills inferred from experience and background, even if not explicitly listed</p>
+                  <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>Skills inferred from experience and background, even if not explicitly listed</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {candidate.inferred_skills.map((skill, i) => (
@@ -1141,7 +1192,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
                   <ArrowUpRight className="w-5 h-5 text-red-400 flex-shrink-0" />
-                  <p className="text-xs text-zinc-400">Adjacent roles or companies this candidate could excel in</p>
+                  <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>Adjacent roles or companies this candidate could excel in</p>
                 </div>
                 <div className="space-y-2">
                   {candidate.lateral_opportunities.map((opp, i) => {
@@ -1152,7 +1203,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                     return (
                       <div key={i} className="flex items-center gap-2 text-sm">
                         <Briefcase className="w-4 h-4 text-red-400 flex-shrink-0" />
-                        <span className="text-zinc-300">{displayText}</span>
+                        <span className={t("text-gray-700", "text-zinc-300")}>{displayText}</span>
                         {typeof opp === 'object' && opp.fit_score && (
                           <span className="ml-auto px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
                             {opp.fit_score}% fit
@@ -1172,17 +1223,17 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
                   <Network className="w-5 h-5 text-red-400 flex-shrink-0" />
-                  <p className="text-xs text-zinc-400">Related companies and competitive insights</p>
+                  <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>Related companies and competitive insights</p>
                 </div>
                 <div className="space-y-2">
                   {candidate.company_correlations.map((company, i) => {
                     // Handle string format (company name)
                     if (typeof company === 'string') {
                       return (
-                        <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                        <div key={i} className={`flex items-center justify-between p-2 ${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg`}>
                           <div className="flex items-center gap-2">
                             <Building2 className="w-4 h-4 text-red-400" />
-                            <span className="text-sm text-zinc-300">{company}</span>
+                            <span className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>{company}</span>
                           </div>
                         </div>
                       );
@@ -1190,10 +1241,10 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                     // Handle object with name/similarity (expected format)
                     if (company.name) {
                       return (
-                        <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                        <div key={i} className={`flex items-center justify-between p-2 ${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg`}>
                           <div className="flex items-center gap-2">
                             <Building2 className="w-4 h-4 text-red-400" />
-                            <span className="text-sm text-zinc-300">{company.name}</span>
+                            <span className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>{company.name}</span>
                           </div>
                           {company.similarity && (
                             <span className="text-xs text-red-400">{company.similarity}% match</span>
@@ -1204,17 +1255,17 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                     // Handle inference object format (from AI)
                     if (company.inference || company.observation || company.outreach_angle) {
                       return (
-                        <div key={i} className="p-3 bg-zinc-800/50 rounded-lg space-y-2">
+                        <div key={i} className={`p-3 ${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg space-y-2`}>
                           {company.observation && (
                             <div className="flex items-start gap-2">
                               <Eye className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                              <span className="text-sm text-zinc-300">{company.observation}</span>
+                              <span className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>{company.observation}</span>
                             </div>
                           )}
                           {company.inference && (
                             <div className="flex items-start gap-2">
                               <Sparkles className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                              <span className="text-sm text-zinc-400">{company.inference}</span>
+                              <span className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>{company.inference}</span>
                             </div>
                           )}
                           {company.outreach_angle && (
@@ -1228,9 +1279,9 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                     }
                     // Fallback
                     return (
-                      <div key={i} className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg">
+                      <div key={i} className={`flex items-center gap-2 p-2 ${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg`}>
                         <Building2 className="w-4 h-4 text-red-400" />
-                        <span className="text-sm text-zinc-300">{JSON.stringify(company)}</span>
+                        <span className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>{JSON.stringify(company)}</span>
                       </div>
                     );
                   })}
@@ -1241,9 +1292,9 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
         </>
       ) : (
         <div className="text-center py-8">
-          <Brain className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-          <p className="text-zinc-400">No intelligence data available</p>
-          <p className="text-sm text-zinc-500 mt-1">
+          <Brain className={`w-12 h-12 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-3`} />
+          <p className={t("text-gray-500", "text-zinc-400")}>No intelligence data available</p>
+          <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} mt-1`}>
             Generate intelligence to unlock insights
           </p>
         </div>
@@ -1269,11 +1320,12 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
 
 // Match Analysis Tab
 const MatchAnalysisTab = ({ matchData, campaignContext }) => {
+  const { t } = useTheme();
   if (!matchData) {
     return (
       <div className="text-center py-8">
-        <Target className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-        <p className="text-zinc-400">No match data available</p>
+        <Target className={`w-12 h-12 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-3`} />
+        <p className={t("text-gray-500", "text-zinc-400")}>No match data available</p>
       </div>
     );
   }
@@ -1283,23 +1335,23 @@ const MatchAnalysisTab = ({ matchData, campaignContext }) => {
       {/* Match Score Header */}
       <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-500/10 to-red-500/10 rounded-lg border border-red-500/20">
         <div>
-          <div className="text-lg font-medium text-white">Match Score</div>
+          <div className={`text-lg font-medium ${t("text-gray-900", "text-white")}`}>Match Score</div>
           {campaignContext?.roleName && (
-            <div className="text-sm text-zinc-400 mt-1">
+            <div className={`text-sm ${t("text-gray-500", "text-zinc-400")} mt-1`}>
               For: {campaignContext.roleName}
             </div>
           )}
         </div>
         <div className="text-center">
           <div className="text-4xl font-bold text-red-400">{matchData.match_score || 0}%</div>
-          <div className="text-xs text-zinc-500 mt-1">Match</div>
+          <div className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-1`}>Match</div>
         </div>
       </div>
 
       {/* Score Breakdown */}
       {matchData.match_factors && (
         <Section title="Score Breakdown">
-          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30 space-y-3">
+          <div className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg p-4 border ${t("border-gray-200", "border-zinc-700/30")} space-y-3`}>
             <ScoreBar label="Skills Match" score={matchData.match_factors.skills_fit} color="red" />
             <ScoreBar label="Experience Match" score={matchData.match_factors.experience_fit} color="red" />
             <ScoreBar label="Title Match" score={matchData.match_factors.title_fit} color="red" />
@@ -1315,7 +1367,7 @@ const MatchAnalysisTab = ({ matchData, campaignContext }) => {
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
             <div className="flex items-start gap-2">
               <Brain className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-zinc-300 text-sm leading-relaxed">{matchData.ai_analysis}</p>
+              <p className={`${t("text-gray-700", "text-zinc-300")} text-sm leading-relaxed`}>{matchData.ai_analysis}</p>
             </div>
           </div>
         </Section>
@@ -1331,7 +1383,7 @@ const MatchAnalysisTab = ({ matchData, campaignContext }) => {
                 className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
               >
                 <TrendingUp className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-zinc-300">{reason}</span>
+                <span className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>{reason}</span>
               </div>
             ))}
           </div>
@@ -1354,10 +1406,11 @@ const MatchAnalysisTab = ({ matchData, campaignContext }) => {
 
 // Activity Tab
 const ActivityTab = ({ activityHistory, loading }) => {
+  const { t } = useTheme();
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+        <Loader2 className={`w-6 h-6 ${t("text-gray-400", "text-zinc-500")} animate-spin`} />
       </div>
     );
   }
@@ -1365,9 +1418,9 @@ const ActivityTab = ({ activityHistory, loading }) => {
   if (!activityHistory || activityHistory.length === 0) {
     return (
       <div className="text-center py-8">
-        <History className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-        <p className="text-zinc-400">No activity history yet</p>
-        <p className="text-sm text-zinc-500 mt-1">
+        <History className={`w-12 h-12 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-3`} />
+        <p className={t("text-gray-500", "text-zinc-400")}>No activity history yet</p>
+        <p className={`text-sm ${t("text-gray-400", "text-zinc-500")} mt-1`}>
           Activity will appear here as you interact with this candidate
         </p>
       </div>
@@ -1377,7 +1430,7 @@ const ActivityTab = ({ activityHistory, loading }) => {
   return (
     <div className="relative">
       {/* Timeline line */}
-      <div className="absolute left-[15px] top-0 bottom-0 w-px bg-zinc-700" />
+      <div className={`absolute left-[15px] top-0 bottom-0 w-px ${t("bg-gray-200", "bg-zinc-700")}`} />
 
       <div className="space-y-0">
         {activityHistory.map((activity, i) => (
@@ -1396,6 +1449,7 @@ export default function CandidateDetailDrawer({
   campaignContext,
 }) {
   const { user } = useUser();
+  const { t } = useTheme();
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("summary");
@@ -1422,6 +1476,13 @@ export default function CandidateDetailDrawer({
   // Campaign Matches state
   const [campaignMatches, setCampaignMatches] = useState([]);
 
+  // Open Roles + Outreach state
+  const [openRoles, setOpenRoles] = useState([]);
+  const [openRolesLoading, setOpenRolesLoading] = useState(false);
+  const [generatingOutreach, setGeneratingOutreach] = useState(null); // role id being generated
+  const [outreachPreview, setOutreachPreview] = useState(null); // { role, message }
+  const [outreachChannel, setOutreachChannel] = useState("email");
+
   // Panel preferences
   const {
     preferences,
@@ -1439,6 +1500,7 @@ export default function CandidateDetailDrawer({
       fetchCandidateDetails();
       fetchActivityHistory();
       fetchCampaignMatches();
+      fetchOpenRoles();
     }
   }, [candidateId, open]);
 
@@ -1476,7 +1538,8 @@ export default function CandidateDetailDrawer({
         current_company: data.current_company || data.company_name || null,
         location: data.location || data.person_home_location || null,
         linkedin_url: data.linkedin_url || data.linkedin_profile || null,
-        summary: data.summary || data.professional_summary || null,
+        summary: data.summary || data.professional_summary || data.experience_report || null,
+        age_group: data.age_group || data.estimated_age_range || null,
 
         // Intelligence fields - timing_signals from intelligence_timing
         timing_signals: data.timing_signals || data.intelligence_timing || [],
@@ -1629,6 +1692,116 @@ export default function CandidateDetailDrawer({
     } catch (err) {
       console.error("Error fetching matches:", err);
     }
+  };
+
+  // Fetch all open roles for the organization
+  const fetchOpenRoles = async () => {
+    if (!user?.organization_id) return;
+    setOpenRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("roles")
+        .select("*, project:project_id(id, title, client_company)")
+        .eq("organization_id", user.organization_id)
+        .eq("status", "open")
+        .order("created_date", { ascending: false });
+
+      if (error) throw error;
+      setOpenRoles(data || []);
+    } catch (err) {
+      console.error("Error fetching open roles:", err);
+    } finally {
+      setOpenRolesLoading(false);
+    }
+  };
+
+  // Generate outreach message for a specific role
+  const handleGenerateOutreach = async (role) => {
+    if (!candidate) return;
+    setGeneratingOutreach(role.id);
+    try {
+      const candidateName = candidate.name || `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim();
+
+      // Build role context from the role's data
+      const skills = Array.isArray(role.required_skills) ? role.required_skills : [];
+      const roleContext = {
+        perfect_fit_criteria: skills.join(", "),
+        selling_points: role.description || "",
+        must_haves: skills.join("\n"),
+        nice_to_haves: Array.isArray(role.preferred_skills) ? role.preferred_skills.join("\n") : "",
+        compensation_range: role.salary_range || "",
+        unique_aspects: [
+          role.location_requirements ? `Location: ${role.location_requirements}` : "",
+          role.remote_policy ? `Remote: ${role.remote_policy}` : "",
+          role.employment_type ? `Type: ${role.employment_type.replace("_", " ")}` : "",
+        ].filter(Boolean).join(". "),
+      };
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCampaignOutreach`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            candidate_id: candidate.id,
+            organization_id: user.organization_id,
+            candidate_name: candidateName,
+            candidate_title: candidate.current_title || candidate.job_title,
+            candidate_company: candidate.current_company || candidate.company_name,
+            candidate_skills: candidate.skills || [],
+            // Intelligence data
+            intelligence_score: candidate.intelligence_score,
+            recommended_approach: candidate.recommended_approach,
+            outreach_hooks: candidate.outreach_hooks || [],
+            best_outreach_angle: candidate.best_outreach_angle,
+            timing_signals: candidate.timing_signals || [],
+            company_pain_points: candidate.company_pain_points || [],
+            key_insights: candidate.key_insights || [],
+            lateral_opportunities: candidate.lateral_opportunities || [],
+            intelligence_factors: candidate.intelligence_factors,
+            // Role context
+            role_context: roleContext,
+            role_title: role.title,
+            company_name: role.project?.client_company || "",
+            // Settings
+            stage: "initial",
+            campaign_type: outreachChannel,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to generate outreach");
+      const data = await response.json();
+
+      setOutreachPreview({
+        role,
+        message: data,
+        candidateName,
+      });
+      toast.success("Outreach message generated!", {
+        description: data.personalization_score
+          ? `Personalization: ${data.personalization_score}%`
+          : undefined,
+      });
+    } catch (err) {
+      console.error("Error generating outreach:", err);
+      toast.error("Failed to generate outreach message");
+    } finally {
+      setGeneratingOutreach(null);
+    }
+  };
+
+  // Copy outreach message to clipboard
+  const handleCopyOutreach = async () => {
+    if (!outreachPreview?.message) return;
+    const text = outreachPreview.message.subject
+      ? `Subject: ${outreachPreview.message.subject}\n\n${outreachPreview.message.content}`
+      : outreachPreview.message.content;
+    await navigator.clipboard.writeText(text);
+    toast.success("Message copied to clipboard");
   };
 
   // SYNC Intel handler
@@ -2010,7 +2183,7 @@ export default function CandidateDetailDrawer({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 bg-black/60 z-40"
+            className={`fixed inset-0 ${t("bg-black/30", "bg-black/60")} z-40`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -2019,7 +2192,7 @@ export default function CandidateDetailDrawer({
 
           {/* Drawer */}
           <motion.div
-            className="fixed right-0 top-0 h-full w-full max-w-[600px] bg-zinc-900 border-l border-zinc-800 z-50 overflow-hidden flex flex-col"
+            className={`fixed right-0 top-0 h-full w-full max-w-[600px] ${t("bg-white", "bg-zinc-900")} border-l ${t("border-gray-200", "border-zinc-800")} z-50 overflow-hidden flex flex-col`}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -2027,12 +2200,12 @@ export default function CandidateDetailDrawer({
           >
             {loading ? (
               <div className="flex items-center justify-center h-full">
-                <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
+                <Loader2 className={`w-8 h-8 ${t("text-gray-400", "text-zinc-500")} animate-spin`} />
               </div>
             ) : candidate ? (
               <>
                 {/* Header */}
-                <div className="p-6 border-b border-zinc-800 bg-gradient-to-b from-zinc-800/50 to-transparent">
+                <div className={`p-6 border-b ${t("border-gray-200", "border-zinc-800")} bg-gradient-to-b ${t("from-gray-50", "from-zinc-800/50")} to-transparent`}>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start gap-4">
                       {/* Avatar */}
@@ -2042,10 +2215,10 @@ export default function CandidateDetailDrawer({
 
                       {/* Info */}
                       <div>
-                        <h2 className="text-xl font-semibold text-white">
+                        <h2 className={`text-xl font-semibold ${t("text-gray-900", "text-white")}`}>
                           {candidate.name || `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim() || "Unknown"}
                         </h2>
-                        <div className="text-sm text-zinc-400 flex items-center gap-2 mt-1">
+                        <div className={`text-sm ${t("text-gray-500", "text-zinc-400")} flex items-center gap-2 mt-1`}>
                           {candidate.current_title && (
                             <>
                               <Briefcase className="w-3.5 h-3.5" />
@@ -2053,7 +2226,7 @@ export default function CandidateDetailDrawer({
                             </>
                           )}
                           {candidate.current_title && candidate.current_company && (
-                            <span className="text-zinc-600">at</span>
+                            <span className={t("text-gray-300", "text-zinc-600")}>at</span>
                           )}
                           {candidate.current_company && (
                             <>
@@ -2063,7 +2236,7 @@ export default function CandidateDetailDrawer({
                           )}
                         </div>
                         {candidate.location && (
-                          <div className="text-sm text-zinc-500 flex items-center gap-1 mt-1">
+                          <div className={`text-sm ${t("text-gray-400", "text-zinc-500")} flex items-center gap-1 mt-1`}>
                             <MapPin className="w-3.5 h-3.5" />
                             <span>{candidate.location}</span>
                           </div>
@@ -2078,48 +2251,48 @@ export default function CandidateDetailDrawer({
                       {/* Customize Button */}
                       <button
                         onClick={() => setShowCustomizationModal(true)}
-                        className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                        className={`p-2 ${t("hover:bg-gray-100", "hover:bg-zinc-800")} rounded-lg transition-colors`}
                         title="Customize panel"
                       >
-                        <Settings className="w-5 h-5 text-zinc-400 hover:text-zinc-300" />
+                        <Settings className={`w-5 h-5 ${t("text-gray-500", "text-zinc-400")} ${t("hover:text-gray-700", "hover:text-zinc-300")}`} />
                       </button>
                       {/* Close Button */}
                       <button
                         onClick={onClose}
-                        className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                        className={`p-2 ${t("hover:bg-gray-100", "hover:bg-zinc-800")} rounded-lg transition-colors`}
                       >
-                        <X className="w-5 h-5 text-zinc-400" />
+                        <X className={`w-5 h-5 ${t("text-gray-500", "text-zinc-400")}`} />
                       </button>
                     </div>
                   </div>
 
                   {/* Enhanced Quick Stats Bar */}
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4 pt-4 border-t border-zinc-700/50 items-end">
+                  <div className={`grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4 pt-4 border-t ${t("border-gray-200", "border-zinc-700/50")} items-end`}>
                     <div className="text-center">
-                      <p className="text-[10px] text-zinc-500 mb-1">Urgency</p>
+                      <p className={`text-[10px] ${t("text-gray-400", "text-zinc-500")} mb-1`}>Urgency</p>
                       <UrgencyBadge level={candidate.recruitment_urgency} />
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-zinc-500 mb-1">Satisfaction</p>
+                      <p className={`text-[10px] ${t("text-gray-400", "text-zinc-500")} mb-1`}>Satisfaction</p>
                       <SatisfactionBadge level={candidate.job_satisfaction} />
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-zinc-500 mb-1">Salary</p>
+                      <p className={`text-[10px] ${t("text-gray-400", "text-zinc-500")} mb-1`}>Salary</p>
                       <p className="text-sm font-semibold text-red-400">
                         {candidate.salary_range ? `\u20AC${Number(candidate.salary_range).toLocaleString()}` : "—"}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-zinc-500 mb-1">Tenure</p>
-                      <p className="text-sm font-semibold text-white">{candidate.years_at_company || 0}y</p>
+                      <p className={`text-[10px] ${t("text-gray-400", "text-zinc-500")} mb-1`}>Tenure</p>
+                      <p className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>{candidate.years_at_company || 0}y</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-zinc-500 mb-1">Promos</p>
-                      <p className="text-sm font-semibold text-white">{candidate.times_promoted || 0}</p>
+                      <p className={`text-[10px] ${t("text-gray-400", "text-zinc-500")} mb-1`}>Promos</p>
+                      <p className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>{candidate.times_promoted || 0}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-zinc-500 mb-1">Job Changes</p>
-                      <p className="text-sm font-semibold text-white">{candidate.times_company_hopped || 0}</p>
+                      <p className={`text-[10px] ${t("text-gray-400", "text-zinc-500")} mb-1`}>Job Changes</p>
+                      <p className={`text-sm font-semibold ${t("text-gray-900", "text-white")}`}>{candidate.times_company_hopped || 0}</p>
                     </div>
                   </div>
 
@@ -2153,7 +2326,7 @@ export default function CandidateDetailDrawer({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                        className={`${t("border-gray-200 text-gray-700 hover:bg-gray-100", "border-zinc-700 text-zinc-300 hover:bg-zinc-800")}`}
                         onClick={() => window.open(candidate.linkedin_url, "_blank")}
                       >
                         <Linkedin className="w-4 h-4" />
@@ -2164,7 +2337,7 @@ export default function CandidateDetailDrawer({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      className={t("border-gray-200 text-gray-700 hover:bg-gray-100", "border-zinc-700 text-zinc-300 hover:bg-zinc-800")}
                       onClick={() => {
                         window.location.href = `${createPageUrl("TalentCandidateProfile")}?id=${candidate.id}`;
                       }}
@@ -2177,7 +2350,7 @@ export default function CandidateDetailDrawer({
 
 
                 {/* Tabs */}
-                <div className="border-b border-zinc-800 px-6">
+                <div className={`border-b ${t("border-gray-200", "border-zinc-800")} px-6`}>
                   <div className="flex gap-1 overflow-x-auto">
                     {tabs.map((tab) => (
                       <button
@@ -2186,7 +2359,7 @@ export default function CandidateDetailDrawer({
                         className={`flex items-center gap-1 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                           activeTab === tab.id
                             ? "text-red-400 border-red-500"
-                            : "text-zinc-400 border-transparent hover:text-zinc-300 hover:border-zinc-700"
+                            : `${t("text-gray-500", "text-zinc-400")} border-transparent ${t("hover:text-gray-700 hover:border-gray-300", "hover:text-zinc-300 hover:border-zinc-700")}`
                         }`}
                       >
                         {tab.label}
@@ -2222,7 +2395,7 @@ export default function CandidateDetailDrawer({
                       <div className="flex justify-end mb-3">
                         <button
                           onClick={() => setShowIntelPrefs(true)}
-                          className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-zinc-800/50"
+                          className={`flex items-center gap-1.5 text-xs ${t("text-gray-500", "text-zinc-400")} hover:text-red-400 transition-colors px-2 py-1 rounded-lg ${t("hover:bg-gray-100", "hover:bg-zinc-800/50")}`}
                         >
                           <Settings className="w-3.5 h-3.5" />
                           AI Preferences
@@ -2247,7 +2420,7 @@ export default function CandidateDetailDrawer({
                             <Building2 className="w-6 h-6 text-red-400" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-white">{candidate.current_company || candidate.company_name}</h3>
+                            <h3 className={`font-semibold ${t("text-gray-900", "text-white")}`}>{candidate.current_company || candidate.company_name}</h3>
                             {candidate.company_domain && (
                               <p className="text-sm text-red-400/70">{candidate.company_domain}</p>
                             )}
@@ -2268,99 +2441,180 @@ export default function CandidateDetailDrawer({
                     </div>
                   )}
                   {activeTab === "matches" && (
-                    <div className="space-y-4">
-                      {campaignMatches.length === 0 ? (
-                        <div className="text-center py-12">
-                          <Target className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                          <h3 className="text-lg font-semibold text-white mb-2">No Campaign Matches</h3>
-                          <p className="text-zinc-400 text-sm">
-                            This candidate hasn't been matched to any campaigns yet.
-                          </p>
-                        </div>
-                      ) : (
-                        campaignMatches.map((match) => (
-                          <div
-                            key={match.id}
-                            className="bg-zinc-800/50 rounded-xl border border-zinc-700/50 p-4"
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-3">
-                                {/* Score Circle */}
-                                <div className="relative w-14 h-14 flex-shrink-0">
-                                  <svg className="w-14 h-14 -rotate-90">
-                                    <circle
-                                      cx="28"
-                                      cy="28"
-                                      r="24"
-                                      fill="none"
-                                      stroke="rgba(255,255,255,0.1)"
-                                      strokeWidth="4"
-                                    />
-                                    <circle
-                                      cx="28"
-                                      cy="28"
-                                      r="24"
-                                      fill="none"
-                                      stroke={match.match_score >= 80 ? "#22c55e" : match.match_score >= 60 ? "#eab308" : "#ef4444"}
-                                      strokeWidth="4"
-                                      strokeLinecap="round"
-                                      strokeDasharray={`${(match.match_score / 100) * 150.8} 150.8`}
-                                    />
-                                  </svg>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <span className="text-sm font-bold text-white">{match.match_score}%</span>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-semibold text-white">{match.campaigns?.name || "Unknown Campaign"}</h4>
-                                  <p className="text-sm text-zinc-400">{match.campaigns?.campaign_type || "—"}</p>
-                                  {match.match_reasons?.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                      {match.match_reasons.slice(0, 3).map((reason, idx) => (
-                                        <span key={idx} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
-                                          {reason}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                match.campaigns?.status === "active"
-                                  ? "bg-red-500/20 text-red-400"
-                                  : "bg-zinc-500/20 text-zinc-400"
-                              }`}>
-                                {match.campaigns?.status || "unknown"}
-                              </span>
+                    <div className="space-y-6">
+                      {/* Open Roles Section */}
+                      <div>
+                        <h3 className={`text-sm font-semibold ${t("text-gray-900", "text-white")} mb-3 flex items-center gap-2`}>
+                          <Briefcase className="w-4 h-4 text-red-400" />
+                          Open Roles ({openRoles.length})
+                        </h3>
+                        {openRolesLoading ? (
+                          <div className="flex items-center justify-center py-6">
+                            <Loader2 className={`w-5 h-5 ${t("text-gray-400", "text-zinc-500")} animate-spin`} />
+                          </div>
+                        ) : openRoles.length === 0 ? (
+                          <div className={`text-center py-6 ${t("bg-gray-50", "bg-zinc-800/30")} rounded-lg border ${t("border-gray-200", "border-zinc-700/30")}`}>
+                            <Briefcase className={`w-8 h-8 ${t("text-gray-300", "text-zinc-600")} mx-auto mb-2`} />
+                            <p className={`text-sm ${t("text-gray-500", "text-zinc-400")}`}>No open roles</p>
+                            <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-1`}>Create roles in Recruitment Projects</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {/* Channel selector */}
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>Channel:</span>
+                              {["email", "linkedin", "sms"].map((ch) => (
+                                <button
+                                  key={ch}
+                                  onClick={() => setOutreachChannel(ch)}
+                                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                                    outreachChannel === ch
+                                      ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                      : `${t("bg-gray-100 text-gray-500 border-gray-200", "bg-zinc-800 text-zinc-400 border-zinc-700")} ${t("hover:bg-gray-200", "hover:bg-zinc-700")}`
+                                  }`}
+                                >
+                                  {ch === "linkedin" ? "LinkedIn" : ch.charAt(0).toUpperCase() + ch.slice(1)}
+                                </button>
+                              ))}
                             </div>
 
-                            {match.best_outreach_angle && (
-                              <div className="mt-3 pt-3 border-t border-zinc-700/50">
-                                <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Best Approach</p>
-                                <p className="text-sm text-zinc-300">{match.best_outreach_angle}</p>
-                              </div>
-                            )}
-
-                            {match.timing_signals?.length > 0 && (
-                              <div className="mt-3 pt-3 border-t border-zinc-700/50">
-                                <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Timing Signals</p>
-                                <div className="flex flex-wrap gap-1">
-                                  {match.timing_signals.slice(0, 3).map((signal, idx) => (
-                                    <span key={idx} className="text-xs px-2 py-0.5 bg-red-500/10 text-red-400 rounded border border-red-500/20">
-                                      {signal.trigger || signal}
-                                    </span>
-                                  ))}
+                            {openRoles.map((role) => (
+                              <div
+                                key={role.id}
+                                className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-xl border ${t("border-gray-200", "border-zinc-700/30")} p-4`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <h4 className={`font-semibold ${t("text-gray-900", "text-white")} truncate`}>{role.title}</h4>
+                                    <div className={`flex items-center gap-2 text-xs ${t("text-gray-500", "text-zinc-400")} mt-1`}>
+                                      {role.project?.client_company && (
+                                        <span className="flex items-center gap-1">
+                                          <Building2 className="w-3 h-3" />
+                                          {role.project.client_company}
+                                        </span>
+                                      )}
+                                      {role.project?.title && (
+                                        <span className="flex items-center gap-1">
+                                          <FileText className="w-3 h-3" />
+                                          {role.project.title}
+                                        </span>
+                                      )}
+                                      {role.location_requirements && (
+                                        <span className="flex items-center gap-1">
+                                          <MapPin className="w-3 h-3" />
+                                          {role.location_requirements}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {role.required_skills?.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {role.required_skills.slice(0, 4).map((skill, idx) => (
+                                          <span key={idx} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
+                                            {skill}
+                                          </span>
+                                        ))}
+                                        {role.required_skills.length > 4 && (
+                                          <span className={`text-[10px] px-2 py-0.5 ${t("bg-gray-100 text-gray-500", "bg-zinc-700 text-zinc-400")} rounded-full`}>
+                                            +{role.required_skills.length - 4}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleGenerateOutreach(role)}
+                                    disabled={generatingOutreach === role.id}
+                                    className="bg-red-500 hover:bg-red-600 text-white flex-shrink-0"
+                                  >
+                                    {generatingOutreach === role.id ? (
+                                      <>
+                                        <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                                        Generating...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Sparkles className="w-3 h-3 mr-1.5" />
+                                        Reach Out
+                                      </>
+                                    )}
+                                  </Button>
                                 </div>
+                                {role.salary_range && (
+                                  <div className={`mt-2 text-xs ${t("text-gray-500", "text-zinc-400")} flex items-center gap-1`}>
+                                    <Euro className="w-3 h-3" />
+                                    {role.salary_range}
+                                  </div>
+                                )}
                               </div>
-                            )}
-
-                            <p className="text-xs text-zinc-500 mt-3">
-                              Matched {new Date(match.matched_at).toLocaleDateString()}
-                            </p>
+                            ))}
                           </div>
-                        ))
+                        )}
+                      </div>
+
+                      {/* Campaign Matches Section */}
+                      {campaignMatches.length > 0 && (
+                        <div>
+                          <h3 className={`text-sm font-semibold ${t("text-gray-900", "text-white")} mb-3 flex items-center gap-2`}>
+                            <Target className="w-4 h-4 text-red-400" />
+                            Campaign Matches ({campaignMatches.length})
+                          </h3>
+                          <div className="space-y-3">
+                            {campaignMatches.map((match) => (
+                              <div
+                                key={match.id}
+                                className={`${t("bg-gray-50", "bg-zinc-800/30")} rounded-xl border ${t("border-gray-200", "border-zinc-700/30")} p-4`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-start gap-3">
+                                    <div className="relative w-12 h-12 flex-shrink-0">
+                                      <svg className="w-12 h-12 -rotate-90">
+                                        <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                                        <circle
+                                          cx="24" cy="24" r="20" fill="none"
+                                          stroke={match.match_score >= 80 ? "#22c55e" : match.match_score >= 60 ? "#eab308" : "#ef4444"}
+                                          strokeWidth="3" strokeLinecap="round"
+                                          strokeDasharray={`${(match.match_score / 100) * 125.6} 125.6`}
+                                        />
+                                      </svg>
+                                      <div className="absolute inset-0 flex items-center justify-center">
+                                        <span className={`text-xs font-bold ${t("text-gray-900", "text-white")}`}>{match.match_score}%</span>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <h4 className={`font-semibold text-sm ${t("text-gray-900", "text-white")}`}>{match.campaigns?.name || "Unknown"}</h4>
+                                      <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>{match.campaigns?.campaign_type || "—"}</p>
+                                      {match.match_reasons?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1.5">
+                                          {match.match_reasons.slice(0, 3).map((reason, idx) => (
+                                            <span key={idx} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
+                                              {reason}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    match.campaigns?.status === "active"
+                                      ? "bg-red-500/20 text-red-400"
+                                      : t("bg-gray-200 text-gray-500", "bg-zinc-500/20 text-zinc-400")
+                                  }`}>
+                                    {match.campaigns?.status || "unknown"}
+                                  </span>
+                                </div>
+                                {match.best_outreach_angle && (
+                                  <div className={`mt-2 pt-2 border-t ${t("border-gray-200", "border-zinc-700/30")}`}>
+                                    <p className={`text-xs ${t("text-gray-700", "text-zinc-300")}`}>{match.best_outreach_angle}</p>
+                                  </div>
+                                )}
+                                <p className={`text-xs ${t("text-gray-400", "text-zinc-500")} mt-2`}>
+                                  Matched {new Date(match.matched_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
@@ -2380,7 +2634,7 @@ export default function CandidateDetailDrawer({
               </>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <p className="text-zinc-500">Candidate not found</p>
+                <p className={t("text-gray-400", "text-zinc-500")}>Candidate not found</p>
               </div>
             )}
           </motion.div>
@@ -2404,7 +2658,7 @@ export default function CandidateDetailDrawer({
 
       {/* SMS Modal */}
       <Dialog open={showSMSModal} onOpenChange={setShowSMSModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-lg">
+        <DialogContent className={`${t("bg-white", "bg-zinc-900")} ${t("border-gray-200", "border-zinc-800")} ${t("text-gray-900", "text-white")} max-w-lg`}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-red-400" />
@@ -2414,10 +2668,10 @@ export default function CandidateDetailDrawer({
 
           <div className="space-y-4 mt-4">
             {/* Recipient Info */}
-            <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+            <div className={`flex items-center justify-between p-3 ${t("bg-gray-100/50", "bg-zinc-800/50")} rounded-lg border ${t("border-gray-200", "border-zinc-700/50")}`}>
               <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-zinc-400" />
-                <span className="text-sm text-zinc-300">
+                <Phone className={`w-4 h-4 ${t("text-gray-500", "text-zinc-400")}`} />
+                <span className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>
                   {candidate?.verified_phone || candidate?.phone || "No phone number"}
                 </span>
               </div>
@@ -2428,19 +2682,19 @@ export default function CandidateDetailDrawer({
 
             {/* Sending Number Selection */}
             <div>
-              <label className="block text-sm font-medium text-zinc-400 mb-2">Send from</label>
+              <label className={`block text-sm font-medium ${t("text-gray-500", "text-zinc-400")} mb-2`}>Send from</label>
               {availableNumbers.length === 0 ? (
                 <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-sm text-red-400">
                   No phone numbers available. Purchase one in SMS Outreach settings.
                 </div>
               ) : (
                 <Select value={sendingFromNumber} onValueChange={setSendingFromNumber}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectTrigger className={`${t("bg-white border-gray-200 text-gray-900", "bg-zinc-800 border-zinc-700 text-white")}`}>
                     <SelectValue placeholder="Select phone number" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectContent className={t("bg-white border-gray-200", "bg-zinc-800 border-zinc-700")}>
                     {availableNumbers.map((num) => (
-                      <SelectItem key={num.phone_number} value={num.phone_number} className="text-white">
+                      <SelectItem key={num.phone_number} value={num.phone_number} className={t("text-gray-900", "text-white")}>
                         {num.friendly_name || num.phone_number}
                       </SelectItem>
                     ))}
@@ -2452,7 +2706,7 @@ export default function CandidateDetailDrawer({
             {/* Message */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-zinc-400">Message</label>
+                <label className={`text-sm font-medium ${t("text-gray-500", "text-zinc-400")}`}>Message</label>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -2477,11 +2731,11 @@ export default function CandidateDetailDrawer({
                 value={smsMessage}
                 onChange={(e) => setSmsMessage(e.target.value)}
                 placeholder="Type your message or click 'Generate with AI' for a personalized message..."
-                className="bg-zinc-800 border-zinc-700 text-white min-h-[120px] resize-none"
+                className={`${t("bg-white border-gray-200 text-gray-900", "bg-zinc-800 border-zinc-700 text-white")} min-h-[120px] resize-none`}
                 maxLength={160}
               />
               <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-zinc-500">{smsMessage.length}/160 characters</span>
+                <span className={`text-xs ${t("text-gray-400", "text-zinc-500")}`}>{smsMessage.length}/160 characters</span>
                 {smsMessage.length > 160 && (
                   <span className="text-xs text-red-400">Will be sent as multiple messages</span>
                 )}
@@ -2489,14 +2743,14 @@ export default function CandidateDetailDrawer({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-800">
+            <div className={`flex items-center justify-end gap-2 pt-4 border-t ${t("border-gray-200", "border-zinc-800")}`}>
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowSMSModal(false);
                   setSmsMessage("");
                 }}
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                className={t("border-gray-200 text-gray-700 hover:bg-gray-100", "border-zinc-700 text-zinc-300 hover:bg-zinc-800")}
               >
                 Cancel
               </Button>
@@ -2519,6 +2773,97 @@ export default function CandidateDetailDrawer({
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Outreach Preview Modal */}
+      <Dialog open={!!outreachPreview} onOpenChange={(open) => !open && setOutreachPreview(null)}>
+        <DialogContent className={`${t("bg-white border-gray-200", "bg-zinc-900 border-zinc-800")} ${t("text-gray-900", "text-white")} max-w-lg max-h-[80vh] overflow-hidden flex flex-col`}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-red-400" />
+              Outreach Preview
+            </DialogTitle>
+          </DialogHeader>
+
+          {outreachPreview && (
+            <div className="space-y-4 mt-2 overflow-y-auto flex-1">
+              {/* Role + Candidate header */}
+              <div className={`flex items-center gap-3 p-3 rounded-lg ${t("bg-gray-50 border-gray-200", "bg-zinc-800/50 border-zinc-700/50")} border`}>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                  {outreachPreview.candidateName?.charAt(0)?.toUpperCase() || "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-medium text-sm ${t("text-gray-900", "text-white")}`}>{outreachPreview.candidateName}</p>
+                  <p className={`text-xs ${t("text-gray-500", "text-zinc-400")}`}>
+                    For: {outreachPreview.role?.title} {outreachPreview.role?.project?.client_company ? `at ${outreachPreview.role.project.client_company}` : ""}
+                  </p>
+                </div>
+                {outreachPreview.message?.personalization_score && (
+                  <span className="text-xs px-2 py-1 bg-red-500/20 text-red-400 rounded-full font-medium">
+                    {outreachPreview.message.personalization_score}% Personal
+                  </span>
+                )}
+              </div>
+
+              {/* Subject line (if present) */}
+              {outreachPreview.message?.subject && (
+                <div>
+                  <label className={`text-xs font-medium ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>Subject</label>
+                  <p className={`text-sm ${t("text-gray-900", "text-white")} mt-1 p-2 rounded ${t("bg-gray-50", "bg-zinc-800/50")}`}>
+                    {outreachPreview.message.subject}
+                  </p>
+                </div>
+              )}
+
+              {/* Message content */}
+              <div>
+                <label className={`text-xs font-medium ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>Message</label>
+                <div className={`text-sm ${t("text-gray-700", "text-zinc-300")} mt-1 p-3 rounded-lg ${t("bg-gray-50 border-gray-200", "bg-zinc-800/50 border-zinc-700/30")} border whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto`}>
+                  {outreachPreview.message?.content}
+                </div>
+              </div>
+
+              {/* Intelligence used badges */}
+              {outreachPreview.message?.intelligence_used?.length > 0 && (
+                <div>
+                  <label className={`text-xs font-medium ${t("text-gray-500", "text-zinc-400")} uppercase tracking-wider`}>AI Personalization Used</label>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {outreachPreview.message.intelligence_used.map((item, i) => (
+                      <span key={i} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-2">
+                <Button
+                  onClick={handleCopyOutreach}
+                  variant="outline"
+                  className={`flex-1 ${t("border-gray-200 text-gray-700", "border-zinc-700 text-zinc-300")}`}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Message
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleCopyOutreach();
+                    if (candidate?.linkedin_url) {
+                      window.open(candidate.linkedin_url, "_blank");
+                    }
+                    setOutreachPreview(null);
+                  }}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Copy & Open LinkedIn
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </AnimatePresence>

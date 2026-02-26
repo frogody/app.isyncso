@@ -16,6 +16,7 @@ import {
   Package,
   ExternalLink,
 } from "lucide-react";
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 
 export default function CandidatesTab({
   campaign,
@@ -129,7 +130,7 @@ export default function CandidatesTab({
                 {isMatching ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Matching...</>
                 ) : (
-                  <><Sparkles className="w-4 h-4 mr-2" /> Run AI Matching</>
+                  <><Sparkles className="w-4 h-4 mr-2" /> Run AI Matching <CreditCostBadge credits={2} /></>
                 )}
               </Button>
             </div>
@@ -202,7 +203,7 @@ export default function CandidatesTab({
               {generatingOutreach ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
               ) : (
-                <><Mail className="w-4 h-4 mr-2" /> Generate Outreach</>
+                <><Mail className="w-4 h-4 mr-2" /> Generate Outreach <CreditCostBadge credits={1} /></>
               )}
             </Button>
           )}
@@ -218,7 +219,7 @@ export default function CandidatesTab({
               {isMatching ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Matching...</>
               ) : (
-                <><Sparkles className="w-4 h-4 mr-2" /> Run Matching</>
+                <><Sparkles className="w-4 h-4 mr-2" /> Run Matching <CreditCostBadge credits={2} /></>
               )}
             </Button>
           )}

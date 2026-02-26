@@ -45,6 +45,9 @@ import { executeCreateAction } from './tools/create.ts';
 import { executeResearchAction } from './tools/research.ts';
 import { executeComposioAction, COMPOSIO_ACTIONS } from './tools/composio.ts';
 import { executeTalentAction } from './tools/talent.ts';
+import { executePhoneAction, PHONE_ACTIONS } from './tools/phone.ts';
+import { executeB2BAction } from './tools/b2b.ts';
+import { executeJournalAction } from './tools/journal.ts';
 import { ActionContext, ActionResult, ChainedAction, ActionChainResult } from './tools/types.ts';
 
 // Import new improvement modules
@@ -84,6 +87,7 @@ import {
 
 // Import AI usage tracking utility
 import { logLLMUsage, calculateModelCost } from '../_shared/ai-usage.ts';
+import { requireCredits } from '../_shared/credit-check.ts';
 
 import {
   detectOrchestrationWorkflow,
@@ -192,6 +196,10 @@ const FINANCE_ACTIONS = [
   'list_expenses',
   'get_financial_summary',
   'convert_proposal_to_invoice',
+  'create_vendor',
+  'create_bill',
+  'get_trial_balance',
+  'get_balance_sheet',
 ];
 
 const PRODUCT_ACTIONS = [
@@ -254,6 +262,26 @@ const SENTINEL_ACTIONS = [
   'register_ai_system',
   'list_ai_systems',
   'get_compliance_status',
+];
+
+const B2B_ACTIONS = [
+  'b2b_list_orders',
+  'b2b_get_order',
+  'b2b_update_order_status',
+  'b2b_get_store_stats',
+  'b2b_list_clients',
+  'b2b_get_client',
+  'b2b_list_price_lists',
+  'b2b_update_price_list',
+  'b2b_list_inquiries',
+  'b2b_respond_inquiry',
+  'b2b_send_order_message',
+  'b2b_create_announcement',
+];
+
+const JOURNAL_ACTIONS = [
+  'generate_journal',
+  'list_journals',
 ];
 
 const CREATE_ACTIONS = [
@@ -654,6 +682,18 @@ async function executeActionCore(
 
   if (TALENT_ACTIONS.includes(actionName)) {
     return executeTalentAction(ctx, actionName, data);
+  }
+
+  if (PHONE_ACTIONS.includes(actionName)) {
+    return executePhoneAction(ctx, actionName, data);
+  }
+
+  if (B2B_ACTIONS.includes(actionName)) {
+    return executeB2BAction(ctx, actionName, data);
+  }
+
+  if (JOURNAL_ACTIONS.includes(actionName)) {
+    return executeJournalAction(ctx, actionName, data);
   }
 
   // Unknown action
@@ -1288,6 +1328,10 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - **list_expenses**: List expenses with filters
 - **get_financial_summary**: Get revenue/expense summary (month/quarter/year)
 - **convert_proposal_to_invoice**: Convert accepted proposal to invoice
+- **create_vendor**: Create a vendor/supplier (name, email, phone)
+- **create_bill**: Create a bill/payable for a vendor (amount, vendor_name, due_date)
+- **get_trial_balance**: View trial balance report (all account debits & credits)
+- **get_balance_sheet**: View balance sheet (Assets = Liabilities + Equity)
 
 ### PRODUCTS (6 actions)
 - **search_products**: Search products by name
@@ -1343,6 +1387,29 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - **register_ai_system**: Register an AI system for compliance
 - **list_ai_systems**: List registered AI systems
 - **get_compliance_status**: Get EU AI Act compliance overview
+
+### B2B WHOLESALE STORE (12 actions)
+- **b2b_list_orders**: List B2B orders (status?, clientId?, limit?)
+- **b2b_get_order**: Get order details (orderId)
+- **b2b_update_order_status**: Update order status (orderId, status: pending/confirmed/processing/shipped/delivered/cancelled)
+- **b2b_get_store_stats**: Get B2B store stats — orders, revenue, clients (period?: week/month/quarter)
+- **b2b_list_clients**: List portal clients (search?, limit?)
+- **b2b_get_client**: Get client details + order count (clientId)
+- **b2b_list_price_lists**: List B2B price lists (limit?)
+- **b2b_update_price_list**: Update price list (priceListId, name?, description?, status?)
+- **b2b_list_inquiries**: List B2B inquiries (status?, limit?)
+- **b2b_respond_inquiry**: Respond to inquiry (inquiryId, response, status?)
+- **b2b_send_order_message**: Send message on order (orderId, message)
+- **b2b_create_announcement**: Create store announcement (storeId, title, content, type?, priority?)
+
+### DAILY JOURNAL (2 actions)
+- **generate_journal**: Generate or regenerate a daily journal for any date (date?: "today", "yesterday", "3 days ago", "2026-02-20"). Regenerating overwrites the existing journal for that date with fresh AI insights.
+- **list_journals**: List recent daily journals (limit?, days?)
+
+Examples:
+- "Generate my journal for yesterday" → [ACTION]{"action": "generate_journal", "data": {"date": "yesterday"}}[/ACTION]
+- "Regenerate my journal from last Friday" → [ACTION]{"action": "generate_journal", "data": {"date": "2026-02-20"}}[/ACTION]
+- "Show my recent journals" → [ACTION]{"action": "list_journals", "data": {"limit": 7}}[/ACTION]
 
 ### CREATE/AI GENERATION (2 actions)
 - **generate_image**: Generate an AI image (product, marketing, creative)
@@ -1414,6 +1481,10 @@ You: Let me check!
 [ACTION]{"action": "list_invoices", "data": {"status": "sent", "limit": 10}}[/ACTION]
 [ACTION]{"action": "create_expense", "data": {"description": "Office supplies", "amount": 150, "category": "office", "vendor": "Staples"}}[/ACTION]
 [ACTION]{"action": "get_financial_summary", "data": {"period": "month"}}[/ACTION]
+[ACTION]{"action": "create_vendor", "data": {"name": "Office Depot", "email": "orders@officedepot.com"}}[/ACTION]
+[ACTION]{"action": "create_bill", "data": {"vendor_name": "Office Depot", "amount": 450.00, "due_date": "2026-03-15"}}[/ACTION]
+[ACTION]{"action": "get_trial_balance", "data": {}}[/ACTION]
+[ACTION]{"action": "get_balance_sheet", "data": {}}[/ACTION]
 
 ### Products
 [ACTION]{"action": "search_products", "data": {"query": "OneBlade"}}[/ACTION]
@@ -1513,6 +1584,20 @@ You: I'll archive that for you!
 [ACTION]{"action": "composio_create_calendar_event", "data": {"title": "Team Meeting", "start_time": "2026-01-15T10:00:00Z", "end_time": "2026-01-15T11:00:00Z"}}[/ACTION]
 
 **IMPORTANT**: When user asks "what integrations do I have" or "what apps are connected" - ALWAYS execute composio_list_integrations!
+
+### PHONE SCHEDULING (2 actions)
+- **schedule_meeting_calls**: Autonomously call people to find a meeting time. Looks up contacts, checks your calendar, calls each person to ask availability, finds overlapping slot, creates calendar event.
+- **get_scheduling_job_status**: Check the status of an ongoing scheduling job.
+
+Examples:
+- "Call David and Mike to schedule a meeting next week" →
+[ACTION]{"action": "schedule_meeting_calls", "data": {"participants": ["David", "Mike"], "meeting_subject": "Team sync", "date_range": "next week"}}[/ACTION]
+
+- "Phone Sarah about meeting Thursday" →
+[ACTION]{"action": "schedule_meeting_calls", "data": {"participants": ["Sarah"], "meeting_subject": "Catch up", "date_range": "this week"}}[/ACTION]
+
+- "What's the status of the scheduling?" →
+[ACTION]{"action": "get_scheduling_job_status", "data": {}}[/ACTION]
 
 ## Action Chaining (Multi-Step Operations)
 
@@ -2480,6 +2565,15 @@ serve(async (req) => {
     const companyId = context?.companyId || DEFAULT_COMPANY_ID;
     const userId = context?.userId;
 
+    // ── Credit check (1 credit per chat message) ───────────────────
+    if (userId) {
+      const credit = await requireCredits(supabase, userId, 'sync-chat', {
+        edgeFunction: 'sync',
+        metadata: { mode, voice, sessionId },
+      });
+      if (!credit.success) return credit.errorResponse!;
+    }
+
     // Get or create persistent session using memory system
     const session = await memorySystem.session.getOrCreateSession(
       sessionId,
@@ -3298,6 +3392,8 @@ Examples of BAD voice responses:
           ...COMPOSIO_ACTIONS,
           ...RESEARCH_ACTIONS,
           ...TALENT_ACTIONS,
+          ...PHONE_ACTIONS,
+          ...B2B_ACTIONS,
         ];
 
         // Enrich system prompt with entity context

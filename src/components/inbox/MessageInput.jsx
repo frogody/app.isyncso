@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Plus, Smile, Code, Bold, Italic,
@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/popover';
 import AutocompletePopup, { EMOJI_SHORTCODES } from './AutocompletePopup';
 import { AVAILABLE_AGENTS } from './AgentMentionHandler';
+import { useSmartCompose } from './smart/useSmartCompose';
+import SmartCompose from './smart/SmartCompose';
 
 const EMOJI_CATEGORIES = {
   'Smileys': ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘'],
@@ -57,6 +59,21 @@ export default function MessageInput({
     selectedIndex: 0,
     triggerPos: 0
   });
+
+  // Smart Compose - AI ghost-text suggestions
+  const smartCompose = useSmartCompose({
+    channelId,
+    userId: null,
+    messageText: message,
+    recentMessages: [],
+  });
+
+  const handleAcceptSuggestion = useCallback(() => {
+    const accepted = smartCompose.acceptSuggestion();
+    if (accepted) {
+      setMessage(prev => prev + accepted);
+    }
+  }, [smartCompose]);
 
   // Draft auto-save
   const channelIdRef = useRef(channelId);
@@ -463,7 +480,7 @@ export default function MessageInput({
                   src={URL.createObjectURL(files[0])} 
                   alt="" 
                   className="w-16 h-16 object-cover rounded-lg"
-                />
+                 loading="lazy" decoding="async" />
               ) : (
                 <div className="w-16 h-16 bg-cyan-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
                   <Paperclip className="w-6 h-6 text-cyan-400" />
@@ -499,7 +516,7 @@ export default function MessageInput({
                   src={typingUsers[0].avatar}
                   alt=""
                   className="w-5 h-5 rounded-full"
-                />
+                 loading="lazy" decoding="async" />
               ) : typingUsers.length > 0 ? (
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-[9px] font-bold text-white">
                   {typingUsers[0]?.name?.charAt(0) || '?'}
@@ -614,6 +631,16 @@ export default function MessageInput({
                   />
                 )}
               </AnimatePresence>
+
+              {/* Smart Compose ghost-text overlay */}
+              <SmartCompose
+                suggestion={smartCompose.suggestion}
+                messageText={message}
+                onAccept={handleAcceptSuggestion}
+                onDismiss={smartCompose.dismissSuggestion}
+                textareaRef={textareaRef}
+                showToneAdjuster={false}
+              />
 
               <textarea
                 ref={textareaRef}

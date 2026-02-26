@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
+import { useTheme } from "@/contexts/GlobalThemeContext";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
@@ -57,10 +58,10 @@ const itemVariants = {
 };
 
 // Trend Indicator Component
-const TrendIndicator = ({ value, suffix = "%" }) => {
+const TrendIndicator = ({ value, suffix = "%", t }) => {
   if (value === 0) {
     return (
-      <span className="flex items-center text-white/50 text-sm">
+      <span className={`flex items-center ${t ? t("text-gray-400", "text-white/50") : "text-white/50"} text-sm`}>
         <Minus className="w-3 h-3 mr-1" />
         No change
       </span>
@@ -69,7 +70,7 @@ const TrendIndicator = ({ value, suffix = "%" }) => {
 
   const isPositive = value > 0;
   return (
-    <span className={`flex items-center text-sm ${isPositive ? "text-red-400" : "text-zinc-400"}`}>
+    <span className={`flex items-center text-sm ${isPositive ? "text-red-400" : t ? t("text-gray-500", "text-zinc-400") : "text-zinc-400"}`}>
       {isPositive ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
       {Math.abs(value)}{suffix}
     </span>
@@ -77,7 +78,7 @@ const TrendIndicator = ({ value, suffix = "%" }) => {
 };
 
 // Progress Bar Component
-const ProgressBar = ({ value, max = 100, color = "red", label, showValue = true }) => {
+const ProgressBar = ({ value, max = 100, color = "red", label, showValue = true, t }) => {
   const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   const colors = {
     red: "bg-red-500",
@@ -91,11 +92,11 @@ const ProgressBar = ({ value, max = 100, color = "red", label, showValue = true 
     <div className="space-y-1">
       {label && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-white/70">{label}</span>
-          {showValue && <span className="text-white/50">{value}/{max}</span>}
+          <span className={t ? t("text-gray-600", "text-white/70") : "text-white/70"}>{label}</span>
+          {showValue && <span className={t ? t("text-gray-400", "text-white/50") : "text-white/50"}>{value}/{max}</span>}
         </div>
       )}
-      <div className="h-2 bg-zinc-700/50 rounded-full overflow-hidden">
+      <div className={`h-2 ${t ? t("bg-gray-200", "bg-zinc-700/50") : "bg-zinc-700/50"} rounded-full overflow-hidden`}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
@@ -108,24 +109,24 @@ const ProgressBar = ({ value, max = 100, color = "red", label, showValue = true 
 };
 
 // Funnel Stage Component
-const FunnelStage = ({ stage, count, total, color, icon: Icon }) => {
+const FunnelStage = ({ stage, count, total, color, icon: Icon, t }) => {
   const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
   const width = Math.max(percentage, 20); // Minimum width for visibility
 
   return (
     <motion.div variants={itemVariants} className="relative">
       <div
-        className={`p-4 rounded-lg border border-white/10 ${color}`}
+        className={`p-4 rounded-lg border ${t ? t("border-gray-200", "border-white/10") : "border-white/10"} ${color}`}
         style={{ width: `${width}%`, minWidth: "200px" }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Icon className="w-4 h-4" />
-            <span className="font-medium text-white">{stage}</span>
+            <span className={`font-medium ${t ? t("text-gray-900", "text-white") : "text-white"}`}>{stage}</span>
           </div>
           <div className="text-right">
-            <span className="text-lg font-bold text-white">{count}</span>
-            <span className="text-sm text-white/50 ml-1">({percentage}%)</span>
+            <span className={`text-lg font-bold ${t ? t("text-gray-900", "text-white") : "text-white"}`}>{count}</span>
+            <span className={`text-sm ${t ? t("text-gray-400", "text-white/50") : "text-white/50"} ml-1`}>({percentage}%)</span>
           </div>
         </div>
       </div>
@@ -134,7 +135,7 @@ const FunnelStage = ({ stage, count, total, color, icon: Icon }) => {
 };
 
 // Metric Card Component
-const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }) => {
+const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend, t }) => {
   const colors = {
     red: "from-red-500/20 to-red-600/20 border-red-500/30",
     blue: "from-red-500/20 to-red-600/20 border-red-500/30",
@@ -158,12 +159,12 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }
           <div className={`p-2 rounded-lg bg-black/20 ${iconColors[color]}`}>
             <Icon className="w-4 h-4" />
           </div>
-          {trend !== undefined && <TrendIndicator value={trend} />}
+          {trend !== undefined && <TrendIndicator value={trend} t={t} />}
         </div>
         <div>
-          <h3 className="text-xl font-bold text-white mb-0.5">{value}</h3>
-          <p className="text-xs text-white/70 font-medium">{title}</p>
-          {subtitle && <p className="text-[10px] text-white/50 mt-0.5">{subtitle}</p>}
+          <h3 className={`text-xl font-bold ${t ? t("text-gray-900", "text-white") : "text-white"} mb-0.5`}>{value}</h3>
+          <p className={`text-xs ${t ? t("text-gray-600", "text-white/70") : "text-white/70"} font-medium`}>{title}</p>
+          {subtitle && <p className={`text-[10px] ${t ? t("text-gray-400", "text-white/50") : "text-white/50"} mt-0.5`}>{subtitle}</p>}
         </div>
       </GlassCard>
     </motion.div>
@@ -171,7 +172,7 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }
 };
 
 // Outreach Type Stats Component
-const OutreachTypeStats = ({ data }) => {
+const OutreachTypeStats = ({ data, t }) => {
   const types = [
     { key: "email", label: "Email", icon: Mail, color: "red", bgClass: "bg-red-500/20", textClass: "text-red-400" },
     { key: "linkedin", label: "LinkedIn", icon: Linkedin, color: "red", bgClass: "bg-red-500/20", textClass: "text-red-400" },
@@ -183,7 +184,7 @@ const OutreachTypeStats = ({ data }) => {
 
   return (
     <GlassCard className="p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Outreach by Type</h3>
+      <h3 className={`text-lg font-semibold ${t ? t("text-gray-900", "text-white") : "text-white"} mb-4`}>Outreach by Type</h3>
       <div className="space-y-4">
         {types.map((type) => (
           <div key={type.key} className="flex items-center gap-3">
@@ -197,6 +198,7 @@ const OutreachTypeStats = ({ data }) => {
                 color={type.color}
                 label={type.label}
                 showValue
+                t={t}
               />
             </div>
           </div>
@@ -207,7 +209,7 @@ const OutreachTypeStats = ({ data }) => {
 };
 
 // Intelligence Distribution Component
-const IntelligenceDistribution = ({ data }) => {
+const IntelligenceDistribution = ({ data, t }) => {
   const levels = [
     { key: "Critical", color: "red", count: data.critical || 0, barClass: "bg-red-500", textClass: "text-red-400" },
     { key: "High", color: "red", count: data.high || 0, barClass: "bg-red-500", textClass: "text-red-400" },
@@ -219,7 +221,7 @@ const IntelligenceDistribution = ({ data }) => {
 
   return (
     <GlassCard className="p-4">
-      <h3 className="text-sm font-semibold text-white mb-3">Intelligence Distribution</h3>
+      <h3 className={`text-sm font-semibold ${t ? t("text-gray-900", "text-white") : "text-white"} mb-3`}>Intelligence Distribution</h3>
       <div className="flex items-center gap-0.5 h-6 rounded-lg overflow-hidden mb-3">
         {levels.map((level) => {
           const width = total > 0 ? (level.count / total) * 100 : 25;
@@ -239,7 +241,7 @@ const IntelligenceDistribution = ({ data }) => {
         {levels.map((level) => (
           <div key={level.key} className="text-center">
             <div className={`text-sm font-bold ${level.textClass}`}>{level.count}</div>
-            <div className="text-[10px] text-white/50">{level.key}</div>
+            <div className={`text-[10px] ${t ? t("text-gray-400", "text-white/50") : "text-white/50"}`}>{level.key}</div>
           </div>
         ))}
       </div>
@@ -248,7 +250,7 @@ const IntelligenceDistribution = ({ data }) => {
 };
 
 // Campaign Performance Table
-const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
+const CampaignPerformanceTable = ({ campaigns, outreachTasks, t }) => {
   const campaignStats = useMemo(() => {
     return campaigns.map((campaign) => {
       const tasks = outreachTasks.filter((t) => t.campaign_id === campaign.id);
@@ -268,11 +270,11 @@ const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
 
   return (
     <GlassCard className="p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Campaign Performance</h3>
+      <h3 className={`text-lg font-semibold ${t ? t("text-gray-900", "text-white") : "text-white"} mb-4`}>Campaign Performance</h3>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="text-left text-sm text-white/50 border-b border-white/10">
+            <tr className={`text-left text-sm ${t ? t("text-gray-400", "text-white/50") : "text-white/50"} border-b ${t ? t("border-gray-200", "border-white/10") : "border-white/10"}`}>
               <th className="pb-3 font-medium">Campaign</th>
               <th className="pb-3 font-medium text-right">Tasks</th>
               <th className="pb-3 font-medium text-right">Sent</th>
@@ -280,25 +282,25 @@ const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
               <th className="pb-3 font-medium text-right">Response Rate</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className={`divide-y ${t ? t("divide-gray-200", "divide-white/5") : "divide-white/5"}`}>
             {campaignStats.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-white/40">
+                <td colSpan={5} className={`py-8 text-center ${t ? t("text-gray-400", "text-white/40") : "text-white/40"}`}>
                   No campaigns found
                 </td>
               </tr>
             ) : (
               campaignStats.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-white/5">
+                <tr key={campaign.id} className={`${t ? t("hover:bg-gray-50", "hover:bg-white/5") : "hover:bg-white/5"}`}>
                   <td className="py-3">
                     <div>
-                      <p className="font-medium text-white">{campaign.name}</p>
-                      <p className="text-xs text-white/50">{campaign.status}</p>
+                      <p className={`font-medium ${t ? t("text-gray-900", "text-white") : "text-white"}`}>{campaign.name}</p>
+                      <p className={`text-xs ${t ? t("text-gray-400", "text-white/50") : "text-white/50"}`}>{campaign.status}</p>
                     </div>
                   </td>
-                  <td className="py-3 text-right text-white/70">{campaign.totalTasks}</td>
-                  <td className="py-3 text-right text-white/70">{campaign.sent}</td>
-                  <td className="py-3 text-right text-white/70">{campaign.replied}</td>
+                  <td className={`py-3 text-right ${t ? t("text-gray-600", "text-white/70") : "text-white/70"}`}>{campaign.totalTasks}</td>
+                  <td className={`py-3 text-right ${t ? t("text-gray-600", "text-white/70") : "text-white/70"}`}>{campaign.sent}</td>
+                  <td className={`py-3 text-right ${t ? t("text-gray-600", "text-white/70") : "text-white/70"}`}>{campaign.replied}</td>
                   <td className="py-3 text-right">
                     <span
                       className={`font-medium ${
@@ -306,7 +308,7 @@ const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
                           ? "text-red-400"
                           : campaign.responseRate >= 10
                           ? "text-red-300"
-                          : "text-white/50"
+                          : t ? t("text-gray-400", "text-white/50") : "text-white/50"
                       }`}
                     >
                       {campaign.responseRate}%
@@ -323,7 +325,7 @@ const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
 };
 
 // Pipeline Stages Component
-const PipelineStages = ({ candidates }) => {
+const PipelineStages = ({ candidates, t }) => {
   const stages = useMemo(() => {
     const stageOrder = ["new", "contacted", "responded", "screening", "interview", "offer", "hired", "rejected"];
     const stageCounts = {};
@@ -344,7 +346,7 @@ const PipelineStages = ({ candidates }) => {
 
   return (
     <GlassCard className="p-4">
-      <h3 className="text-sm font-semibold text-white mb-3">Pipeline Stages</h3>
+      <h3 className={`text-sm font-semibold ${t ? t("text-gray-900", "text-white") : "text-white"} mb-3`}>Pipeline Stages</h3>
       <div className="space-y-2">
         {stages.map((stage, index) => {
           const percentage = total > 0 ? Math.round((stage.count / total) * 100) : 0;
@@ -352,8 +354,8 @@ const PipelineStages = ({ candidates }) => {
 
           return (
             <div key={stage.name} className="flex items-center gap-2">
-              <div className="w-20 text-xs text-white/70">{stage.name}</div>
-              <div className="flex-1 h-5 bg-zinc-800/50 rounded overflow-hidden">
+              <div className={`w-20 text-xs ${t ? t("text-gray-600", "text-white/70") : "text-white/70"}`}>{stage.name}</div>
+              <div className={`flex-1 h-5 ${t ? t("bg-gray-200", "bg-zinc-800/50") : "bg-zinc-800/50"} rounded overflow-hidden`}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${barWidth}%` }}
@@ -361,11 +363,11 @@ const PipelineStages = ({ candidates }) => {
                   className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded flex items-center justify-end px-1.5"
                 >
                   {stage.count > 0 && (
-                    <span className="text-[10px] font-medium text-white">{stage.count}</span>
+                    <span className={`text-[10px] font-medium ${t ? t("text-gray-900", "text-white") : "text-white"}`}>{stage.count}</span>
                   )}
                 </motion.div>
               </div>
-              <div className="w-10 text-right text-xs text-white/50">{percentage}%</div>
+              <div className={`w-10 text-right text-xs ${t ? t("text-gray-400", "text-white/50") : "text-white/50"}`}>{percentage}%</div>
             </div>
           );
         })}
@@ -375,7 +377,7 @@ const PipelineStages = ({ candidates }) => {
 };
 
 // Recent Activity Component
-const RecentActivity = ({ outreachTasks }) => {
+const RecentActivity = ({ outreachTasks, t }) => {
   const recentTasks = useMemo(() => {
     return [...outreachTasks]
       .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
@@ -411,28 +413,28 @@ const RecentActivity = ({ outreachTasks }) => {
 
   return (
     <GlassCard className="p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
+      <h3 className={`text-lg font-semibold ${t ? t("text-gray-900", "text-white") : "text-white"} mb-4`}>Recent Activity</h3>
       <div className="space-y-3">
         {recentTasks.length === 0 ? (
-          <p className="text-center text-white/40 py-4">No recent activity</p>
+          <p className={`text-center ${t ? t("text-gray-400", "text-white/40") : "text-white/40"} py-4`}>No recent activity</p>
         ) : (
           recentTasks.map((task) => (
             <div
               key={task.id}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"
+              className={`flex items-center gap-3 p-2 rounded-lg ${t ? t("hover:bg-gray-50", "hover:bg-white/5") : "hover:bg-white/5"} transition-colors`}
             >
-              <div className="p-2 rounded-lg bg-zinc-800/50">
+              <div className={`p-2 rounded-lg ${t ? t("bg-gray-100", "bg-zinc-800/50") : "bg-zinc-800/50"}`}>
                 {getStatusIcon(task.status)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white truncate">
+                <p className={`text-sm ${t ? t("text-gray-900", "text-white") : "text-white"} truncate`}>
                   {task.candidate_name || "Unknown Candidate"}
                 </p>
-                <p className="text-xs text-white/50">
+                <p className={`text-xs ${t ? t("text-gray-400", "text-white/50") : "text-white/50"}`}>
                   {task.task_type?.replace(/_/g, " ")} - {task.status}
                 </p>
               </div>
-              <span className="text-xs text-white/40">{formatTime(task.updated_at)}</span>
+              <span className={`text-xs ${t ? t("text-gray-400", "text-white/40") : "text-white/40"}`}>{formatTime(task.updated_at)}</span>
             </div>
           ))
         )}
@@ -443,6 +445,7 @@ const RecentActivity = ({ outreachTasks }) => {
 
 export default function TalentAnalytics({ embedded = false }) {
   const { user } = useUser();
+  const { t } = useTheme();
 
   const [candidates, setCandidates] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
@@ -611,7 +614,7 @@ export default function TalentAnalytics({ embedded = false }) {
     if (embedded) return <div className="space-y-4">{loadingSkeleton}</div>;
 
     return (
-      <div className="min-h-screen bg-black relative">
+      <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
         <div className="relative z-10 w-full px-4 lg:px-6 py-4">
           {loadingSkeleton}
         </div>
@@ -629,10 +632,10 @@ export default function TalentAnalytics({ embedded = false }) {
           actions={
             <div className="flex items-center gap-2">
               <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700 text-white">
+                <SelectTrigger className={`w-32 ${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-white/10">
+                <SelectContent className={`${t("bg-white", "bg-slate-800")} ${t("border-gray-200", "border-white/10")}`}>
                   <SelectItem value="7d">Last 7 days</SelectItem>
                   <SelectItem value="30d">Last 30 days</SelectItem>
                   <SelectItem value="90d">Last 90 days</SelectItem>
@@ -642,7 +645,7 @@ export default function TalentAnalytics({ embedded = false }) {
               <Button
                 variant="ghost"
                 onClick={fetchData}
-                className="text-white/60 hover:text-white"
+                className={`${t("text-gray-400 hover:text-gray-600", "text-white/60 hover:text-white")}`}
               >
                 <RefreshCw className="w-4 h-4" />
               </Button>
@@ -654,15 +657,15 @@ export default function TalentAnalytics({ embedded = false }) {
       {embedded && (
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-white">Performance Overview</h3>
-            <p className="text-sm text-zinc-500">Pipeline metrics and recruitment performance</p>
+            <h3 className={`text-lg font-semibold ${t("text-gray-900", "text-white")}`}>Performance Overview</h3>
+            <p className={`text-sm ${t("text-gray-500", "text-zinc-500")}`}>Pipeline metrics and recruitment performance</p>
           </div>
           <div className="flex items-center gap-2">
             <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700 text-white">
+              <SelectTrigger className={`w-32 ${t("bg-white", "bg-zinc-800/50")} ${t("border-gray-200", "border-zinc-700")} ${t("text-gray-900", "text-white")}`}>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-white/10">
+              <SelectContent className={`${t("bg-white", "bg-slate-800")} ${t("border-gray-200", "border-white/10")}`}>
                 <SelectItem value="7d">Last 7 days</SelectItem>
                 <SelectItem value="30d">Last 30 days</SelectItem>
                 <SelectItem value="90d">Last 90 days</SelectItem>
@@ -673,7 +676,7 @@ export default function TalentAnalytics({ embedded = false }) {
               variant="ghost"
               size="sm"
               onClick={fetchData}
-              className="text-white/60 hover:text-white"
+              className={`${t("text-gray-400 hover:text-gray-600", "text-white/60 hover:text-white")}`}
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -694,6 +697,7 @@ export default function TalentAnalytics({ embedded = false }) {
           subtitle={`${metrics.highRiskCandidates} high-risk`}
           icon={Users}
           color="red"
+          t={t}
         />
         <MetricCard
           title="Active Campaigns"
@@ -701,6 +705,7 @@ export default function TalentAnalytics({ embedded = false }) {
           subtitle={`${campaigns.length} total`}
           icon={Megaphone}
           color="red"
+          t={t}
         />
         <MetricCard
           title="Outreach Sent"
@@ -708,6 +713,7 @@ export default function TalentAnalytics({ embedded = false }) {
           subtitle={`${metrics.totalOutreach} total tasks`}
           icon={Send}
           color="red"
+          t={t}
         />
         <MetricCard
           title="Response Rate"
@@ -715,6 +721,7 @@ export default function TalentAnalytics({ embedded = false }) {
           subtitle={`${metrics.repliedOutreach} replies`}
           icon={MessageSquare}
           color="red"
+          t={t}
         />
       </motion.div>
 
@@ -731,6 +738,7 @@ export default function TalentAnalytics({ embedded = false }) {
           subtitle={`${projects.length} total`}
           icon={Briefcase}
           color="red"
+          t={t}
         />
         <MetricCard
           title="Open Roles"
@@ -738,6 +746,7 @@ export default function TalentAnalytics({ embedded = false }) {
           subtitle={`${roles.length} total roles`}
           icon={Target}
           color="red"
+          t={t}
         />
         <MetricCard
           title="Roles Filled"
@@ -745,6 +754,7 @@ export default function TalentAnalytics({ embedded = false }) {
           subtitle={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}% success`}
           icon={CheckCircle2}
           color="red"
+          t={t}
         />
       </motion.div>
 
@@ -756,10 +766,10 @@ export default function TalentAnalytics({ embedded = false }) {
         className="grid grid-cols-1 lg:grid-cols-2 gap-4"
       >
         <motion.div variants={itemVariants}>
-          <PipelineStages candidates={candidates} />
+          <PipelineStages candidates={candidates} t={t} />
         </motion.div>
         <motion.div variants={itemVariants}>
-          <IntelligenceDistribution data={metrics.intelligenceDistribution} />
+          <IntelligenceDistribution data={metrics.intelligenceDistribution} t={t} />
         </motion.div>
       </motion.div>
 
@@ -771,10 +781,10 @@ export default function TalentAnalytics({ embedded = false }) {
         className="grid grid-cols-1 lg:grid-cols-3 gap-4"
       >
         <motion.div variants={itemVariants} className="lg:col-span-2">
-          <CampaignPerformanceTable campaigns={campaigns} outreachTasks={outreachTasks} />
+          <CampaignPerformanceTable campaigns={campaigns} outreachTasks={outreachTasks} t={t} />
         </motion.div>
         <motion.div variants={itemVariants}>
-          <RecentActivity outreachTasks={outreachTasks} />
+          <RecentActivity outreachTasks={outreachTasks} t={t} />
         </motion.div>
       </motion.div>
     </div>
@@ -783,7 +793,7 @@ export default function TalentAnalytics({ embedded = false }) {
   if (embedded) return analyticsContent;
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className={`min-h-screen ${t("bg-gray-50", "bg-black")} relative`}>
       <div className="relative z-10 w-full px-4 lg:px-6 py-4">
         {analyticsContent}
       </div>

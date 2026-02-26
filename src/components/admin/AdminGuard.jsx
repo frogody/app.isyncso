@@ -94,7 +94,7 @@ export function AdminGuard({ children, requiredRole = null }) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 text-red-500 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-10 h-10 text-cyan-500 animate-spin mx-auto mb-4" />
           <p className="text-zinc-400">Verifying admin access...</p>
         </div>
       </div>
@@ -140,8 +140,8 @@ export function AdminGuard({ children, requiredRole = null }) {
       return (
         <div className="min-h-screen bg-black flex items-center justify-center p-4">
           <div className="text-center max-w-md">
-            <div className="w-16 h-16 rounded-2xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center mx-auto mb-4">
-              <ShieldAlert className="w-8 h-8 text-orange-400" />
+            <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
+              <ShieldAlert className="w-8 h-8 text-cyan-400" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Insufficient Permissions</h1>
             <p className="text-zinc-400 mb-6">

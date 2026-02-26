@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import TermsAcceptanceGate from "./TermsAcceptanceGate";
 
 // Dynamically import to avoid circular dependencies
 const Onboarding = React.lazy(() => import("../../pages/Onboarding"));
@@ -101,7 +102,10 @@ export default function OnboardingGuard({ children }) {
   }
 
   // User is authenticated - check onboarding status
-  const hasCompletedOnboarding = user?.job_title?.trim()?.length > 0 || user?.onboarding_completed === true;
+  // Check DB fields first, then localStorage as fallback (in case DB write was delayed)
+  const hasCompletedOnboarding = user?.job_title?.trim()?.length > 0
+    || user?.onboarding_completed === true
+    || localStorage.getItem('onboarding_completed') === 'true';
 
   // If user completed onboarding and tries to access onboarding page, redirect to Dashboard
   if (isOnOnboardingPage && hasCompletedOnboarding) {
@@ -127,6 +131,21 @@ export default function OnboardingGuard({ children }) {
     );
   }
 
-  // User is authenticated and has completed onboarding - show normal app
+  // User is authenticated and has completed onboarding — check terms acceptance
+  const hasAcceptedTerms = !!user?.terms_accepted_at;
+
+  if (!hasAcceptedTerms) {
+    return (
+      <TermsAcceptanceGate
+        user={user}
+        onAccepted={() => {
+          // Refresh user data to pick up the new terms_accepted_at
+          setUser(prev => ({ ...prev, terms_accepted_at: new Date().toISOString() }));
+        }}
+      />
+    );
+  }
+
+  // All checks passed — show normal app
   return children;
 }

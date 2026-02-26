@@ -82,6 +82,8 @@ export default function FinanceDashboard() {
   const [recentEntries, setRecentEntries] = useState([]);
   const [billsDueSoon, setBillsDueSoon] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [showGLBanner, setShowGLBanner] = useState(false);
+  const [liveData, setLiveData] = useState(null);
 
   const navigate = useNavigate();
   const { hasPermission, isLoading: permLoading } = usePermissions();
@@ -101,28 +103,102 @@ export default function FinanceDashboard() {
     const today = new Date().toISOString().slice(0, 10);
 
     try {
-      const [plResult, tbResult, agingResult, entriesResult, billsResult] = await Promise.all([
+      const [plResult, tbResult, agingResult, entriesResult, billsResult, invoicesResult, expensesResult, recentInvoicesResult] = await Promise.all([
         // P&L for the selected period
-        supabase.rpc('get_profit_loss', { p_company_id: companyId, p_start_date: dateRange.from, p_end_date: dateRange.to }).then(r => r, () => ({ data: [] })),
+        supabase.rpc('get_profit_loss', { p_company_id: companyId, p_start_date: dateRange.from, p_end_date: dateRange.to })
+          .then(r => { if (r.error) console.warn('P&L RPC error:', r.error.message); return r; }, (err) => { console.warn('P&L RPC failed:', err); return { data: [], error: err }; }),
         // Trial Balance as of today
-        supabase.rpc('get_trial_balance', { p_company_id: companyId, p_as_of_date: today }).then(r => r, () => ({ data: [] })),
+        supabase.rpc('get_trial_balance', { p_company_id: companyId, p_as_of_date: today })
+          .then(r => { if (r.error) console.warn('TB RPC error:', r.error.message); return r; }, (err) => { console.warn('TB RPC failed:', err); return { data: [], error: err }; }),
         // AP Aging
-        supabase.rpc('get_aged_payables', { p_company_id: companyId, p_as_of_date: today }).then(r => r, () => ({ data: [] })),
+        supabase.rpc('get_aged_payables', { p_company_id: companyId, p_as_of_date: today })
+          .then(r => { if (r.error) console.warn('Aging RPC error:', r.error.message); return r; }, (err) => { console.warn('Aging RPC failed:', err); return { data: [], error: err }; }),
         // Recent journal entries
         Promise.resolve(db.entities.JournalEntry?.list?.({ limit: 10, sort_by: 'entry_date', sort_order: 'desc' })).catch(() => []),
         // Bills due in next 7 days
         Promise.resolve(db.entities.Bill?.list?.({ limit: 10 })).catch(() => []),
+        // Live invoice data (total, paid, outstanding)
+        supabase.from('invoices').select('id, status, total, amount_paid, balance_due, due_date, created_at').eq('company_id', companyId).range(0, 9999)
+          .then(r => r, () => ({ data: [] })),
+        // Live expense data
+        supabase.from('expenses').select('id, amount, status, date, category, description, created_at').eq('company_id', companyId).range(0, 9999)
+          .then(r => r, () => ({ data: [] })),
+        // Recent invoices for activity feed
+        supabase.from('invoices').select('id, invoice_number, status, total, due_date, created_at').eq('company_id', companyId)
+          .order('created_at', { ascending: false }).limit(5)
+          .then(r => r, () => ({ data: [] })),
       ]);
 
-      // Process P&L
+      // Process P&L — handle both old (row_type/section) and new (category/is_summary) field names
       const plRows = plResult?.data || [];
       let totalRevenue = 0, totalExpenses = 0, netIncome = 0;
       for (const row of plRows) {
-        if (row.row_type === 'subtotal' && row.section === 'Revenue') totalRevenue = parseFloat(row.amount) || 0;
-        else if (row.row_type === 'subtotal' && row.section === 'Expenses') totalExpenses = parseFloat(row.amount) || 0;
-        else if (row.row_type === 'summary') netIncome = parseFloat(row.amount) || 0;
+        const isSubtotal = row.row_type === 'subtotal' || (row.is_summary === true && row.category !== 'Net Income');
+        const isSummary = row.row_type === 'summary' || (row.is_summary === true && row.category === 'Net Income');
+        const section = row.section || row.category;
+        if (isSubtotal && section === 'Revenue') totalRevenue = parseFloat(row.amount) || 0;
+        else if (isSubtotal && (section === 'Expenses' || section === 'Expense')) totalExpenses = parseFloat(row.amount) || 0;
+        else if (isSummary) netIncome = parseFloat(row.amount) || 0;
       }
       setPLData({ revenue: totalRevenue, expenses: totalExpenses, netIncome });
+
+      // Process live invoice & expense data
+      const invoices = invoicesResult?.data || [];
+      const expenses = expensesResult?.data || [];
+
+      const invoiceStats = { total: 0, paid: 0, outstanding: 0, overdue: 0, count: invoices.length, paidCount: 0, pendingCount: 0, overdueCount: 0 };
+      for (const inv of invoices) {
+        const t = parseFloat(inv.total) || 0;
+        const paid = parseFloat(inv.amount_paid) || 0;
+        const bal = parseFloat(inv.balance_due) || (t - paid);
+        invoiceStats.total += t;
+        invoiceStats.paid += paid;
+        if (inv.status === 'paid') {
+          invoiceStats.paidCount++;
+        } else {
+          invoiceStats.outstanding += bal;
+          invoiceStats.pendingCount++;
+          if (inv.due_date && new Date(inv.due_date) < new Date()) {
+            invoiceStats.overdue += bal;
+            invoiceStats.overdueCount++;
+          }
+        }
+      }
+
+      const expenseStats = { total: 0, count: expenses.length };
+      // Filter expenses to selected period
+      let periodExpenses = 0;
+      for (const exp of expenses) {
+        const amt = parseFloat(exp.amount) || 0;
+        expenseStats.total += amt;
+        const expDate = (exp.date || exp.created_at || '').slice(0, 10);
+        if (expDate >= dateRange.from && expDate <= dateRange.to) {
+          periodExpenses += amt;
+        }
+      }
+
+      // Filter invoices to selected period for P&L
+      let periodRevenue = 0;
+      for (const inv of invoices) {
+        const invDate = (inv.created_at || '').slice(0, 10);
+        if (invDate >= dateRange.from && invDate <= dateRange.to) {
+          periodRevenue += parseFloat(inv.total) || 0;
+        }
+      }
+
+      setLiveData({
+        invoiceStats,
+        expenseStats,
+        periodRevenue,
+        periodExpenses,
+        recentInvoices: recentInvoicesResult?.data || [],
+      });
+
+      // Detect if financial data exists but GL is empty (show info banner)
+      const hasInvoices = invoices.length > 0;
+      const hasExpenses = expenses.length > 0;
+      const glIsEmpty = plRows.length === 0 && (tbResult?.data || []).length === 0;
+      setShowGLBanner(glIsEmpty && (hasInvoices || hasExpenses));
 
       // Process Trial Balance
       const tbRows = tbResult?.data || [];
@@ -152,13 +228,23 @@ export default function FinanceDashboard() {
       }
       setAgingData(agingTotals);
 
-      // Set top metrics
+      // Set top metrics — use live data when GL is empty
+      const useLiveData = glIsEmpty && (hasInvoices || hasExpenses);
       setMetrics({
-        cash: cashBalance,
-        ar: arBalance,
+        cash: useLiveData ? (invoiceStats.paid - expenseStats.total) : cashBalance,
+        ar: useLiveData ? invoiceStats.outstanding : arBalance,
         ap: agingTotals.total,
-        netIncome,
+        netIncome: useLiveData ? (periodRevenue - periodExpenses) : netIncome,
       });
+
+      // Override P&L with live data when GL is empty
+      if (useLiveData) {
+        setPLData({
+          revenue: periodRevenue,
+          expenses: periodExpenses,
+          netIncome: periodRevenue - periodExpenses,
+        });
+      }
 
       // Recent entries
       setRecentEntries((entriesResult || []).slice(0, 10));
@@ -275,6 +361,31 @@ export default function FinanceDashboard() {
             ))}
           </div>
 
+          {/* GL Info Banner */}
+          {showGLBanner && (
+            <Card className={`${ft('bg-blue-50 border-blue-200', 'bg-blue-500/5 border-blue-500/20')} border`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${ft('text-blue-800', 'text-blue-300')}`}>
+                      Showing live data from invoices & expenses
+                    </p>
+                    <p className={`text-xs mt-1 ${ft('text-blue-600', 'text-blue-400/70')}`}>
+                      KPIs reflect your actual {liveData?.invoiceStats?.count || 0} invoices and {liveData?.expenseStats?.count || 0} expenses.
+                      For full double-entry accounting reports, initialize the General Ledger.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm"
+                    className={ft('border-blue-300 text-blue-700 hover:bg-blue-100', 'border-blue-500/30 text-blue-400 hover:bg-blue-500/10')}
+                    onClick={() => navigate(createPageUrl('FinanceAccounts'))}>
+                    Initialize GL
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Quick Actions */}
           <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
             <CardContent className="p-3">
@@ -339,16 +450,18 @@ export default function FinanceDashboard() {
               </CardContent>
             </Card>
 
-            {/* Trial Balance Check */}
+            {/* Trial Balance / Invoice Summary */}
             <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className={`text-sm font-semibold ${ft('text-slate-700', 'text-zinc-300')}`}>Balance Check</h3>
-                  <Link to={createPageUrl('FinanceReportTB')} className="text-blue-400 hover:text-blue-300">
+                  <h3 className={`text-sm font-semibold ${ft('text-slate-700', 'text-zinc-300')}`}>
+                    {tbData && tbData.accountCount > 0 ? 'Balance Check' : 'Invoice Overview'}
+                  </h3>
+                  <Link to={createPageUrl(tbData && tbData.accountCount > 0 ? 'FinanceReportTB' : 'FinanceInvoices')} className="text-blue-400 hover:text-blue-300">
                     <ExternalLink className="w-3.5 h-3.5" />
                   </Link>
                 </div>
-                {tbData && (
+                {tbData && tbData.accountCount > 0 ? (
                   <div className="space-y-3">
                     <div className={`flex items-center gap-3 p-3 rounded-lg ${
                       tbData.isBalanced ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
@@ -377,6 +490,32 @@ export default function FinanceDashboard() {
                       </div>
                     </div>
                   </div>
+                ) : liveData?.invoiceStats ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-baseline">
+                      <span className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>Total Invoiced</span>
+                      <span className={`text-lg font-bold tabular-nums ${ft('text-slate-900', 'text-white')}`}>{formatCurrency(liveData.invoiceStats.total)}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className={`p-2 rounded-md ${ft('bg-slate-50', 'bg-zinc-800/30')}`}>
+                        <p className={`text-[10px] uppercase tracking-wider ${ft('text-slate-400', 'text-zinc-500')}`}>Paid</p>
+                        <p className="text-sm font-bold tabular-nums mt-0.5 text-green-400">{formatCurrency(liveData.invoiceStats.paid)}</p>
+                        <p className={`text-[10px] mt-0.5 ${ft('text-slate-400', 'text-zinc-500')}`}>{liveData.invoiceStats.paidCount} invoices</p>
+                      </div>
+                      <div className={`p-2 rounded-md ${ft('bg-slate-50', 'bg-zinc-800/30')}`}>
+                        <p className={`text-[10px] uppercase tracking-wider ${ft('text-slate-400', 'text-zinc-500')}`}>Pending</p>
+                        <p className="text-sm font-bold tabular-nums mt-0.5 text-amber-400">{formatCurrency(liveData.invoiceStats.outstanding)}</p>
+                        <p className={`text-[10px] mt-0.5 ${ft('text-slate-400', 'text-zinc-500')}`}>{liveData.invoiceStats.pendingCount} invoices</p>
+                      </div>
+                      <div className={`p-2 rounded-md ${ft('bg-slate-50', 'bg-zinc-800/30')}`}>
+                        <p className={`text-[10px] uppercase tracking-wider ${ft('text-slate-400', 'text-zinc-500')}`}>Overdue</p>
+                        <p className="text-sm font-bold tabular-nums mt-0.5 text-red-400">{formatCurrency(liveData.invoiceStats.overdue)}</p>
+                        <p className={`text-[10px] mt-0.5 ${ft('text-slate-400', 'text-zinc-500')}`}>{liveData.invoiceStats.overdueCount} invoices</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className={`text-sm text-center py-6 ${ft('text-slate-400', 'text-zinc-500')}`}>No data</p>
                 )}
               </CardContent>
             </Card>
@@ -428,15 +567,15 @@ export default function FinanceDashboard() {
             <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className={`text-sm font-semibold ${ft('text-slate-700', 'text-zinc-300')}`}>Recent Journal Entries</h3>
-                  <Link to={createPageUrl('FinanceGeneralLedger')}
+                  <h3 className={`text-sm font-semibold ${ft('text-slate-700', 'text-zinc-300')}`}>
+                    {recentEntries.length > 0 ? 'Recent Journal Entries' : 'Recent Invoices'}
+                  </h3>
+                  <Link to={createPageUrl(recentEntries.length > 0 ? 'FinanceGeneralLedger' : 'FinanceInvoices')}
                     className={`text-xs flex items-center gap-1 ${ft('text-blue-600', 'text-blue-400')} hover:underline`}>
                     View All <ChevronRight className="w-3 h-3" />
                   </Link>
                 </div>
-                {recentEntries.length === 0 ? (
-                  <p className={`text-sm text-center py-6 ${ft('text-slate-400', 'text-zinc-500')}`}>No recent entries</p>
-                ) : (
+                {recentEntries.length > 0 ? (
                   <div className="space-y-1">
                     {recentEntries.map((entry, i) => (
                       <div key={entry.id || i}
@@ -464,6 +603,45 @@ export default function FinanceDashboard() {
                       </div>
                     ))}
                   </div>
+                ) : (liveData?.recentInvoices || []).length > 0 ? (
+                  <div className="space-y-1">
+                    {(liveData?.recentInvoices || []).map((inv) => {
+                      const isPaid = inv.status === 'paid';
+                      const isOverdue = !isPaid && inv.due_date && new Date(inv.due_date) < new Date();
+                      return (
+                        <div key={inv.id}
+                          className={`flex items-center gap-3 px-2 py-2 rounded-md ${ft('hover:bg-slate-50', 'hover:bg-white/[0.02]')}`}>
+                          <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
+                            isPaid ? 'bg-green-500/10' : isOverdue ? 'bg-red-500/10' : 'bg-amber-500/10'
+                          }`}>
+                            <Receipt className={`w-3.5 h-3.5 ${
+                              isPaid ? 'text-green-400' : isOverdue ? 'text-red-400' : 'text-amber-400'
+                            }`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm truncate ${ft('text-slate-700', 'text-zinc-300')}`}>
+                              {inv.invoice_number || 'Invoice'}
+                            </p>
+                            <p className={`text-xs ${ft('text-slate-400', 'text-zinc-500')}`}>
+                              {formatDate(inv.created_at)} {inv.due_date ? `· Due ${formatDate(inv.due_date)}` : ''}
+                            </p>
+                          </div>
+                          <span className={`text-sm font-medium tabular-nums flex-shrink-0 ${ft('text-slate-900', 'text-white')}`}>
+                            {formatCurrency(inv.total)}
+                          </span>
+                          <Badge variant="outline" className={`text-[10px] flex-shrink-0 ${
+                            isPaid ? 'text-green-400 border-green-500/30'
+                              : isOverdue ? 'text-red-400 border-red-500/30'
+                              : 'text-amber-400 border-amber-500/30'
+                          }`}>
+                            {isPaid ? 'Paid' : isOverdue ? 'Overdue' : 'Pending'}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className={`text-sm text-center py-6 ${ft('text-slate-400', 'text-zinc-500')}`}>No recent activity</p>
                 )}
               </CardContent>
             </Card>

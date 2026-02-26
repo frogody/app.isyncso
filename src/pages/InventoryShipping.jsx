@@ -39,6 +39,7 @@ import {
   listTrackingJobs,
 } from "@/lib/db/queries";
 import { completeShipping } from "@/lib/services/inventory-service";
+import TrackingMapDrawer from "@/components/shipping/TrackingMapDrawer";
 
 const STATUS_STYLES = {
   pending: {
@@ -137,14 +138,17 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
             <div className="text-sm">
               <span className={`${t ? t('text-slate-500', 'text-zinc-400') : 'text-zinc-400'}`}>Order:</span>
               <span className={`ml-2 ${t ? t('text-slate-900', 'text-white') : 'text-white'} font-medium`}>
-                {task?.sales_orders?.order_number || task?.task_number}
+                {task?.sales_orders?.order_number || task?.b2b_orders?.order_number || task?.task_number}
               </span>
+              {task?.b2b_orders && !task?.sales_orders && (
+                <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">B2B</span>
+              )}
             </div>
-            {task?.sales_orders?.customers?.name && (
+            {(task?.sales_orders?.customers?.name || task?.b2b_orders?.portal_clients) && (
               <div className="text-sm mt-1">
                 <span className={`${t ? t('text-slate-500', 'text-zinc-400') : 'text-zinc-400'}`}>Customer:</span>
                 <span className={`ml-2 ${t ? t('text-slate-900', 'text-white') : 'text-white'}`}>
-                  {task.sales_orders.customers.name}
+                  {task?.sales_orders?.customers?.name || task?.b2b_orders?.portal_clients?.company_name || task?.b2b_orders?.portal_clients?.full_name}
                 </span>
               </div>
             )}
@@ -248,14 +252,38 @@ function getPriorityStyle(priorityKey) {
   return { bg: "bg-zinc-500/10", text: "text-zinc-400" };
 }
 
+// Helper: get order info from either sales_orders or b2b_orders
+function getOrderInfo(task) {
+  if (task.sales_orders) {
+    return {
+      orderNumber: task.sales_orders.order_number || task.task_number,
+      customerName: task.sales_orders.customers?.name || 'Unknown customer',
+      source: 'sales',
+    };
+  }
+  if (task.b2b_orders) {
+    return {
+      orderNumber: task.b2b_orders.order_number || task.task_number,
+      customerName: task.b2b_orders.portal_clients?.company_name || task.b2b_orders.portal_clients?.full_name || 'B2B Client',
+      source: 'b2b',
+    };
+  }
+  return {
+    orderNumber: task.task_number || 'No order',
+    customerName: 'Unknown',
+    source: null,
+  };
+}
+
 // Shipping task card
-function ShippingTaskCard({ task, onShip, t }) {
+function ShippingTaskCard({ task, onShip, onTrack, t }) {
   if (!task) return null;
 
   const status = getStatusStyle(task.status);
   const priority = getPriorityStyle(task.priority);
   const StatusIcon = (status.icon && typeof status.icon === 'function') ? status.icon : Clock;
   const isShippable = ["pending", "ready_to_ship"].includes(task.status);
+  const orderInfo = getOrderInfo(task);
 
   return (
     <div className={`p-3 rounded-lg ${t('bg-white/80 border-slate-200', 'bg-zinc-900/50 border-white/5')} border hover:border-cyan-500/30 transition-all`}>
@@ -267,8 +295,11 @@ function ShippingTaskCard({ task, onShip, t }) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className={`font-medium ${t('text-slate-900', 'text-white')}`}>
-                {task.sales_orders?.order_number || task.task_number}
+                {orderInfo.orderNumber}
               </h3>
+              {orderInfo.source === 'b2b' && (
+                <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20">B2B</Badge>
+              )}
               <Badge className={`${status.bg} ${status.text} ${status.border}`}>
                 {task.status || 'unknown'}
               </Badge>
@@ -279,7 +310,7 @@ function ShippingTaskCard({ task, onShip, t }) {
               )}
             </div>
             <p className={`text-sm ${t('text-slate-500', 'text-zinc-400')} mt-1`}>
-              {task.sales_orders?.customers?.name || "Unknown customer"}
+              {orderInfo.customerName}
             </p>
           </div>
         </div>
@@ -319,6 +350,17 @@ function ShippingTaskCard({ task, onShip, t }) {
                   onClick={() => window.open(task.tracking_url, "_blank")}
                 >
                   <ExternalLink className="w-3 h-3" />
+                </Button>
+              )}
+              {task.tracking_job_id && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[11px] text-cyan-400 hover:bg-cyan-500/10"
+                  onClick={() => onTrack?.(task)}
+                >
+                  <MapPin className="w-3 h-3 mr-1" />
+                  Track
                 </Button>
               )}
             </div>
@@ -386,7 +428,7 @@ function OverdueAlert({ count, onClick }) {
   );
 }
 
-export default function InventoryShipping() {
+export default function InventoryShipping({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, t } = useTheme();
   const [tasks, setTasks] = useState([]);
@@ -396,6 +438,7 @@ export default function InventoryShipping() {
   const [search, setSearch] = useState("");
   const [selectedTask, setSelectedTask] = useState(null);
   const [showShipModal, setShowShipModal] = useState(false);
+  const [trackingTask, setTrackingTask] = useState(null);
 
   const companyId = user?.company_id;
 
@@ -433,6 +476,9 @@ export default function InventoryShipping() {
         task.task_number?.toLowerCase().includes(searchLower) ||
         task.sales_orders?.order_number?.toLowerCase().includes(searchLower) ||
         task.sales_orders?.customers?.name?.toLowerCase().includes(searchLower) ||
+        task.b2b_orders?.order_number?.toLowerCase().includes(searchLower) ||
+        task.b2b_orders?.portal_clients?.full_name?.toLowerCase().includes(searchLower) ||
+        task.b2b_orders?.portal_clients?.company_name?.toLowerCase().includes(searchLower) ||
         task.track_trace_code?.toLowerCase().includes(searchLower)
       );
     }
@@ -468,15 +514,15 @@ export default function InventoryShipping() {
     setShowShipModal(true);
   };
 
-  return (
-    <ProductsPageTransition>
-      <PermissionGuard permission="shipping.manage" showMessage>
-        <div className={`max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4 ${t('bg-white text-slate-900', 'bg-transparent text-white')}`}>
+  const pageContent = (
+        <div className={`${embedded ? 'space-y-4' : 'max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4'} ${t('text-slate-900', 'text-white')}`}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+            {!embedded && (
             <div>
               <h1 className={`text-lg font-bold ${t('text-slate-900', 'text-white')}`}>Shipping</h1>
               <p className={`text-xs ${t('text-slate-500', 'text-zinc-400')}`}>Manage outbound shipments</p>
             </div>
+            )}
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleTheme}
@@ -575,6 +621,7 @@ export default function InventoryShipping() {
                   key={task.id}
                   task={task}
                   onShip={openShipModal}
+                  onTrack={setTrackingTask}
                   t={t}
                 />
               ))}
@@ -592,7 +639,22 @@ export default function InventoryShipping() {
             onShip={handleShip}
             t={t}
           />
+
+          {/* Tracking map drawer */}
+          <TrackingMapDrawer
+            task={trackingTask}
+            isOpen={!!trackingTask}
+            onClose={() => setTrackingTask(null)}
+          />
         </div>
+  );
+
+  if (embedded) return pageContent;
+
+  return (
+    <ProductsPageTransition>
+      <PermissionGuard permission="shipping.manage" showMessage>
+        {pageContent}
       </PermissionGuard>
     </ProductsPageTransition>
   );

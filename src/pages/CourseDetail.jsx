@@ -20,6 +20,7 @@ import {
 import YellowOrbitIcon from "@/components/icons/YellowOrbitIcon";
 import { useUser } from "@/components/context/UserContext";
 import { LearningAnalytics } from "@/components/learn/LearningAnalytics";
+import CourseRatings from "@/components/learn/CourseRatings";
 
 export default function CourseDetail() {
   const [searchParams] = useSearchParams();
@@ -334,6 +335,9 @@ export default function CourseDetail() {
           <LearningAnalytics courseId={course.id} userId={user?.id} />
         )}
 
+        {/* Course Ratings */}
+        <CourseRatings courseId={course.id} userId={user?.id} />
+
         {/* Course Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-4">
@@ -426,7 +430,7 @@ export default function CourseDetail() {
                       src={course.instructor_image}
                       alt={course.instructor || "Instructor"}
                       className="w-12 h-12 rounded-lg object-cover border-2 border-zinc-700/50"
-                    />
+                     loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-teal-500/20 to-teal-600/20 flex items-center justify-center border-2 border-zinc-700/50">
                       <GraduationCap className="w-6 h-6 text-teal-400" />

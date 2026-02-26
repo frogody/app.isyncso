@@ -214,11 +214,11 @@ export default function FinanceBills({ embedded = false }) {
     try {
       setLoading(true);
       const [billData, lineData, payData, vendorData, acctData, typeData] = await Promise.all([
-        db.entities.Bill?.list?.({ limit: 2000 }).catch(() => []),
-        db.entities.BillLineItem?.list?.({ limit: 5000 }).catch(() => []),
-        db.entities.BillPayment?.list?.({ limit: 2000 }).catch(() => []),
-        db.entities.Vendor?.list?.({ limit: 1000 }).catch(() => []),
-        db.entities.Account?.list?.({ limit: 1000 }).catch(() => []),
+        db.entities.Bill?.list?.({ limit: 500 }).catch(() => []),
+        db.entities.BillLineItem?.list?.({ limit: 2000 }).catch(() => []),
+        db.entities.BillPayment?.list?.({ limit: 500 }).catch(() => []),
+        db.entities.Vendor?.list?.({ limit: 200 }).catch(() => []),
+        db.entities.Account?.list?.({ limit: 200 }).catch(() => []),
         db.entities.AccountType?.list?.({ limit: 10 }).catch(() => []),
       ]);
       setBills(billData || []);

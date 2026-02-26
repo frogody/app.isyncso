@@ -267,7 +267,7 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
           src={src}
           alt={alt || ''}
           className="rounded-xl max-w-full h-auto border border-zinc-800"
-          loading="lazy"
+          loading="lazy" decoding="async"
         />
         {alt && <figcaption className="text-center text-sm text-zinc-500 mt-2">{alt}</figcaption>}
       </figure>

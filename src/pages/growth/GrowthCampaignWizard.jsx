@@ -579,7 +579,7 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
                       >
                         <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden">
                           {imgSrc ? (
-                            <img src={imgSrc} alt={product.name} className="w-full h-full object-cover rounded-lg" />
+                            <img src={imgSrc} alt={product.name} className="w-full h-full object-cover rounded-lg"  loading="lazy" decoding="async" />
                           ) : (
                             <Package className="w-4 h-4 text-zinc-500" />
                           )}
@@ -638,7 +638,7 @@ function Step1Product({ formData, setFormData, products, productsLoading, onProd
                   ? formData.selectedProduct.featured_image
                   : formData.selectedProduct?.featured_image?.url || null;
                 return imgSrc
-                  ? <img src={imgSrc} alt={formData.selectedProduct?.name} className="w-full h-full object-cover rounded-lg" />
+                  ? <img src={imgSrc} alt={formData.selectedProduct?.name} className="w-full h-full object-cover rounded-lg"  loading="lazy" decoding="async" />
                   : <Package className="w-4 h-4 text-zinc-500" />;
               })()}
             </div>

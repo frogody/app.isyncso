@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets, GeneratedContent, Product, PhysicalProduct } from '@/api/entities';
@@ -29,10 +30,10 @@ import {
   AlertCircle,
   ArrowLeft,
   Zap,
-  Upload,
   Save,
   ChevronRight,
   BookmarkPlus,
+  Hand,
 } from 'lucide-react';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
@@ -56,6 +57,15 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from '@/api/supabaseClient';
 import { createPageUrl } from '@/utils';
+
+// Credit cost per use case (maps to underlying model)
+const USE_CASE_CREDITS = {
+  product_variation: 8,   // flux-kontext-pro
+  product_scene: 15,      // flux-kontext-max
+  marketing_creative: 8,  // flux-pro
+  quick_draft: 2,         // flux-schnell
+  premium_quality: 15,    // flux-kontext-max
+};
 
 // Use case definitions with model selection
 const USE_CASES = {
@@ -108,7 +118,7 @@ const USE_CASES = {
     costTier: 'premium',
     estimatedCost: 0.04,
     color: 'yellow'
-  }
+  },
 };
 
 const STYLE_PRESETS = [
@@ -129,6 +139,15 @@ const ASPECT_RATIOS = [
   { id: '9:16', label: '9:16', width: 1024, height: 1792, shape: 'w-4 h-7' },
   { id: '4:3', label: '4:3', width: 1365, height: 1024, shape: 'w-6 h-5' },
   { id: '3:4', label: '3:4', width: 1024, height: 1365, shape: 'w-5 h-6' },
+];
+
+const SIZE_SCALE = [
+  { value: 1, label: 'Tiny',       desc: 'Fingertip-sized (earring, ring, gemstone)', cm: '1-3cm', circle: 8 },
+  { value: 2, label: 'Small',      desc: 'Fits in your palm (key, lighter, AirPods case)', cm: '4-7cm', circle: 16 },
+  { value: 3, label: 'Hand-sized', desc: 'Size of a hand (phone, wallet, perfume bottle)', cm: '8-15cm', circle: 28 },
+  { value: 4, label: 'Forearm',    desc: 'Forearm length (shoe, wine bottle, tablet)', cm: '20-35cm', circle: 44 },
+  { value: 5, label: 'Large',      desc: 'Torso-sized (suitcase, backpack, side table)', cm: '40-80cm', circle: 64 },
+  { value: 6, label: 'Very Large', desc: 'Human-sized or bigger (chair, guitar, floor lamp)', cm: '80cm+', circle: 88 },
 ];
 
 const QUICK_SUGGESTIONS = [
@@ -172,7 +191,7 @@ function getModeFromUseCase(useCaseId) {
   return MODES.find(m => m.useCases.includes(useCaseId)) || MODES[1];
 }
 
-export default function CreateImages() {
+export default function CreateImages({ embedded = false }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
   const [prompt, setPrompt] = useState('');
@@ -194,7 +213,9 @@ export default function CreateImages() {
   const [selectedReferenceImage, setSelectedReferenceImage] = useState(null);
   const [showEnhancedPrompt, setShowEnhancedPrompt] = useState(false);
   const [promptError, setPromptError] = useState('');
-
+  const [productSizeScale, setProductSizeScale] = useState(3);
+  const [productAnalysis, setProductAnalysis] = useState(null);
+  const [isAnalyzingProduct, setIsAnalyzingProduct] = useState(false);
   const selectedMode = getModeFromUseCase(selectedUseCase);
 
   const handleModeSelect = (mode) => {
@@ -276,15 +297,58 @@ export default function CreateImages() {
     }
   };
 
+  const analyzeProduct = async (product) => {
+    setIsAnalyzingProduct(true);
+    setProductAnalysis(null);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const isPhysical = product.type === 'physical';
+      const analysis = {
+        type: isPhysical ? 'physical' : 'digital',
+        summary: isPhysical
+          ? `${product.name} is a physical product — best results with reference image editing and studio-style prompts.`
+          : `${product.name} is a digital product/service — best results with abstract visuals, UI mockups, and conceptual imagery.`,
+        suggestedStyles: isPhysical
+          ? ['photorealistic', 'luxury', 'minimalist']
+          : ['minimalist', '3d_render', 'cinematic'],
+        suggestedPrompts: isPhysical
+          ? [
+              `${product.name} on a clean white marble surface`,
+              `${product.name} in a lifestyle flat-lay scene`,
+              `${product.name} with dramatic studio lighting`,
+            ]
+          : [
+              `Abstract visualization representing ${product.name}`,
+              `Modern marketing banner for ${product.name}`,
+              `Conceptual digital art showcasing ${product.name}`,
+            ],
+        productTraits: isPhysical
+          ? ['tangible', 'photographable', 'reference-image-ready']
+          : ['conceptual', 'abstract-visual', 'text-to-image-optimized'],
+      };
+      setProductAnalysis(analysis);
+    } catch (err) {
+      console.warn('Product analysis failed:', err);
+    } finally {
+      setIsAnalyzingProduct(false);
+    }
+  };
+
   const handleProductSelect = async (product) => {
     setSelectedProduct(product);
     setProductSearch('');
     if (product) {
       await loadProductImages(product);
-      if (product.type === 'physical') setSelectedUseCase('product_variation');
+      if (product.type === 'physical') {
+        setSelectedUseCase('product_variation');
+      } else {
+        setSelectedUseCase('marketing_creative');
+      }
+      analyzeProduct(product);
     } else {
       setProductImages([]);
       setSelectedReferenceImage(null);
+      setProductAnalysis(null);
     }
   };
 
@@ -404,6 +468,9 @@ export default function CreateImages() {
       const useCaseEnhancement = getUseCaseEnhancements(selectedUseCase, false);
       if (useCaseEnhancement) parts.push(useCaseEnhancement);
     }
+    if (selectedProduct && selectedProduct.type !== 'physical') {
+      parts.push('abstract conceptual visualization, modern design, no physical product photography');
+    }
     return parts.filter(p => p).join(', ');
   };
 
@@ -429,25 +496,37 @@ export default function CreateImages() {
     try {
       let finalPrompt = prompt;
       let enhancementData = null;
+      let wasEnhanced = false;
       try {
         toast.info('AI is enhancing your prompt...', { duration: 2000 });
-        const { data: enhanceData, error: enhanceError } = await supabase.functions.invoke('enhance-prompt', {
-          body: {
-            prompt: prompt,
-            use_case: selectedUseCase,
-            style: selectedStyle,
-            product_name: selectedProduct?.name,
-            product_type: selectedProduct?.type,
-            product_description: selectedProduct?.description || selectedProduct?.short_description,
-            product_tags: selectedProduct?.tags,
-            product_category: selectedProduct?.category,
-            brand_mood: brandAssets?.visual_style?.mood,
-            has_reference_image: !!selectedReferenceImage
+        const enhanceRes = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enhance-prompt`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              prompt: prompt,
+              use_case: selectedUseCase,
+              style: selectedStyle,
+              product_name: selectedProduct?.name,
+              product_type: selectedProduct?.type,
+              product_description: selectedProduct?.description || selectedProduct?.short_description,
+              product_tags: selectedProduct?.tags,
+              product_category: selectedProduct?.category,
+              brand_mood: brandAssets?.visual_style?.mood,
+              has_reference_image: !!selectedReferenceImage,
+              product_size_scale: selectedProduct ? SIZE_SCALE[productSizeScale - 1] : null,
+            }),
           }
-        });
-        if (!enhanceError && enhanceData?.enhanced_prompt) {
+        );
+        const enhanceData = enhanceRes.ok ? await enhanceRes.json() : null;
+        if (enhanceData?.enhanced_prompt) {
           finalPrompt = enhanceData.enhanced_prompt;
           enhancementData = enhanceData;
+          wasEnhanced = true;
           setAiEnhancedPrompt(enhanceData);
         } else {
           finalPrompt = buildEnhancedPrompt();
@@ -459,25 +538,38 @@ export default function CreateImages() {
       setIsEnhancing(false);
       const aspectConfig = ASPECT_RATIOS.find(a => a.id === aspectRatio);
       const isPhysicalProduct = selectedProduct?.type === 'physical';
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: {
-          use_case: selectedUseCase,
-          reference_image_url: selectedReferenceImage,
-          prompt: finalPrompt,
-          original_prompt: prompt,
-          style: selectedStyle,
-          aspect_ratio: aspectRatio,
-          width: aspectConfig?.width || 1024,
-          height: aspectConfig?.height || 1024,
-          brand_context: useBrandContext ? brandAssets : null,
-          product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type } : null,
-          product_images: isPhysicalProduct ? productImages : [],
-          is_physical_product: isPhysicalProduct,
-          company_id: user.company_id,
-          user_id: user.id,
+      const genRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            use_case: selectedUseCase,
+            reference_image_url: selectedReferenceImage,
+            prompt: finalPrompt,
+            original_prompt: prompt,
+            prompt_enhanced: wasEnhanced,
+            style: selectedStyle,
+            aspect_ratio: aspectRatio,
+            width: aspectConfig?.width || 1024,
+            height: aspectConfig?.height || 1024,
+            brand_context: useBrandContext ? brandAssets : null,
+            product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type, product_size_scale: SIZE_SCALE[productSizeScale - 1] } : null,
+            product_images: isPhysicalProduct ? productImages : [],
+            is_physical_product: isPhysicalProduct,
+            company_id: user.company_id,
+            user_id: user.id,
+          }),
         }
-      });
-      if (error) throw error;
+      );
+      if (!genRes.ok) {
+        const errText = await genRes.text();
+        throw new Error(`Image generation failed: ${errText}`);
+      }
+      const data = await genRes.json();
       if (data?.error) throw new Error(data.details || data.error);
       if (data?.url) {
         const savedContent = await GeneratedContent.create({
@@ -579,12 +671,15 @@ export default function CreateImages() {
   const currentUseCase = USE_CASES[selectedUseCase];
   const isProductMode = selectedMode.id === 'product';
 
+  const Wrapper = embedded ? React.Fragment : CreatePageTransition;
+
   return (
-    <CreatePageTransition>
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+    <Wrapper>
+      <div className={embedded ? '' : `min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
         <div className="w-full px-4 lg:px-6 py-6 space-y-5">
 
           {/* 1. Back nav + Header row */}
+          {!embedded && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <a
@@ -624,297 +719,7 @@ export default function CreateImages() {
               </button>
             </div>
           </div>
-
-          {/* 2. Hero Prompt Area */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className={`rounded-[20px] ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border p-5 ${promptError ? 'ring-2 ring-red-500/50 border-red-500/30' : ''}`}
-          >
-            <Textarea
-              value={prompt}
-              onChange={(e) => { setPrompt(e.target.value); if (promptError) setPromptError(''); }}
-              placeholder="Describe the image you want to create..."
-              className={`min-h-[80px] bg-transparent border-none ${ct('text-slate-900 placeholder:text-slate-400', 'text-white placeholder:text-zinc-600')} text-base focus:ring-0 focus-visible:ring-0 resize-none p-0 shadow-none`}
-              maxLength={CREATE_LIMITS.PROMPT_MAX_LENGTH}
-            />
-            {promptError && (
-              <p className="text-xs text-red-400 mt-1">{promptError}</p>
-            )}
-            <div className={`flex items-center justify-between mt-3 pt-3 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
-              <div className="flex flex-wrap gap-1.5">
-                {QUICK_SUGGESTIONS.map(chip => (
-                  <button
-                    key={chip}
-                    onClick={() => setPrompt(prev => prev ? `${prev}, ${chip.toLowerCase()}` : chip)}
-                    className={`px-3 py-1 text-xs rounded-full ${ct('bg-slate-100 border-slate-200 text-slate-500', 'bg-zinc-800/60 border-zinc-700/40 text-zinc-400')} border hover:text-yellow-400 hover:border-yellow-500/30 transition-all`}
-                  >
-                    {chip}
-                  </button>
-                ))}
-              </div>
-              <span className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')} flex-shrink-0 ml-3`}>{prompt.length}/{CREATE_LIMITS.PROMPT_MAX_LENGTH}</span>
-            </div>
-          </motion.div>
-
-          {/* 3. Mode Selector */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.05 }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-          >
-            {MODES.map(mode => {
-              const IconComp = mode.icon;
-              const isSelected = selectedMode.id === mode.id;
-              return (
-                <button
-                  key={mode.id}
-                  onClick={() => handleModeSelect(mode)}
-                  className={`relative rounded-[20px] p-4 text-left transition-all border ${
-                    isSelected
-                      ? 'bg-yellow-500/[0.03] border-yellow-500/30'
-                      : ct('bg-white border-slate-200 hover:border-slate-300', 'bg-zinc-900/50 border-zinc-800/60 hover:border-zinc-700')
-                  }`}
-                >
-                  {isSelected && (
-                    <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full bg-yellow-500" />
-                  )}
-                  <IconComp className={`w-5 h-5 mb-2 ${isSelected ? 'text-yellow-400' : ct('text-slate-400', 'text-zinc-500')}`} />
-                  <div className={`text-sm font-semibold ${isSelected ? ct('text-slate-900', 'text-white') : ct('text-slate-700', 'text-zinc-300')}`}>
-                    {mode.label}
-                  </div>
-                  <div className={`text-[11px] ${ct('text-slate-500', 'text-zinc-500')} mt-0.5 leading-snug`}>{mode.description}</div>
-                </button>
-              );
-            })}
-          </motion.div>
-
-          {/* 4. Settings Row */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.1 }}
-            className={`rounded-[20px] ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border p-4`}
-          >
-            <div className="flex flex-wrap items-start gap-6">
-              {/* Style swatches */}
-              <div className="space-y-1.5">
-                <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Style</Label>
-                <div className="flex gap-1.5">
-                  {STYLE_PRESETS.map(style => {
-                    const Ic = style.icon;
-                    const isSel = selectedStyle === style.id;
-                    return (
-                      <button
-                        key={style.id}
-                        onClick={() => setSelectedStyle(style.id)}
-                        title={style.label}
-                        className={`p-2 rounded-lg transition-all ${
-                          isSel
-                            ? 'bg-yellow-500/10 ring-2 ring-yellow-500/40 text-yellow-400'
-                            : ct('bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200', 'bg-zinc-800/40 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800')
-                        }`}
-                      >
-                        <Ic className="w-4 h-4" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Aspect Ratio */}
-              <div className="space-y-1.5">
-                <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Ratio</Label>
-                <div className="flex gap-1.5">
-                  {ASPECT_RATIOS.map(ratio => {
-                    const isSel = aspectRatio === ratio.id;
-                    return (
-                      <button
-                        key={ratio.id}
-                        onClick={() => setAspectRatio(ratio.id)}
-                        title={ratio.label}
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                          isSel
-                            ? 'bg-yellow-400 text-black'
-                            : ct('bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200', 'bg-zinc-800/40 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800')
-                        }`}
-                      >
-                        <div className={`border-2 rounded-sm ${isSel ? 'border-black' : 'border-current'} ${ratio.shape}`} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Product selector (only in product mode) */}
-              <AnimatePresence>
-                {isProductMode && (
-                  <motion.div
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: 'auto' }}
-                    exit={{ opacity: 0, width: 0 }}
-                    className="space-y-1.5 overflow-hidden"
-                  >
-                    <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Product</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className={`flex items-center gap-2 px-3 py-2 rounded-lg ${ct('bg-slate-100 border-slate-200 text-slate-700 hover:border-slate-300', 'bg-zinc-800/40 border-zinc-700/40 text-zinc-300 hover:border-zinc-600')} border text-sm transition-colors min-w-[160px]`}>
-                          <Package className="w-3.5 h-3.5 text-yellow-400/70" />
-                          <span className="truncate">{selectedProduct?.name || 'Select...'}</span>
-                          <ChevronDown className="w-3 h-3 opacity-50 ml-auto" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className={`w-72 ${ct('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} p-2`}>
-                        <input
-                          type="text"
-                          placeholder="Search products..."
-                          value={productSearch}
-                          onChange={(e) => setProductSearch(e.target.value)}
-                          className={`w-full px-3 py-1.5 mb-2 ${ct('bg-slate-50 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} border rounded-lg text-xs focus:outline-none focus:border-yellow-500/30`}
-                        />
-                        <div className="max-h-48 overflow-y-auto space-y-0.5">
-                          {selectedProduct && (
-                            <button
-                              onClick={() => handleProductSelect(null)}
-                              className={`w-full text-left px-3 py-1.5 text-xs ${ct('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')} rounded-lg flex items-center gap-2`}
-                            >
-                              <X className="w-3 h-3" /> Clear
-                            </button>
-                          )}
-                          {filteredProducts.map(product => (
-                            <button
-                              key={product.id}
-                              onClick={() => handleProductSelect(product)}
-                              className={`w-full text-left px-3 py-1.5 text-xs rounded-lg flex items-center justify-between ${
-                                selectedProduct?.id === product.id
-                                  ? 'bg-yellow-500/10 text-yellow-400'
-                                  : ct('text-slate-900 hover:bg-slate-100', 'text-white hover:bg-zinc-800')
-                              }`}
-                            >
-                              <span className="flex items-center gap-2 truncate">
-                                <Package className="w-3.5 h-3.5 flex-shrink-0" />
-                                {product.name}
-                              </span>
-                              {selectedProduct?.id === product.id && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
-                            </button>
-                          ))}
-                          {filteredProducts.length === 0 && (
-                            <p className={`${ct('text-slate-500', 'text-zinc-500')} text-xs text-center py-3`}>No products found</p>
-                          )}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Brand context toggle */}
-              {brandAssets && (
-                <div className="space-y-1.5">
-                  <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Brand</Label>
-                  <button
-                    onClick={() => setUseBrandContext(!useBrandContext)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm ${
-                      useBrandContext
-                        ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400'
-                        : ct('bg-slate-100 border border-slate-200 text-slate-500', 'bg-zinc-800/40 border border-zinc-700/40 text-zinc-500')
-                    }`}
-                  >
-                    <Palette className="w-3.5 h-3.5" />
-                    {useBrandContext ? 'On' : 'Off'}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Reference image area (product mode) */}
-            <AnimatePresence>
-              {isProductMode && selectedProduct?.type === 'physical' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className={`mt-4 pt-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <ShieldCheck className="w-4 h-4 text-yellow-400" />
-                    <span className="text-xs font-medium text-yellow-400">Product Preservation Mode</span>
-                    <span className={`text-[10px] ${ct('text-slate-500', 'text-zinc-500')}`}>- Only background changes</span>
-                  </div>
-                  {loadingProductImages ? (
-                    <div className="flex items-center gap-2 py-3">
-                      <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
-                      <span className={`${ct('text-slate-500', 'text-zinc-400')} text-xs`}>Loading images...</span>
-                    </div>
-                  ) : productImages.length > 0 ? (
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-                      {productImages.slice(0, 8).map((imageUrl, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setSelectedReferenceImage(imageUrl)}
-                          className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
-                            selectedReferenceImage === imageUrl
-                              ? 'border-yellow-500 ring-2 ring-yellow-500/20'
-                              : ct('border-slate-200 hover:border-slate-400', 'border-zinc-700/50 hover:border-zinc-500')
-                          }`}
-                        >
-                          <img src={imageUrl} alt={`Ref ${index + 1}`} className="w-full h-full object-cover" />
-                          {selectedReferenceImage === imageUrl && (
-                            <div className="absolute inset-0 bg-yellow-500/10 flex items-center justify-center">
-                              <Check className="w-3.5 h-3.5 text-yellow-400" />
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
-                      <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
-                      <span className="text-xs text-yellow-400/70">No reference images. Add images in Products page for best results.</span>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-
-          {/* 5. Generate Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.15 }}
-            className="flex items-center justify-center gap-3"
-          >
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating || (!currentUseCase?.requiresReferenceImage && !prompt.trim()) || (currentUseCase?.requiresReferenceImage && !selectedReferenceImage)}
-              className={`bg-yellow-400 hover:bg-yellow-300 ${ct('disabled:bg-slate-200 disabled:text-slate-400', 'disabled:bg-zinc-800 disabled:text-zinc-600')} text-black font-bold rounded-full px-8 py-3 text-sm transition-all flex items-center gap-2 disabled:cursor-not-allowed`}
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {isEnhancing ? 'Enhancing prompt...' : 'Generating...'}
-                </>
-              ) : (
-                <>
-                  <Wand2 className="w-4 h-4" />
-                  Generate Image
-                </>
-              )}
-            </button>
-            <Badge
-              variant="outline"
-              className={`text-xs px-2.5 py-1 rounded-full ${
-                currentUseCase?.costTier === 'economy' ? ct('border-slate-200 text-slate-500', 'border-zinc-700 text-zinc-400') :
-                currentUseCase?.costTier === 'premium' ? 'border-yellow-500/30 text-yellow-400' :
-                ct('border-slate-200 text-slate-500', 'border-zinc-700 text-zinc-400')
-              }`}
-            >
-              ~${currentUseCase?.estimatedCost?.toFixed(3) || '0.025'}
-            </Badge>
-          </motion.div>
+          )}
 
           {/* 6. Output Area */}
           <AnimatePresence>
@@ -947,7 +752,7 @@ export default function CreateImages() {
                       alt="Generated"
                       className="w-full max-h-[560px] object-contain cursor-pointer"
                       onClick={() => setPreviewImage(generatedImage)}
-                    />
+                    loading="lazy" decoding="async" />
                   ) : null}
                 </div>
 
@@ -1044,6 +849,469 @@ export default function CreateImages() {
               <p className={`${ct('text-slate-400', 'text-zinc-700')} text-xs mt-1`}>Enter a prompt and click Generate</p>
             </motion.div>
           )}
+
+          {/* 2. Hero Prompt Area */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className={`rounded-[20px] ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border p-5 ${promptError ? 'ring-2 ring-red-500/50 border-red-500/30' : ''}`}
+          >
+            <Textarea
+              value={prompt}
+              onChange={(e) => { setPrompt(e.target.value); if (promptError) setPromptError(''); }}
+              placeholder="Describe the image you want to create..."
+              className={`min-h-[80px] bg-transparent border-none ${ct('text-slate-900 placeholder:text-slate-400', 'text-white placeholder:text-zinc-600')} text-base focus:ring-0 focus-visible:ring-0 resize-none p-0 shadow-none`}
+              maxLength={CREATE_LIMITS.PROMPT_MAX_LENGTH}
+            />
+            {promptError && (
+              <p className="text-xs text-red-400 mt-1">{promptError}</p>
+            )}
+            <div className={`flex items-center justify-between mt-3 pt-3 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_SUGGESTIONS.map(chip => (
+                  <button
+                    key={chip}
+                    onClick={() => setPrompt(prev => prev ? `${prev}, ${chip.toLowerCase()}` : chip)}
+                    className={`px-3 py-1 text-xs rounded-full ${ct('bg-slate-100 border-slate-200 text-slate-500', 'bg-zinc-800/60 border-zinc-700/40 text-zinc-400')} border hover:text-yellow-400 hover:border-yellow-500/30 transition-all`}
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+              <span className={`text-[10px] ${ct('text-slate-400', 'text-zinc-600')} flex-shrink-0 ml-3`}>{prompt.length}/{CREATE_LIMITS.PROMPT_MAX_LENGTH}</span>
+            </div>
+          </motion.div>
+
+          {/* 3. Mode Selector */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="grid grid-cols-3 gap-3"
+          >
+            {MODES.map(mode => {
+              const IconComp = mode.icon;
+              const isSelected = selectedMode.id === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => handleModeSelect(mode)}
+                  className={`relative rounded-[20px] p-4 text-left transition-all border ${
+                    isSelected
+                      ? 'bg-yellow-500/[0.03] border-yellow-500/30'
+                      : ct('bg-white border-slate-200 hover:border-slate-300', 'bg-zinc-900/50 border-zinc-800/60 hover:border-zinc-700')
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full bg-yellow-500" />
+                  )}
+                  <IconComp className={`w-5 h-5 mb-2 ${isSelected ? 'text-yellow-400' : ct('text-slate-400', 'text-zinc-500')}`} />
+                  <div className={`text-sm font-semibold ${isSelected ? ct('text-slate-900', 'text-white') : ct('text-slate-700', 'text-zinc-300')}`}>
+                    {mode.label}
+                  </div>
+                  <div className={`text-[11px] ${ct('text-slate-500', 'text-zinc-500')} mt-0.5 leading-snug`}>{mode.description}</div>
+                </button>
+              );
+            })}
+          </motion.div>
+
+          {/* 4. Settings Row */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.1 }}
+            className={`rounded-[20px] ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border p-4`}
+          >
+            <div className="flex flex-wrap items-start gap-6">
+              {/* Style swatches */}
+              <div className="space-y-1.5">
+                <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Style</Label>
+                <div className="flex gap-1.5">
+                  {STYLE_PRESETS.map(style => {
+                    const Ic = style.icon;
+                    const isSel = selectedStyle === style.id;
+                    return (
+                      <button
+                        key={style.id}
+                        onClick={() => setSelectedStyle(style.id)}
+                        title={style.label}
+                        className={`p-2 rounded-lg transition-all ${
+                          isSel
+                            ? 'bg-yellow-500/10 ring-2 ring-yellow-500/40 text-yellow-400'
+                            : ct('bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200', 'bg-zinc-800/40 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800')
+                        }`}
+                      >
+                        <Ic className="w-4 h-4" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Aspect Ratio */}
+              <div className="space-y-1.5">
+                <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Ratio</Label>
+                <div className="flex gap-1.5">
+                  {ASPECT_RATIOS.map(ratio => {
+                    const isSel = aspectRatio === ratio.id;
+                    return (
+                      <button
+                        key={ratio.id}
+                        onClick={() => setAspectRatio(ratio.id)}
+                        title={ratio.label}
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                          isSel
+                            ? 'bg-yellow-400 text-black'
+                            : ct('bg-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-200', 'bg-zinc-800/40 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800')
+                        }`}
+                      >
+                        <div className={`border-2 rounded-sm ${isSel ? 'border-black' : 'border-current'} ${ratio.shape}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Product selector (product & fashion modes) */}
+              <AnimatePresence>
+                {isProductMode && (
+                  <motion.div
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="space-y-1.5 overflow-hidden"
+                  >
+                    <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Product</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className={`flex items-center gap-2 px-3 py-2 rounded-lg ${ct('bg-slate-100 border-slate-200 text-slate-700 hover:border-slate-300', 'bg-zinc-800/40 border-zinc-700/40 text-zinc-300 hover:border-zinc-600')} border text-sm transition-colors min-w-[160px]`}>
+                          <Package className="w-3.5 h-3.5 text-yellow-400/70" />
+                          <span className="truncate">{selectedProduct?.name || 'Select...'}</span>
+                          <ChevronDown className="w-3 h-3 opacity-50 ml-auto" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className={`w-72 ${ct('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} p-2`}>
+                        <input
+                          type="text"
+                          placeholder="Search products..."
+                          value={productSearch}
+                          onChange={(e) => setProductSearch(e.target.value)}
+                          className={`w-full px-3 py-1.5 mb-2 ${ct('bg-slate-50 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} border rounded-lg text-xs focus:outline-none focus:border-yellow-500/30`}
+                        />
+                        <div className="max-h-48 overflow-y-auto space-y-0.5">
+                          {selectedProduct && (
+                            <button
+                              onClick={() => handleProductSelect(null)}
+                              className={`w-full text-left px-3 py-1.5 text-xs ${ct('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')} rounded-lg flex items-center gap-2`}
+                            >
+                              <X className="w-3 h-3" /> Clear
+                            </button>
+                          )}
+                          {filteredProducts.map(product => (
+                            <button
+                              key={product.id}
+                              onClick={() => handleProductSelect(product)}
+                              className={`w-full text-left px-3 py-1.5 text-xs rounded-lg flex items-center justify-between ${
+                                selectedProduct?.id === product.id
+                                  ? 'bg-yellow-500/10 text-yellow-400'
+                                  : ct('text-slate-900 hover:bg-slate-100', 'text-white hover:bg-zinc-800')
+                              }`}
+                            >
+                              <span className="flex items-center gap-2 truncate">
+                                <Package className="w-3.5 h-3.5 flex-shrink-0" />
+                                {product.name}
+                              </span>
+                              {selectedProduct?.id === product.id && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                            </button>
+                          ))}
+                          {filteredProducts.length === 0 && (
+                            <p className={`${ct('text-slate-500', 'text-zinc-500')} text-xs text-center py-3`}>No products found</p>
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Product size scale (when product selected in product mode) */}
+              {isProductMode && selectedProduct && (
+                <div className="space-y-1.5">
+                  <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Size</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className={`flex items-center gap-2 px-3 py-2 rounded-lg ${ct('bg-slate-100 border-slate-200 text-slate-700 hover:border-slate-300', 'bg-zinc-800/40 border-zinc-700/40 text-zinc-300 hover:border-zinc-600')} border text-sm transition-colors`}>
+                        <Hand className="w-3.5 h-3.5 text-yellow-400/70" />
+                        <span>{SIZE_SCALE[productSizeScale - 1].label}</span>
+                        <ChevronDown className="w-3 h-3 opacity-50" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className={`w-80 ${ct('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} p-0 overflow-hidden`} align="start">
+                      {/* Header */}
+                      <div className={`px-4 pt-3.5 pb-2.5 ${ct('bg-slate-50', 'bg-zinc-900')}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-md bg-yellow-400/10 flex items-center justify-center">
+                              <Hand className="w-3.5 h-3.5 text-yellow-400" />
+                            </div>
+                            <span className={`text-xs font-semibold ${ct('text-slate-800', 'text-zinc-200')}`}>Product Scale</span>
+                          </div>
+                          <span className="text-[10px] font-mono font-medium text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">{SIZE_SCALE[productSizeScale - 1].cm}</span>
+                        </div>
+                      </div>
+
+                      {/* Visual comparison: hand + circle */}
+                      <div className={`px-4 py-5 ${ct('bg-white', 'bg-zinc-950/50')}`}>
+                        <div className="relative h-24 flex items-center justify-center gap-4">
+                          {/* Hand silhouette (fixed ~80px tall = reference) */}
+                          <svg viewBox="0 0 56 90" className={`h-[80px] ${ct('text-slate-200', 'text-zinc-700/80')} flex-shrink-0`} fill="currentColor">
+                            <path d="M28 2c-2 0-3.5 1.5-3.5 3.5V30h-3.5V10.5C21 8.5 19.5 7 17.5 7S14 8.5 14 10.5V32h-2.5V17c0-2-1.5-3.5-3.5-3.5S4.5 15 4.5 17v28c0 2.5.5 5 1.5 7l3 8.5c1.5 4 5 6.5 9 6.5h16c4.5 0 8.5-3 10-7.5l1-3c1-3 1.5-6.5 1.5-10V33c0-2-1.5-3.5-3.5-3.5S39.5 31 39.5 33v-1.5V5.5c0-2-1.5-3.5-3.5-3.5s-3.5 1.5-3.5 3.5V30h-1V5.5C31.5 3.5 30 2 28 2z"/>
+                          </svg>
+                          {/* Product circle (scales) */}
+                          <motion.div
+                            animate={{
+                              width: SIZE_SCALE[productSizeScale - 1].circle,
+                              height: SIZE_SCALE[productSizeScale - 1].circle,
+                            }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                            className="rounded-full border-2 border-yellow-400/60 bg-yellow-400/10 flex-shrink-0"
+                            style={{ boxShadow: '0 0 12px rgba(250,204,21,0.08)' }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Size selector pills */}
+                      <div className={`px-3 pb-3 ${ct('bg-white', 'bg-zinc-900')}`}>
+                        <div className="grid grid-cols-6 gap-1">
+                          {SIZE_SCALE.map((size) => {
+                            const isActive = productSizeScale === size.value;
+                            return (
+                              <button
+                                key={size.value}
+                                onClick={() => setProductSizeScale(size.value)}
+                                className={`relative flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-center transition-all ${
+                                  isActive
+                                    ? 'bg-yellow-400/15 ring-1 ring-yellow-400/40'
+                                    : ct('hover:bg-slate-50', 'hover:bg-zinc-800/60')
+                                }`}
+                              >
+                                <span className={`text-[10px] font-semibold leading-none ${
+                                  isActive ? 'text-yellow-400' : ct('text-slate-600', 'text-zinc-400')
+                                }`}>{size.label}</span>
+                                <span className={`text-[9px] leading-none ${
+                                  isActive ? 'text-yellow-400/70' : ct('text-slate-400', 'text-zinc-600')
+                                }`}>{size.cm}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {/* Description */}
+                        <div className={`mt-2.5 px-1.5 py-1.5 rounded-md ${ct('bg-slate-50', 'bg-zinc-800/40')}`}>
+                          <p className={`text-[10px] leading-snug ${ct('text-slate-500', 'text-zinc-500')}`}>
+                            <span className="text-yellow-400/80 font-medium">{SIZE_SCALE[productSizeScale - 1].label}</span> — {SIZE_SCALE[productSizeScale - 1].desc}
+                          </p>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
+              {/* Brand context toggle */}
+              {brandAssets && (
+                <div className="space-y-1.5">
+                  <Label className={`${ct('text-slate-500', 'text-zinc-500')} text-[11px] uppercase tracking-wider`}>Brand</Label>
+                  <button
+                    onClick={() => setUseBrandContext(!useBrandContext)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm ${
+                      useBrandContext
+                        ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400'
+                        : ct('bg-slate-100 border border-slate-200 text-slate-500', 'bg-zinc-800/40 border border-zinc-700/40 text-zinc-500')
+                    }`}
+                  >
+                    <Palette className="w-3.5 h-3.5" />
+                    {useBrandContext ? 'On' : 'Off'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Reference image area (product mode) */}
+            <AnimatePresence>
+              {isProductMode && selectedProduct?.type === 'physical' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className={`mt-4 pt-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="w-4 h-4 text-yellow-400" />
+                    <span className="text-xs font-medium text-yellow-400">Product Preservation Mode</span>
+                    <span className={`text-[10px] ${ct('text-slate-500', 'text-zinc-500')}`}>- Only background changes</span>
+                  </div>
+                  {loadingProductImages ? (
+                    <div className="flex items-center gap-2 py-3">
+                      <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
+                      <span className={`${ct('text-slate-500', 'text-zinc-400')} text-xs`}>Loading images...</span>
+                    </div>
+                  ) : productImages.length > 0 ? (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {productImages.slice(0, 8).map((imageUrl, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedReferenceImage(imageUrl)}
+                          className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
+                            selectedReferenceImage === imageUrl
+                              ? 'border-yellow-500 ring-2 ring-yellow-500/20'
+                              : ct('border-slate-200 hover:border-slate-400', 'border-zinc-700/50 hover:border-zinc-500')
+                          }`}
+                        >
+                          <img src={imageUrl} alt={`Ref ${index + 1}`} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
+                          {selectedReferenceImage === imageUrl && (
+                            <div className="absolute inset-0 bg-yellow-500/10 flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 text-yellow-400" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+                      <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                      <span className="text-xs text-yellow-400/70">No reference images. Add images in Products page for best results.</span>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+          </motion.div>
+
+          {/* Product Analysis Loading */}
+          {isAnalyzingProduct && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 px-4 py-3 bg-yellow-500/5 border border-yellow-500/20 rounded-xl"
+            >
+              <div className="relative">
+                <Loader2 className="w-5 h-5 text-yellow-400 animate-spin" />
+                <Sparkles className="w-3 h-3 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-yellow-300">Understanding your product...</p>
+                <p className="text-xs text-zinc-500">Analyzing characteristics for optimal image generation</p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Product Analysis Result */}
+          {productAnalysis && !isAnalyzingProduct && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-zinc-800/40 border border-zinc-700/30 rounded-xl p-4 space-y-3"
+            >
+              {/* Type indicator with icon */}
+              <div className="flex items-center gap-2">
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                  productAnalysis.type === 'physical'
+                    ? 'bg-blue-500/10 border border-blue-500/20'
+                    : 'bg-purple-500/10 border border-purple-500/20'
+                }`}>
+                  {productAnalysis.type === 'physical'
+                    ? <Package className="w-3.5 h-3.5 text-blue-400" />
+                    : <Monitor className="w-3.5 h-3.5 text-purple-400" />
+                  }
+                </div>
+                <p className="text-xs font-medium text-zinc-300">{productAnalysis.summary}</p>
+              </div>
+
+              {/* Recommended Styles */}
+              {productAnalysis.suggestedStyles?.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5">Recommended Styles</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {productAnalysis.suggestedStyles.map(styleId => {
+                      const style = STYLE_PRESETS.find(s => s.id === styleId);
+                      if (!style) return null;
+                      return (
+                        <button
+                          key={styleId}
+                          onClick={() => setSelectedStyle(styleId)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${
+                            selectedStyle === styleId
+                              ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                              : 'bg-zinc-700/40 text-zinc-400 border border-zinc-600/30 hover:border-zinc-500'
+                          }`}
+                        >
+                          {style.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Prompts */}
+              {productAnalysis.suggestedPrompts?.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1.5">Quick Prompts</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {productAnalysis.suggestedPrompts.slice(0, 3).map((suggestion, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPrompt(suggestion)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] text-zinc-400 bg-zinc-700/30 border border-zinc-600/20 hover:border-zinc-500 hover:text-zinc-300 transition-all truncate max-w-[200px]"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* 5. Generate Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.15 }}
+            className="flex items-center justify-center gap-3"
+          >
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || (!currentUseCase?.requiresReferenceImage && !prompt.trim()) || (currentUseCase?.requiresReferenceImage && !selectedReferenceImage)}
+              className={`bg-yellow-400 hover:bg-yellow-300 ${ct('disabled:bg-slate-200 disabled:text-slate-400', 'disabled:bg-zinc-800 disabled:text-zinc-600')} text-black font-bold rounded-full px-8 py-3 text-sm transition-all flex items-center gap-2 disabled:cursor-not-allowed`}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {isEnhancing ? 'Enhancing prompt...' : 'Generating...'}
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4" />
+                  Generate Image
+                  <CreditCostBadge credits={USE_CASE_CREDITS[selectedUseCase] || 8} />
+                </>
+              )}
+            </button>
+            <Badge
+              variant="outline"
+              className={`text-xs px-2.5 py-1 rounded-full ${
+                currentUseCase?.costTier === 'economy' ? ct('border-slate-200 text-slate-500', 'border-zinc-700 text-zinc-400') :
+                currentUseCase?.costTier === 'premium' ? 'border-yellow-500/30 text-yellow-400' :
+                ct('border-slate-200 text-slate-500', 'border-zinc-700 text-zinc-400')
+              }`}
+            >
+              ~${currentUseCase?.estimatedCost?.toFixed(3) || '0.025'}
+            </Badge>
+          </motion.div>
+
         </div>
 
         {/* 7. History Drawer */}
@@ -1093,7 +1361,7 @@ export default function CreateImages() {
                           src={item.thumbnail_url || item.url}
                           alt={item.name}
                           className="w-full h-full object-cover"
-                        />
+                         loading="lazy" decoding="async" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-2 gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRegenerate(item); }}
@@ -1144,7 +1412,7 @@ export default function CreateImages() {
             </DialogHeader>
             {previewImage && (
               <div className="space-y-3">
-                <img src={previewImage.url} alt="Preview" className="w-full rounded-xl" />
+                <img src={previewImage.url} alt="Preview" className="w-full rounded-xl"  loading="lazy" decoding="async" />
                 {previewImage.generation_config?.prompt && (
                   <div className={`p-3 ${ct('bg-slate-50 border-slate-200', 'bg-zinc-900/60 border-zinc-800/40')} rounded-xl border`}>
                     <Label className={`${ct('text-slate-400', 'text-zinc-600')} text-[10px] mb-1 block`}>Prompt</Label>
@@ -1170,6 +1438,6 @@ export default function CreateImages() {
           </DialogContent>
         </Dialog>
       </div>
-    </CreatePageTransition>
+    </Wrapper>
   );
 }

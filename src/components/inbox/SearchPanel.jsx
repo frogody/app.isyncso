@@ -150,7 +150,7 @@ export default function SearchPanel({
             >
               <div className="flex items-center gap-2 mb-1">
                 {message.sender_avatar ? (
-                  <img src={message.sender_avatar} alt="" className="w-4 h-4 rounded-full" />
+                  <img src={message.sender_avatar} alt="" className="w-4 h-4 rounded-full"  loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-4 h-4 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-[8px] font-bold text-white">
                     {message.sender_name?.charAt(0) || '?'}

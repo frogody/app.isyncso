@@ -450,7 +450,7 @@ function NotionBlock({ block, settings }) {
     case 'image':
       return (
         <figure className="my-6">
-          <img src={block.url || block.src} alt={block.caption || ''} className="rounded-xl w-full" />
+          <img src={block.url || block.src} alt={block.caption || ''} className="rounded-xl w-full"  loading="lazy" decoding="async" />
           {block.caption && (
             <figcaption className="text-sm text-zinc-500 text-center mt-2">{block.caption}</figcaption>
           )}
@@ -685,7 +685,7 @@ function CommentItem({ comment, settings }) {
         }}
       >
         {author?.avatar_url ? (
-          <img src={author.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+          <img src={author.avatar_url} alt="" className="w-full h-full rounded-full object-cover"  loading="lazy" decoding="async" />
         ) : (
           <span className="text-white text-xs font-semibold">
             {author?.full_name?.charAt(0) || '?'}

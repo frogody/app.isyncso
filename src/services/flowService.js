@@ -3,6 +3,7 @@
  */
 
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 
 // ============================================================================
 // Flow CRUD Operations
@@ -323,7 +324,10 @@ export async function getProspectsForRun(workspaceId, search = '', limit = 20) {
       .limit(limit);
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,full_name.ilike.%${search}%,company.ilike.%${search}%,email.ilike.%${search}%`);
+      const cleanSearch = sanitizeSearchInput(search);
+      if (cleanSearch) {
+        query = query.or(`name.ilike.%${cleanSearch}%,full_name.ilike.%${cleanSearch}%,company.ilike.%${cleanSearch}%,email.ilike.%${cleanSearch}%`);
+      }
     }
 
     const { data, error } = await query;

@@ -517,7 +517,7 @@ Do NOT cluster all scores around 50. Differentiate clearly between strong and we
           "Authorization": `Bearer ${groqApiKey}`,
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
           messages: [
             {
               role: "system",

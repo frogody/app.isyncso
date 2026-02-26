@@ -66,6 +66,8 @@ export interface Inventory {
   // Cost
   average_cost?: number;
   last_purchase_cost?: number;
+  // External stock tracking
+  quantity_external_shopify: number;
   // Timestamps
   last_counted_at?: string;
   last_received_at?: string;
@@ -303,6 +305,10 @@ export interface SalesOrder {
   // Notes
   internal_notes?: string;
   customer_notes?: string;
+  // Source tracking
+  source?: 'manual' | 'bolcom' | 'shopify' | 'email' | 'api';
+  shopify_order_id?: number;
+  shopify_order_number?: string;
   // Metadata
   metadata: Record<string, unknown>;
   created_at: string;
@@ -351,7 +357,8 @@ export type SalesOrderItemUpdate = Partial<SalesOrderItemInsert>;
 export interface ShippingTask {
   id: string;
   company_id: string;
-  sales_order_id: string;
+  sales_order_id: string | null;
+  b2b_order_id?: string | null;
   // Task details
   task_number?: string;
   status: 'pending' | 'ready_to_ship' | 'shipped' | 'delivered' | 'cancelled';
@@ -603,6 +610,7 @@ export type NotificationType =
   | 'partial_delivery'
   | 'stock_alert'
   | 'payment_overdue'
+  | 'b2b_order'
   | 'receiving_session_closed';
 
 export type NotificationSeverity = 'low' | 'medium' | 'high' | 'critical';
@@ -856,6 +864,58 @@ export type SupplierEmailPatternInsert = Omit<SupplierEmailPattern, 'id' | 'crea
 export type SupplierEmailPatternUpdate = Partial<Omit<SupplierEmailPatternInsert, 'company_id'>>;
 
 // =============================================================================
+// =============================================================================
+// SHOPIFY INTEGRATION
+// =============================================================================
+
+export interface ShopifyCredentials {
+  id: string;
+  company_id: string;
+  shop_domain: string;
+  shop_name?: string;
+  access_token_encrypted?: string;
+  scopes?: string[];
+  primary_location_id?: string;
+  auto_sync_orders: boolean;
+  auto_sync_inventory: boolean;
+  auto_fulfill: boolean;
+  sync_frequency_minutes: number;
+  status: 'connected' | 'disconnected' | 'error';
+  last_sync_at?: string;
+  last_order_sync_at?: string;
+  last_inventory_sync_at?: string;
+  last_error?: string;
+  webhook_ids?: unknown[];
+  oauth_state?: string;
+  connected_by?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+export type ShopifyCredentialsInsert = Omit<ShopifyCredentials, 'id' | 'created_at' | 'updated_at'>;
+export type ShopifyCredentialsUpdate = Partial<Omit<ShopifyCredentialsInsert, 'company_id'>>;
+
+export interface ShopifyProductMapping {
+  id: string;
+  company_id: string;
+  product_id: string;
+  shopify_product_id: number;
+  shopify_variant_id?: number;
+  shopify_inventory_item_id?: number;
+  matched_by: 'ean' | 'sku' | 'manual' | 'auto_created';
+  shopify_product_title?: string;
+  shopify_variant_title?: string;
+  shopify_sku?: string;
+  is_active: boolean;
+  sync_inventory: boolean;
+  last_synced_at?: string;
+  shopify_stock_level?: number;
+  created_at: string;
+  updated_at: string;
+}
+export type ShopifyProductMappingInsert = Omit<ShopifyProductMapping, 'id' | 'created_at' | 'updated_at'>;
+export type ShopifyProductMappingUpdate = Partial<Omit<ShopifyProductMappingInsert, 'company_id'>>;
+
 // BUSINESS CONSTANTS
 // =============================================================================
 

@@ -8,7 +8,7 @@ export default function DesignAnalysisPanel({ analysis, isLoading, onApplyColors
     return (
       <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 mt-4">
         <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
           <span className="text-sm text-zinc-400">Analyzing product design...</span>
         </div>
       </div>
@@ -27,7 +27,7 @@ export default function DesignAnalysisPanel({ analysis, isLoading, onApplyColors
         className="w-full flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-cyan-400" />
+          <Eye className="w-4 h-4 text-yellow-400" />
           <span className="text-sm font-medium text-white">Design Analysis</span>
           <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">AI-Detected</span>
         </div>
@@ -70,7 +70,7 @@ export default function DesignAnalysisPanel({ analysis, isLoading, onApplyColors
             </div>
             <div className="flex flex-wrap gap-1.5">
               {[
-                { label: `Typography: ${typography?.style || 'unknown'}`, cls: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
+                { label: `Typography: ${typography?.style || 'unknown'}`, cls: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
                 { label: `Cards: ${uiStyle?.cardStyle || 'unknown'}`, cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
                 { label: `Radius: ${uiStyle?.borderRadius || 'unknown'}`, cls: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
                 { label: `Layout: ${layoutPattern || 'unknown'}`, cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
@@ -117,7 +117,7 @@ export default function DesignAnalysisPanel({ analysis, isLoading, onApplyColors
           {onApplyColors && (
             <button
               onClick={() => onApplyColors(colorPalette)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-lg text-sm text-cyan-400 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 rounded-lg text-sm text-yellow-400 transition-colors"
             >
               <Paintbrush className="w-3.5 h-3.5" />
               Apply Colors to Video

@@ -1186,7 +1186,7 @@ export default function Integrations({ embedded = false }) {
                 <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
                   {!desktopConnected && (
                     <a
-                      href="https://github.com/frogody/sync-desktop/releases"
+                      href="https://github.com/frogody/sync.desktop/releases"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-sm text-zinc-400 hover:text-cyan-400 transition-colors"

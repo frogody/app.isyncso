@@ -638,6 +638,7 @@ export default function GrowthAssistant() {
                     )}
                   </Button>
                 </div>
+                <p className="text-[10px] text-zinc-500 mt-1">1 credit per message</p>
               </div>
             </div>
           </div>

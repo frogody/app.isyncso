@@ -63,9 +63,7 @@ export function VoiceSelector({ voiceId, onVoiceChange }) {
     setPreviewingVoice(voice.id);
     
     try {
-      const previewText = voice.gender === 'male' 
-        ? "Hi! I'm here to help you learn. This is what I sound like."
-        : "Hi! I'm here to help you learn. This is what I sound like.";
+      const previewText = "Hi! I'm here to help you learn. This is what I sound like.";
       
       const { data } = await db.functions.invoke('generateVoice', {
         text: previewText,

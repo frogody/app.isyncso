@@ -8,7 +8,8 @@ import {
   AlertTriangle, Image as ImageIcon, Video, HelpCircle, Share2, Copy,
   Heart, ShoppingCart, Info, Layers, Ruler, Weight, MapPin, Save,
   LayoutGrid, Settings, History, FolderOpen, TrendingUp, Boxes,
-  ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus
+  ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus,
+  Megaphone, Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ import {
 } from '@/lib/db/queries';
 import { supabase } from '@/api/supabaseClient';
 import { calculateDiffs, logProductActivity } from '@/lib/audit';
+import { ProductListingBuilder } from '@/components/products/listing';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -93,6 +95,7 @@ const NAV_ITEMS = [
   { id: 'deliverables', label: 'Deliverables', icon: ClipboardList, serviceOnly: true },
   { id: 'documents', label: 'Documents', icon: FolderOpen },
   { id: 'activity', label: 'Activity', icon: History },
+  { id: 'listing', label: 'Product Listing', icon: Megaphone, physicalOnly: true },
 ];
 
 // ============= HELPERS =============
@@ -189,9 +192,12 @@ function SectionNav({ activeSection, onSectionChange, productType }) {
             onClick={() => onSectionChange(item.id)}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap",
-              isActive
-                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-                : cn(t('text-slate-500', 'text-zinc-400'), t('hover:text-slate-900', 'hover:text-white'), "hover:bg-white/5")
+              item.id === 'listing' && 'ml-auto',
+              item.id === 'listing' && !isActive
+                ? "bg-white/[0.06] text-zinc-300 hover:bg-white/[0.12] hover:text-white"
+                : isActive
+                  ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                  : cn(t('text-slate-500', 'text-zinc-400'), t('hover:text-slate-900', 'hover:text-white'), "hover:bg-white/5")
             )}
           >
             <Icon className="w-4 h-4" />
@@ -199,6 +205,87 @@ function SectionNav({ activeSection, onSectionChange, productType }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// ============= PRODUCT VIDEOS SECTION =============
+
+function ProductVideosSection({ productId }) {
+  const { t } = useTheme();
+  const [videos, setVideos] = useState([]);
+  const [playingId, setPlayingId] = useState(null);
+  const videoRefs = useRef({});
+
+  useEffect(() => {
+    if (!productId) return;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('product_listing_videos')
+          .select('id, video_url, thumbnail_url, preset_label, duration, created_at')
+          .eq('product_id', productId)
+          .order('created_at', { ascending: false })
+          .limit(6);
+        setVideos(data || []);
+      } catch { /* ignore */ }
+    })();
+  }, [productId]);
+
+  if (!videos.length) return null;
+
+  const togglePlay = (id) => {
+    const el = videoRefs.current[id];
+    if (!el) return;
+    if (playingId === id) {
+      el.pause();
+      setPlayingId(null);
+    } else {
+      // Pause any other playing video
+      Object.entries(videoRefs.current).forEach(([k, v]) => {
+        if (k !== id && v) v.pause();
+      });
+      el.play();
+      setPlayingId(id);
+    }
+  };
+
+  return (
+    <div className={cn("border rounded-xl p-3", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+      <div className="flex items-center gap-2 mb-3">
+        <Video className="w-4 h-4 text-cyan-400" />
+        <h4 className={cn("text-sm font-medium", t('text-slate-900', 'text-white'))}>Generated Videos</h4>
+        <span className={cn("text-xs", t('text-slate-500', 'text-zinc-500'))}>{videos.length}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {videos.map((v) => (
+          <div
+            key={v.id}
+            className="relative group rounded-lg overflow-hidden cursor-pointer aspect-video bg-black"
+            onClick={() => togglePlay(v.id)}
+          >
+            <video
+              ref={(el) => { videoRefs.current[v.id] = el; }}
+              src={v.video_url}
+              className="w-full h-full object-cover"
+              loop
+              muted
+              playsInline
+              onEnded={() => setPlayingId(null)}
+            />
+            {playingId !== v.id && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                <Play className="w-6 h-6 text-white fill-white" />
+              </div>
+            )}
+            {v.preset_label && (
+              <div className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-gradient-to-t from-black/70 to-transparent">
+                <p className="text-[10px] text-white/80 truncate">{v.preset_label}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -252,7 +339,7 @@ function OverviewSection({
             featuredImage={localFeatured}
             onImagesChange={handleImagesChange}
             onFeaturedChange={handleFeaturedChange}
-            maxImages={10}
+            maxImages={50}
           />
         </div>
 
@@ -279,6 +366,9 @@ function OverviewSection({
             </div>
           </div>
         )}
+
+        {/* Generated Videos */}
+        <ProductVideosSection productId={product.id} />
       </div>
 
       {/* Right Column - Details */}
@@ -624,6 +714,73 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
           currency={currency}
           onTiersChange={handleTiersChange}
         />
+      </div>
+
+      {/* B2B Storefront Pricing Preview */}
+      <div className={cn("border rounded-xl p-4", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Store className="w-5 h-5 text-cyan-400" />
+            <span className={cn("font-medium", t('text-slate-900', 'text-white'))}>B2B Store Pricing</span>
+          </div>
+          <span className={cn("text-xs px-2.5 py-1 rounded-full border",
+            tiers.length > 0
+              ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
+              : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+          )}>
+            {tiers.length > 0 ? `${tiers.length} bulk tier${tiers.length > 1 ? 's' : ''} active` : 'No bulk tiers'}
+          </span>
+        </div>
+
+        {tiers.length > 0 ? (
+          <div className="space-y-3">
+            <p className={cn("text-xs", t('text-slate-500', 'text-zinc-500'))}>
+              These volume tiers are shown on your B2B storefront product pages. Clients see tiered pricing when ordering.
+            </p>
+            <div className={cn("rounded-lg overflow-hidden border", t('border-slate-200', 'border-zinc-800'))}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={cn(t('bg-slate-50', 'bg-zinc-800/50'))}>
+                    <th className={cn("text-left px-4 py-2 font-medium text-xs", t('text-slate-500', 'text-zinc-400'))}>Quantity</th>
+                    <th className={cn("text-right px-4 py-2 font-medium text-xs", t('text-slate-500', 'text-zinc-400'))}>Unit Price</th>
+                    <th className={cn("text-right px-4 py-2 font-medium text-xs", t('text-slate-500', 'text-zinc-400'))}>Savings</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className={cn("border-t", t('border-slate-100', 'border-zinc-800'))}>
+                    <td className={cn("px-4 py-2.5", t('text-slate-700', 'text-zinc-300'))}>1 - {(tiers[0]?.min_quantity || 2) - 1}</td>
+                    <td className={cn("px-4 py-2.5 text-right font-medium", t('text-slate-900', 'text-white'))}>{formatPrice(pricing.base_price || 0, currency)}</td>
+                    <td className={cn("px-4 py-2.5 text-right text-xs", t('text-slate-400', 'text-zinc-500'))}>Base price</td>
+                  </tr>
+                  {tiers.map((tier, idx) => {
+                    const savings = pricing.base_price > 0 ? Math.round((1 - tier.price / pricing.base_price) * 100) : 0;
+                    return (
+                      <tr key={idx} className={cn("border-t", t('border-slate-100', 'border-zinc-800'))}>
+                        <td className={cn("px-4 py-2.5", t('text-slate-700', 'text-zinc-300'))}>
+                          {tier.min_quantity}+{tier.max_quantity ? ` (up to ${tier.max_quantity})` : ''}
+                        </td>
+                        <td className={cn("px-4 py-2.5 text-right font-medium text-cyan-400")}>{formatPrice(tier.price, currency)}</td>
+                        <td className={cn("px-4 py-2.5 text-right text-xs font-medium", savings > 0 ? "text-green-400" : t('text-slate-400', 'text-zinc-500'))}>
+                          {savings > 0 ? `-${savings}%` : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className={cn("flex flex-col items-center py-6 text-center")}>
+            <Store className={cn("w-8 h-8 mb-2", t('text-slate-300', 'text-zinc-600'))} />
+            <p className={cn("text-sm", t('text-slate-500', 'text-zinc-500'))}>
+              Add volume tiers above to enable bulk pricing on your B2B store
+            </p>
+            <p className={cn("text-xs mt-1", t('text-slate-400', 'text-zinc-600'))}>
+              Clients will see quantity-based discounts on the product detail page
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1823,6 +1980,122 @@ function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
 
 // ============= ACTIVITY SECTION =============
 
+function buildActionText(action, changes, fallbackSummary) {
+  const fieldNames = changes ? Object.keys(changes) : [];
+
+  const LABELS = {
+    name: 'product name', description: 'description', short_description: 'short description',
+    base_price: 'price', price: 'price', compare_at_price: 'compare-at price',
+    cost_price: 'cost price', status: 'status', featured_image: 'featured image',
+    gallery: 'product images', sku: 'SKU', ean: 'barcode', brand: 'brand',
+    category: 'category', origin_country: 'origin country', weight: 'weight',
+    stock_quantity: 'stock level', quantity: 'quantity', channels: 'sales channels',
+    tags: 'tags', margin: 'margin', tax_rate: 'tax rate', currency: 'currency',
+    pricing_model: 'pricing model', pricing_tiers: 'pricing tiers',
+    billing_cycle: 'billing cycle', trial_days: 'trial period',
+    setup_fee: 'setup fee', delivery_time: 'delivery time',
+    specifications: 'specifications', meta_title: 'SEO title',
+    meta_description: 'SEO description', slug: 'URL slug',
+    min_order_quantity: 'min order quantity', max_order_quantity: 'max order quantity',
+    low_stock_threshold: 'low stock threshold', warranty_info: 'warranty info',
+    return_policy: 'return policy', mpn: 'MPN',
+  };
+
+  const friendlyField = (f) => LABELS[f] || f.replace(/_/g, ' ');
+
+  // Format a single value for inline display
+  const fmt = (val) => {
+    if (val === null || val === undefined || val === '') return null;
+    if (Array.isArray(val)) return `${val.length} item${val.length !== 1 ? 's' : ''}`;
+    if (typeof val === 'object') return null;
+    if (typeof val === 'string' && val.length > 40) return null;
+    return String(val);
+  };
+
+  // Handle explicit action types that don't need change introspection
+  if (action === 'created') return 'created this product';
+  if (action === 'deleted') return 'deleted the product';
+  if (action === 'channel_added') return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'added a sales channel';
+  if (action === 'channel_removed') return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'removed a sales channel';
+  if (action === 'supplier_added') return 'linked a supplier';
+  if (action === 'supplier_removed') return 'removed a supplier';
+
+  // For everything else, build description from the actual changes
+  if (!changes || fieldNames.length === 0) {
+    if (action === 'published') return 'published the product';
+    if (action === 'archived') return 'archived the product';
+    return typeof fallbackSummary === 'string' && fallbackSummary ? fallbackSummary : 'updated the product';
+  }
+
+  // Try to build a specific description from the most important changed field
+  const parts = [];
+
+  // Status change is high-priority info
+  if (changes.status) {
+    const nw = fmt(changes.status.new);
+    const old = fmt(changes.status.old);
+    if (nw && old) parts.push(`changed status from "${old}" to "${nw}"`);
+    else if (nw) parts.push(`set status to "${nw}"`);
+  }
+
+  // Price changes
+  for (const pf of ['base_price', 'price', 'compare_at_price', 'cost_price']) {
+    if (changes[pf]) {
+      const old = changes[pf].old;
+      const nw = changes[pf].new;
+      if (old != null && nw != null) parts.push(`updated ${friendlyField(pf)} from €${old} to €${nw}`);
+      else if (nw != null) parts.push(`set ${friendlyField(pf)} to €${nw}`);
+      break; // only show one price field
+    }
+  }
+
+  // Stock changes
+  if (changes.stock_quantity || changes.quantity) {
+    const sf = changes.stock_quantity || changes.quantity;
+    const old = fmt(sf.old);
+    const nw = fmt(sf.new);
+    if (old && nw) parts.push(`adjusted stock from ${old} to ${nw}`);
+    else if (nw) parts.push(`set stock to ${nw}`);
+  }
+
+  // Image changes
+  if (changes.gallery) {
+    const oldCount = Array.isArray(changes.gallery.old) ? changes.gallery.old.length : 0;
+    const newCount = Array.isArray(changes.gallery.new) ? changes.gallery.new.length : 0;
+    const diff = newCount - oldCount;
+    if (diff > 0) parts.push(`added ${diff} image${diff !== 1 ? 's' : ''}`);
+    else if (diff < 0) parts.push(`removed ${Math.abs(diff)} image${Math.abs(diff) !== 1 ? 's' : ''}`);
+    else if (newCount > 0) parts.push(`reordered ${newCount} images`);
+  }
+  if (changes.featured_image && !parts.some(p => p.includes('image'))) {
+    parts.push('updated featured image');
+  }
+
+  // Name change
+  if (changes.name) {
+    const nw = fmt(changes.name.new);
+    const old = fmt(changes.name.old);
+    if (nw && old) parts.push(`renamed from "${old}" to "${nw}"`);
+    else if (nw) parts.push(`set name to "${nw}"`);
+  }
+
+  // If we got specific parts, use them
+  if (parts.length > 0) {
+    // Count remaining fields not covered by the parts
+    const coveredFields = new Set(['status', 'base_price', 'price', 'compare_at_price', 'cost_price', 'stock_quantity', 'quantity', 'gallery', 'featured_image', 'name']);
+    const remaining = fieldNames.filter(f => !coveredFields.has(f)).length;
+    let text = parts.join(', ');
+    if (remaining > 0) text += ` and ${remaining} other field${remaining !== 1 ? 's' : ''}`;
+    return text;
+  }
+
+  // Fallback: list the field names that changed
+  if (fieldNames.length <= 3) return `updated ${fieldNames.map(friendlyField).join(', ')}`;
+  // Show first 2 + count
+  const shown = fieldNames.slice(0, 2).map(friendlyField);
+  return `updated ${shown.join(', ')} and ${fieldNames.length - 2} other field${fieldNames.length - 2 !== 1 ? 's' : ''}`;
+}
+
 function ActivitySectionWrapper({ product, details }) {
   const { t } = useTheme();
   const [activities, setActivities] = useState([]);
@@ -1840,14 +2113,33 @@ function ActivitySectionWrapper({ product, details }) {
         .limit(50);
 
       if (!error && data && data.length > 0) {
-        setActivities(data.map(a => ({
-          id: a.id,
-          type: a.action,
-          title: a.summary,
-          timestamp: a.performed_at,
-          user: a.actor?.full_name || 'Unknown',
-          changes: a.changes,
-        })));
+        setActivities(data.map(a => {
+          const userName = a.actor?.full_name || 'Someone';
+          const action = a.action || 'updated';
+          // Sanitize changes — keep only valid {old, new} entries
+          let safeChanges = null;
+          if (a.changes && typeof a.changes === 'object' && !Array.isArray(a.changes)) {
+            safeChanges = {};
+            for (const [field, change] of Object.entries(a.changes)) {
+              if (change && typeof change === 'object' && !Array.isArray(change) && ('old' in change || 'new' in change)) {
+                safeChanges[field] = change;
+              }
+            }
+            if (Object.keys(safeChanges).length === 0) safeChanges = null;
+          }
+
+          const actionText = buildActionText(action, safeChanges, a.summary);
+
+          return {
+            id: a.id,
+            type: action,
+            actionText,
+            timestamp: a.performed_at,
+            user: userName,
+            avatarUrl: a.actor?.avatar_url || null,
+            changes: safeChanges,
+          };
+        }));
       } else {
         // Fallback to mock data if no real activity entries yet
         setActivities(generateMockActivities(product, details));
@@ -1888,6 +2180,10 @@ export default function ProductDetail() {
   const [activeSection, setActiveSection] = useState('overview');
 
   const [auditInfo, setAuditInfo] = useState(null);
+
+  // B2B storefront visibility
+  const [b2bEnabled, setB2bEnabled] = useState(false);
+  const [b2bLoading, setB2bLoading] = useState(false);
 
   // Modal states
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
@@ -1996,6 +2292,55 @@ export default function ProductDetail() {
     loadProduct();
   }, [slug, type]);
 
+  // Load B2B channel status
+  useEffect(() => {
+    if (!product?.id || !user?.company_id) return;
+    supabase
+      .from('product_sales_channels')
+      .select('id, is_active')
+      .eq('product_id', product.id)
+      .eq('channel', 'b2b')
+      .eq('company_id', user.company_id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setB2bEnabled(!!data?.is_active);
+      });
+  }, [product?.id, user?.company_id]);
+
+  const handleB2bToggle = async (enabled) => {
+    if (!product?.id || !user?.company_id) return;
+    setB2bLoading(true);
+    try {
+      if (enabled) {
+        await supabase
+          .from('product_sales_channels')
+          .upsert({
+            company_id: user.company_id,
+            product_id: product.id,
+            channel: 'b2b',
+            is_active: true,
+            listed_at: new Date().toISOString(),
+            listed_by: user.id,
+            delisted_at: null,
+          }, { onConflict: 'company_id,product_id,channel' });
+      } else {
+        await supabase
+          .from('product_sales_channels')
+          .update({ is_active: false, delisted_at: new Date().toISOString() })
+          .eq('product_id', product.id)
+          .eq('channel', 'b2b')
+          .eq('company_id', user.company_id);
+      }
+      setB2bEnabled(enabled);
+      toast.success(enabled ? 'Product visible on B2B store' : 'Product hidden from B2B store');
+    } catch (err) {
+      console.error('Failed to toggle B2B visibility:', err);
+      toast.error('Failed to update B2B visibility');
+    } finally {
+      setB2bLoading(false);
+    }
+  };
+
   // Handle product update
   const handleProductUpdate = async (updates) => {
     if (!product) return;
@@ -2024,24 +2369,48 @@ export default function ProductDetail() {
 
   // Handle details update
   const handleDetailsUpdate = async (updates) => {
-    if (!details) return;
-
     setSaving(true);
     try {
-      // digital_products and physical_products use product_id as primary key, not id
-      const detailsId = details.product_id || details.id;
-
-      if (type === 'digital') {
-        await DigitalProduct.update(detailsId, updates);
-      } else if (type === 'service') {
-        await ServiceProduct.update(detailsId, updates);
+      if (!details && type === 'service') {
+        // No service_products row exists yet — create one
+        const newRow = await ServiceProduct.create({
+          product_id: product.id,
+          company_id: user?.company_id,
+          ...updates,
+        });
+        setDetails(newRow);
+      } else if (!details && type === 'digital') {
+        const newRow = await DigitalProduct.create({
+          product_id: product.id,
+          company_id: user?.company_id,
+          ...updates,
+        });
+        setDetails(newRow);
+      } else if (!details) {
+        // Physical product (default) — auto-create row
+        const newRow = await PhysicalProduct.create({
+          product_id: product.id,
+          company_id: user?.company_id,
+          ...updates,
+        });
+        setDetails(newRow);
       } else {
-        await PhysicalProduct.update(detailsId, updates);
+        // Existing row — update as normal
+        const detailsId = details.product_id || details.id;
+
+        if (type === 'digital') {
+          await DigitalProduct.update(detailsId, updates);
+        } else if (type === 'service') {
+          await ServiceProduct.update(detailsId, updates);
+        } else {
+          await PhysicalProduct.update(detailsId, updates);
+        }
+        setDetails(prev => ({ ...prev, ...updates }));
       }
-      setDetails(prev => ({ ...prev, ...updates }));
+
       // Log detail-level changes to the product activity feed
       if (product?.id && user?.id) {
-        const changes = calculateDiffs(details, updates);
+        const changes = calculateDiffs(details || {}, updates);
         if (changes) {
           await logProductActivity({
             productId: product.id,
@@ -2089,7 +2458,7 @@ export default function ProductDetail() {
     setInquiryModalOpen(true);
   };
 
-  const backUrl = isPhysical ? 'ProductsPhysical' : isService ? 'ProductsServices' : 'ProductsDigital';
+  const backTab = isPhysical ? 'physical' : isService ? 'service' : 'digital';
 
   // Loading State
   if (loading) {
@@ -2139,7 +2508,7 @@ export default function ProductDetail() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link to={createPageUrl(backUrl)}>
+            <Link to={`/Products?tab=${backTab}`}>
               <Button variant="ghost" size="sm" className={cn(t('text-slate-500', 'text-zinc-400'), t('hover:text-slate-900', 'hover:text-white'), "-ml-2")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
@@ -2165,6 +2534,19 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className={cn(
+              "flex items-center gap-2.5 px-3 py-1.5 rounded-lg border",
+              t('bg-white border-slate-200', 'bg-zinc-900/50 border-white/10')
+            )}>
+              <Store className="w-4 h-4 text-cyan-400" />
+              <span className={cn("text-xs font-medium", t('text-slate-600', 'text-zinc-400'))}>B2B Store</span>
+              <Switch
+                checked={b2bEnabled}
+                onCheckedChange={handleB2bToggle}
+                disabled={b2bLoading}
+                className="data-[state=checked]:bg-cyan-500"
+              />
+            </div>
             <button
               onClick={toggleTheme}
               className={cn(
@@ -2273,6 +2655,15 @@ export default function ProductDetail() {
               <ActivitySectionWrapper
                 product={product}
                 details={details}
+              />
+            )}
+
+            {activeSection === 'listing' && isPhysical && (
+              <ProductListingBuilder
+                product={product}
+                details={details}
+                onDetailsUpdate={handleDetailsUpdate}
+                onProductUpdate={handleProductUpdate}
               />
             )}
         </div>

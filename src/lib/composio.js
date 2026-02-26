@@ -556,6 +556,32 @@ export const ToolHelpers = {
   },
 
   /**
+   * LinkedIn: Social posting
+   */
+  linkedin: {
+    createPost: (text, mediaUrl = null) => ({
+      toolSlug: 'LINKEDIN_CREATE_POST',
+      arguments: {
+        text,
+        ...(mediaUrl && { media_url: mediaUrl }),
+      },
+    }),
+  },
+
+  /**
+   * Twitter/X: Social posting
+   */
+  twitter: {
+    postTweet: (text, mediaUrl = null) => ({
+      toolSlug: 'TWITTER_POST_TWEET',
+      arguments: {
+        text,
+        ...(mediaUrl && { media_url: mediaUrl }),
+      },
+    }),
+  },
+
+  /**
    * Google Sheets: Spreadsheet operations
    */
   googleSheets: {
@@ -607,6 +633,31 @@ export const ToolHelpers = {
     getSheetNames: (spreadsheetId) => ({
       toolSlug: 'GOOGLESHEETS_GET_SHEET_NAMES',
       arguments: { spreadsheet_id: spreadsheetId },
+    }),
+  },
+
+  /**
+   * Outlook: Email
+   */
+  outlook: {
+    sendEmail: (to, subject, body) => ({
+      toolSlug: 'OUTLOOK_SEND_EMAIL',
+      arguments: { recipient_email: to, subject, body },
+    }),
+  },
+
+  /**
+   * Outlook Calendar: Calendar operations
+   */
+  outlookCalendar: {
+    createEvent: (subject, start, end, attendees = []) => ({
+      toolSlug: 'OUTLOOKCALENDAR_CREATE_CALENDAR_EVENT',
+      arguments: {
+        subject,
+        start_date_time: start,
+        end_date_time: end,
+        attendees,
+      },
     }),
   },
 

@@ -153,7 +153,7 @@ export default function CompanyProfile() {
               {/* Logo */}
               <div className="w-20 h-20 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {firmographics.business_logo ? (
-                  <img src={firmographics.business_logo} alt={company.name} className="w-full h-full object-cover" />
+                  <img src={firmographics.business_logo} alt={company.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                 ) : (
                   <Building2 className="w-8 h-8 text-zinc-600" />
                 )}

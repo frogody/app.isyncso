@@ -1057,7 +1057,7 @@ Reply now (concise).`;
                                 src={a.url || ""}
                                 alt={a.name || "attachment"}
                                 className="w-full h-20 object-cover rounded-lg border border-white/10"
-                              />
+                               loading="lazy" decoding="async" />
                             </a>
                           ))}
                         </div>
@@ -1153,7 +1153,7 @@ Reply now (concise).`;
                         src={a.url || ""}
                         alt={a.name}
                         className={`w-16 h-16 object-cover rounded-lg border ${a.uploading ? "border-emerald-300/30 opacity-60" : "border-white/10"}`}
-                      />
+                       loading="lazy" decoding="async" />
                     </div>
                   ))}
                 </div>

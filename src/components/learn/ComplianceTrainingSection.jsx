@@ -33,9 +33,9 @@ export default function ComplianceTrainingSection({ recommendations }) {
     );
   }
 
-  const { ai_systems_count, high_risk_count, recommendations: courses } = recommendations;
-  const requiredCourses = courses.filter(c => c.priority === 'required');
-  const recommendedCourses = courses.filter(c => c.priority === 'recommended');
+  const { ai_systems_count, high_risk_count, recommendations: courses = [] } = recommendations;
+  const requiredCourses = (courses || []).filter(c => c.priority === 'required');
+  const recommendedCourses = (courses || []).filter(c => c.priority === 'recommended');
 
   return (
     <Card className="glass-card border-0 border-teal-500/20">

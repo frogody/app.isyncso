@@ -139,12 +139,31 @@ export default function FinanceReportPL({ embedded = false }) {
     setLoading(true);
     setGenerated(false);
     try {
+      // Check if COA is initialized
+      const { count } = await supabase.from('accounts').select('id', { count: 'exact', head: true }).eq('company_id', user.company_id);
+      if (!count || count === 0) {
+        toast.error('Initialize your Chart of Accounts first (Ledger > Chart of Accounts)');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.rpc('get_profit_loss', {
         p_company_id: user.company_id,
         p_start_date: dateRange.from,
         p_end_date: dateRange.to,
       });
-      if (error) throw error;
+
+      if (error) {
+        console.error('[FinanceReportPL] get_profit_loss error:', error);
+        if (error.message?.includes('404') || error.code === 'PGRST202') {
+          toast.error('Profit & Loss report function not available. Please contact support.');
+          setReportData([]);
+          setGenerated(true);
+          return;
+        }
+        throw error;
+      }
+
       setReportData(data || []);
 
       if (compare) {
@@ -154,8 +173,13 @@ export default function FinanceReportPL({ embedded = false }) {
           p_start_date: prev.from,
           p_end_date: prev.to,
         });
-        if (prevErr) throw prevErr;
-        setComparisonData({ data: prevData || [], from: prev.from, to: prev.to });
+
+        if (prevErr) {
+          console.warn('[FinanceReportPL] Previous period error:', prevErr);
+          setComparisonData(null);
+        } else {
+          setComparisonData({ data: prevData || [], from: prev.from, to: prev.to });
+        }
       } else {
         setComparisonData(null);
       }
@@ -172,6 +196,7 @@ export default function FinanceReportPL({ embedded = false }) {
   }, [user?.company_id, dateRange, compare]);
 
   // Process report data into sections
+  // RPC returns: category ('Revenue'|'Expense'|'Net Income'), is_summary (bool), account_code, account_name, amount
   const processed = useMemo(() => {
     if (!reportData) return null;
 
@@ -182,15 +207,21 @@ export default function FinanceReportPL({ embedded = false }) {
     let netIncome = 0;
 
     for (const row of reportData) {
-      if (row.row_type === 'detail' && row.section === 'Revenue') {
+      // Handle both old (row_type/section) and new (category/is_summary) field names
+      const isDetail = row.row_type === 'detail' || (row.is_summary === false && row.category !== 'Net Income');
+      const isSubtotal = row.row_type === 'subtotal' || (row.is_summary === true && row.category !== 'Net Income');
+      const isSummary = row.row_type === 'summary' || (row.is_summary === true && row.category === 'Net Income');
+      const section = row.section || row.category;
+
+      if (isDetail && section === 'Revenue') {
         revenue.push(row);
-      } else if (row.row_type === 'detail' && row.section === 'Expenses') {
+      } else if (isDetail && (section === 'Expenses' || section === 'Expense')) {
         expenses.push(row);
-      } else if (row.row_type === 'subtotal' && row.section === 'Revenue') {
+      } else if (isSubtotal && section === 'Revenue') {
         totalRevenue = parseFloat(row.amount) || 0;
-      } else if (row.row_type === 'subtotal' && row.section === 'Expenses') {
+      } else if (isSubtotal && (section === 'Expenses' || section === 'Expense')) {
         totalExpenses = parseFloat(row.amount) || 0;
-      } else if (row.row_type === 'summary') {
+      } else if (isSummary) {
         netIncome = parseFloat(row.amount) || 0;
       }
     }
@@ -207,13 +238,18 @@ export default function FinanceReportPL({ embedded = false }) {
     let netIncome = 0;
 
     for (const row of rows) {
-      if (row.row_type === 'detail') {
+      const isDetail = row.row_type === 'detail' || (row.is_summary === false && row.category !== 'Net Income');
+      const isSubtotal = row.row_type === 'subtotal' || (row.is_summary === true && row.category !== 'Net Income');
+      const isSummary = row.row_type === 'summary' || (row.is_summary === true && row.category === 'Net Income');
+      const section = row.section || row.category;
+
+      if (isDetail) {
         map[row.account_code] = parseFloat(row.amount) || 0;
-      } else if (row.row_type === 'subtotal' && row.section === 'Revenue') {
+      } else if (isSubtotal && section === 'Revenue') {
         totalRevenue = parseFloat(row.amount) || 0;
-      } else if (row.row_type === 'subtotal' && row.section === 'Expenses') {
+      } else if (isSubtotal && (section === 'Expenses' || section === 'Expense')) {
         totalExpenses = parseFloat(row.amount) || 0;
-      } else if (row.row_type === 'summary') {
+      } else if (isSummary) {
         netIncome = parseFloat(row.amount) || 0;
       }
     }
@@ -707,7 +743,7 @@ export default function FinanceReportPL({ embedded = false }) {
                   <CardContent className="p-8 text-center">
                     <AlertCircle className={`w-12 h-12 mx-auto mb-3 ${ft('text-slate-300', 'text-zinc-600')}`} />
                     <p className={`text-sm ${ft('text-slate-500', 'text-zinc-400')}`}>
-                      No transactions found for this period. Post journal entries to generate reports.
+                      No transactions found for this period. Revenue and expenses appear here after invoices are marked as paid and expenses are recorded.
                     </p>
                   </CardContent>
                 </Card>

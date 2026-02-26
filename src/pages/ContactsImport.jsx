@@ -6,7 +6,7 @@ import {
   Upload, Columns, CheckCircle, Download, Sparkles, Users,
   ArrowLeft, ArrowRight, FileSpreadsheet, Building2, Target,
   TrendingUp, UserCheck, Handshake, UserPlus, Crosshair, Truck,
-  Sun, Moon
+  Sun, Moon, Contact
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -31,6 +31,8 @@ const STEPS = [
 
 // Contact types for selection
 const CONTACT_TYPES = [
+  { id: 'contact', label: 'Contacts', icon: Contact, description: 'General contacts — sort into a category later', color: 'cyan' },
+  { id: 'company', label: 'Companies', icon: Building2, description: 'Companies and organizations — not tied to a specific person', color: 'indigo' },
   { id: 'lead', label: 'Leads', icon: Target, description: 'Unqualified contacts for initial outreach', color: 'zinc' },
   { id: 'prospect', label: 'Prospects', icon: TrendingUp, description: 'Qualified leads in sales pipeline', color: 'blue' },
   { id: 'customer', label: 'Customers', icon: UserCheck, description: 'Paying customers with active relationships', color: 'green' },
@@ -296,6 +298,7 @@ export default function ContactsImport() {
           // Create contact
           const contactData = {
             owner_id: user.id,
+            organization_id: user.organization_id,
             first_name: firstName,
             last_name: lastName,
             email: data.email || null,

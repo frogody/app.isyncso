@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets, GeneratedContent, Product, DigitalProduct, RenderJob } from '@/api/entities';
@@ -88,6 +89,7 @@ const STYLE_PRESETS = [
   { id: 'documentary', label: 'Documentary', icon: FileVideo },
   { id: 'animated', label: 'Animated', icon: Clapperboard },
   { id: 'product_showcase', label: 'Product', icon: Package },
+  { id: 'fashion', label: 'Fashion', icon: Sparkles },
   { id: 'explainer', label: 'Explainer', icon: Lightbulb },
   { id: 'social_media', label: 'Social', icon: Smartphone },
   { id: 'corporate', label: 'Corporate', icon: Building2 },
@@ -132,6 +134,8 @@ const QUICK_SUGGESTIONS = [
   'Cinematic intro',
   'Social ad',
   'Explainer',
+  'Fashion lookbook',
+  'Runway walk',
 ];
 
 function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProductData, designAnalysis) {
@@ -141,12 +145,12 @@ function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProdu
     accent: designAnalysis.colorPalette.accent,
   } : {
     primary: brandAssets?.colors?.primary || '#0f0f0f',
-    secondary: brandAssets?.colors?.secondary || '#1a1a2e',
-    accent: brandAssets?.colors?.accent || '#06b6d4',
+    secondary: brandAssets?.colors?.secondary || '#1c1917',
+    accent: brandAssets?.colors?.accent || '#EAB308',
   };
 
   const productName = selectedProduct?.name || 'Your Product';
-  const productImage = selectedProduct?.featured_image?.url || 'https://placehold.co/800x600/1a1a2e/06b6d4?text=Product';
+  const productImage = selectedProduct?.featured_image?.url || 'https://placehold.co/800x600/1c1917/EAB308?text=Product';
 
   const dpFeatures = digitalProductData?.features;
 
@@ -311,10 +315,10 @@ function ProductSelector({ selectedProduct, setSelectedProduct, products, produc
   );
 }
 
-export default function CreateVideos() {
+export default function CreateVideos({ embedded = false, defaultMode = 'ai' }) {
   const { user } = useUser();
   const { theme, toggleTheme, ct } = useTheme();
-  const [mode, setMode] = useState('ai');
+  const [mode, setMode] = useState(defaultMode);
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('cinematic');
   const [duration, setDuration] = useState('10');
@@ -480,6 +484,9 @@ export default function CreateVideos() {
     if (style) enhanced += ` Style: ${style.label} video.`;
     const dur = DURATIONS.find(d => d.id === duration);
     if (dur) enhanced += ` Duration: ${dur.seconds} seconds.`;
+    if (selectedStyle === 'fashion') {
+      enhanced += ' High-fashion editorial video, professional fashion model, runway-quality movement, elegant transitions, fabric flowing naturally, Vogue-quality cinematography, soft key lighting with dramatic shadows, slow-motion fabric details.';
+    }
     if (useBrandContext && brandAssets) {
       if (brandAssets.colors?.primary) {
         enhanced += ` Brand colors: ${brandAssets.colors.primary}`;
@@ -698,12 +705,15 @@ export default function CreateVideos() {
 
   const durationConfig = DURATIONS.find(d => d.id === duration);
 
+  const Wrapper = embedded ? React.Fragment : CreatePageTransition;
+
   return (
-    <CreatePageTransition>
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+    <Wrapper>
+      <div className={embedded ? '' : `min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
         <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ───── 1. Back Nav + Page Header ───── */}
+          {!embedded && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <a
@@ -749,6 +759,83 @@ export default function CreateVideos() {
               </button>
             </div>
           </div>
+          )}
+
+          {/* ───── 6. Output Area (moved above prompt) ───── */}
+          {mode === 'ai' && (
+            <AnimatePresence>
+              {(isGenerating || generatedVideo) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.4 }}
+                  className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}
+                >
+                  <div className="aspect-video relative">
+                    {isGenerating ? (
+                      <div className={`absolute inset-0 flex flex-col items-center justify-center ${ct('bg-slate-100/90', 'bg-zinc-950/80')}`}>
+                        <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mb-3" />
+                        <p className={`${ct('text-slate-500', 'text-zinc-400')} text-sm`}>Creating your video...</p>
+                        <p className={`${ct('text-slate-400', 'text-zinc-600')} text-xs mt-1`}>This may take 1-3 minutes</p>
+                        <div className={`w-40 h-1.5 ${ct('bg-slate-200', 'bg-zinc-800')} rounded-full mt-4 overflow-hidden`}>
+                          <div className="h-full bg-yellow-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+                        </div>
+                      </div>
+                    ) : generatedVideo ? (
+                      <video
+                        src={generatedVideo.url}
+                        controls
+                        className="w-full h-full object-contain bg-black"
+                        poster={generatedVideo.thumbnail_url}
+                      />
+                    ) : null}
+                  </div>
+
+                  {generatedVideo && (
+                    <div className={`p-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
+                            <Clock className="w-3 h-3 mr-1" />
+                            {generatedVideo.duration}s
+                          </Badge>
+                          <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
+                            {aspectRatio}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleDownload(generatedVideo.url)}
+                            className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={handleGenerate}
+                            className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {generatedVideo.enhanced_prompt && (
+                        <details className="mt-3">
+                          <summary className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} cursor-pointer ${ct('hover:text-slate-700', 'hover:text-zinc-400')} transition-colors`}>
+                            Prompt details
+                          </summary>
+                          <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} mt-2 p-2 ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')}`}>
+                            {generatedVideo.enhanced_prompt}
+                          </p>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
 
           {/* ───── 2. Hero Prompt Area (AI modes only) ───── */}
           {(mode === 'ai' || mode === 'studio') && mode === 'ai' && (
@@ -823,17 +910,6 @@ export default function CreateVideos() {
                 <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Multi-shot storyboard with automatic assembly</p>
               </button>
             </div>
-          )}
-
-          {/* Back button when in studio or templates mode */}
-          {(mode === 'studio' || mode === 'templates') && (
-            <button
-              onClick={() => setMode('ai')}
-              className={`flex items-center gap-1.5 text-sm ${ct('text-slate-500', 'text-zinc-500')} ${ct('hover:text-slate-700', 'hover:text-zinc-300')} transition-colors`}
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to modes
-            </button>
           )}
 
           {/* ───── AI Studio Mode ───── */}
@@ -969,6 +1045,7 @@ export default function CreateVideos() {
                     <>
                       <Sparkles className="w-4 h-4" />
                       Generate Video
+                      <CreditCostBadge credits={50} />
                     </>
                   )}
                 </button>
@@ -976,80 +1053,6 @@ export default function CreateVideos() {
                   ~{durationConfig?.seconds || 10}s video &middot; est. 1-3 min
                 </span>
               </div>
-
-              {/* ───── 6. Output Area ───── */}
-              <AnimatePresence>
-                {(isGenerating || generatedVideo) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    transition={{ duration: 0.4 }}
-                    className={`rounded-[20px] ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} overflow-hidden`}
-                  >
-                    <div className="aspect-video relative">
-                      {isGenerating ? (
-                        <div className={`absolute inset-0 flex flex-col items-center justify-center ${ct('bg-slate-100/90', 'bg-zinc-950/80')}`}>
-                          <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mb-3" />
-                          <p className={`${ct('text-slate-500', 'text-zinc-400')} text-sm`}>Creating your video...</p>
-                          <p className={`${ct('text-slate-400', 'text-zinc-600')} text-xs mt-1`}>This may take 1-3 minutes</p>
-                          <div className={`w-40 h-1.5 ${ct('bg-slate-200', 'bg-zinc-800')} rounded-full mt-4 overflow-hidden`}>
-                            <div className="h-full bg-yellow-500 rounded-full animate-pulse" style={{ width: '60%' }} />
-                          </div>
-                        </div>
-                      ) : generatedVideo ? (
-                        <video
-                          src={generatedVideo.url}
-                          controls
-                          className="w-full h-full object-contain bg-black"
-                          poster={generatedVideo.thumbnail_url}
-                        />
-                      ) : null}
-                    </div>
-
-                    {generatedVideo && (
-                      <div className={`p-4 border-t ${ct('border-slate-100', 'border-zinc-800/40')}`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
-                              <Clock className="w-3 h-3 mr-1" />
-                              {generatedVideo.duration}s
-                            </Badge>
-                            <Badge variant="outline" className={`${ct('border-slate-200', 'border-zinc-700')} ${ct('text-slate-600', 'text-zinc-300')} ${ct('bg-slate-50', 'bg-zinc-800/50')} text-xs`}>
-                              {aspectRatio}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => handleDownload(generatedVideo.url)}
-                              className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={handleGenerate}
-                              className={`p-2 rounded-full ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-900', 'hover:text-white')} ${ct('hover:bg-slate-100', 'hover:bg-zinc-800')} transition-colors`}
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {generatedVideo.enhanced_prompt && (
-                          <details className="mt-3">
-                            <summary className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} cursor-pointer ${ct('hover:text-slate-700', 'hover:text-zinc-400')} transition-colors`}>
-                              Prompt details
-                            </summary>
-                            <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} mt-2 p-2 ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')}`}>
-                              {generatedVideo.enhanced_prompt}
-                            </p>
-                          </details>
-                        )}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
           )}
 
@@ -1326,7 +1329,7 @@ export default function CreateVideos() {
                       >
                         <div className="relative aspect-video">
                           {item.thumbnail_url ? (
-                            <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover" />
+                            <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                           ) : (
                             <div className={`w-full h-full ${ct('bg-slate-100', 'bg-zinc-900')} flex items-center justify-center`}>
                               <Video className={`w-8 h-8 ${ct('text-slate-300', 'text-zinc-800')}`} />
@@ -1440,6 +1443,6 @@ export default function CreateVideos() {
           </DialogContent>
         </Dialog>
       </div>
-    </CreatePageTransition>
+    </Wrapper>
   );
 }

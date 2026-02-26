@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCredits } from '../_shared/credit-check.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -61,9 +62,19 @@ serve(async (req) => {
         aspect_ratio = "16:9",
         camera_direction,
         image_url,
+        user_id,
       } = body;
 
       if (!description) return err("Description is required", 400);
+
+      // ── Credit check (8 credits per shot) ──────────────────────
+      if (user_id) {
+        const credit = await requireCredits(supabase, user_id, 'generate-shot', {
+          edgeFunction: 'generate-shot',
+          metadata: { model, duration_seconds, shot_id },
+        });
+        if (!credit.success) return credit.errorResponse!;
+      }
 
       let prompt = description;
       if (camera_direction) prompt += `. Camera: ${camera_direction}`;

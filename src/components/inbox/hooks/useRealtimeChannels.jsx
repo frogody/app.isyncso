@@ -34,7 +34,8 @@ export function useRealtimeChannels(userId) {
       const allChannels = data || [];
       const publicChannels = allChannels.filter(c => c.type !== 'dm' && c.type !== 'support');
       const dms = allChannels.filter(c => c.type === 'dm');
-      const support = allChannels.filter(c => c.type === 'support');
+      // Support channels are loaded separately by platform owners in Inbox.jsx — don't expose here
+      const support = [];
 
       setChannels(publicChannels);
       setDirectMessages(dms);

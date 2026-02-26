@@ -3,6 +3,7 @@
  */
 
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 import type {
   Return,
   ReturnInsert,
@@ -55,7 +56,10 @@ export async function listReturns(
     query = query.lte('registered_at', filters.dateTo);
   }
   if (filters?.search) {
-    query = query.or(`return_code.ilike.%${filters.search}%,bol_return_id.ilike.%${filters.search}%`);
+    const cleanSearch = sanitizeSearchInput(filters.search);
+    if (cleanSearch) {
+      query = query.or(`return_code.ilike.%${cleanSearch}%,bol_return_id.ilike.%${cleanSearch}%`);
+    }
   }
 
   const { data, error } = await query;
@@ -121,6 +125,20 @@ export async function listReturnItems(returnId: string): Promise<ReturnItem[]> {
 
   if (error) throw error;
   return data || [];
+}
+
+export async function getReturnItem(id: string): Promise<ReturnItem | null> {
+  const { data, error } = await supabase
+    .from('return_items')
+    .select(`
+      *,
+      products (id, name, sku, ean)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
 }
 
 export async function createReturnItem(item: ReturnItemInsert): Promise<ReturnItem> {
