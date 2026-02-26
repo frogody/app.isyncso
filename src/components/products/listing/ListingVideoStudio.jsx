@@ -524,6 +524,10 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
 
         if (fnError) throw fnError;
 
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
         if (!data?.videoUrl && !data?.url) {
           throw new Error('No video URL returned from generation');
         }
