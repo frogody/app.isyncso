@@ -369,20 +369,6 @@ export default function InboxPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Handle notification click — navigate to the clicked channel
-  useEffect(() => {
-    const handler = (e) => {
-      const { channelId } = e.detail;
-      if (channelId) {
-        const ch = [...realtimeChannels, ...resolvedDMs, ...resolvedSupportChannels]
-          .find(c => c.id === channelId);
-        if (ch) setSelectedChannel(ch);
-      }
-    };
-    window.addEventListener('notification-click', handler);
-    return () => window.removeEventListener('notification-click', handler);
-  }, [realtimeChannels, resolvedDMs, resolvedSupportChannels]);
-
   // Load team members once (realtime handles channels/messages)
   useEffect(() => {
     const loadTeamMembers = async () => {
@@ -528,6 +514,20 @@ export default function InboxPage() {
       return ch;
     });
   }, [supportChannels, user?.id]);
+
+  // Handle notification click — navigate to the clicked channel
+  useEffect(() => {
+    const handler = (e) => {
+      const { channelId } = e.detail;
+      if (channelId) {
+        const ch = [...realtimeChannels, ...resolvedDMs, ...resolvedSupportChannels]
+          .find(c => c.id === channelId);
+        if (ch) setSelectedChannel(ch);
+      }
+    };
+    window.addEventListener('notification-click', handler);
+    return () => window.removeEventListener('notification-click', handler);
+  }, [realtimeChannels, resolvedDMs, resolvedSupportChannels]);
 
   // Track which channels we've marked as read to avoid re-calling
   const markedReadRef = useRef(new Set());
