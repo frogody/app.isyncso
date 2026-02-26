@@ -16,6 +16,10 @@ import {
   Upload,
   Download,
   Sparkles,
+  CheckSquare,
+  ListChecks,
+  Inbox,
+  FolderOpen,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -135,6 +139,40 @@ export default function CommandPalette({ open, onClose, onAction }) {
         action: () => {
           onAction?.("run-matching");
         },
+      },
+
+      // Tasks
+      {
+        id: "tasks",
+        label: "Go to Tasks",
+        icon: CheckSquare,
+        category: "Navigation",
+        keywords: ["todo", "task", "board", "kanban"],
+        action: () => navigate(createPageUrl("Tasks")),
+      },
+      {
+        id: "create-task",
+        label: "Create New Task",
+        icon: ListChecks,
+        category: "Quick Actions",
+        keywords: ["add", "task", "todo", "new"],
+        action: () => navigate(createPageUrl("Tasks") + "?action=create"),
+      },
+      {
+        id: "inbox",
+        label: "Go to Inbox",
+        icon: Inbox,
+        category: "Navigation",
+        keywords: ["chat", "messages", "email"],
+        action: () => navigate(createPageUrl("Inbox")),
+      },
+      {
+        id: "projects",
+        label: "Go to Projects",
+        icon: FolderOpen,
+        category: "Navigation",
+        keywords: ["project", "folder", "workspace"],
+        action: () => navigate(createPageUrl("Projects")),
       },
 
       // Settings

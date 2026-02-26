@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MoreHorizontal, Reply, Smile, Bookmark, Share, Pin, Edit2,
-  Trash2, MessageSquare, Loader2, Forward,
+  Trash2, MessageSquare, Loader2, Forward, ListTodo,
   ChevronDown, ChevronUp, Send, CornerDownRight, CheckCheck, BookmarkCheck
 } from 'lucide-react';
 import FilePreview from './FilePreview';
@@ -89,6 +89,7 @@ function MessageBubble({
   onSupport,
   onToggleComplete,
   onAssign,
+  onCreateTask,
 }) {
   const [showActions, setShowActions] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -618,6 +619,14 @@ function MessageBubble({
                 >
                   <Forward className="w-4 h-4 mr-2" /> Forward message
                 </DropdownMenuItem>
+                {onCreateTask && (
+                  <DropdownMenuItem
+                    onClick={() => onCreateTask(message)}
+                    className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
+                  >
+                    <ListTodo className="w-4 h-4 mr-2" /> Create task
+                  </DropdownMenuItem>
+                )}
                 {isOwn && (
                   <>
                     <DropdownMenuSeparator className="bg-zinc-700" />
@@ -671,6 +680,7 @@ export default function MessageList({
   onSupport,
   onToggleComplete,
   onAssign,
+  onCreateTask,
 }) {
   const userMap = React.useMemo(() => {
     const map = {};
@@ -853,6 +863,7 @@ export default function MessageList({
                   onSupport={onSupport}
                   onToggleComplete={onToggleComplete}
                   onAssign={onAssign}
+                  onCreateTask={onCreateTask}
                 />
               );
             })}

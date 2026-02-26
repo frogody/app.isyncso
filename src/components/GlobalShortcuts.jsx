@@ -67,6 +67,30 @@ export default function GlobalShortcuts() {
     "Navigation"
   );
 
+  // g+t = Go to Tasks
+  useShortcut(
+    "g+t",
+    () => navigate(createPageUrl("Tasks")),
+    "Go to Tasks",
+    "Navigation"
+  );
+
+  // g+i = Go to Inbox
+  useShortcut(
+    "g+i",
+    () => navigate(createPageUrl("Inbox")),
+    "Go to Inbox",
+    "Navigation"
+  );
+
+  // g+j = Go to Projects
+  useShortcut(
+    "g+j",
+    () => navigate(createPageUrl("Projects")),
+    "Go to Projects",
+    "Navigation"
+  );
+
   // Escape - Close modals (handled at component level typically)
   // ? - Show shortcuts help (built into KeyboardShortcutsContext)
 

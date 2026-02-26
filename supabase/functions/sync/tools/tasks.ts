@@ -40,6 +40,15 @@ interface TaskData {
   project_id?: string;
   candidate_id?: string;
   campaign_id?: string;
+  // v2 fields
+  checklist?: Array<{ id: string; title: string; done: boolean }>;
+  labels?: string[];
+  source?: string;
+  source_ref_id?: string;
+  is_draft?: boolean;
+  estimated_minutes?: number;
+  company_id?: string;
+  created_by?: string;
 }
 
 interface TaskFilters {
@@ -50,6 +59,11 @@ interface TaskFilters {
   type?: string;
   overdue?: boolean;
   limit?: number;
+  // v2 filters
+  is_draft?: boolean;
+  source?: string;
+  labels?: string[];
+  company_id?: string;
 }
 
 // ============================================================================
@@ -73,6 +87,14 @@ export async function createTask(
       project_id: data.project_id || null,
       candidate_id: data.candidate_id || null,
       campaign_id: data.campaign_id || null,
+      checklist: data.checklist || [],
+      labels: data.labels || [],
+      source: data.source || 'sync_agent',
+      source_ref_id: data.source_ref_id || null,
+      is_draft: data.is_draft || false,
+      estimated_minutes: data.estimated_minutes || null,
+      company_id: data.company_id || null,
+      created_by: data.created_by || ctx.userId || null,
     };
 
     const { data: task, error } = await ctx.supabase
@@ -141,6 +163,11 @@ export async function updateTask(
     }
     if (data.updates.assigned_to) updateFields.assigned_to = data.updates.assigned_to;
     if (data.updates.due_date) updateFields.due_date = new Date(data.updates.due_date).toISOString();
+    if (data.updates.checklist !== undefined) updateFields.checklist = data.updates.checklist;
+    if (data.updates.labels !== undefined) updateFields.labels = data.updates.labels;
+    if (data.updates.estimated_minutes !== undefined) updateFields.estimated_minutes = data.updates.estimated_minutes;
+    if (data.updates.is_draft !== undefined) updateFields.is_draft = data.updates.is_draft;
+    if (data.updates.source !== undefined) updateFields.source = data.updates.source;
 
     const { data: updated, error } = await ctx.supabase
       .from('tasks')
@@ -248,7 +275,7 @@ export async function listTasks(
   try {
     let query = ctx.supabase
       .from('tasks')
-      .select('id, title, description, type, status, priority, assigned_to, due_date, created_date')
+      .select('id, title, description, type, status, priority, assigned_to, due_date, created_date, checklist, labels, source, is_draft, estimated_minutes')
       .order('due_date', { ascending: true, nullsFirst: false })
       .order('priority', { ascending: false })
       .limit(filters.limit || 20);
@@ -273,6 +300,18 @@ export async function listTasks(
         .neq('status', 'completed')
         .neq('status', 'cancelled')
         .lt('due_date', new Date().toISOString());
+    }
+    if (filters.is_draft !== undefined) {
+      query = query.eq('is_draft', filters.is_draft);
+    }
+    if (filters.source) {
+      query = query.eq('source', filters.source);
+    }
+    if (filters.company_id) {
+      query = query.eq('company_id', filters.company_id);
+    }
+    if (filters.labels && filters.labels.length > 0) {
+      query = query.overlaps('labels', filters.labels);
     }
 
     const { data: tasks, error } = await query;
@@ -482,6 +521,25 @@ export async function getOverdueTasks(
 }
 
 // ============================================================================
+// Triage Tasks (list draft tasks for review)
+// ============================================================================
+
+export async function triageTasks(
+  ctx: ActionContext,
+  data: { limit?: number } = {}
+): Promise<ActionResult> {
+  if (!ctx.userId) {
+    return errorResult('User ID not available.', 'No user context');
+  }
+
+  return listTasks(ctx, {
+    assigned_to: ctx.userId,
+    is_draft: true,
+    limit: data.limit || 20,
+  });
+}
+
+// ============================================================================
 // Tasks Action Router
 // ============================================================================
 
@@ -507,6 +565,8 @@ export async function executeTasksAction(
       return getMyTasks(ctx, data);
     case 'get_overdue_tasks':
       return getOverdueTasks(ctx, data);
+    case 'triage_tasks':
+      return triageTasks(ctx, data);
     default:
       return errorResult(`Unknown tasks action: ${action}`, 'Unknown action');
   }

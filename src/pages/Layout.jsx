@@ -410,7 +410,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'cyan',
       items: [
         { label: 'Projects', path: createPageUrl('Projects'), icon: FolderKanban },
-        { label: 'Tasks', path: createPageUrl('Tasks'), icon: ListTodo },
+        { label: 'Tasks', path: createPageUrl('Tasks'), icon: ListTodo, badge: stats.activeTasks },
       ]
     };
   }
@@ -1689,6 +1689,27 @@ export default function Layout({ children, currentPageName }) {
             }));
           } catch (e) {
             console.warn('Failed to load GROWTH stats:', e.message);
+          }
+        }
+
+        // Projects/Tasks stats
+        if (path.startsWith('/projects') || path.startsWith('/tasks')) {
+          try {
+            const currentUser = await db.auth.me();
+            if (!isMounted || !currentUser?.id) return;
+            const { count } = await supabase
+              .from('tasks')
+              .select('id', { count: 'exact', head: true })
+              .eq('assigned_to', currentUser.id)
+              .neq('status', 'completed')
+              .neq('status', 'cancelled');
+            if (!isMounted) return;
+            setSecondaryNavStats(prev => ({
+              ...prev,
+              activeTasks: count || 0,
+            }));
+          } catch (e) {
+            console.warn('Failed to load task stats:', e.message);
           }
         }
 

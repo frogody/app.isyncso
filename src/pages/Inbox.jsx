@@ -50,6 +50,7 @@ import WorkspaceSettingsModal from '@/components/inbox/WorkspaceSettingsModal';
 import KeyboardShortcutsModal from '@/components/inbox/KeyboardShortcutsModal';
 import DeleteChannelDialog from '@/components/inbox/DeleteChannelDialog';
 import ForwardMessageModal from '@/components/inbox/ForwardMessageModal';
+import TaskModal from '@/components/tasks/TaskModal';
 import BookmarksPanel from '@/components/inbox/BookmarksPanel';
 import ChannelSettingsPanel from '@/components/inbox/ChannelSettingsPanel';
 
@@ -196,6 +197,37 @@ export default function InboxPage() {
   // Forward message modal state
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [messageToForward, setMessageToForward] = useState(null);
+
+  // Create Task from message modal state
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [taskFromMessage, setTaskFromMessage] = useState(null);
+
+  const handleCreateTaskFromMessage = (message) => {
+    setTaskFromMessage({
+      title: (message.content || '').slice(0, 60),
+      description: message.content || '',
+      source: 'inbox',
+      source_ref_id: message.id,
+    });
+    setShowTaskModal(true);
+  };
+
+  const handleSaveTaskFromMessage = async (formData) => {
+    try {
+      const { error } = await supabase.from('tasks').insert({
+        ...formData,
+        source: 'inbox',
+        source_ref_id: taskFromMessage?.source_ref_id || null,
+        created_by: user?.id,
+        company_id: user?.company_id || null,
+      });
+      if (error) throw error;
+      toast.success('Task created from message');
+    } catch (err) {
+      console.error('Failed to create task:', err);
+      toast.error('Failed to create task');
+    }
+  };
 
   // Team members (still loaded once)
   const [teamMembers, setTeamMembers] = useState([]);
@@ -1309,6 +1341,7 @@ export default function InboxPage() {
               onSupport={handleDecisionSupport}
               onToggleComplete={handleToggleComplete}
               onAssign={handleAssignActionItem}
+              onCreateTask={handleCreateTaskFromMessage}
             />
 
             {/* Sentiment alert banner */}
@@ -1564,6 +1597,17 @@ export default function InboxPage() {
         channels={realtimeChannels}
         directMessages={resolvedDMs}
         currentUser={user}
+      />
+
+      {/* Create Task from Message */}
+      <TaskModal
+        open={showTaskModal}
+        onOpenChange={(open) => {
+          setShowTaskModal(open);
+          if (!open) setTaskFromMessage(null);
+        }}
+        task={taskFromMessage}
+        onSave={handleSaveTaskFromMessage}
       />
 
       {/* Universal Search (Cmd+K) */}

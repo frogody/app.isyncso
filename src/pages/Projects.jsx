@@ -46,6 +46,7 @@ import NotionEditor, { generateId as generateBlockId } from "@/components/shared
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { ProjectsPageTransition } from '@/components/projects/ui';
 import { cn } from '@/lib/utils';
+import ProjectTasksView from "@/components/tasks/ProjectTasksView";
 
 const PROJECT_STATUSES = [
   { id: "planning", label: "Planning", color: `bg-zinc-600`, textColor: `text-zinc-400`, bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30", icon: Target },
@@ -2552,66 +2553,11 @@ function ProjectDetailSheet({
             </TabsContent>
 
             <TabsContent value="tasks">
-              {/* Budget Progress */}
-              {project.budget && (
-                <div className={`mb-6 p-4 ${pt('bg-slate-50','bg-zinc-800/30')} rounded-xl`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`text-sm ${pt('text-slate-500','text-zinc-400')} flex items-center gap-2`}>
-                      <Wallet className="w-4 h-4" /> Budget Usage
-                    </span>
-                    <span className={`text-sm font-medium ${budgetUsed > 90 ? "text-cyan-300" : `${pt('text-slate-600','text-zinc-300')}`}`}>
-                      {budgetUsed}%
-                    </span>
-                  </div>
-                  <Progress value={budgetUsed} className={`h-2 ${pt('bg-slate-200','bg-zinc-800')}`} />
-                  <div className={`flex justify-between mt-2 text-xs ${pt('text-slate-400','text-zinc-500')}`}>
-                    <span>Spent: ${(parseFloat(project.spent) || 0).toLocaleString()}</span>
-                    <span>Budget: ${parseFloat(project.budget).toLocaleString()}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Task Lists by Status */}
-              <div className="space-y-6">
-                {/* To Do */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Circle className={`w-4 h-4 ${pt('text-slate-400','text-zinc-500')}`} />
-                    <span className={`text-sm font-medium ${pt('text-slate-500','text-zinc-400')}`}>To Do ({tasksByStatus.todo.length})</span>
-                  </div>
-                  <div className="space-y-2">
-                    {tasksByStatus.todo.map(task => (
-                      <TaskItem key={task.id} task={task} onUpdate={onUpdateTask} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* In Progress */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="w-4 h-4 text-cyan-400/80" />
-                    <span className={`text-sm font-medium ${pt('text-slate-500','text-zinc-400')}`}>In Progress ({tasksByStatus.in_progress.length})</span>
-                  </div>
-                  <div className="space-y-2">
-                    {tasksByStatus.in_progress.map(task => (
-                      <TaskItem key={task.id} task={task} onUpdate={onUpdateTask} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Completed */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                    <span className={`text-sm font-medium ${pt('text-slate-500','text-zinc-400')}`}>Completed ({tasksByStatus.completed.length})</span>
-                  </div>
-                  <div className="space-y-2">
-                    {tasksByStatus.completed.map(task => (
-                      <TaskItem key={task.id} task={task} onUpdate={onUpdateTask} />
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <ProjectTasksView
+                projectId={project.id}
+                projectName={project.name}
+                teamMembers={project.team_members || []}
+              />
             </TabsContent>
 
             <TabsContent value="overview" className="space-y-4">

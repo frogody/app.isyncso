@@ -1,3 +1,6 @@
+[functions.task-pixel]
+verify_jwt = false
+
 [functions.raise-chat]
 verify_jwt = false
 
