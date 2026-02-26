@@ -244,6 +244,8 @@ const PlatformAdminStructuralTests = lazy(() => import("./admin/AdminStructuralT
 
 const DemoExperience = lazy(() => import("./DemoExperience"));
 const RequestDemo = lazy(() => import("./RequestDemo"));
+const PrivacyPolicy = lazy(() => import("./PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./TermsOfService"));
 const B2BStoreBuilder = lazy(() => import("./B2BStoreBuilder"));
 const StoreDashboard = lazy(() => import("./StoreDashboard"));
 const ProductSalesAnalytics = lazy(() => import("./ProductSalesAnalytics"));
@@ -715,6 +717,19 @@ function PagesContent() {
         );
     }
 
+    // Legal pages - public, no auth required
+    const isLegalRoute = location.pathname === '/privacy' || location.pathname === '/terms';
+    if (isLegalRoute) {
+        return (
+            <Suspense fallback={<PageLoadingFallback />}>
+                <Routes>
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/terms" element={<TermsOfService />} />
+                </Routes>
+            </Suspense>
+        );
+    }
+
     // Public booking page - Calendly-style, no auth required
     const isBookingRoute = location.pathname.startsWith('/book');
     if (isBookingRoute) {
@@ -912,6 +927,7 @@ function PagesContent() {
       'reachcampaigndetail', 'reachseo', 'reachcalendar', 'reachcopystudio',
       'reachbrandvoice', 'reachsettings',
       'learningpaths',
+      'privacy', 'terms',
     ]);
     if (pathSegment && !knownPrefixes.has(pathSegment)) {
       return <NotFound />;
