@@ -1141,7 +1141,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             knockHook={syncKnock}
           />
         ) : (
-          <div className="flex items-center justify-center py-2 mb-1">
+          <div className="flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl">
             <img src="/isyncso-logo.png" alt="iSyncSO" className="w-9 h-9 object-contain" />
           </div>
         )}
