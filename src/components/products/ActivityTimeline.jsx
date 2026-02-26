@@ -227,7 +227,9 @@ function ActivityItem({ activity, t }) {
             )}
           </div>
           <span className={`text-xs ${t('text-slate-400', 'text-zinc-600')} whitespace-nowrap flex-shrink-0`}>
-            {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+            {activity.timestamp
+              ? formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })
+              : 'Unknown time'}
           </span>
         </div>
 
@@ -244,7 +246,7 @@ export default function ActivityTimeline({
   className
 }) {
   const { t } = useTheme();
-  const displayActivities = activities.slice(0, maxItems);
+  const displayActivities = (activities || []).slice(0, maxItems);
 
   if (displayActivities.length === 0 && showEmpty) {
     return (
@@ -282,21 +284,27 @@ export function generateMockActivities(product, details) {
   const activities = [];
   const now = new Date();
 
-  if (product?.created_at) {
-    activities.push({
-      id: 'created',
-      type: 'created',
-      title: 'Product created',
-      timestamp: product.created_at,
-    });
-  }
+  activities.push({
+    id: 'created',
+    type: 'created',
+    title: 'Product created',
+    actionText: 'Product created',
+    timestamp: product?.created_at || now.toISOString(),
+    user: 'System',
+    avatarUrl: null,
+    changes: {},
+  });
 
   if (product?.updated_at && product.updated_at !== product.created_at) {
     activities.push({
       id: 'updated',
       type: 'updated',
       title: 'Product updated',
+      actionText: 'Product updated',
       timestamp: product.updated_at,
+      user: 'System',
+      avatarUrl: null,
+      changes: {},
     });
   }
 
@@ -305,7 +313,11 @@ export function generateMockActivities(product, details) {
       id: 'published',
       type: 'published',
       title: 'Product published',
+      actionText: 'Product published',
       timestamp: product.published_at,
+      user: 'System',
+      avatarUrl: null,
+      changes: {},
     });
   }
 
@@ -314,8 +326,12 @@ export function generateMockActivities(product, details) {
       id: 'low_stock',
       type: 'low_stock',
       title: 'Low stock warning',
+      actionText: 'Low stock warning',
       description: `Only ${details.inventory.quantity} units remaining`,
       timestamp: new Date(now - 1000 * 60 * 60 * 24).toISOString(),
+      user: 'System',
+      avatarUrl: null,
+      changes: {},
     });
   }
 
