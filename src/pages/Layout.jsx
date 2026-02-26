@@ -744,24 +744,18 @@ const SIDEBAR_CONSTANTS = {
   ALIGNMENT_ADJUST: -24,   // Fine-tune adjustment to align items perfectly
 };
 
-// Core nav item indices (Dashboard, CRM, Projects, Products, Inbox)
-const CORE_NAV_INDICES = {
-  crm: 1,       // CRM is 2nd in core nav
-  projects: 2,  // Projects is 3rd in core nav
-  products: 3,  // Products is 4th in core nav
-};
-
 // Calculate offset for secondary sidebar based on config
-function calculateSecondaryNavOffset(config, visibleEngineIds = []) {
+// visibleCoreNavTitles: actual titles of visible core nav items in order (e.g. ['Dashboard', 'Projects', 'Products', 'B2B Store', 'Inbox'])
+function calculateSecondaryNavOffset(config, visibleEngineIds = [], visibleCoreNavTitles = []) {
   const { AVATAR_SECTION, NAV_PADDING, CORE_ITEM_HEIGHT, ITEM_GAP, DIVIDER_HEIGHT, ALIGNMENT_ADJUST } = SIDEBAR_CONSTANTS;
 
-  // Check if this is a core nav item (CRM, Products) or an engine app
-  const configTitle = config?.title?.toLowerCase();
-  const coreNavIndex = CORE_NAV_INDICES[configTitle];
+  const configTitle = config?.title;
 
-  if (coreNavIndex !== undefined) {
-    // Core nav item: align with that position
-    // Offset = avatar + nav padding + items above + adjustment
+  // Find the actual index of this item in the visible core nav
+  const coreNavIndex = visibleCoreNavTitles.indexOf(configTitle);
+
+  if (coreNavIndex !== -1) {
+    // Core nav item: align with its actual visible position
     return AVATAR_SECTION + NAV_PADDING + (coreNavIndex * (CORE_ITEM_HEIGHT + ITEM_GAP)) + ALIGNMENT_ADJUST;
   }
 
@@ -769,11 +763,11 @@ function calculateSecondaryNavOffset(config, visibleEngineIds = []) {
   const agentId = config?.agent;
   const engineIndex = agentId ? visibleEngineIds.indexOf(agentId) : 0;
 
-  // Count visible core items (5: Dashboard, CRM, Projects, Products, Inbox)
-  const CORE_ITEMS_COUNT = 5;
+  // Use actual visible core item count
+  const coreItemsCount = visibleCoreNavTitles.length;
 
   // Base offset: avatar + nav padding + core items (with gaps) + divider
-  const coreItemsTotal = (CORE_ITEMS_COUNT * CORE_ITEM_HEIGHT) + ((CORE_ITEMS_COUNT - 1) * ITEM_GAP);
+  const coreItemsTotal = (coreItemsCount * CORE_ITEM_HEIGHT) + ((coreItemsCount - 1) * ITEM_GAP);
   const baseOffset = AVATAR_SECTION + NAV_PADDING + coreItemsTotal + DIVIDER_HEIGHT;
 
   // Add offset for engine items before the active one + alignment adjustment
@@ -783,7 +777,7 @@ function calculateSecondaryNavOffset(config, visibleEngineIds = []) {
 }
 
 // Submenu Flyout Component - Floating panel that appears on click/hover
-function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibleEngineIds = [] }) {
+function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibleEngineIds = [], visibleCoreNavTitles = [] }) {
   // Get submenu identifier (agent for engine apps, title for core items like CRM/Products)
   const submenuId = config?.agent || config?.title?.toLowerCase();
 
@@ -794,7 +788,7 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibl
 
   // Calculate dynamic offset to align with the active primary nav item
   // Subtract header height (title + padding + border + container padding) so first nav item aligns
-  const baseOffset = calculateSecondaryNavOffset(config, visibleEngineIds);
+  const baseOffset = calculateSecondaryNavOffset(config, visibleEngineIds, visibleCoreNavTitles);
   const headerHeight = 44; // title (~14px) + pb-2 (8px) + mb-2 (8px) + p-3 container (12px) + border (1px)
   const navOffset = baseOffset - headerHeight;
 
@@ -997,7 +991,7 @@ function MobileSubNavStrip({ config, location }) {
 }
 
 // Reusable Sidebar Content - must be rendered inside PermissionProvider
-function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, onEngineItemsChange, inboxUnreadCount = 0 }) {
+function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, onEngineItemsChange, onCoreNavChange, inboxUnreadCount = 0 }) {
     const location = useLocation();
     const navigate = useNavigate();
   const [me, setMe] = React.useState(null);
@@ -1070,6 +1064,12 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       return true;
     });
   }, [hasPermission, permLoading, isAdmin, enabledApps]);
+
+  // Report visible core nav titles to parent for submenu positioning
+  const visibleCoreNavTitles = useMemo(() => filteredNavItems.map(i => i.title), [filteredNavItems]);
+  useEffect(() => {
+    onCoreNavChange?.(visibleCoreNavTitles);
+  }, [visibleCoreNavTitles, onCoreNavChange]);
 
   // Memoize filtered bottom nav items (Settings, Admin)
   const filteredBottomNavItems = useMemo(() => {
@@ -1578,6 +1578,7 @@ export default function Layout({ children, currentPageName }) {
   // Submenu flyout state
   const [openSubmenu, setOpenSubmenu] = useState(null); // engine id or null
   const [visibleEngineIds, setVisibleEngineIds] = useState([]);
+  const [visibleCoreNavTitles, setVisibleCoreNavTitles] = useState([]);
   const closeTimeoutRef = useRef(null);
 
   const handleSubmenuClose = useCallback(() => {
@@ -3559,6 +3560,7 @@ export default function Layout({ children, currentPageName }) {
               onSubmenuClose={handleSubmenuClose}
               onSubmenuEnter={handleSubmenuEnter}
               onEngineItemsChange={setVisibleEngineIds}
+              onCoreNavChange={setVisibleCoreNavTitles}
               inboxUnreadCount={inboxUnreadCount}
             />
             {/* Submenu Flyout - positioned absolutely relative to sidebar */}
@@ -3569,6 +3571,7 @@ export default function Layout({ children, currentPageName }) {
               onEnter={handleSubmenuEnter}
               location={location}
               visibleEngineIds={visibleEngineIds}
+              visibleCoreNavTitles={visibleCoreNavTitles}
             />
           </div>
 
