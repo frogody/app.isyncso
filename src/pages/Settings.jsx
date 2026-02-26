@@ -110,7 +110,9 @@ export default function Settings() {
     // Identity fields for smart invoice import
     vat_number: "",
     kvk_number: "",
-    legal_address: ""
+    legal_address: "",
+    hq_address: "",
+    hq_postal_code: ""
   });
 
   const [invitations, setInvitations] = useState([]);
@@ -203,7 +205,9 @@ export default function Settings() {
           // Identity fields
           vat_number: company.vat_number || "",
           kvk_number: company.kvk_number || "",
-          legal_address: company.legal_address || ""
+          legal_address: company.legal_address || "",
+          hq_address: company.hq_address || "",
+          hq_postal_code: company.hq_postal_code || ""
         });
 
         if (user.company_id) {
@@ -328,7 +332,11 @@ export default function Settings() {
         email: companyData.email,
         vat_number: companyData.vat_number,
         kvk_number: companyData.kvk_number,
-        legal_address: companyData.legal_address,
+        hq_address: companyData.hq_address,
+        hq_postal_code: companyData.hq_postal_code,
+        legal_address: companyData.hq_address && companyData.hq_postal_code && companyData.hq_city
+          ? `${companyData.hq_address}, ${companyData.hq_postal_code} ${companyData.hq_city}`
+          : companyData.legal_address,
       };
 
       if (company?.id) {
@@ -1282,9 +1290,21 @@ export default function Settings() {
                       </div>
                       <div>
                         <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
-                          <MapPin className="w-3 h-3" /> Legal Address
+                          <MapPin className="w-3 h-3" /> Street Address
                         </Label>
-                        <Input value={companyData.legal_address} onChange={(e) => setCompanyData({...companyData, legal_address: e.target.value})} placeholder="Keizersgracht 1, 1015 AA Amsterdam" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                        <Input value={companyData.hq_address} onChange={(e) => setCompanyData({...companyData, hq_address: e.target.value})} placeholder="Keizersgracht 1" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <MapPin className="w-3 h-3" /> Postal Code
+                        </Label>
+                        <Input value={companyData.hq_postal_code} onChange={(e) => setCompanyData({...companyData, hq_postal_code: e.target.value})} placeholder="1015 AA" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
+                      </div>
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs flex items-center gap-1`}>
+                          <Building2 className="w-3 h-3" /> City
+                        </Label>
+                        <Input value={companyData.hq_city} onChange={(e) => setCompanyData({...companyData, hq_city: e.target.value})} placeholder="Amsterdam" className={`mt-1 ${st('bg-white border-slate-200', 'bg-zinc-800/50 border-zinc-700')} h-9 text-sm`} />
                       </div>
                     </div>
 

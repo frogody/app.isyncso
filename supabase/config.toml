@@ -330,3 +330,6 @@ verify_jwt = false
 
 [functions.revolut-sync]
 verify_jwt = false
+
+[functions.finance-ai-accountant]
+verify_jwt = false

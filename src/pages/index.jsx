@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import Layout from "./Layout.jsx";
-import FinanceErrorWrapper from "@/components/finance/FinanceErrorWrapper";
+import FinancePageWrapper from "@/components/finance/FinancePageWrapper";
 import NotFound from "./NotFound";
 import Dashboard from "./Dashboard";
 import { UserProvider } from "@/components/context/UserContext";
@@ -1177,50 +1177,50 @@ function PagesContent() {
 
                 <Route path="/OAuthCallback" element={<OAuthCallback />} />
 
-                <Route path="/Finance" element={<FinanceErrorWrapper><FinanceDashboard /></FinanceErrorWrapper>} />
+                <Route path="/Finance" element={<FinancePageWrapper><FinanceDashboard /></FinancePageWrapper>} />
 
-                <Route path="/FinanceOverview" element={<FinanceErrorWrapper><FinanceDashboard /></FinanceErrorWrapper>} />
+                <Route path="/FinanceOverview" element={<FinancePageWrapper><FinanceDashboard /></FinancePageWrapper>} />
 
-                <Route path="/FinanceDashboard" element={<FinanceErrorWrapper><FinanceDashboard /></FinanceErrorWrapper>} />
+                <Route path="/FinanceDashboard" element={<FinancePageWrapper><FinanceDashboard /></FinancePageWrapper>} />
 
-                <Route path="/FinanceInvoices" element={<FinanceErrorWrapper><FinanceInvoices /></FinanceErrorWrapper>} />
+                <Route path="/FinanceInvoices" element={<FinancePageWrapper><FinanceInvoices /></FinancePageWrapper>} />
 
-                <Route path="/FinanceExpenses" element={<FinanceErrorWrapper><FinanceExpenses /></FinanceErrorWrapper>} />
-                <Route path="/FinanceExpensesConsolidated" element={<FinanceErrorWrapper><FinanceExpensesConsolidated /></FinanceErrorWrapper>} />
+                <Route path="/FinanceExpenses" element={<FinancePageWrapper><FinanceExpenses /></FinancePageWrapper>} />
+                <Route path="/FinanceExpensesConsolidated" element={<FinancePageWrapper><FinanceExpensesConsolidated /></FinancePageWrapper>} />
 
-                <Route path="/FinanceSubscriptions" element={<FinanceErrorWrapper><FinanceSubscriptions /></FinanceErrorWrapper>} />
+                <Route path="/FinanceSubscriptions" element={<FinancePageWrapper><FinanceSubscriptions /></FinancePageWrapper>} />
 
-                <Route path="/FinanceAccounts" element={<FinanceErrorWrapper><FinanceAccounts /></FinanceErrorWrapper>} />
+                <Route path="/FinanceAccounts" element={<FinancePageWrapper><FinanceAccounts /></FinancePageWrapper>} />
 
-                <Route path="/FinanceJournalEntries" element={<FinanceErrorWrapper><FinanceJournalEntries /></FinanceErrorWrapper>} />
+                <Route path="/FinanceJournalEntries" element={<FinancePageWrapper><FinanceJournalEntries /></FinancePageWrapper>} />
 
-                <Route path="/FinanceGeneralLedger" element={<FinanceErrorWrapper><FinanceGeneralLedger /></FinanceErrorWrapper>} />
-                <Route path="/FinanceLedger" element={<FinanceErrorWrapper><FinanceLedger /></FinanceErrorWrapper>} />
+                <Route path="/FinanceGeneralLedger" element={<FinancePageWrapper><FinanceGeneralLedger /></FinancePageWrapper>} />
+                <Route path="/FinanceLedger" element={<FinancePageWrapper><FinanceLedger /></FinancePageWrapper>} />
 
-                <Route path="/FinanceVendors" element={<FinanceErrorWrapper><FinanceVendors /></FinanceErrorWrapper>} />
+                <Route path="/FinanceVendors" element={<FinancePageWrapper><FinanceVendors /></FinancePageWrapper>} />
 
-                <Route path="/FinanceBills" element={<FinanceErrorWrapper><FinanceBills /></FinanceErrorWrapper>} />
+                <Route path="/FinanceBills" element={<FinancePageWrapper><FinanceBills /></FinancePageWrapper>} />
 
-                <Route path="/FinanceBillPayments" element={<FinanceErrorWrapper><FinanceBillPayments /></FinanceErrorWrapper>} />
-                <Route path="/FinancePayables" element={<FinanceErrorWrapper><FinancePayables /></FinanceErrorWrapper>} />
+                <Route path="/FinanceBillPayments" element={<FinancePageWrapper><FinanceBillPayments /></FinancePageWrapper>} />
+                <Route path="/FinancePayables" element={<FinancePageWrapper><FinancePayables /></FinancePageWrapper>} />
 
-                <Route path="/FinanceReportPL" element={<FinanceErrorWrapper><FinanceReportPL /></FinanceErrorWrapper>} />
+                <Route path="/FinanceReportPL" element={<FinancePageWrapper><FinanceReportPL /></FinancePageWrapper>} />
 
-                <Route path="/FinanceReportBS" element={<FinanceErrorWrapper><FinanceReportBS /></FinanceErrorWrapper>} />
+                <Route path="/FinanceReportBS" element={<FinancePageWrapper><FinanceReportBS /></FinancePageWrapper>} />
 
-                <Route path="/FinanceReportTB" element={<FinanceErrorWrapper><FinanceReportTB /></FinanceErrorWrapper>} />
+                <Route path="/FinanceReportTB" element={<FinancePageWrapper><FinanceReportTB /></FinancePageWrapper>} />
 
-                <Route path="/FinanceReportAging" element={<FinanceErrorWrapper><FinanceReportAging /></FinanceErrorWrapper>} />
-                <Route path="/FinanceReportCashFlow" element={<FinanceErrorWrapper><FinanceReportCashFlow /></FinanceErrorWrapper>} />
-                <Route path="/FinanceReports" element={<FinanceErrorWrapper><FinanceReports /></FinanceErrorWrapper>} />
-                <Route path="/FinanceTaxRates" element={<FinanceErrorWrapper><FinanceTaxRates /></FinanceErrorWrapper>} />
-                <Route path="/FinanceBTWAangifte" element={<FinanceErrorWrapper><FinanceBTWAangifte /></FinanceErrorWrapper>} />
-                <Route path="/FinanceRecurringInvoices" element={<FinanceErrorWrapper><FinanceRecurringInvoices /></FinanceErrorWrapper>} />
-                <Route path="/FinanceCreditNotes" element={<FinanceErrorWrapper><FinanceCreditNotes /></FinanceErrorWrapper>} />
-                <Route path="/FinanceBankAccounts" element={<FinanceErrorWrapper><FinanceBankAccounts /></FinanceErrorWrapper>} />
-                <Route path="/FinanceBankReconciliation" element={<FinanceErrorWrapper><FinanceBankReconciliation /></FinanceErrorWrapper>} />
-                <Route path="/FinanceBolcomPayouts" element={<FinanceErrorWrapper><FinanceBolcomPayouts /></FinanceErrorWrapper>} />
-                <Route path="/FinanceSmartImport" element={<FinanceErrorWrapper><FinanceSmartImport /></FinanceErrorWrapper>} />
+                <Route path="/FinanceReportAging" element={<FinancePageWrapper><FinanceReportAging /></FinancePageWrapper>} />
+                <Route path="/FinanceReportCashFlow" element={<FinancePageWrapper><FinanceReportCashFlow /></FinancePageWrapper>} />
+                <Route path="/FinanceReports" element={<FinancePageWrapper><FinanceReports /></FinancePageWrapper>} />
+                <Route path="/FinanceTaxRates" element={<FinancePageWrapper><FinanceTaxRates /></FinancePageWrapper>} />
+                <Route path="/FinanceBTWAangifte" element={<FinancePageWrapper><FinanceBTWAangifte /></FinancePageWrapper>} />
+                <Route path="/FinanceRecurringInvoices" element={<FinancePageWrapper><FinanceRecurringInvoices /></FinancePageWrapper>} />
+                <Route path="/FinanceCreditNotes" element={<FinancePageWrapper><FinanceCreditNotes /></FinancePageWrapper>} />
+                <Route path="/FinanceBankAccounts" element={<FinancePageWrapper><FinanceBankAccounts /></FinancePageWrapper>} />
+                <Route path="/FinanceBankReconciliation" element={<FinancePageWrapper><FinanceBankReconciliation /></FinancePageWrapper>} />
+                <Route path="/FinanceBolcomPayouts" element={<FinancePageWrapper><FinanceBolcomPayouts /></FinancePageWrapper>} />
+                <Route path="/FinanceSmartImport" element={<FinancePageWrapper><FinanceSmartImport /></FinancePageWrapper>} />
 
                 <Route path="/Raise" element={<Raise />} />
 
