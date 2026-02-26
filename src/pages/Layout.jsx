@@ -267,7 +267,8 @@ const navigationItems = [
     title: "B2B Store",
     url: createPageUrl("StoreDashboard"),
     icon: Store,
-    permission: "products.manage",
+    permission: null,
+    alwaysVisible: true,
     matchPatterns: ["/storedashboard", "/b2bstorebuilder", "/b2b"],
   },
   {
