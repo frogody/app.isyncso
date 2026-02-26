@@ -254,7 +254,7 @@ export default function StoreDashboard() {
   const organizationId = user?.organization_id || user?.company_id;
 
   const [activeView, setActiveView] = useState(searchParams.get('view') || 'b2b');
-  const [selectedPeriod, setSelectedPeriod] = useState('30d');
+  const [selectedPeriod, setSelectedPeriod] = useState('7d');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -306,11 +306,15 @@ export default function StoreDashboard() {
     try {
       const now = new Date();
       const periodStart = (() => {
+        if (selectedPeriod === '1d') {
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          return today;
+        }
         if (selectedPeriod === '7d') return new Date(now.getTime() - 7 * 86400000);
         if (selectedPeriod === '30d') return new Date(now.getTime() - 30 * 86400000);
         if (selectedPeriod === '90d') return new Date(now.getTime() - 90 * 86400000);
         if (selectedPeriod === 'all') return new Date('2020-01-01');
-        return new Date(now.getTime() - 30 * 86400000);
+        return new Date(now.getTime() - 7 * 86400000);
       })().toISOString();
 
       const safe = (promise, label = '') =>
@@ -515,10 +519,8 @@ export default function StoreDashboard() {
           needsMore = false;
         }
       }
-      // Refetch dashboard data to show new orders
-      if (totalSynced > 0) {
-        await fetchData();
-      }
+      // Always refetch dashboard data after sync to show latest state
+      await fetchData();
     } catch (err) {
       console.error('[StoreDashboard] bol.com sync error:', err);
       setSyncResult({ error: err.message });
@@ -557,12 +559,14 @@ export default function StoreDashboard() {
   const quickActions = QUICK_ACTIONS[activeView] || QUICK_ACTIONS.all;
 
   const PERIOD_OPTIONS = [
+    { key: '1d', label: 'Today' },
     { key: '7d', label: '7d' },
     { key: '30d', label: '30d' },
     { key: '90d', label: '90d' },
     { key: 'all', label: 'All' },
   ];
-  const periodLabel = selectedPeriod === '7d' ? 'Last 7 Days'
+  const periodLabel = selectedPeriod === '1d' ? 'Today'
+    : selectedPeriod === '7d' ? 'Last 7 Days'
     : selectedPeriod === '30d' ? 'Last 30 Days'
     : selectedPeriod === '90d' ? 'Last 90 Days'
     : 'All Time';
@@ -644,11 +648,19 @@ export default function StoreDashboard() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={fetchData}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-700/50 bg-zinc-800/30 text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-all text-sm font-medium"
+              disabled={syncing}
+              onClick={async () => {
+                // When on bolcom or all-channels view, trigger actual API sync first
+                if ((activeView === 'bolcom' || activeView === 'all') && channelData.bolcom.connected) {
+                  await syncBolcomOrders();
+                } else {
+                  await fetchData();
+                }
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-zinc-700/50 bg-zinc-800/30 text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
+              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing...' : 'Refresh'}
             </motion.button>
           </div>
         </motion.div>
