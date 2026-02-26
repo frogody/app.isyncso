@@ -385,7 +385,7 @@ export default function Dashboard() {
         teamB2bResult,
         teamProductsResult
       ] = await Promise.allSettled([
-        db.entities.User?.list?.({ limit: 100 }).catch(() => []),
+        supabase.from('users').select('id, full_name, email, company_id, job_title, created_at, last_active_at, avatar_url, avatar_color').eq('company_id', user.company_id).limit(100).then(r => r.data || []).catch(() => []),
         db.entities.UserProgress?.list?.({ limit: 500 }).catch(() => []),
         db.entities.ActivitySession?.list?.({ limit: 500 }).catch(() => []),
         db.entities.GrowthOpportunity?.list?.({ limit: 100 }).catch(() => []),
@@ -406,8 +406,8 @@ export default function Dashboard() {
       const allInvoices = invoicesResult.status === 'fulfilled' ? invoicesResult.value : [];
       const allExpenses = expensesResult.status === 'fulfilled' ? expensesResult.value : [];
 
-      // Filter to company users
-      const teamMembers = allUsers.filter(u => u.company_id === user.company_id);
+      // Users already filtered by company_id in the query
+      const teamMembers = allUsers;
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       // Team overview
