@@ -326,7 +326,7 @@ export default function CreateLibrary({ embedded = false }) {
 
   return (
     <Wrapper>
-      <div className={`${embedded ? '' : 'min-h-screen'} ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+      <div className={`${embedded ? '' : 'min-h-screen'} ${ct('bg-slate-50', 'bg-black')}`}>
         <div className="w-full px-4 lg:px-6 py-6 space-y-5">
 
           {/* Header Row */}

@@ -709,7 +709,7 @@ export default function CreateVideos({ embedded = false, defaultMode = 'ai' }) {
 
   return (
     <Wrapper>
-      <div className={embedded ? '' : `min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+      <div className={embedded ? '' : `min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
         <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ───── 1. Back Nav + Page Header ───── */}

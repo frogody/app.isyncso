@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Maximize2,
 } from 'lucide-react';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function ImageLightbox({
   images = [],
@@ -19,6 +20,7 @@ export default function ImageLightbox({
   onRegenerate,
   onDownload,
 }) {
+  const { ct } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });

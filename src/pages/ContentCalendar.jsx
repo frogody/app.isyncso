@@ -169,7 +169,7 @@ export default function ContentCalendar() {
 
   return (
     <CreatePageTransition>
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
         <div className="w-full px-4 lg:px-6 py-4 space-y-4">
 
           {/* Header Row */}

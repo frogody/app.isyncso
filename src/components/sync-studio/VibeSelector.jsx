@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export const VIBES = {
   clean_studio: {
@@ -88,6 +89,7 @@ export const VIBE_KEYS = Object.keys(VIBES);
 
 function VibeCard({ vibeKey, vibe, isActive, onSelect, compact }) {
   const [imgFailed, setImgFailed] = useState(false);
+  const { ct } = useTheme();
   const hasImage = vibe.example_image && !imgFailed;
 
   return (
@@ -97,8 +99,8 @@ function VibeCard({ vibeKey, vibe, isActive, onSelect, compact }) {
       onClick={() => onSelect(isActive ? null : vibeKey)}
       className={`relative text-left rounded-xl overflow-hidden transition-all duration-200 ${
         isActive
-          ? 'ring-2 ring-yellow-500 ring-offset-2 ring-offset-black'
-          : 'ring-1 ring-zinc-800 hover:ring-zinc-600'
+          ? `ring-2 ring-yellow-500 ring-offset-2 ${ct('ring-offset-white', 'ring-offset-black')}`
+          : `ring-1 ${ct('ring-slate-200 hover:ring-slate-300', 'ring-zinc-800 hover:ring-zinc-600')}`
       }`}
     >
       {/* Image / Gradient preview area */}

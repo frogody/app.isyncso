@@ -35,6 +35,7 @@ import {
   RotateCw,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 // StudioNav removed — sidebar handles navigation
 
@@ -915,6 +916,7 @@ function ConfirmationModal({ open, onClose, stats, plans, onConfirm, isStarting 
 export default function SyncStudioDashboard() {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { ct } = useTheme();
 
   // Data
   const [plans, setPlans] = useState([]);
@@ -1325,7 +1327,7 @@ export default function SyncStudioDashboard() {
   // -- Loading state --
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -1345,7 +1347,7 @@ export default function SyncStudioDashboard() {
   // -- Empty state --
   if (plans.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center p-4`}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -1374,11 +1376,11 @@ export default function SyncStudioDashboard() {
   const allApproved = stats.percentage === 100;
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       {/* ============================================================ */}
       {/* SUB-HEADER                                                    */}
       {/* ============================================================ */}
-      <div className="bg-black/40 border-b border-zinc-800/40">
+      <div className={ct('bg-white/80 border-b border-slate-200/60', 'bg-black/40 border-b border-zinc-800/40')}>
         <div className="max-w-4xl mx-auto px-4 py-3">
           {/* Title + back */}
           <div className="flex items-center gap-3 mb-3">

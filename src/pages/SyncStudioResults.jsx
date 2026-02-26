@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 import { ImageLightbox, CompareSlider, PlatformExportDialog } from '@/components/sync-studio';
 // StudioNav removed — sidebar handles navigation
@@ -89,6 +90,7 @@ function showToast(message, type = 'info') {
 
 export default function SyncStudioResults() {
   const { user } = useUser();
+  const { ct } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('jobId');
@@ -547,7 +549,7 @@ export default function SyncStudioResults() {
 
   if (!jobId) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center p-4`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -556,7 +558,7 @@ export default function SyncStudioResults() {
           <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center mx-auto mb-5">
             <Images className="w-7 h-7 text-zinc-500" />
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">No Results Found</h2>
+          <h2 className={`text-xl font-semibold ${ct('text-slate-900', 'text-white')} mb-2`}>No Results Found</h2>
           <p className="text-sm text-zinc-400 mb-6">
             No job ID was provided. Please start from the dashboard.
           </p>
@@ -577,7 +579,7 @@ export default function SyncStudioResults() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6 lg:px-10">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} p-6 lg:px-10`}>
         <div className="w-full space-y-6">
           {/* Top bar skeleton */}
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 animate-pulse">
@@ -611,7 +613,7 @@ export default function SyncStudioResults() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center p-6`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -645,7 +647,7 @@ export default function SyncStudioResults() {
 
   if (!loading && generatedImages.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center p-6`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -674,7 +676,7 @@ export default function SyncStudioResults() {
   // -------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       <div className="w-full p-6 lg:px-10 space-y-6">
 
         {/* Lightbox */}

@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useUser } from '@/components/context/UserContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import {
@@ -125,6 +126,7 @@ function EqualizerBars({ playing, size = 'sm' }) {
 // ---------------------------------------------------------------------------
 
 function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
+  const { ct } = useTheme();
   const isPreset = voice.type === 'preset';
   const isCustom = voice.type === 'custom';
 
@@ -133,7 +135,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}
-      className="group relative bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5 flex flex-col gap-4 hover:border-zinc-700/60 transition-colors"
+      className={`group relative ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} rounded-[20px] p-5 flex flex-col gap-4 hover:border-zinc-700/60 transition-colors`}
     >
       {/* Header: avatar + name + badge */}
       <div className="flex items-center gap-3">
@@ -144,13 +146,13 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
           {voice.name.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-white truncate">{voice.name}</h3>
-          <p className="text-xs text-zinc-500">{voice.gender || 'Custom'}</p>
+          <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')} truncate`}>{voice.name}</h3>
+          <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>{voice.gender || 'Custom'}</p>
         </div>
         <span
           className={`px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide uppercase ${
             isPreset
-              ? 'bg-zinc-800 text-zinc-400 border border-zinc-700/50'
+              ? `${ct('bg-slate-200', 'bg-zinc-800')} ${ct('text-slate-500', 'text-zinc-400')} border ${ct('border-slate-300', 'border-zinc-700/50')}`
               : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
           }`}
         >
@@ -160,7 +162,7 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
 
       {/* Description (custom voices only) */}
       {isCustom && voice.description && (
-        <p className="text-xs text-zinc-500 line-clamp-2">{voice.description}</p>
+        <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} line-clamp-2`}>{voice.description}</p>
       )}
 
       {/* Player row */}
@@ -170,13 +172,13 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
           className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
             isPlaying
               ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-              : 'bg-zinc-800/80 text-zinc-400 hover:text-white hover:bg-zinc-700/80 border border-zinc-700/40'
+              : `${ct('bg-slate-200', 'bg-zinc-800/80')} ${ct('text-slate-500', 'text-zinc-400')} hover:text-white hover:bg-zinc-700/80 border ${ct('border-slate-300', 'border-zinc-700/40')}`
           }`}
         >
           {isPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
         </button>
 
-        <div className="flex-1 h-1 rounded-full bg-zinc-800 overflow-hidden">
+        <div className={`flex-1 h-1 rounded-full ${ct('bg-slate-200', 'bg-zinc-800')} overflow-hidden`}>
           {isPlaying && (
             <motion.div
               className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-full"
@@ -207,25 +209,26 @@ function VoiceCard({ voice, isPlaying, onPlay, onStop, onUseInStudio, index }) {
 // ---------------------------------------------------------------------------
 
 function UploadedFileCard({ file, onRemove }) {
+  const { ct } = useTheme();
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="flex items-center gap-3 bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-3"
+      className={`flex items-center gap-3 ${ct('bg-slate-100', 'bg-zinc-800/50')} border ${ct('border-slate-300', 'border-zinc-700/40')} rounded-xl px-4 py-3`}
     >
-      <div className="w-8 h-8 rounded-lg bg-pink-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
+      <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
         <FileAudio className="w-4 h-4 text-yellow-400" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-white truncate">{file.file.name}</p>
-        <p className="text-[10px] text-zinc-500">
+        <p className={`text-xs font-medium ${ct('text-slate-900', 'text-white')} truncate`}>{file.file.name}</p>
+        <p className={`text-[10px] ${ct('text-slate-500', 'text-zinc-500')}`}>
           {formatFileSize(file.file.size)} &middot; {formatDuration(file.duration)}
         </p>
       </div>
       <button
         onClick={onRemove}
-        className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+        className={`p-1.5 rounded-lg ${ct('text-slate-500', 'text-zinc-500')} hover:text-red-400 hover:bg-red-500/10 transition-colors`}
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -238,16 +241,17 @@ function UploadedFileCard({ file, onRemove }) {
 // ---------------------------------------------------------------------------
 
 function DurationProgress({ current, required }) {
+  const { ct } = useTheme();
   const pct = Math.min((current / required) * 100, 100);
   const isMet = current >= required;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-zinc-400">
-          Total audio: <span className="text-white font-medium">{formatDuration(current)}</span>
+        <span className={`text-xs ${ct('text-slate-500', 'text-zinc-400')}`}>
+          Total audio: <span className={`${ct('text-slate-900', 'text-white')} font-medium`}>{formatDuration(current)}</span>
         </span>
-        <span className={`text-xs font-medium ${isMet ? 'text-green-400' : 'text-zinc-500'}`}>
+        <span className={`text-xs font-medium ${isMet ? 'text-yellow-400' : ct('text-slate-500', 'text-zinc-500')}`}>
           {isMet ? (
             <span className="flex items-center gap-1">
               <Check className="w-3 h-3" /> Minimum met
@@ -257,9 +261,9 @@ function DurationProgress({ current, required }) {
           )}
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+      <div className={`h-1.5 rounded-full ${ct('bg-slate-200', 'bg-zinc-800')} overflow-hidden`}>
         <motion.div
-          className={`h-full rounded-full ${isMet ? 'bg-green-500' : 'bg-pink-500'}`}
+          className={`h-full rounded-full ${isMet ? 'bg-yellow-500' : 'bg-yellow-500'}`}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -407,8 +411,10 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
     onCloneSuccess(newVoice);
   }, [voiceName, description, uploadedFiles, meetsMinimum, totalDuration, onCloneSuccess]);
 
+  const { ct } = useTheme();
+
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden">
+    <div className={`${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} rounded-[20px] overflow-hidden`}>
       {/* Header toggle */}
       <button
         onClick={() => setExpanded((v) => !v)}
@@ -419,11 +425,11 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
             <Wand2 className="w-5 h-5 text-yellow-400" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Create Voice Clone</h2>
-            <p className="text-xs text-zinc-500">Upload audio samples to clone any voice <span className="text-amber-400/80">(Beta)</span></p>
+            <h2 className={`text-base font-semibold ${ct('text-slate-900', 'text-white')}`}>Create Voice Clone</h2>
+            <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Upload audio samples to clone any voice <span className="text-amber-400/80">(Beta)</span></p>
           </div>
         </div>
-        <div className="p-2 rounded-lg text-zinc-500 group-hover:text-zinc-300 transition-colors">
+        <div className={`p-2 rounded-lg ${ct('text-slate-500', 'text-zinc-500')} group-hover:text-zinc-300 transition-colors`}>
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
@@ -438,11 +444,11 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <div className="px-6 pb-6 space-y-5 border-t border-zinc-800/40 pt-5">
+            <div className={`px-6 pb-6 space-y-5 border-t ${ct('border-slate-200', 'border-zinc-800/40')} pt-5`}>
               {/* Step 1: Name */}
               <div className="space-y-2">
-                <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
+                <label className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} flex items-center gap-1.5`}>
+                  <span className="w-5 h-5 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
                     1
                   </span>
                   Name your voice
@@ -452,14 +458,14 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                   value={voiceName}
                   onChange={(e) => setVoiceName(e.target.value)}
                   placeholder="e.g. My Voice, Sarah's Clone, Brand Narrator"
-                  className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors"
+                  className={`w-full ${ct('bg-slate-100', 'bg-zinc-800/50')} border ${ct('border-slate-300', 'border-zinc-700/40')} rounded-xl px-4 py-2.5 text-sm ${ct('text-slate-900', 'text-white')} ${ct('placeholder:text-slate-400', 'placeholder:text-zinc-600')} focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors`}
                 />
               </div>
 
               {/* Step 2: Upload samples */}
               <div className="space-y-3">
-                <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
+                <label className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} flex items-center gap-1.5`}>
+                  <span className="w-5 h-5 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
                     2
                   </span>
                   Upload voice samples
@@ -474,7 +480,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                   className={`relative cursor-pointer border-2 border-dashed rounded-xl px-6 py-8 text-center transition-colors ${
                     isDragging
                       ? 'border-yellow-500/60 bg-yellow-500/5'
-                      : 'border-zinc-700/50 hover:border-yellow-500/40 bg-zinc-800/20'
+                      : `${ct('border-slate-300', 'border-zinc-700/50')} hover:border-yellow-500/40 ${ct('bg-slate-100/50', 'bg-zinc-800/20')}`
                   }`}
                 >
                   <input
@@ -489,19 +495,19 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
                         isDragging
-                          ? 'bg-pink-500/20 border border-yellow-500/30'
-                          : 'bg-zinc-800/60 border border-zinc-700/40'
+                          ? 'bg-yellow-500/20 border border-yellow-500/30'
+                          : `${ct('bg-slate-200', 'bg-zinc-800/60')} border ${ct('border-slate-300', 'border-zinc-700/40')}`
                       }`}
                     >
                       <Upload
-                        className={`w-5 h-5 transition-colors ${isDragging ? 'text-yellow-400' : 'text-zinc-500'}`}
+                        className={`w-5 h-5 transition-colors ${isDragging ? 'text-yellow-400' : ct('text-slate-500', 'text-zinc-500')}`}
                       />
                     </div>
                     <div>
-                      <p className="text-sm text-zinc-300 font-medium">
+                      <p className={`text-sm ${ct('text-slate-600', 'text-zinc-300')} font-medium`}>
                         {isDragging ? 'Drop files here' : 'Drag & drop audio files'}
                       </p>
-                      <p className="text-xs text-zinc-600 mt-0.5">MP3, WAV, or M4A &middot; Up to 50 MB per file</p>
+                      <p className={`text-xs ${ct('text-slate-400', 'text-zinc-600')} mt-0.5`}>MP3, WAV, or M4A &middot; Up to 50 MB per file</p>
                     </div>
                   </div>
                 </div>
@@ -529,19 +535,19 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
 
               {/* Step 3: Description (optional) */}
               <div className="space-y-2">
-                <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-full bg-pink-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
+                <label className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')} flex items-center gap-1.5`}>
+                  <span className="w-5 h-5 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-[10px] font-bold text-yellow-400">
                     3
                   </span>
                   Description
-                  <span className="text-zinc-600 font-normal">(optional)</span>
+                  <span className={`${ct('text-slate-400', 'text-zinc-600')} font-normal`}>(optional)</span>
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe the voice characteristics, accent, tone..."
                   rows={3}
-                  className="w-full bg-zinc-800/50 border border-zinc-700/40 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors resize-none"
+                  className={`w-full ${ct('bg-slate-100', 'bg-zinc-800/50')} border ${ct('border-slate-300', 'border-zinc-700/40')} rounded-xl px-4 py-2.5 text-sm ${ct('text-slate-900', 'text-white')} ${ct('placeholder:text-slate-400', 'placeholder:text-zinc-600')} focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors resize-none`}
                 />
               </div>
 
@@ -551,7 +557,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
-                      <span className="text-sm text-zinc-300">
+                      <span className={`text-sm ${ct('text-slate-600', 'text-zinc-300')}`}>
                         {cloneProgress < 15
                           ? 'Uploading audio samples...'
                           : cloneProgress < 40
@@ -565,7 +571,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                     </div>
                     <span className="text-xs font-medium text-yellow-400">{cloneProgress}%</span>
                   </div>
-                  <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                  <div className={`h-2 rounded-full ${ct('bg-slate-200', 'bg-zinc-800')} overflow-hidden`}>
                     <motion.div
                       className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-full"
                       animate={{ width: `${cloneProgress}%` }}
@@ -577,7 +583,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
                 <button
                   onClick={handleClone}
                   disabled={!voiceName.trim() || !meetsMinimum}
-                  className="w-full py-3 px-6 rounded-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-black font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+                  className={`w-full py-3 px-6 rounded-full bg-yellow-500 hover:bg-yellow-400 ${ct('disabled:bg-slate-200 disabled:text-slate-400', 'disabled:bg-zinc-800 disabled:text-zinc-600')} disabled:cursor-not-allowed text-black font-semibold text-sm transition-colors flex items-center justify-center gap-2`}
                 >
                   <Sparkles className="w-4 h-4" />
                   Clone Voice
@@ -597,6 +603,7 @@ function CreateVoiceClonePanel({ onCloneSuccess }) {
 
 export default function StudioVoice() {
   const { user } = useUser();
+  const { ct } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all'); // 'all' | 'preset' | 'custom'
   const [playingVoiceId, setPlayingVoiceId] = useState(null);
@@ -736,7 +743,7 @@ export default function StudioVoice() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       <div className="w-full px-4 lg:px-6 py-6 space-y-5">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -745,8 +752,8 @@ export default function StudioVoice() {
               <AudioLines className="w-5 h-5 text-yellow-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Voice Library</h1>
-              <p className="text-sm text-zinc-500 mt-0.5">
+              <h1 className={`text-xl font-bold ${ct('text-slate-900', 'text-white')}`}>Voice Library</h1>
+              <p className={`text-sm ${ct('text-slate-500', 'text-zinc-500')} mt-0.5`}>
                 {allVoices.length} voices available &middot; {presetCount} preset, {customCount} cloned
               </p>
             </div>
@@ -759,7 +766,7 @@ export default function StudioVoice() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-yellow-500/20"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20"
               >
                 <EqualizerBars playing={true} size="sm" />
                 <span className="text-xs text-yellow-300 font-medium">
@@ -773,25 +780,25 @@ export default function StudioVoice() {
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+            <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${ct('text-slate-400', 'text-zinc-500')} pointer-events-none`} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search voices by name, gender, or description..."
-              className="w-full bg-zinc-900/50 border border-zinc-800/60 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500/30 focus:ring-1 focus:ring-yellow-500/20 transition-colors"
+              className={`w-full ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} rounded-xl pl-10 pr-4 py-2.5 text-sm ${ct('text-slate-900', 'text-white')} ${ct('placeholder:text-slate-400', 'placeholder:text-zinc-600')} focus:outline-none focus:border-yellow-500/30 focus:ring-1 focus:ring-yellow-500/20 transition-colors`}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded text-zinc-500 hover:text-zinc-300"
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded ${ct('text-slate-500', 'text-zinc-500')} hover:text-zinc-300`}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          <div className="flex gap-1.5 bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-1">
+          <div className={`flex gap-1.5 ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} rounded-xl p-1`}>
             {[
               { key: 'all', label: 'All' },
               { key: 'preset', label: `Preset (${presetCount})` },
@@ -802,8 +809,8 @@ export default function StudioVoice() {
                 onClick={() => setFilterType(tab.key)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   filterType === tab.key
-                    ? 'bg-zinc-800 text-white'
-                    : 'text-zinc-500 hover:text-zinc-300'
+                    ? `${ct('bg-slate-200', 'bg-zinc-800')} ${ct('text-slate-900', 'text-white')}`
+                    : `${ct('text-slate-500', 'text-zinc-500')} hover:text-zinc-300`
                 }`}
               >
                 {tab.label}
@@ -829,11 +836,11 @@ export default function StudioVoice() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 rounded-[20px] bg-zinc-800/50 border border-zinc-700/40 flex items-center justify-center mb-4">
-              <Volume2 className="w-6 h-6 text-zinc-600" />
+            <div className={`w-14 h-14 rounded-[20px] ${ct('bg-slate-100', 'bg-zinc-800/50')} border ${ct('border-slate-300', 'border-zinc-700/40')} flex items-center justify-center mb-4`}>
+              <Volume2 className={`w-6 h-6 ${ct('text-slate-400', 'text-zinc-600')}`} />
             </div>
-            <p className="text-sm text-zinc-400 font-medium mb-1">No voices found</p>
-            <p className="text-xs text-zinc-600">
+            <p className={`text-sm ${ct('text-slate-500', 'text-zinc-400')} font-medium mb-1`}>No voices found</p>
+            <p className={`text-xs ${ct('text-slate-400', 'text-zinc-600')}`}>
               {searchQuery
                 ? 'Try a different search term.'
                 : filterType === 'custom'
@@ -845,12 +852,12 @@ export default function StudioVoice() {
 
         {/* Divider */}
         <div className="flex items-center gap-4">
-          <div className="flex-1 h-px bg-zinc-800/60" />
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`flex-1 h-px ${ct('bg-slate-200', 'bg-zinc-800/60')}`} />
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')}`}>
             <Plus className="w-3 h-3 text-yellow-400" />
-            <span className="text-xs text-zinc-500 font-medium">Create New</span>
+            <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} font-medium`}>Create New</span>
           </div>
-          <div className="flex-1 h-px bg-zinc-800/60" />
+          <div className={`flex-1 h-px ${ct('bg-slate-200', 'bg-zinc-800/60')}`} />
         </div>
 
         {/* Create Voice Clone Panel */}

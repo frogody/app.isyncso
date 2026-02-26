@@ -19,6 +19,7 @@ import {
   History,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 // StudioNav removed — sidebar handles navigation
 
@@ -72,6 +73,7 @@ function JobStatusBadge({ status }) {
 
 export default function SyncStudioReturn() {
   const { user } = useUser();
+  const { ct } = useTheme();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -118,7 +120,7 @@ export default function SyncStudioReturn() {
   // -- Loading --
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
             <Camera className="w-7 h-7 text-yellow-400" />
@@ -133,7 +135,7 @@ export default function SyncStudioReturn() {
   // -- Empty --
   if (jobs.length === 0 && productCount === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center p-4`}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -142,7 +144,7 @@ export default function SyncStudioReturn() {
           <div className="w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mx-auto mb-5">
             <Camera className="w-7 h-7 text-yellow-400" />
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">Welcome to Sync Studio</h2>
+          <h2 className={`text-xl font-semibold ${ct('text-slate-900', 'text-white')} mb-2`}>Welcome to Sync Studio</h2>
           <p className="text-sm text-zinc-400 mb-6">
             Get started by connecting your catalog and running your first AI photoshoot.
           </p>
@@ -160,9 +162,9 @@ export default function SyncStudioReturn() {
 
   // -- Main --
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       {/* ─── Stats Strip ───────────────────────────────────────── */}
-      <div className="bg-zinc-900/40 border-b border-zinc-800/40">
+      <div className={ct('bg-white/80 border-b border-slate-200/60', 'bg-zinc-900/40 border-b border-zinc-800/40')}>
         <div className="w-full px-4 lg:px-8 py-3 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3 text-sm">
             <span className="text-zinc-400">

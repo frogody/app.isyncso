@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Loader2, Monitor, Smartphone, ShoppingBag, Settings2 } from 'lucide-react';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const PLATFORMS = [
   {
@@ -103,6 +104,7 @@ async function resizeAndDownload(imageUrl, targetWidth, targetHeight, format, qu
 }
 
 export default function PlatformExportDialog({ open, onClose, images = [] }) {
+  const { ct } = useTheme();
   const [selected, setSelected] = useState('bolcom');
   const [customWidth, setCustomWidth] = useState(1024);
   const [customHeight, setCustomHeight] = useState(1024);
@@ -151,19 +153,19 @@ export default function PlatformExportDialog({ open, onClose, images = [] }) {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-zinc-900 border border-zinc-800/60 rounded-2xl max-w-lg w-full shadow-2xl"
+          className={`${ct('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800/60')} border rounded-2xl max-w-lg w-full shadow-2xl`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/50">
+          <div className={`flex items-center justify-between px-5 py-4 border-b ${ct('border-slate-200', 'border-zinc-800/50')}`}>
             <div>
-              <h3 className="text-base font-semibold text-white">Export Images</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <h3 className={`text-base font-semibold ${ct('text-slate-900', 'text-white')}`}>Export Images</h3>
+              <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} mt-0.5`}>
                 {images.length} image{images.length !== 1 ? 's' : ''} selected
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
+              className={`p-1.5 rounded-lg ${ct('text-slate-400 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-500 hover:text-white hover:bg-zinc-800')} transition-colors`}
             >
               <X className="w-4 h-4" />
             </button>
@@ -171,7 +173,7 @@ export default function PlatformExportDialog({ open, onClose, images = [] }) {
 
           {/* Platform grid */}
           <div className="px-5 py-4 space-y-3">
-            <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+            <label className={`text-[11px] font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider`}>
               Platform Preset
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -184,7 +186,7 @@ export default function PlatformExportDialog({ open, onClose, images = [] }) {
                     className={`text-left rounded-xl p-3 transition-all ${
                       selected === p.key
                         ? 'bg-yellow-500/10 border border-yellow-500/30 ring-1 ring-yellow-500/20'
-                        : 'bg-zinc-800/40 border border-zinc-700/30 hover:border-zinc-600'
+                        : `${ct('bg-slate-50 border-slate-200', 'bg-zinc-800/40 border-zinc-700/30')} hover:border-zinc-600`
                     }`}
                   >
                     <Icon
@@ -219,7 +221,7 @@ export default function PlatformExportDialog({ open, onClose, images = [] }) {
                     type="number"
                     value={customWidth}
                     onChange={(e) => setCustomWidth(Number(e.target.value) || 1024)}
-                    className="w-full bg-zinc-800/60 border border-zinc-700/40 rounded-lg px-3 py-1.5 text-sm text-white tabular-nums focus:outline-none focus:border-yellow-500/40"
+                    className={`w-full ${ct('bg-white border-slate-300', 'bg-zinc-800/60 border-zinc-700/40')} border rounded-lg px-3 py-1.5 text-sm ${ct('text-slate-900', 'text-white')} tabular-nums focus:outline-none focus:border-yellow-500/40`}
                   />
                 </div>
                 <span className="text-zinc-600 text-sm mt-4">&times;</span>
@@ -229,7 +231,7 @@ export default function PlatformExportDialog({ open, onClose, images = [] }) {
                     type="number"
                     value={customHeight}
                     onChange={(e) => setCustomHeight(Number(e.target.value) || 1024)}
-                    className="w-full bg-zinc-800/60 border border-zinc-700/40 rounded-lg px-3 py-1.5 text-sm text-white tabular-nums focus:outline-none focus:border-yellow-500/40"
+                    className={`w-full ${ct('bg-white border-slate-300', 'bg-zinc-800/60 border-zinc-700/40')} border rounded-lg px-3 py-1.5 text-sm ${ct('text-slate-900', 'text-white')} tabular-nums focus:outline-none focus:border-yellow-500/40`}
                   />
                 </div>
               </div>
@@ -242,11 +244,11 @@ export default function PlatformExportDialog({ open, onClose, images = [] }) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-zinc-800/50">
+          <div className={`flex items-center justify-end gap-3 px-5 py-4 border-t ${ct('border-slate-200', 'border-zinc-800/50')}`}>
             <button
               onClick={onClose}
               disabled={exporting}
-              className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors disabled:opacity-50"
+              className={`px-4 py-2 text-sm ${ct('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')} transition-colors disabled:opacity-50`}
             >
               Cancel
             </button>

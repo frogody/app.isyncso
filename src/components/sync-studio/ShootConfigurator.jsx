@@ -17,6 +17,7 @@ import {
   Layers,
   Shuffle,
 } from 'lucide-react';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import VibeSelector, { VIBES } from './VibeSelector';
 
 // --- Background presets ---
@@ -127,6 +128,7 @@ export default function ShootConfigurator({
   sampleShot,
   sampleProduct,
 }) {
+  const { ct } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -152,19 +154,19 @@ export default function ShootConfigurator({
   );
 
   return (
-    <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl overflow-hidden">
+    <div className={`${ct('bg-white border-slate-200', 'bg-zinc-900/60 border-zinc-800/50')} border rounded-2xl overflow-hidden`}>
       {/* Collapsed summary / toggle */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-zinc-800/30 transition-colors"
+        className={`w-full flex items-center justify-between px-5 py-3.5 ${ct('hover:bg-slate-50', 'hover:bg-zinc-800/30')} transition-colors`}
       >
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
             <Palette className="w-4 h-4 text-yellow-400" />
           </div>
           <div className="text-left">
-            <p className="text-sm font-medium text-white">Shoot Style</p>
-            <p className="text-xs text-zinc-500">
+            <p className={`text-sm font-medium ${ct('text-slate-900', 'text-white')}`}>Shoot Style</p>
+            <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>
               {vibeLabel || 'No vibe'} &middot; {arLabel} &middot;{' '}
               {settings.lighting !== 'auto'
                 ? LIGHTING.find((l) => l.key === settings.lighting)?.label
@@ -190,10 +192,10 @@ export default function ShootConfigurator({
             transition={{ duration: 0.25 }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-5 space-y-5 border-t border-zinc-800/50 pt-4">
+            <div className={`px-5 pb-5 space-y-5 border-t ${ct('border-slate-200', 'border-zinc-800/50')} pt-4`}>
               {/* Vibe selector */}
               <div>
-                <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-2.5 block">
+                <label className={`text-[11px] font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>
                   Vibe
                 </label>
                 <VibeSelector
@@ -204,7 +206,7 @@ export default function ShootConfigurator({
 
               {/* Background */}
               <div>
-                <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-2.5 block">
+                <label className={`text-[11px] font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>
                   Background
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -215,7 +217,7 @@ export default function ShootConfigurator({
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         settings.background === bg.key
                           ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                          : 'bg-zinc-800/60 text-zinc-400 border border-zinc-700/40 hover:border-zinc-600'
+                          : `${ct('bg-slate-100 text-slate-500 border-slate-300', 'bg-zinc-800/60 text-zinc-400 border-zinc-700/40')} hover:border-zinc-600`
                       }`}
                     >
                       {bg.color && (
@@ -232,7 +234,7 @@ export default function ShootConfigurator({
 
               {/* Lighting */}
               <div>
-                <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-2.5 block">
+                <label className={`text-[11px] font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>
                   Lighting
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -243,7 +245,7 @@ export default function ShootConfigurator({
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         settings.lighting === l.key
                           ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                          : 'bg-zinc-800/60 text-zinc-400 border border-zinc-700/40 hover:border-zinc-600'
+                          : `${ct('bg-slate-100 text-slate-500 border-slate-300', 'bg-zinc-800/60 text-zinc-400 border-zinc-700/40')} hover:border-zinc-600`
                       }`}
                     >
                       {l.label}
@@ -254,7 +256,7 @@ export default function ShootConfigurator({
 
               {/* Aspect ratio */}
               <div>
-                <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-2.5 block">
+                <label className={`text-[11px] font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>
                   Aspect Ratio
                 </label>
                 <div className="flex gap-2">
@@ -267,7 +269,7 @@ export default function ShootConfigurator({
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           settings.aspect_ratio === ar.key
                             ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                            : 'bg-zinc-800/60 text-zinc-400 border border-zinc-700/40 hover:border-zinc-600'
+                            : `${ct('bg-slate-100 text-slate-500 border-slate-300', 'bg-zinc-800/60 text-zinc-400 border-zinc-700/40')} hover:border-zinc-600`
                         }`}
                       >
                         <Icon className="w-3.5 h-3.5" />
@@ -283,13 +285,13 @@ export default function ShootConfigurator({
 
               {/* Batch size */}
               <div>
-                <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-2.5 block">
+                <label className={`text-[11px] font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>
                   Images per Product
                 </label>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => update('batch_size', Math.max(1, (settings.batch_size || 3) - 1))}
-                    className="w-8 h-8 rounded-lg bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors"
+                    className={`w-8 h-8 rounded-lg ${ct('bg-slate-100 border-slate-300', 'bg-zinc-800/60 border-zinc-700/40')} border flex items-center justify-center ${ct('text-slate-500', 'text-zinc-400')} hover:text-white hover:border-zinc-600 transition-colors`}
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
@@ -301,7 +303,7 @@ export default function ShootConfigurator({
                         className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all ${
                           (settings.batch_size || 3) === n
                             ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
-                            : 'bg-zinc-800/60 text-zinc-400 border border-zinc-700/40 hover:border-zinc-600'
+                            : `${ct('bg-slate-100 text-slate-500 border-slate-300', 'bg-zinc-800/60 text-zinc-400 border-zinc-700/40')} hover:border-zinc-600`
                         }`}
                       >
                         {n}
@@ -310,7 +312,7 @@ export default function ShootConfigurator({
                   </div>
                   <button
                     onClick={() => update('batch_size', Math.min(5, (settings.batch_size || 3) + 1))}
-                    className="w-8 h-8 rounded-lg bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors"
+                    className={`w-8 h-8 rounded-lg ${ct('bg-slate-100 border-slate-300', 'bg-zinc-800/60 border-zinc-700/40')} border flex items-center justify-center ${ct('text-slate-500', 'text-zinc-400')} hover:text-white hover:border-zinc-600 transition-colors`}
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -322,7 +324,7 @@ export default function ShootConfigurator({
 
               {/* Variety mode */}
               <div>
-                <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-2.5 block">
+                <label className={`text-[11px] font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2.5 block`}>
                   Shot Variety
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -333,7 +335,7 @@ export default function ShootConfigurator({
                       className={`text-left rounded-xl p-3 transition-all ${
                         (settings.variety_mode || 'balanced') === mode.key
                           ? 'bg-yellow-500/10 border border-yellow-500/30 ring-1 ring-yellow-500/20'
-                          : 'bg-zinc-800/40 border border-zinc-700/30 hover:border-zinc-600'
+                          : `${ct('bg-slate-50 border-slate-200', 'bg-zinc-800/40 border-zinc-700/30')} hover:border-zinc-600`
                       }`}
                     >
                       <div className="flex items-center gap-1.5 mb-1">
@@ -358,7 +360,7 @@ export default function ShootConfigurator({
               <div>
                 <button
                   onClick={() => setShowPreview(!showPreview)}
-                  className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-2 hover:text-zinc-300 transition-colors"
+                  className={`flex items-center gap-1.5 text-[11px] font-medium ${ct('text-slate-500', 'text-zinc-500')} uppercase tracking-wider mb-2 hover:text-zinc-300 transition-colors`}
                 >
                   <Eye className="w-3 h-3" />
                   Prompt Preview
@@ -372,9 +374,9 @@ export default function ShootConfigurator({
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="bg-zinc-800/40 border border-zinc-700/30 rounded-xl p-3"
+                    className={`${ct('bg-slate-50 border-slate-200', 'bg-zinc-800/40 border-zinc-700/30')} border rounded-xl p-3`}
                   >
-                    <p className="text-xs text-zinc-400 leading-relaxed font-mono">
+                    <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} leading-relaxed font-mono`}>
                       {previewPrompt || 'Select a vibe or approve a shot plan to see a preview.'}
                     </p>
                     <p className="text-[10px] text-zinc-600 mt-2">

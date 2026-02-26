@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { useNavigate } from 'react-router-dom';
 import {
   Image, Film, Camera, Mic, AudioLines, UserCircle, Shirt,
-  FileImage, Play, Layers, Palette, ArrowRight, Sparkles, Plus,
+  FileImage, Layers, Palette, Plus, FolderOpen,
   Sun, Moon,
 } from 'lucide-react';
 import { GeneratedContent, VideoProject } from '@/api/entities';
@@ -75,6 +74,13 @@ const TOOLS = [
     route: '/StudioAvatar',
     status: 'soon',
   },
+  {
+    key: 'library',
+    title: 'Library',
+    description: 'Browse all your generated content',
+    icon: FolderOpen,
+    route: '/StudioLibrary',
+  },
 ];
 
 export default function Create() {
@@ -111,14 +117,6 @@ export default function Create() {
       totalPodcasts: content.filter(c => c.content_type === 'podcast' || c.content_type === 'audio').length,
       totalContent: content.length,
     };
-  }, [content, videoProjects]);
-
-  const galleryItems = useMemo(() => {
-    const items = [
-      ...content.map(c => ({ ...c, _type: c.content_type || 'image', _date: c.created_at })),
-      ...videoProjects.map(v => ({ ...v, _type: 'video_project', _date: v.created_at })),
-    ];
-    return items.sort((a, b) => new Date(b._date) - new Date(a._date)).slice(0, 8);
   }, [content, videoProjects]);
 
   const visibleTools = TOOLS.filter(t => !t.hidden);
@@ -233,96 +231,6 @@ export default function Create() {
           </div>
         </div>
 
-        {/* Recent Creations */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')}`}>Recent Creations</h2>
-            <button
-              onClick={() => navigate('/StudioLibrary')}
-              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${ct(
-                'text-slate-500 hover:text-yellow-600',
-                'text-zinc-500 hover:text-yellow-400'
-              )}`}
-            >
-              View All <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          {galleryItems.length === 0 ? (
-            <div className={`flex flex-col items-center justify-center py-16 rounded-xl border border-dashed ${ct(
-              'border-slate-300 bg-white',
-              'border-zinc-800 bg-zinc-900/30'
-            )}`}>
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${ct(
-                'bg-yellow-100',
-                'bg-yellow-500/10'
-              )}`}>
-                <Sparkles className={`w-5 h-5 ${ct('text-yellow-600', 'text-yellow-400')}`} />
-              </div>
-              <p className={`text-sm font-semibold mb-1 ${ct('text-slate-900', 'text-white')}`}>Your canvas awaits</p>
-              <p className={`text-xs mb-5 ${ct('text-slate-500', 'text-zinc-500')}`}>Generate your first image or video</p>
-              <MotionButton
-                onClick={() => navigate('/StudioImage')}
-                className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Start Creating
-              </MotionButton>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {galleryItems.map((item, i) => {
-                const isVideo = item.content_type === 'video' || item._type === 'video_project';
-                const mediaUrl = item.url || item.thumbnail_url || item.final_thumbnail_url;
-                const isVideoFile = mediaUrl && (mediaUrl.includes('.mp4') || mediaUrl.includes('.webm'));
-                const isImageFile = mediaUrl && (mediaUrl.includes('.png') || mediaUrl.includes('.jpg') || mediaUrl.includes('.jpeg') || mediaUrl.includes('.webp') || item.content_type === 'image');
-
-                return (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + i * 0.05 }}
-                    className={`relative aspect-square rounded-xl overflow-hidden group cursor-pointer border ${ct(
-                      'border-slate-200 shadow-sm',
-                      'border-zinc-800/60'
-                    )}`}
-                    onClick={() => navigate('/StudioLibrary')}
-                  >
-                    {isVideoFile ? (
-                      <video src={mediaUrl} muted preload="metadata" className="w-full h-full object-cover" />
-                    ) : isImageFile ? (
-                      <img src={mediaUrl} alt={item.name || ''} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className={`w-full h-full flex items-center justify-center ${ct(
-                        'bg-slate-100',
-                        'bg-zinc-900'
-                      )}`}>
-                        {isVideo ? <Play className="w-8 h-8 text-zinc-400" /> : <FileImage className="w-8 h-8 text-zinc-400" />}
-                      </div>
-                    )}
-
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                    <div className="absolute bottom-0 left-0 right-0 p-2.5 translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-200">
-                      <p className="text-xs font-medium text-white truncate">{item.name || item.title || 'Untitled'}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {isVideo ? <Film className="w-3 h-3 text-yellow-400" /> : <FileImage className="w-3 h-3 text-yellow-400" />}
-                        <span className="text-[10px] text-yellow-400">{isVideo ? 'Video' : 'Image'}</span>
-                      </div>
-                    </div>
-
-                    {isVideo && (
-                      <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                        <Play className="w-3 h-3 text-white fill-white ml-0.5" />
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

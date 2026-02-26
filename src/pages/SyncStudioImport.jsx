@@ -22,6 +22,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 // StudioNav removed — sidebar handles navigation
 
@@ -73,6 +74,7 @@ const PLANNING_STEPS = [
 export default function SyncStudioImport() {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { ct } = useTheme();
 
   // Product browsing state
   const [products, setProducts] = useState([]);
@@ -292,7 +294,7 @@ export default function SyncStudioImport() {
       : 0;
 
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center p-4`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -394,7 +396,7 @@ export default function SyncStudioImport() {
   // ============================================
   if (stage === 'error') {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center p-4`}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -432,11 +434,11 @@ export default function SyncStudioImport() {
     : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
 
   return (
-    <div className="min-h-screen bg-[#09090b] pb-28">
+    <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} pb-28`}>
       {/* ============================================ */}
       {/* HEADER                                       */}
       {/* ============================================ */}
-      <div className="bg-black/40 border-b border-zinc-800/40">
+      <div className={ct('bg-white/80 border-b border-slate-200/60', 'bg-black/40 border-b border-zinc-800/40')}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           {/* Top row */}
           <div className="flex items-center gap-3">

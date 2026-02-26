@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 
 import { useUser } from '@/components/context/UserContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -153,8 +154,8 @@ const fadeSlide = {
 function StatusBadge({ status }) {
   if (status === 'ready') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
         Ready
       </span>
     );
@@ -168,27 +169,29 @@ function StatusBadge({ status }) {
 }
 
 function StyleTag({ style }) {
+  const { ct } = useTheme();
   return (
-    <span className="inline-flex px-2 py-0.5 rounded-md text-[10px] font-medium bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">
+    <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-medium ${ct('bg-slate-100', 'bg-zinc-800/80')} ${ct('text-slate-500', 'text-zinc-400')} border ${ct('border-slate-300', 'border-zinc-700/50')}`}>
       {style}
     </span>
   );
 }
 
 function AvatarCard({ avatar, onCreateVideo, onCreatePost }) {
+  const { ct } = useTheme();
   return (
     <motion.div
       variants={itemVariants}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="group bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-5 flex flex-col items-center text-center relative overflow-hidden"
+      className={`group ${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} rounded-[20px] p-5 flex flex-col items-center text-center relative overflow-hidden`}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-      <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${avatar.gradient} flex items-center justify-center mb-4 ring-2 ring-zinc-800/60 group-hover:ring-yellow-500/30 transition-all duration-300`}>
+      <div className={`relative w-20 h-20 rounded-full bg-gradient-to-br ${avatar.gradient} flex items-center justify-center mb-4 ring-2 ${ct('ring-slate-200', 'ring-zinc-800/60')} group-hover:ring-yellow-500/30 transition-all duration-300`}>
         <span className="text-xl font-bold text-white/90">{avatar.initials}</span>
       </div>
 
-      <h3 className="text-sm font-semibold text-white mb-1.5 relative z-10">{avatar.name}</h3>
+      <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')} mb-1.5 relative z-10`}>{avatar.name}</h3>
 
       <div className="flex items-center gap-2 mb-3">
         <StatusBadge status={avatar.status} />
@@ -205,7 +208,7 @@ function AvatarCard({ avatar, onCreateVideo, onCreatePost }) {
         </button>
         <button
           onClick={() => onCreatePost?.(avatar)}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold border border-zinc-700/60 transition-colors"
+          className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full ${ct('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800 hover:bg-zinc-700')} ${ct('text-slate-900', 'text-white')} text-xs font-semibold border ${ct('border-slate-300', 'border-zinc-700/60')} transition-colors`}
         >
           <ImageIcon className="w-3 h-3" />
           Post
@@ -216,23 +219,25 @@ function AvatarCard({ avatar, onCreateVideo, onCreatePost }) {
 }
 
 function CreateNewCard({ onClick }) {
+  const { ct } = useTheme();
   return (
     <motion.button
       variants={itemVariants}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
       onClick={onClick}
-      className="group bg-zinc-900/30 border-2 border-dashed border-zinc-700/50 hover:border-yellow-500/40 rounded-[20px] p-5 flex flex-col items-center justify-center text-center min-h-[220px] transition-all duration-300 cursor-pointer"
+      className={`group ${ct('bg-slate-50', 'bg-zinc-900/30')} border-2 border-dashed ${ct('border-slate-300', 'border-zinc-700/50')} hover:border-yellow-500/40 rounded-[20px] p-5 flex flex-col items-center justify-center text-center min-h-[220px] transition-all duration-300 cursor-pointer`}
     >
-      <div className="w-14 h-14 rounded-full bg-zinc-800/60 group-hover:bg-yellow-500/10 border border-zinc-700/50 group-hover:border-yellow-500/30 flex items-center justify-center mb-3 transition-all duration-300">
-        <Plus className="w-6 h-6 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
+      <div className={`w-14 h-14 rounded-full ${ct('bg-slate-100', 'bg-zinc-800/60')} group-hover:bg-yellow-500/10 border ${ct('border-slate-300', 'border-zinc-700/50')} group-hover:border-yellow-500/30 flex items-center justify-center mb-3 transition-all duration-300`}>
+        <Plus className={`w-6 h-6 ${ct('text-slate-400', 'text-zinc-500')} group-hover:text-yellow-400 transition-colors`} />
       </div>
-      <span className="text-sm font-semibold text-zinc-400 group-hover:text-yellow-300 transition-colors">Create New Avatar</span>
-      <span className="text-xs text-zinc-600 mt-1">Upload photos to get started</span>
+      <span className={`text-sm font-semibold ${ct('text-slate-500', 'text-zinc-400')} group-hover:text-yellow-300 transition-colors`}>Create New Avatar</span>
+      <span className={`text-xs ${ct('text-slate-400', 'text-zinc-600')} mt-1`}>Upload photos to get started</span>
     </motion.button>
   );
 }
 
 function StepIndicator({ currentStep, totalSteps }) {
+  const { ct } = useTheme();
   const steps = ['Upload Photos', 'Settings', 'Generate'];
   return (
     <div className="flex items-center gap-2 mb-8">
@@ -243,7 +248,7 @@ function StepIndicator({ currentStep, totalSteps }) {
         return (
           <React.Fragment key={label}>
             {i > 0 && (
-              <div className={`flex-1 h-px ${isCompleted ? 'bg-yellow-500/60' : 'bg-zinc-800'}`} />
+              <div className={`flex-1 h-px ${isCompleted ? 'bg-yellow-500/60' : ct('bg-slate-200', 'bg-zinc-800')}`} />
             )}
             <div className="flex items-center gap-2">
               <div
@@ -252,14 +257,14 @@ function StepIndicator({ currentStep, totalSteps }) {
                     ? 'bg-yellow-500text-white ring-4 ring-yellow-500/20'
                     : isCompleted
                     ? 'bg-yellow-500/80 text-white'
-                    : 'bg-zinc-800 text-zinc-500 border border-zinc-700/60'
+                    : `${ct('bg-slate-200', 'bg-zinc-800')} ${ct('text-slate-500', 'text-zinc-500')} border ${ct('border-slate-300', 'border-zinc-700/60')}`
                 }`}
               >
                 {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepNum}
               </div>
               <span
                 className={`text-xs font-medium hidden sm:inline ${
-                  isActive ? 'text-yellow-300' : isCompleted ? 'text-zinc-400' : 'text-zinc-600'
+                  isActive ? 'text-yellow-300' : isCompleted ? ct('text-slate-500', 'text-zinc-400') : ct('text-slate-400', 'text-zinc-600')
                 }`}
               >
                 {label}
@@ -273,6 +278,7 @@ function StepIndicator({ currentStep, totalSteps }) {
 }
 
 function PhotoUploadSlot({ slot, photo, onUpload, onRemove }) {
+  const { ct } = useTheme();
   const fileInputRef = useRef(null);
   const Icon = slot.icon;
 
@@ -301,7 +307,7 @@ function PhotoUploadSlot({ slot, photo, onUpload, onRemove }) {
     <div className="relative group">
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       {photo ? (
-        <div className="relative aspect-square rounded-xl overflow-hidden border border-zinc-700/60 group-hover:border-yellow-500/40 transition-colors">
+        <div className={`relative aspect-square rounded-xl overflow-hidden border ${ct('border-slate-300', 'border-zinc-700/60')} group-hover:border-yellow-500/40 transition-colors`}>
           <img src={photo.url} alt={slot.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <button
@@ -313,7 +319,7 @@ function PhotoUploadSlot({ slot, photo, onUpload, onRemove }) {
           </div>
           <div className="absolute bottom-1.5 left-1.5 right-1.5">
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] text-white/80">
-              <Check className="w-2.5 h-2.5 text-emerald-400" />
+              <Check className="w-2.5 h-2.5 text-yellow-400" />
               {slot.label}
             </span>
           </div>
@@ -321,10 +327,10 @@ function PhotoUploadSlot({ slot, photo, onUpload, onRemove }) {
       ) : (
         <button
           onClick={handleClick}
-          className="w-full aspect-square rounded-xl border-2 border-dashed border-zinc-700/50 hover:border-yellow-500/40 bg-zinc-900/30 hover:bg-yellow-500/[0.03] flex flex-col items-center justify-center gap-2 transition-all duration-200 cursor-pointer"
+          className={`w-full aspect-square rounded-xl border-2 border-dashed ${ct('border-slate-300', 'border-zinc-700/50')} hover:border-yellow-500/40 ${ct('bg-slate-50', 'bg-zinc-900/30')} hover:bg-yellow-500/[0.03] flex flex-col items-center justify-center gap-2 transition-all duration-200 cursor-pointer`}
         >
-          <Icon className="w-5 h-5 text-zinc-600 group-hover:text-yellow-400 transition-colors" />
-          <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 transition-colors leading-tight text-center px-1">
+          <Icon className={`w-5 h-5 ${ct('text-slate-400', 'text-zinc-600')} group-hover:text-yellow-400 transition-colors`} />
+          <span className={`text-[10px] ${ct('text-slate-500', 'text-zinc-500')} group-hover:text-zinc-400 transition-colors leading-tight text-center px-1`}>
             {slot.label}
           </span>
           {slot.required && (
@@ -337,14 +343,15 @@ function PhotoUploadSlot({ slot, photo, onUpload, onRemove }) {
 }
 
 function UploadProgress({ count, max }) {
+  const { ct } = useTheme();
   const pct = Math.round((count / max) * 100);
   return (
     <div className="mt-4">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs text-zinc-400">{count} of {max} photos uploaded</span>
+        <span className={`text-xs ${ct('text-slate-500', 'text-zinc-400')}`}>{count} of {max} photos uploaded</span>
         <span className="text-xs font-semibold text-yellow-400">{pct}%</span>
       </div>
-      <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+      <div className={`w-full h-1.5 ${ct('bg-slate-200', 'bg-zinc-800')} rounded-full overflow-hidden`}>
         <motion.div
           className="h-full bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full"
           initial={{ width: 0 }}
@@ -357,6 +364,7 @@ function UploadProgress({ count, max }) {
 }
 
 function GuidelinesCard() {
+  const { ct } = useTheme();
   const tips = [
     'Multiple angles for best results',
     'Good, even lighting',
@@ -371,10 +379,10 @@ function GuidelinesCard() {
         <Sparkles className="w-4 h-4 text-yellow-400" />
         <h4 className="text-sm font-semibold text-yellow-300">Photo Guidelines</h4>
       </div>
-      <p className="text-xs text-zinc-400 mb-3">For best results, upload 5-10 high-quality photos following these tips:</p>
+      <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} mb-3`}>For best results, upload 5-10 high-quality photos following these tips:</p>
       <ul className="space-y-1.5">
         {tips.map((tip) => (
-          <li key={tip} className="flex items-start gap-2 text-xs text-zinc-500">
+          <li key={tip} className={`flex items-start gap-2 text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>
             <Check className="w-3 h-3 text-yellow-400/60 mt-0.5 shrink-0" />
             {tip}
           </li>
@@ -385,6 +393,7 @@ function GuidelinesCard() {
 }
 
 function GenerationProgress({ stage, progress }) {
+  const { ct } = useTheme();
   return (
     <div className="flex flex-col items-center py-8">
       <div className="relative w-24 h-24 mb-6">
@@ -411,11 +420,11 @@ function GenerationProgress({ stage, progress }) {
           </defs>
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold text-white">{Math.round(progress)}%</span>
+          <span className={`text-lg font-bold ${ct('text-slate-900', 'text-white')}`}>{Math.round(progress)}%</span>
         </div>
       </div>
-      <p className="text-sm font-medium text-white mb-1">{stage}</p>
-      <p className="text-xs text-zinc-500">This may take a few moments</p>
+      <p className={`text-sm font-medium ${ct('text-slate-900', 'text-white')} mb-1`}>{stage}</p>
+      <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>This may take a few moments</p>
     </div>
   );
 }
@@ -424,6 +433,7 @@ function GenerationProgress({ stage, progress }) {
 
 export default function StudioAvatar() {
   const { user } = useUser();
+  const { ct } = useTheme();
 
   // Gallery state
   const [avatars] = useState(SAMPLE_AVATARS);
@@ -526,7 +536,7 @@ export default function StudioAvatar() {
   // --- Render ---
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       <div className="w-full px-4 lg:px-6 py-6 pb-24 space-y-5">
         {/* ============ SECTION 1: My Avatars Gallery ============ */}
         <motion.section
@@ -540,8 +550,8 @@ export default function StudioAvatar() {
                 <UserCircle className="w-3.5 h-3.5 text-yellow-400" />
                 <span className="text-xs font-medium text-yellow-300">AI Avatars</span>
               </div>
-              <h1 className="text-2xl font-bold text-white">My Avatars</h1>
-              <p className="text-sm text-zinc-500 mt-1">Create and manage your AI-generated avatars for videos and social content.</p>
+              <h1 className={`text-2xl font-bold ${ct('text-slate-900', 'text-white')}`}>My Avatars</h1>
+              <p className={`text-sm ${ct('text-slate-500', 'text-zinc-500')} mt-1`}>Create and manage your AI-generated avatars for videos and social content.</p>
             </div>
           </motion.div>
 
@@ -558,14 +568,14 @@ export default function StudioAvatar() {
                       <Sparkles className="w-3 h-3 text-amber-400" />
                       <span className="text-xs font-medium text-amber-300">Coming Soon</span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2">AI Avatars are coming</h3>
-                    <p className="text-sm text-zinc-500 max-w-md mb-6">
+                    <h3 className={`text-lg font-bold ${ct('text-slate-900', 'text-white')} mb-2`}>AI Avatars are coming</h3>
+                    <p className={`text-sm ${ct('text-slate-500', 'text-zinc-500')} max-w-md mb-6`}>
                       We're building AI-powered avatar creation that will let you generate realistic talking-head videos,
                       product reviews, and social content with your own digital likeness.
                     </p>
                     <div className="flex flex-wrap gap-3 justify-center">
                       {['UGC Videos', 'Product Reviews', 'Social Posts', 'Presentations'].map(feature => (
-                        <span key={feature} className="px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/40 text-xs text-zinc-400">
+                        <span key={feature} className={`px-3 py-1.5 rounded-full ${ct('bg-slate-100', 'bg-zinc-800/60')} border ${ct('border-slate-300', 'border-zinc-700/40')} text-xs ${ct('text-slate-500', 'text-zinc-400')}`}>
                           {feature}
                         </span>
                       ))}
@@ -599,7 +609,7 @@ export default function StudioAvatar() {
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
             >
-              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-6 lg:p-8">
+              <div className={`${ct('bg-white', 'bg-zinc-900/50')} border ${ct('border-slate-200', 'border-zinc-800/60')} rounded-[20px] p-6 lg:p-8`}>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
@@ -607,13 +617,13 @@ export default function StudioAvatar() {
                       <Sparkles className="w-5 h-5 text-yellow-400" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-white">Avatar Creation Studio</h2>
-                      <p className="text-xs text-zinc-500">Upload photos, customize settings, generate your avatar</p>
+                      <h2 className={`text-lg font-bold ${ct('text-slate-900', 'text-white')}`}>Avatar Creation Studio</h2>
+                      <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Upload photos, customize settings, generate your avatar</p>
                     </div>
                   </div>
                   <button
                     onClick={resetCreator}
-                    className="p-2 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60 transition-colors"
+                    className={`p-2 rounded-lg ${ct('text-slate-400 hover:text-slate-600 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60')} transition-colors`}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -630,8 +640,8 @@ export default function StudioAvatar() {
                       <div className="grid lg:grid-cols-3 gap-6">
                         {/* Photo grid */}
                         <div className="lg:col-span-2">
-                          <h3 className="text-sm font-semibold text-white mb-1">Training Photos</h3>
-                          <p className="text-xs text-zinc-500 mb-4">Upload 5-10 photos of yourself. More angles produce better results.</p>
+                          <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')} mb-1`}>Training Photos</h3>
+                          <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} mb-4`}>Upload 5-10 photos of yourself. More angles produce better results.</p>
 
                           {/* Required + angle slots */}
                           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
@@ -649,10 +659,10 @@ export default function StudioAvatar() {
                           {/* Extra photos row */}
                           {extraPhotos.length > 0 && (
                             <div className="mb-4">
-                              <p className="text-xs text-zinc-500 mb-2">Additional Photos</p>
+                              <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} mb-2`}>Additional Photos</p>
                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                                 {extraPhotos.map((ep) => (
-                                  <div key={ep.id} className="relative aspect-square rounded-xl overflow-hidden border border-zinc-700/60 group">
+                                  <div key={ep.id} className={`relative aspect-square rounded-xl overflow-hidden border ${ct('border-slate-300', 'border-zinc-700/60')} group`}>
                                     <img src={ep.url} alt="Extra" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                       <button
@@ -674,7 +684,7 @@ export default function StudioAvatar() {
                               <input ref={extraInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleExtraUpload} />
                               <button
                                 onClick={() => extraInputRef.current?.click()}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-zinc-700/50 hover:border-yellow-500/40 text-xs text-zinc-400 hover:text-yellow-300 transition-colors"
+                                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed ${ct('border-slate-300', 'border-zinc-700/50')} hover:border-yellow-500/40 text-xs ${ct('text-slate-500', 'text-zinc-400')} hover:text-yellow-300 transition-colors`}
                               >
                                 <Upload className="w-3.5 h-3.5" />
                                 Add more photos ({photoCount}/{maxPhotos})
@@ -699,19 +709,19 @@ export default function StudioAvatar() {
                       <div className="space-y-8">
                         {/* Name input */}
                         <div>
-                          <label className="block text-sm font-semibold text-white mb-2">Avatar Name</label>
+                          <label className={`block text-sm font-semibold ${ct('text-slate-900', 'text-white')} mb-2`}>Avatar Name</label>
                           <input
                             type="text"
                             value={avatarName}
                             onChange={(e) => setAvatarName(e.target.value)}
                             placeholder="e.g. Business Professional"
-                            className="w-full max-w-md px-4 py-2.5 rounded-xl bg-zinc-800/60 border border-zinc-700/60 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/40 focus:border-yellow-500/40 transition-all"
+                            className={`w-full max-w-md px-4 py-2.5 rounded-xl ${ct('bg-slate-100', 'bg-zinc-800/60')} border ${ct('border-slate-300', 'border-zinc-700/60')} ${ct('text-slate-900', 'text-white')} text-sm ${ct('placeholder:text-slate-400', 'placeholder:text-zinc-600')} focus:outline-none focus:ring-2 focus:ring-yellow-500/40 focus:border-yellow-500/40 transition-all`}
                           />
                         </div>
 
                         {/* Style selector */}
                         <div>
-                          <label className="block text-sm font-semibold text-white mb-3">Avatar Style</label>
+                          <label className={`block text-sm font-semibold ${ct('text-slate-900', 'text-white')} mb-3`}>Avatar Style</label>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {STYLE_OPTIONS.map((style) => {
                               const Icon = style.icon;
@@ -723,12 +733,12 @@ export default function StudioAvatar() {
                                   className={`relative p-4 rounded-xl border text-left transition-all duration-200 ${
                                     isSelected
                                       ? 'bg-yellow-500/10 border-yellow-500/40 ring-1 ring-yellow-500/20'
-                                      : 'bg-zinc-800/30 border-zinc-700/50 hover:border-zinc-600/60'
+                                      : `${ct('bg-slate-100', 'bg-zinc-800/30')} ${ct('border-slate-300', 'border-zinc-700/50')} ${ct('hover:border-slate-400', 'hover:border-zinc-600/60')}`
                                   }`}
                                 >
                                   <Icon className={`w-5 h-5 mb-2 ${isSelected ? 'text-yellow-400' : 'text-zinc-500'}`} />
-                                  <p className={`text-sm font-semibold mb-0.5 ${isSelected ? 'text-yellow-300' : 'text-white'}`}>{style.label}</p>
-                                  <p className="text-[11px] text-zinc-500 leading-snug">{style.desc}</p>
+                                  <p className={`text-sm font-semibold mb-0.5 ${isSelected ? 'text-yellow-300' : ct('text-slate-900', 'text-white')}`}>{style.label}</p>
+                                  <p className={`text-[11px] ${ct('text-slate-500', 'text-zinc-500')} leading-snug`}>{style.desc}</p>
                                   {isSelected && (
                                     <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-yellow-500flex items-center justify-center">
                                       <Check className="w-3 h-3 text-white" />
@@ -742,7 +752,7 @@ export default function StudioAvatar() {
 
                         {/* Background preference */}
                         <div>
-                          <label className="block text-sm font-semibold text-white mb-3">Background Preference</label>
+                          <label className={`block text-sm font-semibold ${ct('text-slate-900', 'text-white')} mb-3`}>Background Preference</label>
                           <div className="flex flex-wrap gap-2">
                             {BACKGROUND_OPTIONS.map((bg) => {
                               const Icon = bg.icon;
@@ -754,7 +764,7 @@ export default function StudioAvatar() {
                                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
                                     isSelected
                                       ? 'bg-yellow-500/10 border border-yellow-500/40 text-yellow-300'
-                                      : 'bg-zinc-800/40 border border-zinc-700/50 text-zinc-400 hover:text-zinc-300 hover:border-zinc-600/60'
+                                      : `${ct('bg-slate-100', 'bg-zinc-800/40')} border ${ct('border-slate-300', 'border-zinc-700/50')} ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-700 hover:border-slate-400', 'hover:text-zinc-300 hover:border-zinc-600/60')}`
                                   }`}
                                 >
                                   <Icon className="w-3.5 h-3.5" />
@@ -767,7 +777,7 @@ export default function StudioAvatar() {
 
                         {/* Output formats */}
                         <div>
-                          <label className="block text-sm font-semibold text-white mb-3">Output Formats</label>
+                          <label className={`block text-sm font-semibold ${ct('text-slate-900', 'text-white')} mb-3`}>Output Formats</label>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {OUTPUT_FORMATS.map((fmt) => {
                               const Icon = fmt.icon;
@@ -779,15 +789,15 @@ export default function StudioAvatar() {
                                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${
                                     isSelected
                                       ? 'bg-yellow-500/10 border-yellow-500/40'
-                                      : 'bg-zinc-800/30 border-zinc-700/50 hover:border-zinc-600/60'
+                                      : `${ct('bg-slate-100', 'bg-zinc-800/30')} ${ct('border-slate-300', 'border-zinc-700/50')} ${ct('hover:border-slate-400', 'hover:border-zinc-600/60')}`
                                   }`}
                                 >
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? 'bg-yellow-500/20' : 'bg-zinc-800/60'}`}>
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? 'bg-yellow-500/20' : ct('bg-slate-200', 'bg-zinc-800/60')}`}>
                                     <Icon className={`w-4 h-4 ${isSelected ? 'text-yellow-400' : 'text-zinc-500'}`} />
                                   </div>
                                   <div className="text-left">
-                                    <p className={`text-xs font-semibold ${isSelected ? 'text-yellow-300' : 'text-white'}`}>{fmt.label}</p>
-                                    <p className="text-[10px] text-zinc-500">{fmt.ratio}</p>
+                                    <p className={`text-xs font-semibold ${isSelected ? 'text-yellow-300' : ct('text-slate-900', 'text-white')}`}>{fmt.label}</p>
+                                    <p className={`text-[10px] ${ct('text-slate-500', 'text-zinc-500')}`}>{fmt.ratio}</p>
                                   </div>
                                   {isSelected && (
                                     <Check className="w-4 h-4 text-yellow-400 ml-auto" />
@@ -807,35 +817,35 @@ export default function StudioAvatar() {
                       {!isGenerating && !generationComplete && (
                         <div>
                           {/* Summary */}
-                          <div className="bg-zinc-800/30 border border-zinc-700/40 rounded-xl p-5 mb-6">
-                            <h3 className="text-sm font-semibold text-white mb-3">Generation Summary</h3>
+                          <div className={`${ct('bg-slate-100', 'bg-zinc-800/30')} border ${ct('border-slate-300', 'border-zinc-700/40')} rounded-xl p-5 mb-6`}>
+                            <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')} mb-3`}>Generation Summary</h3>
                             <div className="grid sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-zinc-500">Name</span>
-                                  <span className="text-xs font-medium text-white">{avatarName || 'Untitled'}</span>
+                                  <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Name</span>
+                                  <span className={`text-xs font-medium ${ct('text-slate-900', 'text-white')}`}>{avatarName || 'Untitled'}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-zinc-500">Style</span>
-                                  <span className="text-xs font-medium text-white capitalize">{selectedStyle}</span>
+                                  <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Style</span>
+                                  <span className={`text-xs font-medium ${ct('text-slate-900', 'text-white')} capitalize`}>{selectedStyle}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-zinc-500">Background</span>
-                                  <span className="text-xs font-medium text-white capitalize">{selectedBackground}</span>
+                                  <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Background</span>
+                                  <span className={`text-xs font-medium ${ct('text-slate-900', 'text-white')} capitalize`}>{selectedBackground}</span>
                                 </div>
                               </div>
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-zinc-500">Photos</span>
-                                  <span className="text-xs font-medium text-white">{photoCount} uploaded</span>
+                                  <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Photos</span>
+                                  <span className={`text-xs font-medium ${ct('text-slate-900', 'text-white')}`}>{photoCount} uploaded</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-zinc-500">Formats</span>
-                                  <span className="text-xs font-medium text-white">{selectedFormats.length} selected</span>
+                                  <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Formats</span>
+                                  <span className={`text-xs font-medium ${ct('text-slate-900', 'text-white')}`}>{selectedFormats.length} selected</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-zinc-500">Est. Time</span>
-                                  <span className="text-xs font-medium text-zinc-400">~2 minutes</span>
+                                  <span className={`text-xs ${ct('text-slate-500', 'text-zinc-500')}`}>Est. Time</span>
+                                  <span className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')}`}>~2 minutes</span>
                                 </div>
                               </div>
                             </div>
@@ -864,10 +874,10 @@ export default function StudioAvatar() {
                           transition={{ duration: 0.5, ease: 'easeOut' }}
                         >
                           <div className="flex items-center gap-2 mb-5">
-                            <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <div className="w-6 h-6 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 text-yellow-400" />
                             </div>
-                            <h3 className="text-sm font-semibold text-white">Avatar Generated Successfully</h3>
+                            <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')}`}>Avatar Generated Successfully</h3>
                           </div>
 
                           {/* Preview grid */}
@@ -878,7 +888,7 @@ export default function StudioAvatar() {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.4, delay: 0.1 }}
-                                className="group relative aspect-[3/4] rounded-[20px] overflow-hidden border border-zinc-700/50 cursor-pointer"
+                                className={`group relative aspect-[3/4] rounded-[20px] overflow-hidden border ${ct('border-slate-300', 'border-zinc-700/50')} cursor-pointer`}
                               >
                                 <div className={`absolute inset-0 bg-gradient-to-br ${pose.gradient}`} />
                                 <div className="absolute inset-0 flex items-center justify-center">
@@ -902,11 +912,11 @@ export default function StudioAvatar() {
                               <Download className="w-4 h-4" />
                               Download All
                             </button>
-                            <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-sm border border-zinc-700/60 transition-colors">
+                            <button className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full ${ct('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800 hover:bg-zinc-700')} ${ct('text-slate-900', 'text-white')} font-semibold text-sm border ${ct('border-slate-300', 'border-zinc-700/60')} transition-colors`}>
                               <Video className="w-4 h-4" />
                               Use in Video
                             </button>
-                            <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-sm border border-zinc-700/60 transition-colors">
+                            <button className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full ${ct('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800 hover:bg-zinc-700')} ${ct('text-slate-900', 'text-white')} font-semibold text-sm border ${ct('border-slate-300', 'border-zinc-700/60')} transition-colors`}>
                               <ImageIcon className="w-4 h-4" />
                               Create Post
                             </button>
@@ -919,7 +929,7 @@ export default function StudioAvatar() {
 
                 {/* Step navigation */}
                 {!isGenerating && !generationComplete && (
-                  <div className="flex items-center justify-between mt-8 pt-6 border-t border-zinc-800/60">
+                  <div className={`flex items-center justify-between mt-8 pt-6 border-t ${ct('border-slate-200', 'border-zinc-800/60')}`}>
                     <button
                       onClick={() => {
                         if (step === 1) {
@@ -928,7 +938,7 @@ export default function StudioAvatar() {
                           setStep((s) => s - 1);
                         }
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm text-zinc-400 hover:text-white transition-colors"
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm ${ct('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')} transition-colors`}
                     >
                       <ChevronLeft className="w-4 h-4" />
                       {step === 1 ? 'Cancel' : 'Back'}
@@ -938,7 +948,7 @@ export default function StudioAvatar() {
                       <button
                         onClick={() => setStep((s) => s + 1)}
                         disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
-                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-black font-semibold text-sm transition-colors"
+                        className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 ${ct('disabled:bg-slate-200 disabled:text-slate-400', 'disabled:bg-zinc-800 disabled:text-zinc-600')} disabled:cursor-not-allowed text-black font-semibold text-sm transition-colors`}
                       >
                         Continue
                         <ChevronRight className="w-4 h-4" />
@@ -949,10 +959,10 @@ export default function StudioAvatar() {
 
                 {/* Done button after generation */}
                 {generationComplete && (
-                  <div className="flex justify-center mt-8 pt-6 border-t border-zinc-800/60">
+                  <div className={`flex justify-center mt-8 pt-6 border-t ${ct('border-slate-200', 'border-zinc-800/60')}`}>
                     <button
                       onClick={resetCreator}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-sm border border-zinc-700/60 transition-colors"
+                      className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full ${ct('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800 hover:bg-zinc-700')} ${ct('text-slate-900', 'text-white')} font-semibold text-sm border ${ct('border-slate-300', 'border-zinc-700/60')} transition-colors`}
                     >
                       <Check className="w-4 h-4" />
                       Done
@@ -972,8 +982,8 @@ export default function StudioAvatar() {
           variants={containerVariants}
         >
           <motion.div variants={itemVariants} className="mb-6">
-            <h2 className="text-lg font-bold text-white">What You Can Do With AI Avatars</h2>
-            <p className="text-sm text-zinc-500 mt-1">Transform your content strategy with personalized AI representations.</p>
+            <h2 className={`text-lg font-bold ${ct('text-slate-900', 'text-white')}`}>What You Can Do With AI Avatars</h2>
+            <p className={`text-sm ${ct('text-slate-500', 'text-zinc-500')} mt-1`}>Transform your content strategy with personalized AI representations.</p>
           </motion.div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -986,11 +996,11 @@ export default function StudioAvatar() {
                   whileHover={{ y: -4, transition: { duration: 0.2 } }}
                   className={`bg-gradient-to-br ${uc.gradient} border ${uc.border} rounded-[20px] p-5 group cursor-pointer`}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-zinc-900/60 border border-zinc-800/40 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
+                  <div className={`w-10 h-10 rounded-xl ${ct('bg-white', 'bg-zinc-900/60')} border ${ct('border-slate-200', 'border-zinc-800/40')} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}>
                     <Icon className="w-5 h-5 text-yellow-400" />
                   </div>
-                  <h3 className="text-sm font-semibold text-white mb-1.5">{uc.title}</h3>
-                  <p className="text-xs text-zinc-400 leading-relaxed">{uc.desc}</p>
+                  <h3 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')} mb-1.5`}>{uc.title}</h3>
+                  <p className={`text-xs ${ct('text-slate-500', 'text-zinc-400')} leading-relaxed`}>{uc.desc}</p>
                 </motion.div>
               );
             })}

@@ -16,6 +16,7 @@ import {
   PartyPopper,
 } from 'lucide-react';
 import { useUser } from '@/components/context/UserContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 // StudioNav removed — sidebar handles navigation
 
@@ -88,6 +89,7 @@ function AnimatedCounter({ value, duration = 600 }) {
 export default function SyncStudioPhotoshoot() {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { ct } = useTheme();
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('jobId');
 
@@ -316,7 +318,7 @@ export default function SyncStudioPhotoshoot() {
 
   if (!jobId) {
     return (
-      <div className="min-h-screen bg-[#09090b]">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
         <div className="min-h-[70vh] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -326,7 +328,7 @@ export default function SyncStudioPhotoshoot() {
             <div className="w-14 h-14 rounded-2xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center mx-auto mb-5">
               <Camera className="w-7 h-7 text-zinc-500" />
             </div>
-            <h2 className="text-xl font-semibold text-white mb-2">No Photoshoot Found</h2>
+            <h2 className={`text-xl font-semibold ${ct('text-slate-900', 'text-white')} mb-2`}>No Photoshoot Found</h2>
             <p className="text-sm text-zinc-400 mb-6">
               No job ID was provided. Please start a photoshoot from the dashboard.
             </p>
@@ -348,7 +350,7 @@ export default function SyncStudioPhotoshoot() {
 
   if (stage === 'completed') {
     return (
-      <div className="min-h-screen bg-[#09090b]">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -425,7 +427,7 @@ export default function SyncStudioPhotoshoot() {
 
   if (stage === 'cancelled') {
     return (
-      <div className="min-h-screen bg-[#09090b]">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -486,7 +488,7 @@ export default function SyncStudioPhotoshoot() {
 
   if (stage === 'error') {
     return (
-      <div className="min-h-screen bg-[#09090b]">
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       <div className="min-h-[70vh] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -531,7 +533,7 @@ export default function SyncStudioPhotoshoot() {
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
 
       <div className="flex flex-col items-center p-4">
       <div className="max-w-2xl w-full my-8">

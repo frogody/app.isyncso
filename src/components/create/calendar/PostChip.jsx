@@ -68,7 +68,7 @@ export default function PostChip({ post, onClick }) {
         {post.title || 'Untitled'}
       </span>
       {post.status === 'published' && (
-        <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />
       )}
       {post.status === 'failed' && (
         <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />

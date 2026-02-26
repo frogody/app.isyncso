@@ -523,7 +523,7 @@ export default function FashionBooth({ embedded = false }) {
 
   // ─── RENDER ─────────────────────────────────────────────────────
   return (
-    <div className={embedded ? 'bg-[#09090b]' : 'min-h-screen bg-[#09090b]'}>
+    <div className={embedded ? ct('bg-slate-50', 'bg-black') : `min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
       <div className="w-full px-4 lg:px-6 py-4">
 
         {/* ── Header ── */}

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function CompareSlider({
   beforeSrc,
@@ -8,6 +9,7 @@ export default function CompareSlider({
   afterLabel = 'Generated',
   className = '',
 }) {
+  const { ct } = useTheme();
   const [position, setPosition] = useState(50);
   const containerRef = useRef(null);
   const dragging = useRef(false);

@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import { useTheme } from '@/contexts/GlobalThemeContext';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 
@@ -117,12 +118,13 @@ const SHOT_TYPE_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 function SkeletonCard() {
+  const { ct } = useTheme();
   return (
-    <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden animate-pulse">
-      <div className="aspect-square bg-zinc-800/60" />
+    <div className={`rounded-xl ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border overflow-hidden animate-pulse`}>
+      <div className={`aspect-square ${ct('bg-slate-200', 'bg-zinc-800/60')}`} />
       <div className="p-3 space-y-2">
-        <div className="h-3 bg-zinc-800/60 rounded w-3/4" />
-        <div className="h-2.5 bg-zinc-800/60 rounded w-1/2" />
+        <div className={`h-3 ${ct('bg-slate-200', 'bg-zinc-800/60')} rounded w-3/4`} />
+        <div className={`h-2.5 ${ct('bg-slate-200', 'bg-zinc-800/60')} rounded w-1/2`} />
       </div>
     </div>
   );
@@ -209,6 +211,7 @@ function ShotTypeDots({ shots }) {
 // ---------------------------------------------------------------------------
 
 function StageIndicator({ currentStage }) {
+  const { ct } = useTheme();
   const currentIndex = STAGES.findIndex((s) => s.key === currentStage);
 
   return (
@@ -225,7 +228,7 @@ function StageIndicator({ currentStage }) {
                 className={`h-px w-12 sm:w-20 ${
                   isCompleted || isActive
                     ? 'bg-yellow-500/40'
-                    : 'bg-zinc-800'
+                    : ct('bg-slate-300', 'bg-zinc-800')
                 }`}
               />
             )}
@@ -236,7 +239,7 @@ function StageIndicator({ currentStage }) {
                     ? 'bg-yellow-400 text-black'
                     : isActive
                     ? 'bg-yellow-500/15 border-2 border-yellow-400 text-yellow-400'
-                    : 'bg-zinc-800/60 border border-zinc-700/40 text-zinc-600'
+                    : `${ct('bg-slate-100 border-slate-300', 'bg-zinc-800/60 border-zinc-700/40')} border text-zinc-600`
                 }`}
               >
                 {isCompleted ? (
@@ -473,6 +476,7 @@ function reducer(state, action) {
 
 export default function SyncStudioFlow() {
   const { user } = useUser();
+  const { ct } = useTheme();
   const [state, dispatch] = useReducer(reducer, initialState);
   const pollRef = useRef(null);
 
@@ -555,7 +559,7 @@ export default function SyncStudioFlow() {
 
   // --- Render ---
   return (
-    <div className="bg-[#09090b] min-h-[calc(100vh-60px)]">
+    <div className={`${ct('bg-slate-50', 'bg-black')} min-h-[calc(100vh-60px)]`}>
       <StageIndicator currentStage={state.stage} />
       <div className="px-4 lg:px-8 pb-8">
         <AnimatePresence mode="wait">
@@ -607,6 +611,7 @@ export default function SyncStudioFlow() {
 // ---------------------------------------------------------------------------
 
 function SelectStage({ state, dispatch, user, callEdge }) {
+  const { ct } = useTheme();
   const [products, setProducts] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
@@ -767,8 +772,8 @@ function SelectStage({ state, dispatch, user, callEdge }) {
     >
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white">Select Products</h2>
-        <p className="text-zinc-400 text-sm mt-1">
+        <h2 className={`text-2xl font-bold ${ct('text-slate-900', 'text-white')}`}>Select Products</h2>
+        <p className={`${ct('text-slate-500', 'text-zinc-400')} text-sm mt-1`}>
           Choose up to {MAX_SELECTION} products for your AI photoshoot
         </p>
       </div>
@@ -782,7 +787,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
             placeholder="Search products by name, EAN, or category..."
             value={searchRaw}
             onChange={(e) => setSearchRaw(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800/60 rounded-xl text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors"
+            className={`w-full pl-10 pr-4 py-2.5 ${ct('bg-white border-slate-200', 'bg-zinc-950 border-zinc-800/60')} border rounded-xl ${ct('text-slate-900', 'text-white')} text-sm ${ct('placeholder:text-slate-400', 'placeholder:text-zinc-600')} focus:outline-none focus:border-yellow-500/40 focus:ring-1 focus:ring-yellow-500/20 transition-colors`}
           />
           {searchRaw && (
             <button
@@ -801,7 +806,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
               className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 !activeCategory
                   ? 'bg-yellow-400/15 text-yellow-400 border border-yellow-500/30'
-                  : 'bg-zinc-900/50 text-zinc-400 border border-zinc-800/60 hover:text-zinc-200'
+                  : `${ct('bg-white text-slate-500 border-slate-200', 'bg-zinc-900/50 text-zinc-400 border-zinc-800/60')} hover:text-zinc-200`
               }`}
             >
               All
@@ -815,7 +820,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
                 className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   activeCategory === cat
                     ? 'bg-yellow-400/15 text-yellow-400 border border-yellow-500/30'
-                    : 'bg-zinc-900/50 text-zinc-400 border border-zinc-800/60 hover:text-zinc-200'
+                    : `${ct('bg-white text-slate-500 border-slate-200', 'bg-zinc-900/50 text-zinc-400 border-zinc-800/60')} hover:text-zinc-200`
                 }`}
               >
                 {cat}
@@ -854,7 +859,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
-            className="p-1.5 rounded-lg bg-zinc-900/50 border border-zinc-800/60 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className={`p-1.5 rounded-lg ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border ${ct('text-slate-400', 'text-zinc-400')} hover:text-white disabled:opacity-30 disabled:cursor-not-allowed`}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -864,7 +869,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
-            className="p-1.5 rounded-lg bg-zinc-900/50 border border-zinc-800/60 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            className={`p-1.5 rounded-lg ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border ${ct('text-slate-400', 'text-zinc-400')} hover:text-white disabled:opacity-30 disabled:cursor-not-allowed`}
           >
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -904,11 +909,11 @@ function SelectStage({ state, dispatch, user, callEdge }) {
                 className={`relative rounded-xl border overflow-hidden text-left transition-all duration-200 group ${
                   isSelected
                     ? 'border-yellow-400 ring-2 ring-yellow-400/30'
-                    : 'border-zinc-800/60 hover:border-zinc-700'
+                    : `${ct('border-slate-200 hover:border-slate-300', 'border-zinc-800/60 hover:border-zinc-700')}`
                 } ${atCapacity ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {/* Thumbnail */}
-                <div className="aspect-square bg-zinc-900/50 relative overflow-hidden">
+                <div className={`aspect-square ${ct('bg-slate-100', 'bg-zinc-900/50')} relative overflow-hidden`}>
                   {imgUrl ? (
                     <img
                       src={imgUrl}
@@ -917,7 +922,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
                       loading="lazy"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-zinc-800">
+                    <div className={`w-full h-full flex items-center justify-center ${ct('bg-slate-200', 'bg-zinc-800')}`}>
                       <Package className="w-8 h-8 text-zinc-600" />
                     </div>
                   )}
@@ -932,12 +937,12 @@ function SelectStage({ state, dispatch, user, callEdge }) {
 
                 {/* Info */}
                 <div className="p-2.5">
-                  <p className="text-sm text-white font-medium truncate">
+                  <p className={`text-sm ${ct('text-slate-900', 'text-white')} font-medium truncate`}>
                     {product.name}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     {product.category && (
-                      <span className="text-[10px] text-zinc-500 bg-zinc-800/60 px-1.5 py-0.5 rounded">
+                      <span className={`text-[10px] ${ct('text-slate-500 bg-slate-100', 'text-zinc-500 bg-zinc-800/60')} px-1.5 py-0.5 rounded`}>
                         {product.category}
                       </span>
                     )}
@@ -962,7 +967,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 80, opacity: 0 }}
             transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-zinc-900/95 backdrop-blur-xl border border-zinc-700/60 rounded-2xl px-5 py-3 shadow-2xl shadow-black/40 flex items-center gap-4"
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 ${ct('bg-white/95 border-slate-200', 'bg-zinc-900/95 border-zinc-700/60')} backdrop-blur-xl border rounded-2xl px-5 py-3 shadow-2xl ${ct('shadow-black/10', 'shadow-black/40')} flex items-center gap-4`}
           >
             {/* Overlapping thumbnails */}
             <div className="flex -space-x-2">
@@ -1039,6 +1044,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
 // ---------------------------------------------------------------------------
 
 function PlanStage({ state, dispatch, user, callEdge }) {
+  const { ct } = useTheme();
   const [expandedPlans, setExpandedPlans] = useState({});
   const [editData, setEditData] = useState({});
   const [rejectConfirm, setRejectConfirm] = useState(null);
@@ -1238,13 +1244,13 @@ function PlanStage({ state, dispatch, user, callEdge }) {
         transition={{ duration: 0.25 }}
         className="flex items-center justify-center min-h-[60vh]"
       >
-        <div className="max-w-lg w-full mx-auto bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8">
+        <div className={`max-w-lg w-full mx-auto ${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-2xl p-8`}>
           <div className="flex items-center justify-center mb-6">
             <div className="w-14 h-14 rounded-2xl bg-yellow-400/10 flex items-center justify-center">
               <Sparkles className="w-7 h-7 text-yellow-400" />
             </div>
           </div>
-          <h3 className="text-xl font-bold text-white text-center mb-6">
+          <h3 className={`text-xl font-bold ${ct('text-slate-900', 'text-white')} text-center mb-6`}>
             Preparing your photoshoot
           </h3>
 
@@ -1427,12 +1433,12 @@ function PlanStage({ state, dispatch, user, callEdge }) {
           return (
             <div
               key={plan.plan_id}
-              className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden"
+              className={`${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-2xl overflow-hidden`}
             >
               {/* Collapsed row */}
               <div className="flex items-center gap-3 p-4">
                 {/* Thumbnail */}
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 shrink-0 flex items-center justify-center">
+                <div className={`w-12 h-12 rounded-xl overflow-hidden ${ct('bg-slate-200', 'bg-zinc-800')} shrink-0 flex items-center justify-center`}>
                   {thumb ? (
                     <img
                       src={thumb}
@@ -1446,11 +1452,11 @@ function PlanStage({ state, dispatch, user, callEdge }) {
 
                 {/* Title + category */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
+                  <p className={`text-sm font-medium ${ct('text-slate-900', 'text-white')} truncate`}>
                     {plan.product_title}
                   </p>
                   {product?.category_path && (
-                    <span className="text-[10px] text-zinc-500 bg-zinc-800/60 px-1.5 py-0.5 rounded inline-block mt-0.5">
+                    <span className={`text-[10px] ${ct('text-slate-500 bg-slate-100', 'text-zinc-500 bg-zinc-800/60')} px-1.5 py-0.5 rounded inline-block mt-0.5`}>
                       {product.category_path}
                     </span>
                   )}
@@ -1790,6 +1796,7 @@ function PlanStage({ state, dispatch, user, callEdge }) {
 // ---------------------------------------------------------------------------
 
 function ShootStage({ state, dispatch, user, callEdge, pollRef }) {
+  const { ct } = useTheme();
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
@@ -1917,7 +1924,7 @@ function ShootStage({ state, dispatch, user, callEdge, pollRef }) {
               <Camera className="w-6 h-6 text-yellow-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 className={`text-xl font-bold ${ct('text-slate-900', 'text-white')} flex items-center gap-2`}>
                 Photoshoot in progress
                 <Loader2 className="w-5 h-5 text-yellow-400 animate-spin" />
               </h3>
@@ -1926,7 +1933,7 @@ function ShootStage({ state, dispatch, user, callEdge, pollRef }) {
 
           {/* Large progress bar */}
           <div className="mb-4">
-            <div className="w-full bg-zinc-800/60 rounded-full h-3 overflow-hidden">
+            <div className={`w-full ${ct('bg-slate-200', 'bg-zinc-800/60')} rounded-full h-3 overflow-hidden`}>
               <motion.div
                 className="h-full bg-gradient-to-r from-yellow-500 to-amber-400 rounded-full"
                 initial={{ width: '0%' }}
@@ -1935,35 +1942,35 @@ function ShootStage({ state, dispatch, user, callEdge, pollRef }) {
               />
             </div>
             <div className="flex items-center justify-between mt-2">
-              <p className="text-sm text-zinc-400">
+              <p className={`text-sm ${ct('text-slate-500', 'text-zinc-400')}`}>
                 {completed} of {total} images
               </p>
-              <p className="text-sm font-semibold text-white">{pct}%</p>
+              <p className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')}`}>{pct}%</p>
             </div>
           </div>
 
           {/* Stats grid */}
           <div className="grid grid-cols-3 gap-3 mb-8">
-            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4 text-center">
+            <div className={`${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-4 text-center`}>
               <p className="text-2xl font-bold text-emerald-400">{completed}</p>
-              <p className="text-xs text-zinc-500 mt-1">Completed</p>
+              <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} mt-1`}>Completed</p>
             </div>
-            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4 text-center">
+            <div className={`${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-4 text-center`}>
               <p className="text-2xl font-bold text-red-400">{failed}</p>
-              <p className="text-xs text-zinc-500 mt-1">Failed</p>
+              <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} mt-1`}>Failed</p>
             </div>
-            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-white">
+            <div className={`${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-xl p-4 text-center`}>
+              <p className={`text-2xl font-bold ${ct('text-slate-900', 'text-white')}`}>
                 {formatTime(elapsed)}
               </p>
-              <p className="text-xs text-zinc-500 mt-1">Elapsed</p>
+              <p className={`text-xs ${ct('text-slate-500', 'text-zinc-500')} mt-1`}>Elapsed</p>
             </div>
           </div>
 
           {/* Live Feed */}
           <div className="mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <h4 className="text-sm font-semibold text-white">Live Feed</h4>
+              <h4 className={`text-sm font-semibold ${ct('text-slate-900', 'text-white')}`}>Live Feed</h4>
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
@@ -2064,10 +2071,10 @@ function ShootStage({ state, dispatch, user, callEdge, pollRef }) {
         className="flex flex-col items-center justify-center min-h-[60vh]"
       >
         <XCircle className="w-16 h-16 text-red-400 mb-4" />
-        <h3 className="text-2xl font-bold text-white mb-2">
+        <h3 className={`text-2xl font-bold ${ct('text-slate-900', 'text-white')} mb-2`}>
           Photoshoot Cancelled
         </h3>
-        <p className="text-zinc-400 text-sm mb-6">
+        <p className={`${ct('text-slate-500', 'text-zinc-400')} text-sm mb-6`}>
           {completed > 0
             ? `${completed} images were generated before cancellation.`
             : 'No images were generated.'}
@@ -2120,10 +2127,10 @@ function CompletionView({ elapsed, formatTime, state, loadAllResults }) {
       >
         <CheckCircle2 className="w-20 h-20 text-emerald-400 mb-4" />
       </motion.div>
-      <h3 className="text-2xl font-bold text-white mb-2">
+      <h3 className={`text-2xl font-bold ${ct('text-slate-900', 'text-white')} mb-2`}>
         Photoshoot Complete!
       </h3>
-      <p className="text-zinc-400 text-sm mb-6">
+      <p className={`${ct('text-slate-500', 'text-zinc-400')} text-sm mb-6`}>
         {completed} image{completed !== 1 ? 's' : ''} generated
         {failed > 0 ? ` (${failed} failed)` : ''} in {formatTime(elapsed)}
       </p>
@@ -2143,6 +2150,7 @@ function CompletionView({ elapsed, formatTime, state, loadAllResults }) {
 // ---------------------------------------------------------------------------
 
 function ResultsStage({ state, dispatch, user, callEdge }) {
+  const { ct } = useTheme();
   const [lightbox, setLightbox] = useState(null);
 
   const imagesByProduct = useMemo(() => {
@@ -2232,7 +2240,7 @@ function ResultsStage({ state, dispatch, user, callEdge }) {
       transition={{ duration: 0.25 }}
     >
       {/* Summary bar */}
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4 mb-6">
+      <div className={`${ct('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800/60')} border rounded-2xl p-4 mb-6`}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
             {[
@@ -2247,12 +2255,12 @@ function ResultsStage({ state, dispatch, user, callEdge }) {
               <div key={stat.label} className="text-center">
                 <p
                   className={`text-lg font-bold ${
-                    stat.color || 'text-white'
+                    stat.color || ct('text-slate-900', 'text-white')
                   }`}
                 >
                   {stat.value}
                 </p>
-                <p className="text-[10px] text-zinc-500">{stat.label}</p>
+                <p className={`text-[10px] ${ct('text-slate-500', 'text-zinc-500')}`}>{stat.label}</p>
               </div>
             ))}
           </div>
@@ -2286,7 +2294,7 @@ function ResultsStage({ state, dispatch, user, callEdge }) {
           <div key={ean} className="mb-8">
             {/* Product header */}
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-800 shrink-0 flex items-center justify-center">
+              <div className={`w-10 h-10 rounded-xl overflow-hidden ${ct('bg-slate-200', 'bg-zinc-800')} shrink-0 flex items-center justify-center`}>
                 {productThumb ? (
                   <img
                     src={productThumb}
@@ -2298,10 +2306,10 @@ function ResultsStage({ state, dispatch, user, callEdge }) {
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-white">
+                <p className={`text-sm font-medium ${ct('text-slate-900', 'text-white')}`}>
                   {product?.title || ean}
                 </p>
-                <p className="text-[10px] text-zinc-500">
+                <p className={`text-[10px] ${ct('text-slate-500', 'text-zinc-500')}`}>
                   {images.length} image{images.length !== 1 ? 's' : ''}
                 </p>
               </div>
@@ -2319,11 +2327,11 @@ function ResultsStage({ state, dispatch, user, callEdge }) {
                     className={`rounded-xl overflow-hidden border group cursor-pointer relative ${
                       isFailed
                         ? 'border-red-500/30'
-                        : 'border-zinc-800/60 hover:border-zinc-700'
+                        : ct('border-slate-200 hover:border-slate-300', 'border-zinc-800/60 hover:border-zinc-700')
                     }`}
                   >
                     {/* Image */}
-                    <div className="aspect-square bg-zinc-800 relative">
+                    <div className={`aspect-square ${ct('bg-slate-200', 'bg-zinc-800')} relative`}>
                       {isFailed ? (
                         <div className="w-full h-full flex flex-col items-center justify-center p-3">
                           <AlertTriangle className="w-6 h-6 text-red-400 mb-2" />

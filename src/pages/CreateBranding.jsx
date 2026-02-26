@@ -443,7 +443,7 @@ export default function CreateBranding() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')} flex items-center justify-center`}>
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
         <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
       </div>
     );
@@ -454,7 +454,7 @@ export default function CreateBranding() {
 
   return (
     <CreatePageTransition>
-      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-[#09090b]')}`}>
+      <div className={`min-h-screen ${ct('bg-slate-50', 'bg-black')}`}>
         <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ---- Header Row ---- */}
