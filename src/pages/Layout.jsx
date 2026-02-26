@@ -1133,13 +1133,17 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-medium">Navigation</p>
           </div>
         )}
-        {/* SYNC Avatar - top of sidebar: click = chat, double-click = voice (platform owners only while in development) */}
-        {isPlatformOwner && (
+        {/* Top of sidebar: SYNC avatar for platform owners, logo for everyone else */}
+        {isPlatformOwner ? (
           <SyncAvatarSidebarButton
             onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
             voiceHook={syncVoice}
             knockHook={syncKnock}
           />
+        ) : (
+          <div className="flex items-center justify-center py-2 mb-1">
+            <img src="/isyncso-logo.png" alt="iSyncSO" className="w-9 h-9 object-contain" />
+          </div>
         )}
 
         {/* Core Navigation - filtered by permissions */}
