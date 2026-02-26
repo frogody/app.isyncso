@@ -167,7 +167,7 @@ Both pages are public (no auth required), rendered outside the main Layout.
 ### Privacy Policy Key Sections
 
 1. **Introduction** — GDPR + PSD2 compliance statement
-2. **Data Controller** — iSyncSO B.V., Netherlands
+2. **Data Controller** — ISYNCSO, Netherlands
 3. **Personal Data We Collect** — Account, Financial, Bank (PSD2), Email, Technical
 4. **Purposes and Legal Basis** — Table mapping each purpose to GDPR article
 5. **Open Banking / PSD2 Provisions** — Explicit consent, limited use (Art. 66(3)(g)), 90-day consent, Enable Banking as intermediary

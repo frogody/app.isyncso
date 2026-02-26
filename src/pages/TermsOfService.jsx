@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { FileText, ArrowLeft } from 'lucide-react';
 
 const LAST_UPDATED = '2026-02-26';
-const COMPANY_NAME = 'iSyncSO';
-const COMPANY_LEGAL = 'iSyncSO B.V.';
+const COMPANY_NAME = 'ISYNCSO';
+const COMPANY_LEGAL = 'ISYNCSO';
 const COMPANY_COUNTRY = 'the Netherlands';
 const COMPANY_EMAIL = 'support@isyncso.com';
 const APP_URL = 'https://app.isyncso.com';
