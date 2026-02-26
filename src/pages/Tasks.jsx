@@ -4,7 +4,7 @@ import anime from '@/lib/anime-wrapper';
 import { prefersReducedMotion } from '@/lib/animations';
 import { useUser } from "@/components/context/UserContext";
 import { useSearchParams } from "react-router-dom";
-import { supabase } from "@/api/supabaseClient";
+import { supabase, functions } from "@/api/supabaseClient";
 import {
   Plus, Sparkles, Keyboard, ChevronRight, InboxIcon
 } from "lucide-react";
@@ -98,7 +98,7 @@ export default function Tasks() {
     const loadMeta = async () => {
       try {
         const [projectsRes, usersRes] = await Promise.all([
-          supabase.from("projects").select("id, name").limit(50),
+          supabase.from("projects").select("id, title").limit(50),
           user.company_id
             ? supabase.from("users").select("id, full_name, email, avatar_url").eq("company_id", user.company_id).limit(50)
             : Promise.resolve({ data: [] }),
@@ -269,20 +269,18 @@ export default function Tasks() {
     // Trigger inline action — the InlineAIActions component handles the API call
     // For context menu actions, do a quick call here
     try {
-      const { data, error } = await import("@/api/supabaseClient").then(m =>
-        m.functions.invoke("task-pixel", {
-          action,
-          context: {
-            taskId: task.id,
-            taskTitle: task.title,
-            taskDescription: task.description,
-            taskPriority: task.priority,
-            taskDueDate: task.due_date,
-            userId: user?.id,
-            companyId: user?.company_id,
-          },
-        })
-      );
+      const { data, error } = await functions.invoke("task-pixel", {
+        action,
+        context: {
+          taskId: task.id,
+          taskTitle: task.title,
+          taskDescription: task.description,
+          taskPriority: task.priority,
+          taskDueDate: task.due_date,
+          userId: user?.id,
+          companyId: user?.company_id,
+        },
+      });
 
       if (error) {
         toast.error(error.message || "AI action failed");

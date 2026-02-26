@@ -119,7 +119,7 @@ export default function TaskFilters({
               <SelectItem value="all">All Projects</SelectItem>
               {projects.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name}
+                  {p.title || p.name}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -290,7 +290,7 @@ export default function TaskModal({
                         <SelectItem value="none">No project</SelectItem>
                         {projects.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
-                            {p.name}
+                            {p.title || p.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
