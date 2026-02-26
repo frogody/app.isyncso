@@ -5,7 +5,10 @@ import { FileText, ArrowLeft } from 'lucide-react';
 const LAST_UPDATED = '2026-02-26';
 const COMPANY_NAME = 'ISYNCSO';
 const COMPANY_LEGAL = 'ISYNCSO';
+const COMPANY_TYPE = 'Eenmanszaak (sole proprietorship)';
+const COMPANY_ADDRESS = 'Oude Woudenbergseweg 17, 3941 JN Doorn';
 const COMPANY_COUNTRY = 'the Netherlands';
+const COMPANY_KVK = '98210424';
 const COMPANY_EMAIL = 'support@isyncso.com';
 const APP_URL = 'https://app.isyncso.com';
 
@@ -31,6 +34,17 @@ export default function TermsOfService() {
         <h1 className="text-3xl font-bold text-white mb-2">Terms of Service</h1>
         <p className="text-sm text-zinc-500 mb-10">Last updated: {LAST_UPDATED}</p>
 
+        {/* Beta notice */}
+        <div className="mb-10 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <p className="text-sm text-amber-300 font-medium mb-1">Early Access / Beta</p>
+          <p className="text-sm text-amber-200/80">
+            {COMPANY_NAME} is currently in early access (beta). The Service may contain bugs, incomplete
+            features, or undergo significant changes. By using the Service during this period, you acknowledge
+            and accept these limitations. We provide the Service on an "as is" basis during beta and make no
+            guarantees regarding uptime, data accuracy, or feature completeness.
+          </p>
+        </div>
+
         <div className="space-y-10 text-[15px] leading-relaxed">
 
           {/* 1. Agreement */}
@@ -38,8 +52,9 @@ export default function TermsOfService() {
             <h2 className="text-xl font-semibold text-white mb-3">1. Agreement to Terms</h2>
             <p>
               These Terms of Service ("Terms") constitute a legally binding agreement between you ("User", "you")
-              and {COMPANY_LEGAL} ("{COMPANY_NAME}", "we", "us"), registered in {COMPANY_COUNTRY}, governing
-              your use of the {COMPANY_NAME} platform at <a href={APP_URL} className="text-cyan-400 hover:underline">{APP_URL}</a> (the "Service").
+              and {COMPANY_LEGAL}, a {COMPANY_TYPE} registered in {COMPANY_COUNTRY} (KvK: {COMPANY_KVK}),
+              governing your use of the {COMPANY_NAME} platform
+              at <a href={APP_URL} className="text-cyan-400 hover:underline">{APP_URL}</a> (the "Service").
             </p>
             <p className="mt-3">
               By creating an account or using the Service, you agree to be bound by these Terms and our{' '}
@@ -104,9 +119,9 @@ export default function TermsOfService() {
             <h3 className="text-lg font-medium text-white mt-4 mb-2">4.3 Consent Duration</h3>
             <p>
               In accordance with PSD2, bank access consent is valid for a maximum of 90 days. You will need to
-              re-authenticate periodically. You may revoke consent at any time through your {COMPANY_NAME}
-              settings or directly with your bank. Revoking consent will stop future transaction synchronization
-              but will not delete previously imported transaction data.
+              re-authenticate periodically. You may revoke consent at any time through
+              your {COMPANY_NAME} settings or directly with your bank. Revoking consent will stop future
+              transaction synchronization but will not delete previously imported transaction data.
             </p>
 
             <h3 className="text-lg font-medium text-white mt-4 mb-2">4.4 Limited Use</h3>
@@ -124,9 +139,9 @@ export default function TermsOfService() {
             </p>
           </section>
 
-          {/* 5. User Obligations */}
+          {/* 5. User Obligations & Acceptable Use */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">5. User Obligations</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">5. User Obligations and Acceptable Use</h2>
             <p>When using the Service, you agree to:</p>
             <ul className="list-disc pl-6 space-y-1 mt-2">
               <li>Provide accurate business and financial information</li>
@@ -135,6 +150,17 @@ export default function TermsOfService() {
               <li>Not attempt to access other users' data or circumvent security measures</li>
               <li>Not reverse-engineer, decompile, or create derivative works of the Service</li>
               <li>Maintain your own records and not rely solely on {COMPANY_NAME} as your only data backup</li>
+            </ul>
+
+            <h3 className="text-lg font-medium text-white mt-5 mb-2">5.1 Prohibited Activities</h3>
+            <p>The following activities are expressly prohibited:</p>
+            <ul className="list-disc pl-6 space-y-1 mt-2">
+              <li>Automated scraping, crawling, or bulk extraction of data from the Service</li>
+              <li>Using the API or any interface in a manner that exceeds reasonable usage or burdens our infrastructure</li>
+              <li>Using AI-powered features to process data you do not have the legal right to process</li>
+              <li>Uploading malicious files, invoices, or documents designed to exploit the AI extraction system</li>
+              <li>Sharing account credentials with unauthorized third parties</li>
+              <li>Using the Service to store or transmit content that infringes intellectual property rights</li>
             </ul>
           </section>
 
@@ -156,9 +182,9 @@ export default function TermsOfService() {
 
             <h3 className="text-lg font-medium text-white mt-4 mb-2">6.3 Our Property</h3>
             <p>
-              The Service, including its design, code, features, and branding, is the intellectual property of
-              {COMPANY_LEGAL}. These Terms do not grant you any rights to our intellectual property beyond the
-              right to use the Service as intended.
+              The Service, including its design, code, features, and branding, is the intellectual property
+              of {COMPANY_LEGAL}. These Terms do not grant you any rights to our intellectual property beyond
+              the right to use the Service as intended.
             </p>
           </section>
 
@@ -182,7 +208,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">8. Third-Party Integrations</h2>
             <p>
-              The Service integrates with third-party services (banks, email providers, payment processors,
+              The Service integrates with third-party services (banks, email providers, AI model providers,
               etc.). Your use of these integrations is subject to the respective third party's terms and
               privacy policies. We are not responsible for the availability, accuracy, or security of
               third-party services.
@@ -193,20 +219,24 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">9. Pricing and Payment</h2>
             <p>
-              Current pricing is displayed on our website and within the Service. We reserve the right to
-              change pricing with 30 days' notice. Fees are non-refundable except as required by applicable
-              law. If you do not agree to a price change, you may cancel your subscription before the change
-              takes effect.
+              {COMPANY_NAME} is currently available free of charge during the early access (beta) period. We
+              reserve the right to introduce paid plans in the future. If and when paid plans are introduced:
             </p>
+            <ul className="list-disc pl-6 space-y-1 mt-2">
+              <li>We will provide at least 30 days' notice before any charges apply</li>
+              <li>You will have the option to cancel before charges take effect</li>
+              <li>Pricing details will be clearly displayed within the Service</li>
+              <li>Fees, once applicable, are non-refundable except as required by law</li>
+            </ul>
           </section>
 
           {/* 10. Availability */}
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">10. Service Availability</h2>
             <p>
-              We aim to provide the Service 24/7 but do not guarantee uninterrupted access. We may perform
-              maintenance, updates, or improvements that temporarily affect availability. We will provide
-              reasonable notice for planned downtime where possible.
+              We aim to provide the Service 24/7 but do not guarantee uninterrupted access, particularly
+              during the beta period. We may perform maintenance, updates, or improvements that temporarily
+              affect availability. We will provide reasonable notice for planned downtime where possible.
             </p>
           </section>
 
@@ -218,16 +248,18 @@ export default function TermsOfService() {
             </p>
             <ul className="list-disc pl-6 space-y-2 mt-2">
               <li>
-                {COMPANY_NAME} is provided "as is" without warranties of any kind, express or implied,
-                including merchantability or fitness for a particular purpose.
+                The Service is provided "as is" and "as available" without warranties of any kind, express or
+                implied, including merchantability or fitness for a particular purpose. This applies especially
+                during the beta period.
               </li>
               <li>
                 We are not liable for indirect, incidental, special, consequential, or punitive damages,
                 including loss of profits, data, or business opportunities.
               </li>
               <li>
-                Our total liability for any claim arising from or related to the Service shall not exceed
-                the amount you paid to us in the 12 months preceding the claim.
+                Our total aggregate liability for any claim arising from or related to the Service shall not
+                exceed the greater of (a) the amount you paid to us in the 12 months preceding the claim,
+                or (b) one hundred euros (&#8364;100).
               </li>
               <li>
                 We are not liable for errors in AI-generated outputs, bank synchronization failures due to
@@ -245,9 +277,10 @@ export default function TermsOfService() {
               reasonably possible.
             </p>
             <p className="mt-3">
-              Upon termination, you may export your data within 30 days. After this period, we will delete
-              your data except where retention is required by law (e.g., 7-year fiscal retention for
-              financial records under Dutch law).
+              Upon termination, you may export your data within 30 days. Export is available via the
+              platform's built-in export features (CSV and JSON formats for financial data, PDF for documents).
+              After the 30-day period, we will delete your data except where retention is required by law
+              (e.g., 7-year fiscal retention for financial records under Dutch law, AWR Art. 52).
             </p>
           </section>
 
@@ -255,8 +288,14 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">13. Governing Law and Disputes</h2>
             <p>
-              These Terms are governed by the laws of {COMPANY_COUNTRY}. Any disputes arising from these
-              Terms or the Service shall be submitted to the competent court in Amsterdam, the Netherlands.
+              These Terms are governed by the laws of {COMPANY_COUNTRY}.
+            </p>
+            <p className="mt-3">
+              In the event of a dispute arising from these Terms or the Service, both parties agree to first
+              attempt to resolve the matter through good-faith negotiation for a period of 30 days, starting
+              from written notice of the dispute sent to the other party. If the dispute cannot be resolved
+              through negotiation within this period, it shall be submitted to the competent court in Utrecht,
+              the Netherlands.
             </p>
           </section>
 
@@ -275,9 +314,11 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">15. Contact</h2>
             <p>For questions about these Terms of Service, contact:</p>
-            <div className="mt-2 p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+            <div className="mt-2 p-4 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-1">
               <p className="text-white font-medium">{COMPANY_LEGAL}</p>
-              <p>{COMPANY_COUNTRY}</p>
+              <p>{COMPANY_TYPE}</p>
+              <p>{COMPANY_ADDRESS}</p>
+              <p>KvK: {COMPANY_KVK}</p>
               <p>Email: <a href={`mailto:${COMPANY_EMAIL}`} className="text-cyan-400 hover:underline">{COMPANY_EMAIL}</a></p>
             </div>
           </section>

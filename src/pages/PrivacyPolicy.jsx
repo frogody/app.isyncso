@@ -5,7 +5,10 @@ import { Shield, ArrowLeft } from 'lucide-react';
 const LAST_UPDATED = '2026-02-26';
 const COMPANY_NAME = 'ISYNCSO';
 const COMPANY_LEGAL = 'ISYNCSO';
+const COMPANY_TYPE = 'Eenmanszaak (sole proprietorship)';
+const COMPANY_ADDRESS = 'Oude Woudenbergseweg 17, 3941 JN Doorn';
 const COMPANY_COUNTRY = 'the Netherlands';
+const COMPANY_KVK = '98210424';
 const COMPANY_EMAIL = 'privacy@isyncso.com';
 const APP_URL = 'https://app.isyncso.com';
 
@@ -31,13 +34,23 @@ export default function PrivacyPolicy() {
         <h1 className="text-3xl font-bold text-white mb-2">Privacy Policy</h1>
         <p className="text-sm text-zinc-500 mb-10">Last updated: {LAST_UPDATED}</p>
 
+        {/* Beta notice */}
+        <div className="mb-10 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <p className="text-sm text-amber-300 font-medium mb-1">Early Access / Beta</p>
+          <p className="text-sm text-amber-200/80">
+            {COMPANY_NAME} is currently in early access (beta). Features, data processing practices, and
+            third-party processors may change as the platform evolves. We will update this Privacy Policy
+            accordingly and notify users of material changes.
+          </p>
+        </div>
+
         <div className="space-y-10 text-[15px] leading-relaxed">
 
           {/* 1. Introduction */}
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">1. Introduction</h2>
             <p>
-              {COMPANY_LEGAL} ("{COMPANY_NAME}", "we", "us", "our"), registered in {COMPANY_COUNTRY},
+              {COMPANY_LEGAL}, a {COMPANY_TYPE} registered in {COMPANY_COUNTRY} (KvK: {COMPANY_KVK}),
               operates the {COMPANY_NAME} platform at <a href={APP_URL} className="text-cyan-400 hover:underline">{APP_URL}</a>.
               We are committed to protecting your privacy and processing your personal data in accordance with
               the General Data Protection Regulation (EU) 2016/679 ("GDPR"), the revised Payment Services
@@ -54,10 +67,12 @@ export default function PrivacyPolicy() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">2. Data Controller</h2>
             <p>The data controller for the processing of your personal data is:</p>
-            <div className="mt-2 p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+            <div className="mt-2 p-4 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-1">
               <p className="text-white font-medium">{COMPANY_LEGAL}</p>
-              <p>{COMPANY_COUNTRY}</p>
-              <p>Email: <a href={`mailto:${COMPANY_EMAIL}`} className="text-cyan-400 hover:underline">{COMPANY_EMAIL}</a></p>
+              <p>{COMPANY_TYPE}</p>
+              <p>{COMPANY_ADDRESS}</p>
+              <p>KvK: {COMPANY_KVK}</p>
+              <p>Data Protection Contact: <a href={`mailto:${COMPANY_EMAIL}`} className="text-cyan-400 hover:underline">{COMPANY_EMAIL}</a></p>
             </div>
           </section>
 
@@ -101,7 +116,9 @@ export default function PrivacyPolicy() {
             <p>
               If you enable Gmail auto-import, we access email metadata (subject, sender, date) and PDF/image
               attachments identified as invoices. We do not read the body of your emails. Attachment data is
-              processed solely for invoice extraction and stored in your account.
+              processed solely for invoice extraction and stored in your account. If this scope changes in the
+              future (e.g., to detect expenses from email body text), we will update this policy and notify you
+              before any such change takes effect.
             </p>
 
             <h3 className="text-lg font-medium text-white mt-5 mb-2">3.5 Technical Data</h3>
@@ -209,7 +226,7 @@ export default function PrivacyPolicy() {
           {/* 6. Data Sharing */}
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">6. Data Sharing and Third-Party Processors</h2>
-            <p>We share personal data only with the following categories of processors, under appropriate Data Processing Agreements:</p>
+            <p>We share personal data only with the following processors, under appropriate Data Processing Agreements (DPAs):</p>
             <div className="overflow-x-auto">
               <table className="w-full mt-3 text-sm">
                 <thead>
@@ -221,8 +238,8 @@ export default function PrivacyPolicy() {
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
                   <tr>
-                    <td className="py-2 pr-4">Supabase (database & auth)</td>
-                    <td className="py-2 pr-4">Data storage, authentication</td>
+                    <td className="py-2 pr-4">Supabase Inc.</td>
+                    <td className="py-2 pr-4">Database, authentication, file storage, edge functions</td>
                     <td className="py-2 pr-4">US (AWS)</td>
                   </tr>
                   <tr>
@@ -231,18 +248,23 @@ export default function PrivacyPolicy() {
                     <td className="py-2 pr-4">Finland (EU)</td>
                   </tr>
                   <tr>
-                    <td className="py-2 pr-4">Vercel</td>
+                    <td className="py-2 pr-4">Vercel Inc.</td>
                     <td className="py-2 pr-4">Frontend hosting and CDN</td>
                     <td className="py-2 pr-4">US / Global edge</td>
                   </tr>
                   <tr>
-                    <td className="py-2 pr-4">Groq / AI providers</td>
-                    <td className="py-2 pr-4">Invoice text extraction (no data retained)</td>
+                    <td className="py-2 pr-4">Groq Inc.</td>
+                    <td className="py-2 pr-4">AI invoice text extraction (transient processing, per DPA with provider)</td>
                     <td className="py-2 pr-4">US</td>
                   </tr>
                   <tr>
-                    <td className="py-2 pr-4">Composio</td>
-                    <td className="py-2 pr-4">Gmail/Outlook integration</td>
+                    <td className="py-2 pr-4">Together AI Inc.</td>
+                    <td className="py-2 pr-4">AI assistant language model and embeddings (transient processing, per DPA with provider)</td>
+                    <td className="py-2 pr-4">US</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-4">Composio Inc.</td>
+                    <td className="py-2 pr-4">Gmail/Outlook integration and OAuth token management</td>
                     <td className="py-2 pr-4">US</td>
                   </tr>
                 </tbody>
@@ -250,7 +272,8 @@ export default function PrivacyPolicy() {
             </div>
             <p className="mt-3">
               We do not sell personal data to third parties. We do not share bank account data with any party
-              other than the processors listed above who require it for service delivery.
+              other than the processors listed above who require it for service delivery. This list will be
+              updated as processors change.
             </p>
           </section>
 
@@ -315,9 +338,21 @@ export default function PrivacyPolicy() {
             </p>
           </section>
 
-          {/* 9. Your Rights */}
+          {/* 9. Data Protection Impact Assessments */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">9. Your Rights</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">9. Data Protection Impact Assessments</h2>
+            <p>
+              Where our processing activities are likely to result in high risk to the rights and freedoms of
+              individuals — including processing of bank transaction data and AI-based document analysis — we
+              conduct Data Protection Impact Assessments (DPIAs) in accordance with GDPR Article 35. These
+              assessments evaluate the necessity, proportionality, and risks of processing, and identify
+              measures to mitigate those risks.
+            </p>
+          </section>
+
+          {/* 10. Your Rights */}
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-3">10. Your Rights</h2>
             <p>Under the GDPR, you have the following rights regarding your personal data:</p>
             <ul className="list-disc pl-6 space-y-2 mt-3">
               <li>
@@ -358,39 +393,49 @@ export default function PrivacyPolicy() {
             </p>
           </section>
 
-          {/* 10. International Transfers */}
+          {/* 11. International Transfers */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">10. International Data Transfers</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">11. International Data Transfers</h2>
             <p>
               Some of our processors are located outside the European Economic Area (EEA), primarily in the
-              United States. Where data is transferred outside the EEA, we ensure adequate protection through
-              Standard Contractual Clauses (SCCs) approved by the European Commission, or through processors
-              that maintain equivalent security standards.
+              United States (Supabase, Vercel, Groq, Together AI, Composio). Where data is transferred outside
+              the EEA, we ensure adequate protection through Standard Contractual Clauses (SCCs) approved by
+              the European Commission, and we evaluate the adequacy of protections provided by each processor,
+              taking into account the nature of the data transferred and the legal framework of the recipient
+              country.
             </p>
           </section>
 
-          {/* 11. Cookies */}
+          {/* 12. Cookies */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">11. Cookies and Local Storage</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">12. Cookies and Local Storage</h2>
             <p>
-              We use essential cookies and local storage for authentication and session management. We do not
-              use tracking cookies or third-party advertising cookies. Analytics data is collected in an
-              anonymized form for service improvement.
+              We use the following browser storage mechanisms, all of which are essential for the Service to
+              function:
+            </p>
+            <ul className="list-disc pl-6 space-y-1 mt-2">
+              <li><strong className="text-white">Authentication tokens</strong> — Supabase session tokens stored in local storage to maintain your login session</li>
+              <li><strong className="text-white">User preferences</strong> — Theme, language, and UI settings stored in local storage</li>
+              <li><strong className="text-white">Essential cookies</strong> — Session cookies for CSRF protection and security</li>
+            </ul>
+            <p className="mt-3">
+              We do not use tracking cookies, third-party advertising cookies, or analytics cookies. No data
+              from browser storage is shared with third parties for advertising or profiling purposes.
             </p>
           </section>
 
-          {/* 12. Children */}
+          {/* 13. Children */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">12. Children's Privacy</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">13. Children's Privacy</h2>
             <p>
               {COMPANY_NAME} is a business tool not intended for use by individuals under 16 years of age.
               We do not knowingly collect personal data from children.
             </p>
           </section>
 
-          {/* 13. Changes */}
+          {/* 14. Changes */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">13. Changes to This Policy</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">14. Changes to This Policy</h2>
             <p>
               We may update this Privacy Policy from time to time. Material changes will be communicated via
               email or in-app notification. Continued use of the platform after notification constitutes
@@ -398,14 +443,16 @@ export default function PrivacyPolicy() {
             </p>
           </section>
 
-          {/* 14. Contact */}
+          {/* 15. Contact */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">14. Contact</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">15. Contact</h2>
             <p>For any questions about this Privacy Policy or your personal data, contact:</p>
-            <div className="mt-2 p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
+            <div className="mt-2 p-4 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-1">
               <p className="text-white font-medium">{COMPANY_LEGAL}</p>
-              <p>Data Protection Contact</p>
-              <p>Email: <a href={`mailto:${COMPANY_EMAIL}`} className="text-cyan-400 hover:underline">{COMPANY_EMAIL}</a></p>
+              <p>{COMPANY_TYPE}</p>
+              <p>{COMPANY_ADDRESS}</p>
+              <p>KvK: {COMPANY_KVK}</p>
+              <p>Data Protection Contact: <a href={`mailto:${COMPANY_EMAIL}`} className="text-cyan-400 hover:underline">{COMPANY_EMAIL}</a></p>
             </div>
           </section>
 
