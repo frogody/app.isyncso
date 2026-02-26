@@ -21,7 +21,7 @@ import {
   CheckCircle2, Clock, Scale, Loader2, Download,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
-import { SCANNER_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
+import { SCANNER_CONFIG, SCANNER_INIT_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -124,7 +124,7 @@ function BarcodeScanner({ onScan, isActive }) {
     setCameraError(null);
     setIsScanning(true);
     try {
-      const qr = new Html5Qrcode("pallet-scanner-region");
+      const qr = new Html5Qrcode("pallet-scanner-region", SCANNER_INIT_CONFIG);
       html5QrCodeRef.current = qr;
       await qr.start(
         { facingMode: "environment" },
@@ -145,7 +145,7 @@ function BarcodeScanner({ onScan, isActive }) {
         () => {}
       );
 
-      optimizeCameraAfterStart(qr);
+      optimizeCameraAfterStart("pallet-scanner-region").catch(() => {});
     } catch (err) {
       setCameraError(err.message || "Camera failed");
       setIsScanning(false);

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { Html5Qrcode } from "html5-qrcode";
-import { SCANNER_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
+import { SCANNER_CONFIG, SCANNER_INIT_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
 
 // Shared BarcodeScanner component with camera support for mobile devices.
 // Props: { onScan, isActive, scannerId }
@@ -70,7 +70,7 @@ export default function BarcodeScanner({ onScan, isActive, scannerId = "barcode-
     setIsScanning(true);
 
     try {
-      const html5QrCode = new Html5Qrcode(scannerId);
+      const html5QrCode = new Html5Qrcode(scannerId, SCANNER_INIT_CONFIG);
       html5QrCodeRef.current = html5QrCode;
 
       await html5QrCode.start(
@@ -93,7 +93,7 @@ export default function BarcodeScanner({ onScan, isActive, scannerId = "barcode-
         () => {}
       );
 
-      optimizeCameraAfterStart(html5QrCode);
+      optimizeCameraAfterStart(scannerId).catch(() => {});
     } catch (err) {
       console.error("Camera scanner error:", err);
       setIsScanning(false);

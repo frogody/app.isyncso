@@ -46,7 +46,7 @@ import {
 } from "@/lib/db/queries";
 import { exportSessionCSV, exportSessionPDF } from "@/components/receiving/SessionExport";
 import { Html5Qrcode } from "html5-qrcode";
-import { SCANNER_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
+import { SCANNER_CONFIG, SCANNER_INIT_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
 
 // Barcode scanner component with camera support for mobile devices
 // Beep feedback using Web Audio API
@@ -110,7 +110,7 @@ function BarcodeScanner({ onScan, isActive }) {
     setIsScanning(true);
 
     try {
-      const html5QrCode = new Html5Qrcode("barcode-scanner-region");
+      const html5QrCode = new Html5Qrcode("barcode-scanner-region", SCANNER_INIT_CONFIG);
       html5QrCodeRef.current = html5QrCode;
 
       await html5QrCode.start(
@@ -133,7 +133,7 @@ function BarcodeScanner({ onScan, isActive }) {
         () => {}
       );
 
-      optimizeCameraAfterStart(html5QrCode);
+      optimizeCameraAfterStart("barcode-scanner-region").catch(() => {});
     } catch (err) {
       console.error("Camera scanner error:", err);
       setIsScanning(false);
