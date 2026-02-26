@@ -110,6 +110,7 @@ import {
   AudioLines,
   Shirt,
   LayoutTemplate,
+  Lock,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -138,6 +139,8 @@ import OnboardingGuard from "@/components/layout/OnboardingGuard";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import FloatingAgentTrigger from "@/components/agents/FloatingAgentTrigger";
 import AppsManagerModal, { AVAILABLE_APPS } from "@/components/layout/AppsManagerModal";
+import AppLicenseGate from "@/components/layout/AppLicenseGate";
+import { ENGINE_ITEMS_CONFIG } from "@/lib/engineAppsConfig";
 
 // Import providers
 import { AchievementProvider } from "@/components/learn/AchievementContext";
@@ -290,73 +293,7 @@ const bottomNavItems = [
   },
 ];
 
-// Engine apps with permission requirements
-const ENGINE_ITEMS_CONFIG = {
-  finance: {
-    title: "Finance",
-    url: createPageUrl("FinanceDashboard"),
-    icon: Euro,
-    id: 'finance',
-    permission: "finance.view",
-    matchPatterns: ["/finance", "/proposal"],
-  },
-  growth: {
-    title: "Growth",
-    url: "/growth/dashboard",
-    icon: Rocket,
-    id: 'growth',
-    permission: "analytics.view", // Growth analytics
-    matchPatterns: ["/growth", "/Growth", "/sequences", "/deals", "/leads", "/insights", "/prospect", "/research", "/pipeline"],
-  },
-  learn: {
-    title: "Learn",
-    url: createPageUrl("LearnDashboard"),
-    icon: GraduationCap,
-    id: 'learn',
-    permission: "courses.view", // Learning features
-    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard", "/practice", "/teamlearn"],
-  },
-  talent: {
-    title: "Talent",
-    url: createPageUrl("TalentDashboard"),
-    icon: UserPlus,
-    id: 'talent',
-    permission: "talent.view",
-    matchPatterns: ["/talent"],
-  },
-  sentinel: {
-    title: "Sentinel",
-    url: createPageUrl("SentinelDashboard"),
-    icon: Shield,
-    id: 'sentinel',
-    permission: "admin.access", // Admin/compliance feature
-    matchPatterns: ["/sentinel", "/aisystem", "/compliance", "/document", "/riskassessment"],
-  },
-  raise: {
-    title: "Raise",
-    url: createPageUrl("Raise"),
-    icon: TrendingUp,
-    id: 'raise',
-    permission: "finance.view", // Fundraising is finance-related
-    matchPatterns: ["/raise"],
-  },
-  create: {
-    title: "Create",
-    url: createPageUrl("Create"),
-    icon: Palette,
-    id: 'create',
-    permission: null, // Always visible - content creation feature
-    matchPatterns: ["/create"],
-  },
-  reach: {
-    title: "Reach",
-    url: createPageUrl("ReachDashboard"),
-    icon: Signal,
-    id: 'reach',
-    permission: null, // Always visible - marketing hub
-    matchPatterns: ["/reach"],
-  },
-};
+// ENGINE_ITEMS_CONFIG imported from @/lib/engineAppsConfig
 
 
 
@@ -1031,18 +968,10 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   // If no licensing (effectiveApps empty), fall back to workspace-enabled apps
   // Base apps (Dashboard, CRM, Products, Projects, Inbox) are always in core nav
   const engineItems = useMemo(() => {
-    let appsToShow;
+    if (teamLoading) return [];
 
-    if (teamLoading) {
-      // Still loading — show nothing to avoid flash
-      appsToShow = [];
-    } else if (effectiveApps.length > 0) {
-      // Licensing active — only show licensed apps that user also enabled in workspace
-      appsToShow = effectiveApps.filter(appId => enabledApps.includes(appId));
-    } else {
-      // No licensing restrictions — show whatever user enabled in workspace settings
-      appsToShow = enabledApps.filter(appId => ENGINE_ITEMS_CONFIG[appId]);
-    }
+    // Show all workspace-enabled engine apps in sidebar
+    let appsToShow = enabledApps.filter(appId => ENGINE_ITEMS_CONFIG[appId]);
 
     // Filter out platform-owner-only apps for regular users
     if (!isPlatformOwner) {
@@ -1050,7 +979,13 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     }
 
     return appsToShow
-      .map(appId => ENGINE_ITEMS_CONFIG[appId])
+      .map(appId => {
+        const config = ENGINE_ITEMS_CONFIG[appId];
+        if (!config) return null;
+        // effectiveApps = [] → isLicensed = false (no licenses = locked)
+        const isLicensed = effectiveApps.includes(appId);
+        return { ...config, isLicensed };
+      })
       .filter(Boolean);
   }, [effectiveApps, enabledApps, teamLoading, isPlatformOwner]);
 
@@ -1239,10 +1174,17 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                   `}
                   title={item.title}
                 >
-                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
-                    isActive ? colors.text : 'group-hover:text-white'
-                  }`} />
-                  <span className="text-sm font-medium">{item.title}</span>
+                  <span className="relative">
+                    <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
+                      isActive ? colors.text : 'group-hover:text-white'
+                    }`} />
+                    {!item.isLicensed && (
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-700">
+                        <Lock className="w-2 h-2 text-zinc-500" />
+                      </span>
+                    )}
+                  </span>
+                  <span className={`text-sm font-medium ${!item.isLicensed ? 'opacity-60' : ''}`}>{item.title}</span>
                   {isActive && (
                     <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
                   )}
@@ -1282,9 +1224,16 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 `}
                 title={item.title}
               >
-                <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
-                  isActive ? colors.text : 'group-hover:text-white'
-                }`} />
+                <span className="relative">
+                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
+                    isActive ? colors.text : 'group-hover:text-white'
+                  } ${!item.isLicensed ? 'opacity-60' : ''}`} />
+                  {!item.isLicensed && (
+                    <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-700">
+                      <Lock className="w-2 h-2 text-zinc-500" />
+                    </span>
+                  )}
+                </span>
                 {isActive && (
                   <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
                 )}
@@ -3580,7 +3529,9 @@ export default function Layout({ children, currentPageName }) {
             {/* SYNC environment top tabs removed — each Sync page renders its own SyncViewSelector on the right */}
             {/* TALENT quick action buttons moved to TalentDashboard PageHeader */}
             <div className="min-h-full">
-              {children}
+              <AppLicenseGate>
+                {children}
+              </AppLicenseGate>
             </div>
           </main>
 

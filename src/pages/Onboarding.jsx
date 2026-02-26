@@ -443,67 +443,14 @@ export default function Onboarding() {
         }
       }
 
-      // 3. Explorium enrichment (non-invited only, non-blocking)
-      if (!invited && companyId && companyDomain) {
-        try {
-          const exploriumResult = await db.functions.invoke('enrichCompanyFromExplorium', {
-            domain: companyDomain,
-          });
-          const enrichment = exploriumResult?.data;
-          if (enrichment && !enrichment.error) {
-            await db.entities.Company.update(companyId, {
-              tech_stack: enrichment.tech_stack || [],
-              tech_categories: enrichment.tech_categories || [],
-              employee_count: enrichment.employee_count || null,
-              founded_year: enrichment.founded_year || null,
-              headquarters: enrichment.headquarters || null,
-              revenue_range: enrichment.revenue_range || null,
-              linkedin_url: enrichment.linkedin_url || null,
-              logo_url: enrichment.logo_url || null,
-              funding_data: enrichment.funding_data || null,
-              total_funding: enrichment.total_funding || null,
-              funding_stage: enrichment.funding_stage || null,
-              enriched_at: new Date().toISOString(),
-              enrichment_source: 'explorium',
-              data_completeness: enrichment.data_completeness || 0,
-            });
-          }
-        } catch (e) {
-          console.warn('[Onboarding] Explorium enrichment error:', e);
-        }
-      }
-
-      // 4. Profile enrichment
-      try {
-        await db.functions.invoke('enrichCompanyProfile', {
-          company_name: immersiveData.companyName,
-          company_url: immersiveData.companyWebsite,
-          job_title: immersiveData.jobTitle,
-          company_description: '',
-          key_products: [],
-          target_audience: '',
-          industry_challenges: [],
-          tech_stack: [],
-          ai_tools_used: [],
-          industry: immersiveData.industry || 'Technology',
-          company_size: immersiveData.companySize || 'Unknown',
-          user_goals: immersiveData.selectedGoals,
-          user_experience_level: immersiveData.experienceLevel,
-          linkedin_url: immersiveData.linkedinUrl || '',
-          linkedin_profile: null,
-        });
-      } catch (e) {
-        console.warn('[Onboarding] Profile enrichment error:', e);
-      }
-
-      // 5. Grant credits
+      // 3. Grant credits
       try {
         await db.functions.invoke('grantOnboardingCredits', { user_id: user.id });
       } catch (e) {
         console.warn('[Onboarding] Credits error:', e);
       }
 
-      // 6. Save app preferences
+      // 4. Save app preferences
       try {
         const existingConfigs = await db.entities.UserAppConfig.filter({ user_id: user.id });
         const selectedApps = immersiveData.selectedApps || ['sync', 'learn', 'growth', 'sentinel'];
@@ -528,10 +475,100 @@ export default function Onboarding() {
         console.warn('[Onboarding] App config error:', e);
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 5. Belt-and-suspenders: set localStorage so guard doesn't loop
+      localStorage.setItem('onboarding_completed', 'true');
+
+      // 6. Fire-and-forget: Explorium company intelligence + research
+      if (!invited && companyId && companyDomain) {
+        Promise.allSettled([
+          db.functions.invoke('researchCompany', {
+            company_name: immersiveData.companyName,
+            company_url: immersiveData.companyWebsite,
+            domain: companyDomain,
+            industry: immersiveData.industry || 'Technology',
+          }),
+          db.functions.invoke('generateCompanyIntelligence', {
+            companyName: immersiveData.companyName,
+            companyDomain: companyDomain,
+          })
+        ]).then(async ([researchResult, intelResult]) => {
+          // Normalize intelligence into company table columns
+          if (intelResult.status === 'fulfilled' && intelResult.value?.data?.intelligence) {
+            const intel = intelResult.value.data.intelligence;
+            const firmo = intel.firmographics || {};
+            const funding = intel.funding || {};
+            const tech = intel.technographics || {};
+            const social = intel.social_media || {};
+            const workforce = intel.workforce || {};
+
+            // Flatten tech stack into simple array
+            const flatTechStack = (tech.tech_stack || [])
+              .flatMap(cat => cat.technologies || []);
+            // Build tech categories object
+            const techCategories = {};
+            (tech.tech_stack || []).forEach(cat => {
+              if (cat.category && cat.technologies?.length) {
+                techCategories[cat.category] = cat.technologies;
+              }
+            });
+
+            try {
+              await db.entities.Company.update(companyId, {
+                name: firmo.company_name || immersiveData.companyName,
+                description: firmo.description || null,
+                industry: firmo.industry || null,
+                naics_code: firmo.naics_code || null,
+                naics_description: firmo.naics_description || null,
+                sic_code: firmo.sic_code || null,
+                sic_description: firmo.sic_description || null,
+                size_range: firmo.employee_count_range || null,
+                employee_count: firmo.employee_count || workforce.total_employees || null,
+                revenue_range: firmo.revenue_range || null,
+                founded_year: firmo.founded_year || null,
+                linkedin_url: firmo.linkedin_url || social.linkedin_url || null,
+                website_url: firmo.website || immersiveData.companyWebsite || null,
+                twitter_url: social.twitter_url || null,
+                facebook_url: social.facebook_url || null,
+                logo_url: firmo.logo_url || null,
+                headquarters: firmo.headquarters || null,
+                hq_city: firmo.city || null,
+                hq_state: firmo.state || null,
+                hq_country: firmo.country || null,
+                hq_postal_code: firmo.zip_code || null,
+                hq_address: firmo.street || null,
+                locations_count: firmo.locations_count || null,
+                tech_stack: flatTechStack.length > 0 ? flatTechStack : [],
+                tech_categories: Object.keys(techCategories).length > 0 ? techCategories : null,
+                tech_stack_count: flatTechStack.length || 0,
+                funding_data: funding.funding_rounds?.length ? funding : null,
+                total_funding: funding.total_funding || null,
+                funding_stage: funding.funding_stage || null,
+                last_funding_date: funding.last_funding_date || null,
+                firmographics: intel.firmographics || null,
+                technographics: intel.technographics || null,
+                funding_raw: intel.funding || null,
+                enriched_at: new Date().toISOString(),
+                enrichment_source: 'explorium',
+                data_completeness: intel.data_quality?.completeness
+                  ? Math.round((intel.data_quality.completeness / 8) * 100)
+                  : 0
+              });
+              console.log('[Onboarding] Company enriched from Explorium intelligence');
+            } catch (updateErr) {
+              console.warn('[Onboarding] Background enrichment update failed:', updateErr);
+            }
+          }
+        }).catch(err => {
+          console.warn('[Onboarding] Background enrichment failed:', err);
+        });
+      }
+
+      // 7. Navigate immediately — don't wait for enrichment
+      await new Promise(resolve => setTimeout(resolve, 300));
       window.location.href = createPageUrl('Dashboard');
     } catch (error) {
       console.error('[Onboarding] Immersive complete error:', error);
+      localStorage.setItem('onboarding_completed', 'true');
       window.location.href = createPageUrl('Dashboard');
     }
   };

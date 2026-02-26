@@ -304,7 +304,7 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embe
     ];
   };
 
-  const isAppLicensed = (appId) => effectiveApps.length === 0 || effectiveApps.includes(appId);
+  const isAppLicensed = (appId) => effectiveApps.includes(appId);
 
   // Persist config to DB and notify sidebar + dashboard instantly
   const persistConfig = useCallback((newApps, newWidgets) => {
