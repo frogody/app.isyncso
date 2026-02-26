@@ -1206,7 +1206,7 @@ function UserRow({ member, roles, currentUserId, isSuperAdmin, onAssignRole, onR
         <div className="relative">
           <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden">
             {member.avatar_url ? (
-              <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
+              <img src={member.avatar_url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-zinc-400 text-lg font-semibold">
                 {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}

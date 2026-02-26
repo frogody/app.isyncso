@@ -308,7 +308,7 @@ function PhotoUploadSlot({ slot, photo, onUpload, onRemove }) {
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       {photo ? (
         <div className={`relative aspect-square rounded-xl overflow-hidden border ${ct('border-slate-300', 'border-zinc-700/60')} group-hover:border-yellow-500/40 transition-colors`}>
-          <img src={photo.url} alt={slot.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          <img src={photo.url} alt={slot.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"  loading="lazy" decoding="async" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <button
               onClick={() => onRemove(slot.id)}
@@ -663,7 +663,7 @@ export default function StudioAvatar() {
                               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                                 {extraPhotos.map((ep) => (
                                   <div key={ep.id} className={`relative aspect-square rounded-xl overflow-hidden border ${ct('border-slate-300', 'border-zinc-700/60')} group`}>
-                                    <img src={ep.url} alt="Extra" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                    <img src={ep.url} alt="Extra" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"  loading="lazy" decoding="async" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                       <button
                                         onClick={() => handleRemoveExtra(ep.id)}

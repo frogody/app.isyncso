@@ -69,7 +69,7 @@ const CartItem = memo(function CartItem({ item, onUpdateQuantity, onRemove }) {
             src={item.image}
             alt={item.name}
             className="w-full h-full object-cover"
-            loading="lazy"
+            loading="lazy" decoding="async"
           />
         ) : (
           <div

@@ -638,7 +638,7 @@ export default function GrowthCampaignReview() {
                             src={product.featured_image}
                             alt={product.name}
                             className="w-6 h-6 rounded object-cover"
-                          />
+                           loading="lazy" decoding="async" />
                         ) : (
                           <Package className="w-4 h-4 text-zinc-500" />
                         )}

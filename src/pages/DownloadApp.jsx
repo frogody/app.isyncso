@@ -74,7 +74,7 @@ export default function DownloadApp() {
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/4314197e6_logoisyncso1.png"
                 alt="iSyncSO"
                 className="w-16 h-16 rounded-xl"
-              />
+               loading="lazy" decoding="async" />
             </div>
 
             <h1 className="text-5xl md:text-6xl font-bold text-white">

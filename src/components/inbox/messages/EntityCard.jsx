@@ -139,7 +139,7 @@ function ProductCard({ data }) {
           src={data.image}
           alt={data.name}
           className="w-10 h-10 rounded-lg object-cover border border-zinc-700/50 flex-shrink-0"
-        />
+         loading="lazy" decoding="async" />
       )}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-white truncate">{data.name}</p>

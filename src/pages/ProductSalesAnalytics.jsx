@@ -464,7 +464,7 @@ export default function ProductSalesAnalytics() {
                             <td className="px-5 py-3">
                               <div className="flex items-center gap-3">
                                 {img ? (
-                                  <img src={img} alt="" className="w-8 h-8 rounded-lg object-cover bg-zinc-800 flex-shrink-0" />
+                                  <img src={img} alt="" className="w-8 h-8 rounded-lg object-cover bg-zinc-800 flex-shrink-0"  loading="lazy" decoding="async" />
                                 ) : (
                                   <div className="w-8 h-8 rounded-lg bg-zinc-800/60 flex items-center justify-center flex-shrink-0">
                                     <ImageIcon className="w-3.5 h-3.5 text-zinc-600" />

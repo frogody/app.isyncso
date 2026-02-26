@@ -12,6 +12,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import { logger } from '@/utils/logger';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft,
@@ -159,7 +160,7 @@ function LineItemsTable({ items }) {
                         src={item.product_image}
                         alt={item.product_name}
                         className="w-10 h-10 rounded-lg object-cover border border-zinc-700"
-                      />
+                       loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center">
                         <Package className="w-4 h-4 text-zinc-500" />
@@ -560,7 +561,7 @@ export default function B2BOrderDetail() {
       setItems(itemsRes.data || []);
       setNotes(notesRes.data || []);
     } catch (err) {
-      console.error('[B2BOrderDetail] fetch error:', err);
+      logger.error('[B2BOrderDetail] fetch error:', err);
       setError(err.message || 'Failed to load order');
     } finally {
       setLoading(false);
@@ -608,12 +609,12 @@ export default function B2BOrderDetail() {
             await processOrderConfirmed(order.id, organizationId, user?.id, user?.company_id);
           }
         } catch (autoErr) {
-          console.warn('[B2BOrderDetail] automation error:', autoErr);
+          logger.warn('[B2BOrderDetail] automation error:', autoErr);
         }
 
         await fetchOrder();
       } catch (err) {
-        console.error('[B2BOrderDetail] status update error:', err);
+        logger.error('[B2BOrderDetail] status update error:', err);
         setError(err.message);
       } finally {
         setActionLoading(null);
@@ -639,7 +640,7 @@ export default function B2BOrderDetail() {
         if (noteError) throw noteError;
         await fetchOrder();
       } catch (err) {
-        console.error('[B2BOrderDetail] add note error:', err);
+        logger.error('[B2BOrderDetail] add note error:', err);
       } finally {
         setAddingNote(false);
       }
@@ -677,7 +678,7 @@ export default function B2BOrderDetail() {
 
         await fetchOrder();
       } catch (err) {
-        console.error('[B2BOrderDetail] tracking update error:', err);
+        logger.error('[B2BOrderDetail] tracking update error:', err);
       } finally {
         setUpdatingTracking(false);
       }
@@ -704,7 +705,7 @@ export default function B2BOrderDetail() {
         );
         await fetchOrder();
       } catch (err) {
-        console.error('[B2BOrderDetail] ship error:', err);
+        logger.error('[B2BOrderDetail] ship error:', err);
         setError(err.message || 'Failed to mark as shipped');
       } finally {
         setUpdatingTracking(false);

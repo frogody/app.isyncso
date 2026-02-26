@@ -81,7 +81,7 @@ function ProductRow({
               src={product.featured_image}
               alt={product.name}
               className="w-10 h-10 rounded-lg object-cover border border-zinc-700"
-            />
+             loading="lazy" decoding="async" />
           ) : (
             <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center">
               <Package className="w-4 h-4 text-zinc-500" />

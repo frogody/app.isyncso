@@ -200,7 +200,7 @@ function UserAvatar({ name, avatarUrl, t }) {
       "flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border",
       t('border-slate-200', 'border-zinc-700/50')
     )}>
-      <img src={src} alt={initials} className="w-full h-full object-cover" />
+      <img src={src} alt={initials} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
     </div>
   );
 }

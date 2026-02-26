@@ -429,7 +429,7 @@ function QuickViewModal({ product, pricing, inventory, onClose, onAddToCart, onN
                 src={product.featured_image}
                 alt={product.name}
                 className="w-full h-full object-cover"
-              />
+               loading="lazy" decoding="async" />
             ) : (
               <div className="flex flex-col items-center justify-center gap-2">
                 <Package className="w-16 h-16" style={{ color: 'var(--ws-muted)', opacity: 0.3 }} />

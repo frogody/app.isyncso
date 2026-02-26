@@ -743,7 +743,7 @@ function VendorCard({ vendor, index, st, expanded, onToggleExpand, onEdit, onDec
                     src={vendor.vendor_logo_url}
                     alt=""
                     className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <div
                     className={cn(

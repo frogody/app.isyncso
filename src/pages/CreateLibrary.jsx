@@ -539,7 +539,7 @@ export default function CreateLibrary({ embedded = false }) {
                       {/* Thumbnail */}
                       {item.content_type === 'video' ? (
                         item.thumbnail_url ? (
-                          <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover" />
+                          <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                         ) : (
                           <video
                             src={item.url}
@@ -549,7 +549,7 @@ export default function CreateLibrary({ embedded = false }) {
                           />
                         )
                       ) : (
-                        <img src={item.thumbnail_url || item.url} alt={item.name} className="w-full h-full object-cover" />
+                        <img src={item.thumbnail_url || item.url} alt={item.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                       )}
 
                       {/* Video play overlay */}
@@ -621,14 +621,14 @@ export default function CreateLibrary({ embedded = false }) {
                       <div className={`w-10 h-10 rounded-xl overflow-hidden ${ct('bg-slate-100', 'bg-zinc-800')} flex-shrink-0 relative`}>
                         {item.content_type === 'video' ? (
                           item.thumbnail_url ? (
-                            <img src={item.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                            <img src={item.thumbnail_url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <Video className="w-4 h-4 text-zinc-600" />
                             </div>
                           )
                         ) : (
-                          <img src={item.thumbnail_url || item.url} alt="" className="w-full h-full object-cover" />
+                          <img src={item.thumbnail_url || item.url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                         )}
                         {item.content_type === 'video' && (
                           <div className="absolute inset-0 flex items-center justify-center">

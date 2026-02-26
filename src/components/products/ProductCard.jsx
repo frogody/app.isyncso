@@ -106,7 +106,7 @@ export function ProductGridCard({
                   src={product.featured_image.url}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-300"
-                />
+                 loading="lazy" decoding="async" />
                 <div className="absolute inset-0 bg-black/25" />
               </>
             ) : (
@@ -318,7 +318,7 @@ export function ProductListRow({
                 src={product.featured_image.url}
                 alt={product.name}
                 className="w-full h-full object-cover"
-              />
+               loading="lazy" decoding="async" />
             ) : (
               <Icon className={cn(
                 "w-7 h-7",
@@ -618,7 +618,7 @@ export function ProductTableView({
                   <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
                     <div className="w-9 h-9 rounded bg-zinc-800 border border-white/[0.06] flex items-center justify-center overflow-hidden">
                       {product.featured_image?.url ? (
-                        <img src={product.featured_image.url} alt="" className="w-full h-full object-cover" />
+                        <img src={product.featured_image.url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                       ) : (
                         <Icon className={cn("w-4 h-4", isDigital ? "text-cyan-500/40" : "text-amber-500/40")} />
                       )}

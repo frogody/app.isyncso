@@ -266,7 +266,7 @@ function FavoriteProductCard({ favorite, onAddToCart, orgId }) {
             alt={product.name || 'Product'}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={() => setImgError(true)}
-          />
+          loading="lazy" decoding="async" />
         ) : (
           <ImageOff className="w-6 h-6" style={{ color: 'var(--ws-muted)', opacity: 0.3 }} />
         )}

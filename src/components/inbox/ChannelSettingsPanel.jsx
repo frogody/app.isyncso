@@ -386,7 +386,7 @@ export default function ChannelSettingsPanel({
                         className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-md"
                       >
                         {member.avatar_url ? (
-                          <img src={member.avatar_url} alt="" className="w-4 h-4 rounded-full" />
+                          <img src={member.avatar_url} alt="" className="w-4 h-4 rounded-full"  loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-4 h-4 rounded-full bg-zinc-700 flex items-center justify-center text-[8px] font-bold text-zinc-400">
                             {member.full_name?.charAt(0) || '?'}

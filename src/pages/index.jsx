@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react';
 import Layout from "./Layout.jsx";
 import FinancePageWrapper from "@/components/finance/FinancePageWrapper";
-import NotFound from "./NotFound";
-import Dashboard from "./Dashboard";
+const NotFound = lazy(() => import("./NotFound"));
+const Dashboard = lazy(() => import("./Dashboard"));
 import { UserProvider } from "@/components/context/UserContext";
 import { PermissionProvider } from "@/components/context/PermissionContext";
 import ClientProvider from "@/components/portal/ClientProvider";
@@ -930,7 +930,7 @@ function PagesContent() {
       'privacy', 'terms',
     ]);
     if (pathSegment && !knownPrefixes.has(pathSegment)) {
-      return <NotFound />;
+      return <Suspense fallback={<PageLoadingFallback />}><NotFound /></Suspense>;
     }
 
     return (

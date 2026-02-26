@@ -124,7 +124,7 @@ function DetailedCard({ product, showPricing, onAddToCart, onNavigate, index }) 
               src={resolveImageUrl(product.featured_image)}
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-            />
+             loading="lazy" decoding="async" />
             {/* Hover gradient overlay */}
             <div
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none"
@@ -273,7 +273,7 @@ function CompactCard({ product, showPricing, onAddToCart, onNavigate, index }) {
             src={resolveImageUrl(product.featured_image)}
             alt={product.name}
             className="w-full h-full object-cover"
-          />
+           loading="lazy" decoding="async" />
         ) : (
           <ShoppingBag className="w-6 h-6" style={{ color: 'var(--ws-muted)' }} />
         )}

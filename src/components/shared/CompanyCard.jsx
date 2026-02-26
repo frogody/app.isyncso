@@ -1,6 +1,8 @@
 import React from "react";
 import { db } from "@/api/supabaseClient";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { logger } from '@/utils/logger';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,7 +28,8 @@ export default function CompanyCard({ companyId, showRefresh = false, onRefresh 
     try {
       await onRefresh(companyId);
     } catch (error) {
-      console.error('Failed to refresh company data:', error);
+      logger.error('[CompanyCard] Failed to refresh company data:', error);
+      toast.error('Failed to refresh company data. Please try again.');
     } finally {
       setRefreshing(false);
     }
@@ -64,7 +67,7 @@ export default function CompanyCard({ companyId, showRefresh = false, onRefresh 
               src={company.logo_url} 
               alt={company.name} 
               className="w-12 h-12 rounded-lg object-contain bg-white p-1"
-            />
+             loading="lazy" decoding="async" />
           ) : (
             <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
               <Building2 className="w-6 h-6 text-orange-400" />

@@ -22,6 +22,8 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
+import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 import { STORE_TEMPLATES } from './utils/storeTemplates';
 import { DEFAULT_STORE_CONFIG } from './utils/storeDefaults';
 
@@ -137,7 +139,8 @@ function BusinessInfoStep({ data, onChange, user }) {
 
         onChange({ logoUrl: urlData.publicUrl, logoPath: path });
       } catch (err) {
-        console.error('Logo upload failed:', err);
+        logger.error('[SetupWizard] Logo upload failed:', err);
+        toast.error('Failed to upload logo. Please try again.');
       } finally {
         setUploading(false);
       }
@@ -210,7 +213,7 @@ function BusinessInfoStep({ data, onChange, user }) {
                 src={data.logoUrl}
                 alt="Logo preview"
                 className="w-full h-full object-contain p-1"
-              />
+               loading="lazy" decoding="async" />
             </div>
             <button
               onClick={removeLogo}
@@ -409,7 +412,7 @@ function ChooseTemplateStep({ data, onChange }) {
                     src={tpl.thumbnail}
                     alt={tpl.name}
                     className="w-full h-full object-cover"
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <div className="flex flex-col items-center gap-1">
                     <Palette
@@ -769,7 +772,8 @@ export default function SetupWizard({ onComplete, user }) {
 
       onComplete(finalConfig);
     } catch (err) {
-      console.error('SetupWizard: create failed', err);
+      logger.error('[SetupWizard] Store creation failed:', err);
+      toast.error('Failed to create store. Please try again.');
     } finally {
       setCreating(false);
     }

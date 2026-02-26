@@ -1,5 +1,14 @@
-import jsPDF from 'jspdf';
 import JsBarcode from 'jsbarcode';
+
+// jsPDF is dynamically imported to avoid loading ~270 KB upfront
+let _jsPDF = null;
+async function getJsPDF() {
+  if (!_jsPDF) {
+    const mod = await import('jspdf');
+    _jsPDF = mod.default;
+  }
+  return _jsPDF;
+}
 
 /**
  * Render a CODE128 barcode to a data URL via offscreen canvas
@@ -150,7 +159,8 @@ function addLabelPage(doc, pallet, shipment, palletIndex, totalPallets) {
 /**
  * Generate and open a single pallet label PDF
  */
-export function generateSinglePalletLabel(pallet, shipment, palletIndex, totalPallets) {
+export async function generateSinglePalletLabel(pallet, shipment, palletIndex, totalPallets) {
+  const jsPDF = await getJsPDF();
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -164,9 +174,10 @@ export function generateSinglePalletLabel(pallet, shipment, palletIndex, totalPa
 /**
  * Generate and open a batch PDF with all pallet labels for a shipment
  */
-export function generateBatchPalletLabels(pallets, shipment) {
+export async function generateBatchPalletLabels(pallets, shipment) {
   if (!pallets || pallets.length === 0) return;
 
+  const jsPDF = await getJsPDF();
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

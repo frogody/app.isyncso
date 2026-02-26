@@ -497,7 +497,7 @@ export default function ProductImageUploader({
                     alt={image.alt || 'Product image'}
                     className="w-full h-full object-cover"
                     onClick={() => setPreviewImage(image)}
-                  />
+                  loading="lazy" decoding="async" />
 
                   {image.isFeatured && (
                     <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-cyan-500 text-[10px] font-bold text-black">
@@ -578,7 +578,7 @@ export default function ProductImageUploader({
                       src={allImages[MAX_VISIBLE - 1].url}
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover blur-sm opacity-40"
-                    />
+                     loading="lazy" decoding="async" />
                   )}
                   <div className={cn(
                     "absolute inset-0 flex flex-col items-center justify-center gap-1",
@@ -643,7 +643,7 @@ export default function ProductImageUploader({
                             : cn(t('border-slate-200', 'border-zinc-800'), t('hover:border-slate-400', 'hover:border-zinc-600'))
                         )}
                       >
-                        <img src={img.url} alt={img.alt || 'Product image'} className="w-full h-full object-cover" />
+                        <img src={img.url} alt={img.alt || 'Product image'} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                         {img.isFeatured && (
                           <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-cyan-500 text-[10px] font-bold text-black">
                             FEATURED
@@ -708,7 +708,7 @@ export default function ProductImageUploader({
                           : cn(t('border-slate-200', 'border-zinc-800'), t('hover:border-slate-400', 'hover:border-zinc-600'))
                       )}
                     >
-                      <img src={item.url} alt={item.name || ''} className="w-full h-full object-cover" />
+                      <img src={item.url} alt={item.name || ''} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                       {isSelected && (
                         <div className="absolute inset-0 bg-cyan-500/20 flex items-center justify-center">
                           <div className="w-7 h-7 rounded-full bg-cyan-500 flex items-center justify-center">
@@ -762,7 +762,7 @@ export default function ProductImageUploader({
                 src={previewImage.url}
                 alt={previewImage.alt || 'Preview'}
                 className="w-full max-h-[80vh] object-contain"
-              />
+               loading="lazy" decoding="async" />
             )}
           </div>
         </DialogContent>
@@ -841,7 +841,7 @@ export function ProductImageInput({
             src={imageUrl}
             alt="Product"
             className="w-full h-full object-cover"
-          />
+           loading="lazy" decoding="async" />
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <Button
               variant="ghost"

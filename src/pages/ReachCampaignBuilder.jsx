@@ -274,7 +274,7 @@ function StepProduct({ selected, onSelect, additionalContext, onContextChange })
                       src={imgSrc}
                       alt={product.name}
                       className="w-12 h-12 rounded-lg object-cover shrink-0 bg-zinc-800"
-                    />
+                     loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-12 h-12 rounded-lg bg-zinc-800/60 flex items-center justify-center shrink-0">
                       <Package className="w-5 h-5 text-zinc-600" />
@@ -330,7 +330,7 @@ function StepProduct({ selected, onSelect, additionalContext, onContextChange })
                 src={selected.featured_image}
                 alt={selected.name}
                 className="w-16 h-16 rounded-xl object-cover bg-zinc-800"
-              />
+               loading="lazy" decoding="async" />
             ) : (
               <div className="w-16 h-16 rounded-xl bg-zinc-800/60 flex items-center justify-center">
                 <Package className="w-6 h-6 text-zinc-500" />
@@ -718,7 +718,7 @@ function VariantCard({
             src={variant.image_url}
             alt="Ad creative"
             className="w-full rounded-lg object-cover max-h-40 bg-zinc-800"
-          />
+           loading="lazy" decoding="async" />
           <button
             type="button"
             onClick={onGenerateImage}

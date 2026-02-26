@@ -20,6 +20,7 @@ import {
   Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import confetti from 'canvas-confetti';
 
@@ -342,8 +343,9 @@ function CopyRevealSection({ copy }) {
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
         className={cn('text-sm leading-relaxed prose prose-sm max-w-none', t('text-slate-600 prose-slate', 'text-zinc-400 prose-invert'))}
-        dangerouslySetInnerHTML={{ __html: copy.description }}
-      />
+      >
+        <SafeHTML html={copy.description} />
+      </motion.div>
 
       {/* Bullet points */}
       {copy.bulletPoints?.length > 0 && (
@@ -362,7 +364,7 @@ function CopyRevealSection({ copy }) {
               <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Check className="w-3 h-3 text-cyan-400" />
               </div>
-              <span dangerouslySetInnerHTML={{ __html: typeof bullet === 'string' ? bullet : bullet.text || '' }} />
+              <SafeHTML as="span" html={typeof bullet === 'string' ? bullet : bullet.text || ''} />
             </motion.div>
           ))}
         </div>
@@ -444,7 +446,7 @@ function HeroImageSection({ heroImageUrl, isLoading }) {
             transition={{ type: 'spring', damping: 20, stiffness: 200 }}
             className="relative rounded-xl overflow-hidden shadow-lg shadow-cyan-500/10"
           >
-            <img src={heroImageUrl} alt="Hero product shot" className="w-full h-80 object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+            <img src={heroImageUrl} alt="Hero product shot" className="w-full h-80 object-cover" onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
             <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl" />
           </motion.div>
         ) : isLoading ? (
@@ -501,7 +503,7 @@ function GallerySection({ galleryImages = [], galleryTotal = 4, isLoading }) {
                 transition={{ type: 'spring', damping: 20, stiffness: 200, delay: idx * 0.05 }}
                 className="relative aspect-square rounded-xl overflow-hidden shadow-md"
               >
-                <img src={img.url} alt={img.description || `Gallery ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src={img.url} alt={img.description || `Gallery ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
                 <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl" />
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2">
                   <p className="text-[10px] text-white/80 font-medium">{img.description}</p>
@@ -566,7 +568,7 @@ function VideoFramesSection({ videoFrames = [], videoFramesTotal = 2, isLoading 
                 transition={{ type: 'spring', damping: 20, stiffness: 200, delay: idx * 0.1 }}
                 className="relative aspect-video rounded-xl overflow-hidden shadow-md"
               >
-                <img src={frame.url} alt={frame.description || `Frame ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src={frame.url} alt={frame.description || `Frame ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
                 <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl" />
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2.5">
                   <p className="text-[11px] text-white/80 font-medium">{frame.description}</p>
@@ -629,7 +631,7 @@ function VideoSection({ videoUrl, isLoading, videoFrames = [] }) {
       {referenceFrame && isLoading && (
         <div className="flex items-center gap-3 mb-4">
           <div className="relative w-20 aspect-video rounded-lg overflow-hidden flex-shrink-0">
-            <img src={referenceFrame} alt="Reference frame" className="w-full h-full object-cover" />
+            <img src={referenceFrame} alt="Reference frame" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
             <div className="absolute inset-0 ring-1 ring-inset ring-cyan-400/30 rounded-lg" />
           </div>
           <div className="flex items-center gap-2">
@@ -808,14 +810,14 @@ function GrandFinale({ progress, listing, product, onNavigateToPublish }) {
       {/* Preview Content */}
       <div className="p-6 space-y-4">
         {heroImage && (
-          <img src={heroImage} alt={title} className={cn('w-full h-64 object-cover rounded-xl border', t('border-slate-200', 'border-white/10'))} onError={(e) => { e.target.style.display = 'none'; }} />
+          <img src={heroImage} alt={title} className={cn('w-full h-64 object-cover rounded-xl border', t('border-slate-200', 'border-white/10'))} onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
         )}
 
         {galleryImages.length > 0 && (
           <div className="grid grid-cols-4 gap-2">
             {galleryImages.map((img, idx) => (
               <div key={idx} className={cn('aspect-square rounded-lg overflow-hidden border', t('border-slate-200', 'border-white/10'))}>
-                <img src={img.url} alt={img.description} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src={img.url} alt={img.description} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
               </div>
             ))}
           </div>
@@ -826,7 +828,7 @@ function GrandFinale({ progress, listing, product, onNavigateToPublish }) {
           <div className="grid grid-cols-2 gap-2">
             {videoFrames.map((frame, idx) => (
               <div key={idx} className={cn('aspect-video rounded-lg overflow-hidden border', t('border-slate-200', 'border-white/10'))}>
-                <img src={frame.url} alt={frame.description} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src={frame.url} alt={frame.description} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
               </div>
             ))}
           </div>
@@ -836,9 +838,9 @@ function GrandFinale({ progress, listing, product, onNavigateToPublish }) {
         <div>
           <h3 className={cn('text-lg font-semibold', t('text-slate-900', 'text-white'))}>{title}</h3>
           {progress?.copy?.description && (
-            <div
+            <SafeHTML
               className={cn('text-sm leading-relaxed mt-2 line-clamp-3', t('text-slate-600', 'text-zinc-400'))}
-              dangerouslySetInnerHTML={{ __html: progress.copy.description }}
+              html={progress.copy.description}
             />
           )}
         </div>

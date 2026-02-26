@@ -435,7 +435,7 @@ export default function FilePreview({ type, url, filename, fileSize, poster }) {
             alt={filename || 'Image'}
             className="rounded-xl max-h-80 object-cover cursor-pointer hover:opacity-90 transition-opacity border border-zinc-700"
             onClick={() => setShowLightbox(true)}
-          />
+          loading="lazy" decoding="async" />
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
             <button
               onClick={() => setShowLightbox(true)}

@@ -134,7 +134,7 @@ export default function AdVariantCard({
             src={image_url}
             alt={headline || 'Ad variant'}
             className="w-full h-full object-cover"
-          />
+           loading="lazy" decoding="async" />
         ) : (
           <div className="flex flex-col items-center gap-2 text-zinc-600">
             <ImageIcon className="w-8 h-8" />

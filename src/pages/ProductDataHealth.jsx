@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useUser } from "@/components/context/UserContext";
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 
 const PAGE_SIZE = 50;
@@ -216,7 +217,10 @@ export default function ProductDataHealth() {
         .order('name', { ascending: true });
 
       if (debouncedSearch.trim()) {
-        query = query.or(`name.ilike.%${debouncedSearch.trim()}%,ean.ilike.%${debouncedSearch.trim()}%,sku.ilike.%${debouncedSearch.trim()}%`);
+        const cleanSearch = sanitizeSearchInput(debouncedSearch.trim());
+        if (cleanSearch) {
+          query = query.or(`name.ilike.%${cleanSearch}%,ean.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%`);
+        }
       }
 
       // Server-side filterable issues
@@ -328,7 +332,7 @@ export default function ProductDataHealth() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="px-4 lg:px-6 py-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -487,7 +491,7 @@ export default function ProductDataHealth() {
                         <div className="flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 ${t('bg-slate-100', 'bg-zinc-800')}`}>
                             {imageUrl ? (
-                              <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                              <img src={imageUrl} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                             ) : (
                               <Package className={`w-4 h-4 ${t('text-slate-300', 'text-zinc-600')}`} />
                             )}

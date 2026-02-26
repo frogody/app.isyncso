@@ -167,7 +167,7 @@ export default function AIPromptBar({
               className="flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-2 py-1"
             >
               {att.preview ? (
-                <img src={att.preview} alt={att.name} className="w-6 h-6 rounded object-cover" />
+                <img src={att.preview} alt={att.name} className="w-6 h-6 rounded object-cover"  loading="lazy" decoding="async" />
               ) : (
                 <Paperclip className="w-3 h-3 text-zinc-500" />
               )}

@@ -412,7 +412,7 @@ export default function CalendarBookingPage() {
                       src={hostUser.avatar_url}
                       alt={hostUser.full_name}
                       className="w-12 h-12 rounded-full object-cover ring-2 ring-zinc-700/50"
-                    />
+                     loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm ring-2 ring-zinc-700/50">
                       {initials}

@@ -137,7 +137,7 @@ export default function NewDMModal({
                     >
                       <div className="relative">
                         {user.avatar_url ? (
-                          <img src={user.avatar_url} alt="" className="w-10 h-10 rounded-full" />
+                          <img src={user.avatar_url} alt="" className="w-10 h-10 rounded-full"  loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-sm font-bold text-white">
                             {user.full_name?.charAt(0) || '?'}

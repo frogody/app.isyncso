@@ -179,7 +179,7 @@ const InviteMembersPanel = memo(function InviteMembersPanel({
                       src={member.avatar_url}
                       alt=""
                       className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    />
+                     loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center flex-shrink-0">
                       <span className="text-xs font-medium text-zinc-300">

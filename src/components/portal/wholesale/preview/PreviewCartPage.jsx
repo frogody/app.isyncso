@@ -90,7 +90,7 @@ function OrderLineItem({ item, index, onUpdateQuantity, onRemove }) {
                 src={image}
                 alt={name}
                 className="w-full h-full object-cover"
-                loading="lazy"
+                loading="lazy" decoding="async"
               />
             ) : (
               <Package className="w-6 h-6" style={{ color: 'var(--ws-muted)', opacity: 0.4 }} />

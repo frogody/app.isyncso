@@ -377,7 +377,7 @@ export default function CRMCompanyProfile() {
                       src={company.logo_url}
                       alt={company.name}
                       className="w-full h-full object-cover rounded-lg sm:rounded-lg"
-                    />
+                     loading="lazy" decoding="async" />
                   ) : (
                     <Building2 className="w-4 h-4 sm:w-4 sm:h-4 lg:w-4 lg:h-4 text-white" />
                   )}

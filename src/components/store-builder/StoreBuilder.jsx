@@ -35,6 +35,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
+import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 import BuilderCanvas from './BuilderCanvas';
 import CodeViewer from './CodeViewer';
 import BuildPlan from './BuildPlan';
@@ -944,7 +946,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
     try {
       if (builder.isPublished) { await builder.unpublishStore(); }
       else { await builder.saveConfig(); await builder.publishStore(); }
-    } catch (err) { console.error('Publish failed:', err); }
+    } catch (err) { logger.error('[StoreBuilder] Publish failed:', err); toast.error('Failed to publish store. Please try again.'); }
   }, [builder.isPublished, builder.saveConfig, builder.publishStore, builder.unpublishStore]);
 
   const handleUpdateConfig = useCallback((newConfig) => {
@@ -991,7 +993,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
         const serialized = ai.getSerializableMessages();
         builder.saveChatHistory(serialized);
       } catch (_) { /* non-critical */ }
-    } catch (err) { console.error('AI failed:', err); }
+    } catch (err) { logger.error('[StoreBuilder] AI prompt failed:', err); toast.error('AI request failed. Please try again.'); }
   }, [ai.sendPrompt, builder.config, builder.updateConfig, history.pushState, storeName, organizationId, ai.markLastMessageWithChanges, ai.getSerializableMessages, builder.saveChatHistory, preview.sendConfigToPreview]);
 
   // Handle "Show changes" button click — instantly switch to code view
@@ -1211,7 +1213,7 @@ export default function StoreBuilder({ organizationId, storeName, onBack }) {
                     className="relative group flex items-center gap-1.5 bg-zinc-800/60 border border-zinc-700/50 rounded-lg px-2 py-1.5"
                   >
                     {att.preview ? (
-                      <img src={att.preview} alt={att.name} className="w-8 h-8 rounded object-cover" />
+                      <img src={att.preview} alt={att.name} className="w-8 h-8 rounded object-cover"  loading="lazy" decoding="async" />
                     ) : (
                       <Paperclip className="w-3.5 h-3.5 text-zinc-500" />
                     )}

@@ -983,7 +983,7 @@ function SelectStage({ state, dispatch, user, callEdge }) {
                         src={p.thumb}
                         className="w-full h-full object-cover"
                         alt=""
-                      />
+                       loading="lazy" decoding="async" />
                     ) : (
                       <Package className="w-4 h-4 text-zinc-600" />
                     )}
@@ -1324,7 +1324,7 @@ function PlanStage({ state, dispatch, user, callEdge }) {
                       src={p.thumb}
                       className="w-full h-full object-cover"
                       alt=""
-                    />
+                     loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Package className="w-3 h-3 text-zinc-600" />
@@ -1444,7 +1444,7 @@ function PlanStage({ state, dispatch, user, callEdge }) {
                       src={thumb}
                       className="w-full h-full object-cover"
                       alt=""
-                    />
+                     loading="lazy" decoding="async" />
                   ) : (
                     <Package className="w-5 h-5 text-zinc-600" />
                   )}
@@ -1593,7 +1593,7 @@ function PlanStage({ state, dispatch, user, callEdge }) {
                                     src={url}
                                     className="w-full h-full object-cover"
                                     alt=""
-                                  />
+                                   loading="lazy" decoding="async" />
                                 </div>
                               ))}
                             </div>
@@ -2300,7 +2300,7 @@ function ResultsStage({ state, dispatch, user, callEdge }) {
                     src={productThumb}
                     className="w-full h-full object-cover"
                     alt=""
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <Package className="w-4 h-4 text-zinc-600" />
                 )}
@@ -2469,7 +2469,7 @@ function ResultsStage({ state, dispatch, user, callEdge }) {
                 src={lightbox.image_url}
                 className="max-w-full max-h-[85vh] object-contain rounded-xl"
                 alt=""
-              />
+               loading="lazy" decoding="async" />
               <button
                 onClick={() => setLightbox(null)}
                 className="absolute top-2 right-2 p-2 rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors"
@@ -2554,7 +2554,7 @@ function CompareSection({ originalImages, generatedImages }) {
                         src={url}
                         className="w-full h-full object-cover"
                         alt=""
-                      />
+                       loading="lazy" decoding="async" />
                     </div>
                   ))}
                 </div>
@@ -2573,7 +2573,7 @@ function CompareSection({ originalImages, generatedImages }) {
                         src={img.image_url}
                         className="w-full h-full object-cover"
                         alt=""
-                      />
+                       loading="lazy" decoding="async" />
                     </div>
                   ))}
                 </div>

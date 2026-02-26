@@ -365,7 +365,7 @@ export const CompanyIntelligenceReport = ({
           <SectionCard icon={Building2} title="Company Profile" iconColor="blue" headerBg="bg-blue-500/5">
             <div className="space-y-4">
               {firmographics.logo_url && (
-                <img src={firmographics.logo_url} alt="" className="h-10 object-contain" />
+                <img src={firmographics.logo_url} alt="" className="h-10 object-contain"  loading="lazy" decoding="async" />
               )}
 
               <div className="divide-y divide-white/[0.04]">

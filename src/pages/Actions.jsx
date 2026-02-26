@@ -370,7 +370,7 @@ export default function Actions() {
               {queuedActions.length > 0 && <Badge className="ml-1 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1">{queuedActions.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="rides" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">
-              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-4 h-4 mr-1" />Claude Rides
+              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-4 h-4 mr-1"  loading="lazy" decoding="async" />Claude Rides
               <Badge className="ml-1 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1">New</Badge>
             </TabsTrigger>
             <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300/90 text-zinc-500 px-3 text-sm">

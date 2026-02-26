@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { useWholesale } from '../WholesaleProvider';
 import StockIndicator from './StockIndicator';
 import BulkPricingTable from './BulkPricingTable';
@@ -461,7 +462,7 @@ function ImageGallery({ images, activeIndex, onSelect, onOpenLightbox }) {
             e.currentTarget.parentElement.innerHTML =
               '<div class="flex items-center justify-center w-full h-full"><svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ws-muted)"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div>';
           }}
-        />
+        loading="lazy" decoding="async" />
         {/* Zoom overlay on hover */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-xl">
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-3 rounded-full bg-black/50">
@@ -490,7 +491,7 @@ function ImageGallery({ images, activeIndex, onSelect, onOpenLightbox }) {
                 src={url}
                 alt={`Thumbnail ${idx + 1}`}
                 className="w-full h-full object-contain p-1"
-              />
+               loading="lazy" decoding="async" />
             </button>
           ))}
         </div>
@@ -1001,7 +1002,7 @@ function RelatedProducts({ product, currentProductId, orgId }) {
                     src={item.featured_image}
                     alt={item.name}
                     className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-200"
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <Package className="w-12 h-12" style={{ color: 'var(--ws-muted)' }} />
                 )}
@@ -1713,10 +1714,10 @@ export default function ProductDetailPage() {
               Description
             </h3>
             {product.description.includes('<') ? (
-              <div
+              <SafeHTML
                 className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed"
                 style={{ color: 'var(--ws-muted)' }}
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
+                html={product.description}
               />
             ) : (
               <p

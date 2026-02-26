@@ -154,7 +154,7 @@ function ImagePreviewModal({ image, onClose }) {
           src={image}
           alt="Preview"
           className="w-full max-h-[80vh] object-contain"
-        />
+         loading="lazy" decoding="async" />
       </motion.div>
     </motion.div>
   );
@@ -667,7 +667,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
                     alt="Current hero"
                     className="w-full h-full object-contain cursor-pointer hover:scale-105 transition-transform duration-300"
                     onClick={() => setPreviewImage(heroImageUrl)}
-                  />
+                  loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center">
                     <ImageIcon className={cn('w-12 h-12 mb-2', t('text-slate-300', 'text-zinc-700'))} />
@@ -706,7 +706,7 @@ export default function ListingImageStudio({ product, details, listing, onUpdate
                       alt="Generated hero"
                       className="w-full h-full object-contain cursor-pointer hover:scale-105 transition-transform duration-300"
                       onClick={() => setPreviewImage(generatedHero)}
-                    />
+                    loading="lazy" decoding="async" />
                     {/* Actions overlay */}
                     <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2">
                       <button

@@ -123,7 +123,7 @@ function LogoItem({ logo, grayscale, showTooltip }) {
         onMouseLeave={(e) => {
           if (grayscale) e.currentTarget.style.filter = 'grayscale(100%)';
         }}
-      />
+      loading="lazy" decoding="async" />
     </motion.div>
   );
 }

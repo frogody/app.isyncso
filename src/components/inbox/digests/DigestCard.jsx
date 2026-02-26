@@ -52,7 +52,7 @@ function AuthorAvatar({ name, avatar, size = 'sm' }) {
         src={avatar}
         alt={name || ''}
         className={`${sizeClasses} rounded-full object-cover border border-zinc-700/50 flex-shrink-0`}
-      />
+       loading="lazy" decoding="async" />
     );
   }
 

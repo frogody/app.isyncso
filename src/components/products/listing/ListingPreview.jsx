@@ -27,6 +27,7 @@ import {
   Circle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { supabase } from '@/api/supabaseClient';
 import ListingGenerationView from './ListingGenerationView';
@@ -161,7 +162,7 @@ function ImageTemplateGuide({ selectedUrls, videoUrl, onGenerateForSlot, generat
                               'relative flex-1 aspect-square rounded-md overflow-hidden border',
                               colors.border
                             )}>
-                              <img src={imageUrl} alt={slot.desc} className="w-full h-full object-cover" />
+                              <img src={imageUrl} alt={slot.desc} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                               <div className={cn(
                                 'absolute bottom-0 inset-x-0 py-px text-center text-[7px] font-bold',
                                 'bg-gradient-to-t from-black/60 to-transparent text-white/90'
@@ -436,7 +437,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, onGenerat
                     dragIdx === idx && 'opacity-40'
                   )}
                 >
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img src={url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
 
                   {/* Hero crown */}
                   {isHero && (
@@ -535,7 +536,7 @@ function ImageGalleryEditor({ product, listing, onUpdate, onTabChange, onGenerat
                   t('border-slate-200 hover:border-slate-400', 'border-white/5 hover:border-white/20')
                 )}
               >
-                <img src={url} alt="" className="w-full h-full object-cover" />
+                <img src={url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                   <Plus className="w-3.5 h-3.5 text-white" />
                 </div>
@@ -764,8 +765,9 @@ function EditableDescription({ value, onChange, t }) {
             'prose-invert prose-p:text-zinc-300 prose-strong:text-white prose-li:text-zinc-300 prose-headings:text-white'
           )
         )}
-        dangerouslySetInnerHTML={{ __html: displayHtml }}
-      />
+      >
+        <SafeHTML html={displayHtml} />
+      </div>
       <div className={cn(
         'absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity',
         'flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded',

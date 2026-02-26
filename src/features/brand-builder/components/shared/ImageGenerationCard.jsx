@@ -86,7 +86,7 @@ export default function ImageGenerationCard({
           src={imageUrl}
           alt={label || 'Generated brand image'}
           className="w-full h-full object-cover"
-          loading="lazy"
+          loading="lazy" decoding="async"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
           <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-80 transition-opacity" />

@@ -16,14 +16,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useTeamAccess } from '@/components/context/UserContext';
 
-// Import widget definitions
-import { LEARN_WIDGETS } from '@/components/dashboard/widgets/LearnWidgets';
-import { GROWTH_WIDGETS } from '@/components/dashboard/widgets/GrowthWidgets';
-import { SENTINEL_WIDGETS } from '@/components/dashboard/widgets/SentinelWidgets';
-import { CORE_WIDGETS } from '@/components/dashboard/widgets/CoreWidgets';
-import { FINANCE_WIDGETS } from '@/components/dashboard/widgets/FinanceWidgets';
-import { RAISE_WIDGETS } from '@/components/dashboard/widgets/RaiseWidgets';
-import { COMMERCE_WIDGETS } from '@/components/dashboard/widgets/CommerceWidgets';
+// Import widget metadata only (not rendering components) to avoid pulling
+// recharts and other heavy chart deps into the initial bundle
+import {
+  LEARN_WIDGETS,
+  GROWTH_WIDGETS,
+  SENTINEL_WIDGETS,
+  CORE_WIDGETS,
+  FINANCE_WIDGETS,
+  RAISE_WIDGETS,
+  COMMERCE_WIDGETS,
+} from '@/components/dashboard/widgets/widgetMetadata';
 
 // Merge core widgets into each app for visibility in previews
 const ALL_CORE_WIDGETS = CORE_WIDGETS;

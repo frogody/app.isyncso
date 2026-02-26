@@ -32,6 +32,7 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { toast } from 'sonner';
 import { supabase } from '@/api/supabaseClient';
@@ -245,7 +246,7 @@ function ShopifyPreview({ listing, product }) {
                 alt={title}
                 className="max-w-full max-h-[240px] object-contain rounded-lg mb-3"
                 onError={(e) => { e.target.style.display = 'none'; }}
-              />
+              loading="lazy" decoding="async" />
               {allImages.length > 1 && (
                 <div className="flex items-center gap-2 mt-2">
                   {allImages.slice(0, 5).map((img, idx) => (
@@ -257,7 +258,7 @@ function ShopifyPreview({ listing, product }) {
                         activeImage === idx ? 'border-slate-900 ring-1 ring-slate-900/20' : 'border-slate-200 hover:border-slate-300'
                       )}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                      <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
                     </button>
                   ))}
                   {allImages.length > 5 && (
@@ -304,9 +305,9 @@ function ShopifyPreview({ listing, product }) {
 
           {/* Description snippet */}
           {description && (
-            <div
+            <SafeHTML
               className="text-sm text-slate-600 leading-relaxed line-clamp-4 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: description.slice(0, 300) + (description.length > 300 ? '...' : '') }}
+              html={description.slice(0, 300) + (description.length > 300 ? '...' : '')}
             />
           )}
 
@@ -376,7 +377,7 @@ function BolcomPreview({ listing, product }) {
                 alt={title}
                 className="max-w-full max-h-[220px] object-contain mb-3"
                 onError={(e) => { e.target.style.display = 'none'; }}
-              />
+              loading="lazy" decoding="async" />
               {allBolImages.length > 1 && (
                 <div className="flex items-center gap-1.5 mt-2">
                   {allBolImages.slice(0, 5).map((img, idx) => (
@@ -388,7 +389,7 @@ function BolcomPreview({ listing, product }) {
                         activeBolImg === idx ? 'border-[#0000A4] ring-1 ring-[#0000A4]/20' : 'border-slate-200 hover:border-slate-300'
                       )}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                      <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
                     </button>
                   ))}
                 </div>
@@ -441,7 +442,7 @@ function BolcomPreview({ listing, product }) {
                 {bullets.slice(0, 5).map((bullet, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-xs text-slate-700">
                     <Check className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span dangerouslySetInnerHTML={{ __html: typeof bullet === 'string' ? bullet : bullet.text || bullet.content || '' }} />
+                    <SafeHTML as="span" html={typeof bullet === 'string' ? bullet : bullet.text || bullet.content || ''} />
                   </li>
                 ))}
               </ul>
@@ -501,7 +502,7 @@ function GenericPreview({ listing, product }) {
               alt={title}
               className="w-full h-64 object-cover"
               onError={(e) => { e.target.style.display = 'none'; }}
-            />
+            loading="lazy" decoding="async" />
           </div>
         )}
 
@@ -510,7 +511,7 @@ function GenericPreview({ listing, product }) {
           <div className="grid grid-cols-4 gap-2">
             {galleryImages.slice(0, 4).map((img, idx) => (
               <div key={idx} className={cn('rounded-lg overflow-hidden border aspect-square', t('border-slate-200', 'border-white/10'))}>
-                <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src={img} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} loading="lazy" decoding="async" />
               </div>
             ))}
           </div>
@@ -536,9 +537,9 @@ function GenericPreview({ listing, product }) {
             <p className={cn('text-xs font-medium mb-1.5 uppercase tracking-wider', t('text-slate-400', 'text-zinc-500'))}>
               Description
             </p>
-            <div
+            <SafeHTML
               className={cn('text-sm leading-relaxed line-clamp-4', t('text-slate-600', 'text-zinc-400'))}
-              dangerouslySetInnerHTML={{ __html: description.slice(0, 400) }}
+              html={description.slice(0, 400)}
             />
           </div>
         )}
@@ -553,7 +554,7 @@ function GenericPreview({ listing, product }) {
               {bullets.slice(0, 6).map((b, idx) => (
                 <li key={idx} className={cn('flex items-start gap-2 text-sm', t('text-slate-700', 'text-zinc-300'))}>
                   <span className="text-cyan-400 mt-0.5">-</span>
-                  <span dangerouslySetInnerHTML={{ __html: typeof b === 'string' ? b : b.text || b.content || '' }} />
+                  <SafeHTML as="span" html={typeof b === 'string' ? b : b.text || b.content || ''} />
                 </li>
               ))}
             </ul>

@@ -589,7 +589,7 @@ export default function FashionBooth({ embedded = false }) {
                   <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-y-auto bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl">
                     {filteredProducts.map(p => (
                       <button key={p.id} onClick={() => handleProductSelect(p)} className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-zinc-800/60 text-xs text-zinc-300">
-                        {p.featured_image?.url && <img src={p.featured_image.url} className="w-6 h-6 rounded-lg object-cover" alt="" />}
+                        {p.featured_image?.url && <img src={p.featured_image.url} className="w-6 h-6 rounded-lg object-cover" alt=""  loading="lazy" decoding="async" />}
                         <span className="truncate">{p.name}</span>
                       </button>
                     ))}
@@ -603,7 +603,7 @@ export default function FashionBooth({ embedded = false }) {
                   {productImages.slice(0, 6).map((url, i) => (
                     <button key={i} onClick={() => setGarmentReferenceUrl(url)}
                       className={`w-10 h-10 shrink-0 rounded-lg overflow-hidden border-2 transition-all ${garmentReferenceUrl === url ? 'border-yellow-500 ring-1 ring-yellow-500/30' : 'border-zinc-800/60 hover:border-zinc-700'}`}>
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <img src={url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                     </button>
                   ))}
                 </div>
@@ -618,7 +618,7 @@ export default function FashionBooth({ embedded = false }) {
                 </label>
                 {garmentReferenceUrl && (
                   <div className="relative w-10 h-10 shrink-0">
-                    <img src={garmentReferenceUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-yellow-500/30" />
+                    <img src={garmentReferenceUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-yellow-500/30"  loading="lazy" decoding="async" />
                     <button onClick={() => { setGarmentReferenceUrl(null); setSelectedProduct(null); setProductImages([]); }}
                       className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white">
                       <X className="w-2.5 h-2.5" />
@@ -644,13 +644,13 @@ export default function FashionBooth({ embedded = false }) {
                   <button key={model.id}
                     onClick={() => { setSelectedAvatarModel(model); setCustomAvatarUrl(null); setSelectedTrainingImage(suggestBestReference(model, selectedPose, selectedAngle, selectedFraming)); }}
                     className={`w-10 h-10 rounded-lg shrink-0 overflow-hidden border-2 transition-all relative ${selectedAvatarModel?.id === model.id ? 'border-yellow-500 ring-1 ring-yellow-500/30' : 'border-zinc-800/60 hover:border-zinc-700'}`}>
-                    <img src={model.thumbnail} alt={model.name} className="w-full h-full object-cover" />
+                    <img src={model.thumbnail} alt={model.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                   </button>
                 ))}
                 {customAvatarUrl && (
                   <button onClick={() => { setSelectedAvatarModel(null); setSelectedTrainingImage({ id: 'custom', url: customAvatarUrl, label: 'Custom' }); }}
                     className={`w-10 h-10 rounded-lg shrink-0 overflow-hidden border-2 transition-all ${!selectedAvatarModel && customAvatarUrl ? 'border-yellow-500 ring-1 ring-yellow-500/30' : 'border-zinc-800/60 hover:border-zinc-700'}`}>
-                    <img src={customAvatarUrl} alt="Custom" className="w-full h-full object-cover" />
+                    <img src={customAvatarUrl} alt="Custom" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                   </button>
                 )}
                 <label className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center border border-dashed border-zinc-700/60 hover:border-yellow-500/40 cursor-pointer transition-all bg-zinc-950/30">
@@ -673,7 +673,7 @@ export default function FashionBooth({ embedded = false }) {
                     {selectedAvatarModel.trainingImages.map(img => (
                       <button key={img.id} onClick={() => setSelectedTrainingImage(img)}
                         className={`relative rounded-lg overflow-hidden border-2 transition-all ${selectedTrainingImage?.id === img.id ? 'border-yellow-500 ring-1 ring-yellow-500/30' : 'border-zinc-800/40 hover:border-zinc-700'}`}>
-                        <img src={img.url} alt={img.label} className="w-full aspect-square object-cover" />
+                        <img src={img.url} alt={img.label} className="w-full aspect-square object-cover"  loading="lazy" decoding="async" />
                         {selectedTrainingImage?.id === img.id && (
                           <div className="absolute inset-0 bg-yellow-500/10 flex items-center justify-center"><Check className="w-3 h-3 text-yellow-400" /></div>
                         )}
@@ -839,7 +839,7 @@ export default function FashionBooth({ embedded = false }) {
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
                   className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden flex-1">
                   <div className="relative">
-                    <img src={generatedImage.url} alt="Generated fashion" className="w-full object-contain max-h-[400px]" />
+                    <img src={generatedImage.url} alt="Generated fashion" className="w-full object-contain max-h-[400px]"  loading="lazy" decoding="async" />
                     <div className="absolute top-3 right-3 flex items-center gap-2">
                       <button onClick={handleDownload} className="p-2 rounded-xl bg-black/70 backdrop-blur-sm text-white hover:bg-black/90 transition-colors"><Download className="w-4 h-4" /></button>
                       <button onClick={handleGenerate} disabled={isGenerating} className="p-2 rounded-xl bg-black/70 backdrop-blur-sm text-white hover:bg-black/90 transition-colors"><RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} /></button>
@@ -1034,7 +1034,7 @@ export default function FashionBooth({ embedded = false }) {
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
                     {generationHistory.slice(0, 12).map(item => (
                       <div key={item.id} className="aspect-square rounded-xl overflow-hidden border border-zinc-800/40 hover:border-yellow-500/30 cursor-pointer transition-all" onClick={() => setGeneratedImage(item)}>
-                        {item.url && <img src={item.url} alt="" className="w-full h-full object-cover" />}
+                        {item.url && <img src={item.url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />}
                       </div>
                     ))}
                   </div>
@@ -1062,7 +1062,7 @@ export default function FashionBooth({ embedded = false }) {
               <div>
                 {extractorSourceUrl ? (
                   <div className="relative">
-                    <img src={extractorSourceUrl} alt="Source outfit" className="w-full max-h-[350px] object-contain rounded-xl border border-zinc-800/60" />
+                    <img src={extractorSourceUrl} alt="Source outfit" className="w-full max-h-[350px] object-contain rounded-xl border border-zinc-800/60"  loading="lazy" decoding="async" />
                     <button onClick={() => { setExtractorSourceUrl(null); setExtractedPieces([]); setExtractorGarments([]); }}
                       className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center text-zinc-400 hover:text-white"><X className="w-3.5 h-3.5" /></button>
                   </div>
@@ -1117,7 +1117,7 @@ export default function FashionBooth({ embedded = false }) {
                   <motion.div key={piece.label + i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.08 }}
                     className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] overflow-hidden group">
                     <div className="relative">
-                      <img src={piece.url} alt={piece.label} className="w-full aspect-square object-contain bg-zinc-950/50 p-2" />
+                      <img src={piece.url} alt={piece.label} className="w-full aspect-square object-contain bg-zinc-950/50 p-2"  loading="lazy" decoding="async" />
                       <button onClick={() => handleDownloadPiece(piece)}
                         className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"><Download className="w-3.5 h-3.5" /></button>
                       {piece.label === 'complete_outfit' && (

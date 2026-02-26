@@ -69,7 +69,7 @@ export default function CompareSlider({
         alt={afterLabel}
         className="w-full h-full object-cover"
         draggable={false}
-      />
+       loading="lazy" decoding="async" />
 
       {/* Before image (clipped) */}
       <div
@@ -82,7 +82,7 @@ export default function CompareSlider({
           className="absolute inset-0 w-full h-full object-cover"
           style={{ width: containerRef.current ? `${containerRef.current.offsetWidth}px` : '100%' }}
           draggable={false}
-        />
+         loading="lazy" decoding="async" />
       </div>
 
       {/* Slider line */}

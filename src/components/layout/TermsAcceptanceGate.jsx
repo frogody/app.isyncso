@@ -62,7 +62,7 @@ export default function TermsAcceptanceGate({ user, onAccepted }) {
             src="/isyncso-logo.png"
             alt="ISYNCSO"
             className="w-20 h-20 mx-auto mb-3 object-contain"
-          />
+           loading="lazy" decoding="async" />
         </div>
 
         {/* Card */}

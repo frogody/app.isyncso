@@ -317,7 +317,7 @@ function ProductCard({ product, cart, nav, index }) {
               src={image}
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
+              loading="lazy" decoding="async"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

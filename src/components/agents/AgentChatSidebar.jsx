@@ -95,7 +95,7 @@ export default function AgentChatSidebar({
             <button className="w-full flex items-center gap-3 text-sm text-gray-400 hover:text-white cursor-pointer p-2 rounded-lg hover:bg-[#1a1a1a] transition-colors">
               {user?.avatar_url ? (
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 flex-shrink-0">
-                  <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                  <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                 </div>
               ) : (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-xs font-bold text-white border border-white/10 flex-shrink-0">
@@ -120,7 +120,7 @@ export default function AgentChatSidebar({
                   <div className="flex items-center gap-3">
                     {user.avatar_url ? (
                       <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10">
-                        <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover" />
+                        <img src={user.avatar_url} alt={user.full_name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                       </div>
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-sm font-bold text-white border border-white/10">

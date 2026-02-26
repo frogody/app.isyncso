@@ -316,7 +316,7 @@ function TopUsersTable({ users }) {
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                      <img src={user.avatar_url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                     ) : (
                       <Users className="w-3 h-3 text-zinc-500" />
                     )}

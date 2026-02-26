@@ -125,7 +125,7 @@ function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uplo
       <p className={`text-xs font-medium ${ct('text-slate-500', 'text-zinc-400')}`}>{label}</p>
       {logo ? (
         <div className={`relative group aspect-video ${ct('bg-slate-50', 'bg-zinc-800/50')} rounded-xl border ${ct('border-slate-200', 'border-zinc-700/50')} flex items-center justify-center overflow-hidden`}>
-          <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain" />
+          <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain"  loading="lazy" decoding="async" />
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <label className="cursor-pointer">
               <input type="file" accept="image/*" onChange={(e) => onUpload(e, logoType)} className="hidden" disabled={uploading} />
@@ -552,7 +552,7 @@ export default function CreateBranding() {
               {/* Logo */}
               <div className={`w-16 h-16 rounded-xl ${ct('bg-slate-100', 'bg-zinc-800/60')} border ${ct('border-slate-200', 'border-zinc-700/40')} flex items-center justify-center overflow-hidden shrink-0`}>
                 {primaryLogo ? (
-                  <img src={primaryLogo.url} alt="Logo" className="max-w-full max-h-full object-contain" />
+                  <img src={primaryLogo.url} alt="Logo" className="max-w-full max-h-full object-contain"  loading="lazy" decoding="async" />
                 ) : (
                   <ImageIcon className={`w-5 h-5 ${ct('text-slate-400', 'text-zinc-600')}`} />
                 )}

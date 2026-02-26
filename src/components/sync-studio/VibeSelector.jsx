@@ -113,7 +113,7 @@ function VibeCard({ vibeKey, vibe, isActive, onSelect, compact }) {
           <img
             src={vibe.example_image}
             alt={vibe.name}
-            loading="lazy"
+            loading="lazy" decoding="async"
             onError={() => setImgFailed(true)}
             className="absolute inset-0 w-full h-full object-cover"
           />

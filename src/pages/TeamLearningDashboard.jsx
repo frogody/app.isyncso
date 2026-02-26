@@ -821,7 +821,7 @@ export default function TeamLearningDashboard() {
                             <div className="flex items-center gap-2.5">
                               <div className={`w-7 h-7 rounded-full ${lt('bg-slate-100', 'bg-zinc-800')} flex items-center justify-center overflow-hidden flex-shrink-0`}>
                                 {member.avatar_url ? (
-                                  <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
+                                  <img src={member.avatar_url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                                 ) : (
                                   <span className={`text-[10px] font-bold ${lt('text-slate-500', 'text-zinc-400')}`}>
                                     {(member.full_name || '?')[0].toUpperCase()}

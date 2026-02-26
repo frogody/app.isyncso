@@ -587,7 +587,7 @@ export default function ChannelSidebar({
                     src={user.avatar_url}
                     alt=""
                     className="w-7 h-7 rounded-lg border border-zinc-700/50 object-cover"
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
                     {user?.full_name?.charAt(0) || '?'}

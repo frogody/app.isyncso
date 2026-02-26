@@ -1329,7 +1329,7 @@ export default function CreateVideos({ embedded = false, defaultMode = 'ai' }) {
                       >
                         <div className="relative aspect-video">
                           {item.thumbnail_url ? (
-                            <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover" />
+                            <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                           ) : (
                             <div className={`w-full h-full ${ct('bg-slate-100', 'bg-zinc-900')} flex items-center justify-center`}>
                               <Video className={`w-8 h-8 ${ct('text-slate-300', 'text-zinc-800')}`} />

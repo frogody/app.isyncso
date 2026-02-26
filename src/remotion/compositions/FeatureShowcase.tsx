@@ -319,7 +319,7 @@ export const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
               objectFit: "contain",
               marginBottom: 8,
             }}
-          />
+           loading="lazy" decoding="async" alt="Logo" />
         )}
         <AnimatedText
           text={productName}

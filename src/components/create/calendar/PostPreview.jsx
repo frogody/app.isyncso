@@ -41,7 +41,7 @@ function LinkedInPreview({ body, mediaUrls, hashtags, user, company }) {
             src={mediaUrls[0]}
             alt="Post media"
             className="w-full h-40 object-cover"
-          />
+           loading="lazy" decoding="async" />
         </div>
       )}
 
@@ -97,7 +97,7 @@ function TwitterPreview({ body, mediaUrls, hashtags, user }) {
                 src={mediaUrls[0]}
                 alt="Tweet media"
                 className="w-full h-36 object-cover"
-              />
+               loading="lazy" decoding="async" />
             </div>
           )}
 

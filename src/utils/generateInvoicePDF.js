@@ -1,4 +1,12 @@
-import jsPDF from 'jspdf';
+// jsPDF is dynamically imported to avoid loading ~270 KB upfront
+let _jsPDF = null;
+async function getJsPDF() {
+  if (!_jsPDF) {
+    const mod = await import('jspdf');
+    _jsPDF = mod.default;
+  }
+  return _jsPDF;
+}
 
 // In-memory logo cache for the session
 const logoCache = new Map();
@@ -64,6 +72,7 @@ async function loadLogoAsBase64(url) {
  * @returns {jsPDF} - PDF document
  */
 export async function generateInvoicePDF(invoice, company = {}, brandConfig = null) {
+  const jsPDF = await getJsPDF();
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',

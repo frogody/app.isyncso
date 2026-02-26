@@ -191,7 +191,7 @@ export default function Leaderboard() {
                     {/* Avatar */}
                     <div className="w-8 h-8 rounded-full bg-zinc-700 overflow-hidden flex-shrink-0">
                       {entry.avatar ? (
-                        <img src={entry.avatar} alt="" className="w-full h-full object-cover" />
+                        <img src={entry.avatar} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xs text-zinc-400 font-bold">
                           {entry.user_name[0].toUpperCase()}

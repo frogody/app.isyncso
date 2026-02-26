@@ -413,7 +413,7 @@ export default function PostComposer({ open, onClose, post, defaultDate, onSave 
                     <div className="flex flex-wrap gap-2">
                       {mediaUrls.map((url, i) => (
                         <div key={i} className="relative group/media w-20 h-20 rounded-xl overflow-hidden">
-                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <img src={url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                           <button
                             onClick={() => setMediaUrls(mediaUrls.filter((_, idx) => idx !== i))}
                             className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover/media:opacity-100 transition-opacity"

@@ -136,7 +136,7 @@ function FavoritesStrip({ favorites, cartItemIds, addToCart }) {
                 style={{ backgroundColor: 'var(--ws-bg)' }}
               >
                 {image ? (
-                  <img src={image} alt={name} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={image} alt={name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <ImageOff className="w-4 h-4" style={{ color: 'var(--ws-muted)', opacity: 0.3 }} />
                 )}

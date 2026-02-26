@@ -955,7 +955,7 @@ function PostEditorDialog({
                         <Video className="w-6 h-6 text-zinc-500" />
                       </div>
                     ) : (
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <img src={url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                     )}
                     <button
                       onClick={() => removeMedia(i)}

@@ -85,7 +85,7 @@ function CardStyleCategory({ category, showCount, showImage, onClick }) {
                 src={category.image}
                 alt={category.name}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+               loading="lazy" decoding="async" />
               {/* Subtle gradient overlay on image */}
               <div
                 className="absolute inset-0"
@@ -167,7 +167,7 @@ function OverlayStyleCategory({ category, showCount, onClick }) {
             src={category.image}
             alt={category.name}
             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.08]"
-          />
+           loading="lazy" decoding="async" />
         ) : (
           <div className="flex items-center justify-center w-full h-full">
             <div

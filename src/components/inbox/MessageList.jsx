@@ -257,11 +257,11 @@ function MessageBubble({
                   src={message.sender_avatar}
                   alt=""
                   className="w-3.5 h-3.5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-zinc-950"
-                />
+                 loading="lazy" decoding="async" />
               )}
             </div>
           ) : message.sender_avatar ? (
-            <img src={message.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50" />
+            <img src={message.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50"  loading="lazy" decoding="async" />
           ) : (
             <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
               {message.sender_name?.charAt(0) || '?'}
@@ -401,7 +401,7 @@ function MessageBubble({
                   {readReceipts.map((reader) => (
                     <div key={reader.user_id} className="flex items-center gap-2">
                       {reader.user_avatar ? (
-                        <img src={reader.user_avatar} alt="" className="w-5 h-5 rounded-full" />
+                        <img src={reader.user_avatar} alt="" className="w-5 h-5 rounded-full"  loading="lazy" decoding="async" />
                       ) : (
                         <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300">
                           {reader.user_name?.charAt(0) || '?'}
@@ -472,7 +472,7 @@ function MessageBubble({
                       >
                         <div className="flex-shrink-0">
                           {reply.sender_avatar ? (
-                            <img src={reply.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50" />
+                            <img src={reply.sender_avatar} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50"  loading="lazy" decoding="async" />
                           ) : (
                             <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
                               {reply.sender_name?.charAt(0) || '?'}
@@ -495,7 +495,7 @@ function MessageBubble({
                     <div className="flex gap-2.5 pt-2">
                       <div className="flex-shrink-0">
                         {currentUser?.avatar_url ? (
-                          <img src={currentUser.avatar_url} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50" />
+                          <img src={currentUser.avatar_url} alt="" className="w-7 h-7 rounded-full border border-zinc-700/50"  loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
                             {currentUser?.full_name?.charAt(0) || '?'}

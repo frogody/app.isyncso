@@ -1022,7 +1022,7 @@ function VerifyEmailStep({
                                 alt=""
                                 className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
                                 style={{ border: '1px solid var(--ws-border)' }}
-                              />
+                               loading="lazy" decoding="async" />
                             )}
                             <div className="min-w-0">
                               <p className="font-medium truncate" style={{ color: 'var(--ws-text)' }}>

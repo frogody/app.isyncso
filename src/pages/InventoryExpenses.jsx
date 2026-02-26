@@ -237,7 +237,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, ft }) {
                   src={expense.original_file_url}
                   alt="Invoice"
                   className={`w-full max-h-48 object-contain ${ft('bg-slate-50', 'bg-zinc-950')}`}
-                />
+                 loading="lazy" decoding="async" />
               </div>
               <Button
                 variant="link"
@@ -811,7 +811,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                     src={previewUrl}
                     alt="Preview"
                     className="max-h-40 mx-auto rounded-lg object-contain"
-                  />
+                   loading="lazy" decoding="async" />
                 ) : (
                   <div className="flex items-center justify-center py-6">
                     <FileText className="w-12 h-12 text-cyan-400" />

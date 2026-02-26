@@ -186,7 +186,7 @@ function CompanyProfileCard({ client, onSave }) {
                 src={client.logo_url}
                 alt={client.company_name}
                 className="w-full h-full rounded-xl object-cover"
-              />
+               loading="lazy" decoding="async" />
             ) : (
               <Building2 className="w-6 h-6" style={{ color: 'var(--ws-primary, #06b6d4)' }} />
             )}

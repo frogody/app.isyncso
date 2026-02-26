@@ -151,7 +151,7 @@ export default function Login() {
             src="/isyncso-logo.png"
             alt="iSyncSO"
             className="w-28 h-28 mx-auto mb-2 object-contain drop-shadow-[0_0_30px_rgba(16,185,129,0.15)]"
-          />
+           loading="lazy" decoding="async" />
           <p className="text-sm text-zinc-500">
             AI-powered business operating system
           </p>

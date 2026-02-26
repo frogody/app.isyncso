@@ -424,7 +424,7 @@ function HistoryCard({ video, onPreview, onUse, isActive, t }) {
             src={video.thumbnail_url}
             alt="Video thumbnail"
             className="w-full h-full object-cover"
-          />
+           loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Film className={cn('w-6 h-6', t('text-slate-300', 'text-zinc-800'))} />

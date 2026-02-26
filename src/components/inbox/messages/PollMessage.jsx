@@ -16,7 +16,7 @@ function VoterAvatars({ voters = [], max = 3 }) {
           title={voter.name || voter.userId}
         >
           {voter.avatar ? (
-            <img src={voter.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+            <img src={voter.avatar} alt="" className="w-full h-full rounded-full object-cover"  loading="lazy" decoding="async" />
           ) : (
             (voter.name || voter.userId || '?').charAt(0).toUpperCase()
           )}

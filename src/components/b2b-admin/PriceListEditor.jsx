@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 import { useUser } from '@/components/context/UserContext';
 import ConfirmDialog from './shared/ConfirmDialog';
 import {
@@ -78,8 +79,12 @@ function ProductSearchDropdown({ onSelect, existingProductIds, companyId }) {
         let q = supabase
           .from('products')
           .select('id, name, sku, price, featured_image')
-          .or(`name.ilike.%${query}%,sku.ilike.%${query}%`)
           .limit(20);
+
+        const cleanSearch = sanitizeSearchInput(query);
+        if (cleanSearch) {
+          q = q.or(`name.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%`);
+        }
 
         if (companyId) {
           q = q.eq('company_id', companyId);
@@ -140,7 +145,7 @@ function ProductSearchDropdown({ onSelect, existingProductIds, companyId }) {
                   src={product.featured_image}
                   alt=""
                   className="w-8 h-8 rounded-lg object-cover bg-zinc-800"
-                />
+                 loading="lazy" decoding="async" />
               ) : (
                 <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center">
                   <Package className="w-4 h-4 text-zinc-600" />
@@ -505,7 +510,7 @@ export default function PriceListEditor() {
                         src={item.products.featured_image}
                         alt=""
                         className="w-8 h-8 rounded-lg object-cover bg-zinc-800 shrink-0"
-                      />
+                       loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0">
                         <Package className="w-4 h-4 text-zinc-600" />

@@ -198,7 +198,7 @@ export default function ImageLightbox({
                 transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
               }}
               draggable={false}
-            />
+             loading="lazy" decoding="async" />
           </motion.div>
 
           {/* Next button */}

@@ -223,7 +223,7 @@ export default function InvoiceBrandingModal({ open, onOpenChange, onSave }) {
                           src={logo.url}
                           alt={logo.type}
                           className="w-16 h-16 object-contain rounded-lg"
-                        />
+                         loading="lazy" decoding="async" />
                         <p className={`text-xs text-center mt-1 capitalize ${ft('text-slate-500', 'text-zinc-400')}`}>
                           {logo.type}
                         </p>

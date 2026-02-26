@@ -317,7 +317,7 @@ export default function AvatarSelector({ selected, onSelect, size = 'default', a
               src={avatar.url} 
               alt={`Avatar ${avatar.id}`}
               className="w-full h-full object-cover"
-            />
+             loading="lazy" decoding="async" />
           </button>
         ))}
       </div>

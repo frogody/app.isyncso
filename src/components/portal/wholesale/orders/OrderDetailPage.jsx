@@ -453,7 +453,7 @@ export default function OrderDetailPage() {
                         src={image}
                         alt={name}
                         className="w-full h-full object-cover"
-                        loading="lazy"
+                        loading="lazy" decoding="async"
                       />
                     ) : (
                       <Package

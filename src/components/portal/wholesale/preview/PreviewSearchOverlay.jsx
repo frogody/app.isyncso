@@ -452,7 +452,7 @@ function SearchResultRow({ product, onSelect, onAddToOrder, isLast }) {
               src={image}
               alt={name}
               className="w-full h-full object-cover"
-            />
+             loading="lazy" decoding="async" />
           ) : (
             <Package
               className="w-4 h-4"

@@ -74,7 +74,7 @@ export function CourseCarousel({ courses = [], title, color = 'teal' }) {
                 {/* Thumbnail */}
                 <div className="h-40 bg-zinc-800/50 relative overflow-hidden">
                   {course.cover_image ? (
-                    <img src={course.cover_image} alt={course.title} className="w-full h-full object-cover" />
+                    <img src={course.cover_image} alt={course.title} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <BookOpen className="w-12 h-12 text-zinc-700" />

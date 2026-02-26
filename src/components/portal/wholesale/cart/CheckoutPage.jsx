@@ -387,7 +387,7 @@ function ReviewItem({ item }) {
             src={item.image || item.featured_image}
             alt={item.name}
             className="w-full h-full object-cover"
-            loading="lazy"
+            loading="lazy" decoding="async"
           />
         ) : (
           <ImageOff className="w-4 h-4" style={{ color: 'var(--ws-muted)', opacity: 0.3 }} />

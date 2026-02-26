@@ -752,7 +752,7 @@ export default function CreateImages({ embedded = false }) {
                       alt="Generated"
                       className="w-full max-h-[560px] object-contain cursor-pointer"
                       onClick={() => setPreviewImage(generatedImage)}
-                    />
+                    loading="lazy" decoding="async" />
                   ) : null}
                 </div>
 
@@ -1168,7 +1168,7 @@ export default function CreateImages({ embedded = false }) {
                               : ct('border-slate-200 hover:border-slate-400', 'border-zinc-700/50 hover:border-zinc-500')
                           }`}
                         >
-                          <img src={imageUrl} alt={`Ref ${index + 1}`} className="w-full h-full object-cover" />
+                          <img src={imageUrl} alt={`Ref ${index + 1}`} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                           {selectedReferenceImage === imageUrl && (
                             <div className="absolute inset-0 bg-yellow-500/10 flex items-center justify-center">
                               <Check className="w-3.5 h-3.5 text-yellow-400" />
@@ -1361,7 +1361,7 @@ export default function CreateImages({ embedded = false }) {
                           src={item.thumbnail_url || item.url}
                           alt={item.name}
                           className="w-full h-full object-cover"
-                        />
+                         loading="lazy" decoding="async" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-2 gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRegenerate(item); }}
@@ -1412,7 +1412,7 @@ export default function CreateImages({ embedded = false }) {
             </DialogHeader>
             {previewImage && (
               <div className="space-y-3">
-                <img src={previewImage.url} alt="Preview" className="w-full rounded-xl" />
+                <img src={previewImage.url} alt="Preview" className="w-full rounded-xl"  loading="lazy" decoding="async" />
                 {previewImage.generation_config?.prompt && (
                   <div className={`p-3 ${ct('bg-slate-50 border-slate-200', 'bg-zinc-900/60 border-zinc-800/40')} rounded-xl border`}>
                     <Label className={`${ct('text-slate-400', 'text-zinc-600')} text-[10px] mb-1 block`}>Prompt</Label>

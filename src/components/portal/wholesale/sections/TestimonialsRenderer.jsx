@@ -61,7 +61,7 @@ function AvatarDisplay({ avatar, author, size = 'md' }) {
           alt={author || ''}
           className="w-full h-full rounded-full object-cover"
           style={{ border: '2px solid var(--ws-bg)' }}
-        />
+         loading="lazy" decoding="async" />
       ) : (
         <div
           className={`w-full h-full rounded-full flex items-center justify-center ${textSize} font-bold`}

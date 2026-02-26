@@ -30,6 +30,7 @@ import { usePermissions } from "@/components/context/PermissionContext";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { toast } from "sonner";
+import { logger } from '@/utils/logger';
 import PortalBranding from "@/components/settings/PortalBranding";
 import AppsManagerModal from "@/components/layout/AppsManagerModal";
 import TeamManagement from "@/pages/TeamManagement";
@@ -550,7 +551,8 @@ export default function Settings() {
       setInvitations(invitations.filter(i => i.id !== id));
       toast.success('Invitation revoked');
     } catch (error) {
-      console.error("Failed to revoke invite:", error);
+      logger.error("[Settings] Failed to revoke invite:", error);
+      toast.error("Failed to revoke invitation.");
     }
   };
 
@@ -731,7 +733,7 @@ export default function Settings() {
                       src={profileForm.avatar_url || user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=0e7490&color=fff&size=128`}
                       alt="Avatar"
                       className="w-full h-full object-cover" 
-                    />
+                     loading="lazy" decoding="async" />
                   </div>
                   <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-cyan-500/70 border-2 ${st('border-white', 'border-zinc-900')}`} />
                 </div>
@@ -813,7 +815,7 @@ export default function Settings() {
                             src={profileForm.avatar_url || user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=0e7490&color=fff&size=128`}
                             alt="Avatar"
                             className="w-full h-full object-cover" 
-                          />
+                           loading="lazy" decoding="async" />
                         </div>
                         <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <Camera className="w-6 h-6 text-white" />
@@ -1184,7 +1186,7 @@ export default function Settings() {
                       <div className="relative group cursor-pointer" onClick={() => companyLogoInputRef.current?.click()}>
                         <div className={`w-20 h-20 rounded-2xl bg-white flex items-center justify-center overflow-hidden border ${st('border-slate-200', 'border-zinc-700')}`}>
                           {companyData.logo_url ? (
-                            <img src={companyData.logo_url} alt="Logo" className="w-full h-full object-contain p-2" />
+                            <img src={companyData.logo_url} alt="Logo" className="w-full h-full object-contain p-2"  loading="lazy" decoding="async" />
                           ) : (
                             <Building2 className={`w-8 h-8 ${st('text-slate-400', 'text-zinc-400')}`} />
                           )}

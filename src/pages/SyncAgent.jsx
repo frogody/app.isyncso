@@ -219,7 +219,7 @@ function ImageCard({ url }) {
             setIsLoading(false);
             setHasError(true);
           }}
-        />
+        loading="lazy" decoding="async" />
 
         {/* Hover overlay with actions */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
@@ -262,7 +262,7 @@ function ImageCard({ url }) {
               src={url}
               alt="Generated image"
               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            />
+             loading="lazy" decoding="async" />
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               <Button
                 size="sm"

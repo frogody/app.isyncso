@@ -873,7 +873,7 @@ export default function CRMContactProfile() {
                             src={contact.company_logo_url}
                             alt={contact.company}
                             className={`w-16 h-16 rounded-xl object-contain ${crt('bg-slate-50', 'bg-white/5')} p-2`}
-                          />
+                           loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30">
                             <Building className="w-8 h-8 text-cyan-400" />
@@ -1206,7 +1206,7 @@ export default function CRMContactProfile() {
                             src={contact.company_logo_url}
                             alt={contact.company}
                             className={`w-24 h-24 rounded-2xl object-contain ${crt('bg-slate-50', 'bg-white/5')} p-3`}
-                          />
+                           loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30">
                             <Building className="w-12 h-12 text-cyan-400" />

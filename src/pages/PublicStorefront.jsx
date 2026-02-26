@@ -305,7 +305,7 @@ function PublicNavBar({ config, currentPage, onNavigate, onOpenSearch, onOpenCar
           src={logoUrl}
           alt={config?.seo?.title || 'Store'}
           className="w-8 h-8 rounded-lg object-contain"
-        />
+         loading="lazy" decoding="async" />
       ) : (
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
@@ -589,7 +589,7 @@ function StoreLoginPage({ storeData, themeVars, onAuthenticated }) {
         {/* Logo & Store Name */}
         <div className="flex flex-col items-center mb-8">
           {logoUrl ? (
-            <img src={logoUrl} alt={storeName} className="w-16 h-16 rounded-2xl object-contain mb-4" />
+            <img src={logoUrl} alt={storeName} className="w-16 h-16 rounded-2xl object-contain mb-4"  loading="lazy" decoding="async" />
           ) : (
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold mb-4"

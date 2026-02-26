@@ -69,7 +69,7 @@ function NavBar({ config }) {
   const Logo = (
     <Link to={basePath} className="flex items-center gap-2 shrink-0" onClick={closeMobile}>
       {logoUrl ? (
-        <img src={logoUrl} alt={companyName} className="h-8 w-auto" />
+        <img src={logoUrl} alt={companyName} className="h-8 w-auto"  loading="lazy" decoding="async" />
       ) : (
         <span
           className="text-lg font-bold tracking-tight"

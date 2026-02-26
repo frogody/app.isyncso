@@ -327,7 +327,7 @@ function GridCard({ product, pricing, inventory, stock, onAddToCart, onNavigate,
             src={product.featured_image}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
+            loading="lazy" decoding="async"
           />
         ) : (
           <ImagePlaceholder size="lg" />
@@ -435,7 +435,7 @@ function ListCard({ product, pricing, inventory, stock, onAddToCart, onNavigate,
             src={product.featured_image}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-            loading="lazy"
+            loading="lazy" decoding="async"
           />
         ) : (
           <ImagePlaceholder size="sm" />

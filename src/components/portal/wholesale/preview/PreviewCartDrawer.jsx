@@ -100,7 +100,7 @@ function OrderItemRow({ item, index, onUpdateQuantity, onRemove, moqViolations }
           }}
         >
           {image ? (
-            <img src={image} alt={name} className="w-full h-full object-cover" />
+            <img src={image} alt={name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
           ) : (
             <Package className="w-5 h-5" style={{ color: 'var(--ws-muted)', opacity: 0.5 }} />
           )}

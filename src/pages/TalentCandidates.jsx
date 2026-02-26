@@ -106,7 +106,7 @@ const CandidateAvatar = ({ name, image, size = "md" }) => {
         src={image}
         alt={name}
         className={`${sizes[size]} rounded-full object-cover ring-2 ring-white/10`}
-      />
+       loading="lazy" decoding="async" />
     );
   }
 

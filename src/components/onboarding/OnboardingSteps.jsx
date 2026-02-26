@@ -145,7 +145,7 @@ export function WelcomeStep({ data, onChange, onNext }) {
           src="/isyncso-logo.png"
           alt="iSyncSO"
           className="w-16 h-16 mx-auto mb-1 object-contain"
-        />
+         loading="lazy" decoding="async" />
         <h2 className="text-xl font-semibold text-white">Welcome to iSyncSO</h2>
         <p className="text-zinc-500 text-xs max-w-sm mx-auto">
           Tell us about yourself so we can set up your workspace

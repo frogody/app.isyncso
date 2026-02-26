@@ -35,7 +35,7 @@ export default function UserAvatar({ user, size = 'md', className = '' }) {
           src={user.avatar_url} 
           alt={user?.full_name || 'User'}
           className="w-full h-full object-cover"
-        />
+         loading="lazy" decoding="async" />
       ) : (
         <UserIcon className="w-1/2 h-1/2 text-gray-600" />
       )}

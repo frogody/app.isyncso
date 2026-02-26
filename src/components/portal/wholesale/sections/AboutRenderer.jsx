@@ -243,7 +243,7 @@ export default function AboutRenderer({ section, theme }) {
             style={{
               border: '1px solid color-mix(in srgb, var(--ws-primary) 20%, var(--ws-border))',
             }}
-          />
+           loading="lazy" decoding="async" />
         </div>
       ) : (
         <ImagePlaceholder />

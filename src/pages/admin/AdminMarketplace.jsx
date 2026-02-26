@@ -722,7 +722,7 @@ export default function AdminMarketplace() {
                                     src={product.preview_image_url}
                                     alt={product.name}
                                     className="w-full h-full object-cover"
-                                  />
+                                   loading="lazy" decoding="async" />
                                 ) : (
                                   <Database className="w-3 h-3 text-zinc-400" />
                                 )}

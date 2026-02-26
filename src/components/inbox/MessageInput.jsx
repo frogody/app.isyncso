@@ -480,7 +480,7 @@ export default function MessageInput({
                   src={URL.createObjectURL(files[0])} 
                   alt="" 
                   className="w-16 h-16 object-cover rounded-lg"
-                />
+                 loading="lazy" decoding="async" />
               ) : (
                 <div className="w-16 h-16 bg-cyan-500/20 border border-cyan-500/30 rounded-lg flex items-center justify-center">
                   <Paperclip className="w-6 h-6 text-cyan-400" />
@@ -516,7 +516,7 @@ export default function MessageInput({
                   src={typingUsers[0].avatar}
                   alt=""
                   className="w-5 h-5 rounded-full"
-                />
+                 loading="lazy" decoding="async" />
               ) : typingUsers.length > 0 ? (
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-[9px] font-bold text-white">
                   {typingUsers[0]?.name?.charAt(0) || '?'}

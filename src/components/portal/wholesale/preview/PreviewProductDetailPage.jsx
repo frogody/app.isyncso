@@ -179,7 +179,7 @@ function ImageGallery({ images, activeIndex, onSelect }) {
           onError={(e) => {
             e.currentTarget.style.display = 'none';
           }}
-        />
+        loading="lazy" decoding="async" />
       </div>
 
       {/* Thumbnail row */}
@@ -207,7 +207,7 @@ function ImageGallery({ images, activeIndex, onSelect }) {
                 src={url}
                 alt={`Thumbnail ${idx + 1}`}
                 className="w-full h-full object-cover"
-              />
+               loading="lazy" decoding="async" />
             </button>
           ))}
         </div>

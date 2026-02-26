@@ -319,7 +319,7 @@ function DetailVariantCard({ variant, campaign, onUpdate, onApprove, onDelete })
             src={variant.image_url}
             alt="Ad creative"
             className="w-full rounded-lg object-cover max-h-40"
-          />
+           loading="lazy" decoding="async" />
           <div className="absolute inset-0 rounded-lg bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <Button
               variant="glass"
@@ -655,7 +655,7 @@ export default function ReachCampaignDetail() {
               src={campaign.product_image}
               alt=""
               className="w-10 h-10 rounded-lg object-cover bg-zinc-800"
-            />
+             loading="lazy" decoding="async" />
           )}
           <div className="flex items-center gap-2">
             <Package className="w-4 h-4 text-zinc-500" />

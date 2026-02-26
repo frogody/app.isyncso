@@ -277,7 +277,7 @@ function QuickReorderSection({ orders, nav }) {
                   style={{ border: '1px solid var(--ws-border)', background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)' }}
                 >
                   {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                   ) : (
                     <Package className="w-4 h-4" style={{ color: 'var(--ws-muted)', opacity: 0.5 }} />
                   )}
@@ -568,7 +568,7 @@ function OrderItemRow({ item, isLast }) {
         style={{ border: '1px solid var(--ws-border)', background: 'color-mix(in srgb, var(--ws-surface) 80%, transparent)' }}
       >
         {item.image ? (
-          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+          <img src={item.image} alt={item.name} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
         ) : (
           <Package className="w-4 h-4" style={{ color: 'var(--ws-muted)', opacity: 0.4 }} />
         )}
