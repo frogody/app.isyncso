@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useUser, useTeamAccess } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
-import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart, ShoppingCart } from "lucide-react";
+import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart, ShoppingCart, ClipboardList } from "lucide-react";
+import TaskLog from "@/components/tasks/TaskLog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1017,6 +1018,15 @@ export default function Dashboard() {
                 <p className="text-zinc-500">Team analytics will appear once your team starts using the platform</p>
               </div>
             )}
+
+            {/* Task Log — always visible on Team Dashboard */}
+            <div className="mt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <ClipboardList className="w-5 h-5 text-cyan-400" />
+                <h2 className="text-base font-semibold text-white">Task Log</h2>
+              </div>
+              <TaskLog />
+            </div>
           </div>
         ) : widgetsLoading ? (
           /* Progressive loading — show skeleton grid while data fetches */
