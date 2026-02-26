@@ -22,8 +22,9 @@ import {
   Check, X, Crown, Key, Lock, ShieldCheck, ShieldAlert,
   Eye, EyeOff, UserCog, Filter, Plus, RefreshCw, Copy,
   AlertTriangle, Info, CheckCircle, ArrowLeft, FolderPlus,
-  Boxes, ToggleLeft, ToggleRight, UserMinus
+  Boxes, ToggleLeft, ToggleRight, UserMinus, ClipboardList
 } from "lucide-react";
+import TaskLog from "@/components/tasks/TaskLog";
 import { createPageUrl } from "@/utils";
 
 // Role hierarchy colors and icons
@@ -733,6 +734,10 @@ export default function TeamManagement({ embedded = false }) {
               <Mail className="w-4 h-4 mr-2" />
               Invitations
             </TabsTrigger>
+            <TabsTrigger value="tasklog" className="data-[state=active]:bg-zinc-800">
+              <ClipboardList className="w-4 h-4 mr-2" />
+              Task Log
+            </TabsTrigger>
           </TabsList>
 
           {/* USERS TAB */}
@@ -914,6 +919,11 @@ export default function TeamManagement({ embedded = false }) {
                 </div>
               )}
             </GlassCard>
+          </TabsContent>
+
+          {/* TASK LOG TAB */}
+          <TabsContent value="tasklog" className="space-y-4">
+            <TaskLog teamMembers={teamMembers} />
           </TabsContent>
         </Tabs>
       </div>
