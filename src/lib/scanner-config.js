@@ -20,7 +20,6 @@ export const WAREHOUSE_FORMATS = [
 // Config for the Html5Qrcode CONSTRUCTOR — controls decoder setup.
 export const SCANNER_INIT_CONFIG = {
   formatsToSupport: WAREHOUSE_FORMATS,
-  experimentalFeatures: { useBarCodeDetectorIfSupported: true },
   verbose: false,
 };
 
@@ -39,7 +38,7 @@ const VIDEO_CONSTRAINTS = {
 // a narrow qrbox (e.g. 25%) forces users to hold the phone unreasonably close.
 // Library minimum is 50px per dimension (Constants.MIN_QR_BOX_SIZE).
 export const SCANNER_CONFIG = {
-  fps: 10,
+  fps: 15,
   qrbox: (viewfinderWidth, viewfinderHeight) => ({
     width: Math.floor(viewfinderWidth * 0.8),
     height: Math.floor(Math.max(viewfinderHeight * 0.35, 60)),
