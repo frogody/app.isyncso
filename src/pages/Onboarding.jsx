@@ -12,6 +12,26 @@ import {
   ProgressIndicator,
   PERSONAS
 } from "@/components/onboarding/OnboardingSteps";
+import ImmersiveOnboarding from "@/components/onboarding/immersive/ImmersiveOnboarding";
+
+// Feature flag — set to true to use the immersive 10-page onboarding
+const useImmersive = true;
+
+// Helper to get default widgets based on selected apps
+const getDefaultWidgetsForApps = (apps) => {
+  const widgets = ['actions_recent', 'quick_actions'];
+  if (apps.includes('sync')) widgets.push('sync_recent', 'sync_quick');
+  if (apps.includes('learn')) widgets.push('learn_progress', 'learn_stats');
+  if (apps.includes('growth')) widgets.push('growth_pipeline', 'growth_stats', 'growth_deals');
+  if (apps.includes('sentinel')) widgets.push('sentinel_compliance', 'sentinel_systems');
+  if (apps.includes('finance')) widgets.push('finance_overview', 'finance_invoices');
+  if (apps.includes('raise')) widgets.push('raise_progress', 'raise_investors');
+  if (apps.includes('talent')) widgets.push('talent_pipeline', 'talent_candidates');
+  if (apps.includes('products')) widgets.push('products_inventory', 'products_lowstock');
+  if (apps.includes('create')) widgets.push('create_recent', 'create_gallery');
+  return widgets;
+};
+
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
@@ -328,6 +348,195 @@ export default function Onboarding() {
     }
   };
 
+  // Immersive onboarding completion handler.
+  // Receives formData from the 10-page immersive flow and runs the full
+  // enrichment + save pipeline. Uses data parameter directly to avoid
+  // setState race conditions.
+  const handleImmersiveComplete = async (immersiveData) => {
+    setIsSubmitting(true);
+
+    // Merge immersive data into local state (for any fallback reads)
+    setFormData(immersiveData);
+
+    try {
+      const user = await db.auth.me();
+
+      // Determine invited user status from the user object
+      const invited = !!user?.company_id;
+
+      // 1. Update basic profile
+      try {
+        await db.auth.updateMe({
+          full_name: immersiveData.fullName || user.full_name,
+          job_title: immersiveData.jobTitle,
+          linkedin_url: immersiveData.linkedinUrl || null,
+          experience_level: immersiveData.experienceLevel || 'intermediate',
+          industry: immersiveData.industry || null,
+          onboarding_completed: true,
+        });
+      } catch (e) {
+        console.warn('[Onboarding] Profile update warning:', e);
+      }
+
+      // 2. Company creation / linking
+      let companyId = null;
+      let companyDomain = '';
+
+      if (invited) {
+        companyId = user.company_id;
+        try {
+          const company = await db.entities.Company.get(companyId);
+          companyDomain = company?.domain || '';
+        } catch {
+          // Company loaded from guard
+        }
+      } else if (immersiveData.companyWebsite) {
+        try {
+          const cleanUrl = immersiveData.companyWebsite.trim();
+          const urlString = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+          companyDomain = new URL(urlString).hostname;
+        } catch {
+          companyDomain = immersiveData.companyWebsite.replace(/^https?:\/\//, '').split('/')[0];
+        }
+
+        try {
+          const existingCompanies = await db.entities.Company.filter({ domain: companyDomain });
+          if (existingCompanies.length > 0) {
+            companyId = existingCompanies[0].id;
+            await db.entities.Company.update(companyId, {
+              name: immersiveData.companyName,
+              industry: immersiveData.industry || 'Technology',
+              size_range: immersiveData.companySize || '',
+              website_url: immersiveData.companyWebsite,
+              enriched_at: new Date().toISOString(),
+              enrichment_source: 'onboarding_immersive',
+            });
+          } else {
+            const newCompany = await db.entities.Company.create({
+              domain: companyDomain,
+              name: immersiveData.companyName,
+              industry: immersiveData.industry || 'Technology',
+              size_range: immersiveData.companySize || '',
+              website_url: immersiveData.companyWebsite,
+              tech_stack: [],
+              knowledge_files: [],
+              enriched_at: new Date().toISOString(),
+              enrichment_source: 'onboarding_immersive',
+              settings: {},
+            });
+            companyId = newCompany.id;
+          }
+
+          if (companyId) {
+            await db.auth.updateMe({ company_id: companyId });
+            try {
+              await supabase.rpc('assign_founder_role', {
+                p_user_id: user.id,
+                p_company_id: companyId,
+              });
+            } catch (roleErr) {
+              console.warn('[Onboarding] Role assignment error:', roleErr);
+            }
+          }
+        } catch (companyError) {
+          console.error('[Onboarding] Company creation error:', companyError);
+        }
+      }
+
+      // 3. Explorium enrichment (non-invited only, non-blocking)
+      if (!invited && companyId && companyDomain) {
+        try {
+          const exploriumResult = await db.functions.invoke('enrichCompanyFromExplorium', {
+            domain: companyDomain,
+          });
+          const enrichment = exploriumResult?.data;
+          if (enrichment && !enrichment.error) {
+            await db.entities.Company.update(companyId, {
+              tech_stack: enrichment.tech_stack || [],
+              tech_categories: enrichment.tech_categories || [],
+              employee_count: enrichment.employee_count || null,
+              founded_year: enrichment.founded_year || null,
+              headquarters: enrichment.headquarters || null,
+              revenue_range: enrichment.revenue_range || null,
+              linkedin_url: enrichment.linkedin_url || null,
+              logo_url: enrichment.logo_url || null,
+              funding_data: enrichment.funding_data || null,
+              total_funding: enrichment.total_funding || null,
+              funding_stage: enrichment.funding_stage || null,
+              enriched_at: new Date().toISOString(),
+              enrichment_source: 'explorium',
+              data_completeness: enrichment.data_completeness || 0,
+            });
+          }
+        } catch (e) {
+          console.warn('[Onboarding] Explorium enrichment error:', e);
+        }
+      }
+
+      // 4. Profile enrichment
+      try {
+        await db.functions.invoke('enrichCompanyProfile', {
+          company_name: immersiveData.companyName,
+          company_url: immersiveData.companyWebsite,
+          job_title: immersiveData.jobTitle,
+          company_description: '',
+          key_products: [],
+          target_audience: '',
+          industry_challenges: [],
+          tech_stack: [],
+          ai_tools_used: [],
+          industry: immersiveData.industry || 'Technology',
+          company_size: immersiveData.companySize || 'Unknown',
+          user_goals: immersiveData.selectedGoals,
+          user_experience_level: immersiveData.experienceLevel,
+          linkedin_url: immersiveData.linkedinUrl || '',
+          linkedin_profile: null,
+        });
+      } catch (e) {
+        console.warn('[Onboarding] Profile enrichment error:', e);
+      }
+
+      // 5. Grant credits
+      try {
+        await db.functions.invoke('grantOnboardingCredits', { user_id: user.id });
+      } catch (e) {
+        console.warn('[Onboarding] Credits error:', e);
+      }
+
+      // 6. Save app preferences
+      try {
+        const existingConfigs = await db.entities.UserAppConfig.filter({ user_id: user.id });
+        const selectedApps = immersiveData.selectedApps || ['sync', 'learn', 'growth', 'sentinel'];
+        const defaultWidgets = getDefaultWidgetsForApps(selectedApps);
+
+        if (existingConfigs.length > 0) {
+          await db.entities.UserAppConfig.update(existingConfigs[0].id, {
+            enabled_apps: selectedApps,
+            app_order: selectedApps,
+            dashboard_widgets: defaultWidgets,
+          });
+        } else {
+          await db.entities.UserAppConfig.create({
+            user_id: user.id,
+            enabled_apps: selectedApps,
+            app_order: selectedApps,
+            dashboard_widgets: defaultWidgets,
+          });
+        }
+        window.dispatchEvent(new CustomEvent('dashboard-config-updated'));
+      } catch (e) {
+        console.warn('[Onboarding] App config error:', e);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      window.location.href = createPageUrl('Dashboard');
+    } catch (error) {
+      console.error('[Onboarding] Immersive complete error:', error);
+      window.location.href = createPageUrl('Dashboard');
+    }
+  };
+
+  // Handle step navigation - for invited users, skip LinkedIn (2) and Company (3) steps
   // ─────────────────────────────────────────────
   // STEP NAVIGATION
   // ─────────────────────────────────────────────
@@ -344,6 +553,17 @@ export default function Onboarding() {
     setStep(s => s - 1);
   };
 
+  // ── Immersive onboarding ──────────────────────────────────
+  if (useImmersive) {
+    return (
+      <ImmersiveOnboarding
+        onComplete={handleImmersiveComplete}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
+
+  // ── Legacy form-based onboarding (feature-flagged off) ───
   // Loading state
   if (!initialCheckDone) {
     return (

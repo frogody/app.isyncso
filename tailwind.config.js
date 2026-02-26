@@ -97,15 +97,33 @@ module.exports = {
   					height: '0'
   				}
   			},
-  			'shimmer': {
+  			'float': {
+  				'0%, 100%': { transform: 'translateY(0)' },
+  				'50%': { transform: 'translateY(-8px)' }
+  			},
+  			'pulse-ring': {
+  				'0%': { transform: 'scale(0.95)', opacity: '0.7' },
+  				'50%': { transform: 'scale(1.05)', opacity: '1' },
+  				'100%': { transform: 'scale(0.95)', opacity: '0.7' }
+  			},
+  			'fade-in-up': {
+  				'0%': { opacity: '0', transform: 'translateY(16px)' },
+  				'100%': { opacity: '1', transform: 'translateY(0)' }
+  			},
+			'shimmer': {
   				'0%': { transform: 'translateX(-100%)' },
   				'100%': { transform: 'translateX(200%)' },
   			},
+
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
-  			'shimmer': 'shimmer 2s infinite',
+  			'float': 'float 3s ease-in-out infinite',
+  			'pulse-ring': 'pulse-ring 2s ease-in-out infinite',
+  			'fade-in-up': 'fade-in-up 0.5s ease-out forwards',
+			'shimmer': 'shimmer 2s infinite',
+
   		}
   	}
   },
