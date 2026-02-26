@@ -2688,6 +2688,105 @@ serve(async (req) => {
       }
 
       // ================================================================
+      // REPAIR DATES — fix orders where order_date = created_at (from NULL fix)
+      // ================================================================
+      case "repairDates": {
+        const tokenRes = await getBolToken(supabase, companyId);
+        if ("error" in tokenRes) { result = { success: false, error: tokenRes.error }; break; }
+
+        const BUDGET_MS = 130_000;
+        const t0 = Date.now();
+        const elapsed = () => Date.now() - t0;
+
+        // Find orders where order_date was incorrectly set to created_at
+        const { data: badDateOrders, error: bdErr } = await supabase
+          .from("sales_orders")
+          .select("id, external_reference, order_date, created_at")
+          .eq("company_id", companyId)
+          .eq("source", "bolcom")
+          .range(0, 49999);
+
+        if (bdErr) { result = { success: false, error: bdErr.message }; break; }
+
+        // Filter to orders where order_date is within 2 seconds of created_at (= likely set by our fix)
+        const toFix = (badDateOrders || []).filter(o => {
+          if (!o.order_date || !o.created_at) return false;
+          const diff = Math.abs(new Date(o.order_date).getTime() - new Date(o.created_at).getTime());
+          return diff < 2000; // within 2 seconds = not a real bol.com date
+        });
+
+        if (!toFix.length) {
+          result = { success: true, data: { message: "No orders with incorrect dates", count: 0 } };
+          break;
+        }
+
+        console.log(`[bolcom-api] repairDates: ${toFix.length} orders to fix`);
+
+        let lastCall = 0;
+        let spacing = 1200;
+        const fetchWithLimit = async <T>(path: string): Promise<T | null> => {
+          const wait = Math.max(0, spacing - (Date.now() - lastCall));
+          if (wait > 0) await new Promise(r => setTimeout(r, wait));
+          lastCall = Date.now();
+          const url = `${BOL_API_BASE}${path}`;
+          const ct = "application/vnd.retailer.v10+json";
+          for (let attempt = 0; attempt < 3; attempt++) {
+            if (elapsed() > BUDGET_MS) return null;
+            try {
+              const resp = await fetch(url, {
+                method: "GET",
+                headers: { "Authorization": `Bearer ${tokenRes.token}`, "Content-Type": ct, "Accept": ct },
+              });
+              if (resp.status === 429) {
+                const ra = Math.min(parseInt(resp.headers.get("Retry-After") || "5", 10), 15);
+                spacing = Math.min(spacing * 1.5, 5000);
+                await new Promise(r => setTimeout(r, ra * 1000));
+                continue;
+              }
+              if (!resp.ok) return null;
+              if (resp.status === 204) return {} as T;
+              return (await resp.json()) as T;
+            } catch { if (attempt < 2) { await new Promise(r => setTimeout(r, 2000)); continue; } return null; }
+          }
+          return null;
+        };
+
+        interface DateRepairOrder {
+          orderId: string;
+          dateTimeOrderPlaced?: string;
+          orderItems?: Array<{ orderItemId: string; ean: string; quantity: number; offerPrice?: number; unitPrice?: number }>;
+        }
+
+        let fixed = 0, noDate = 0;
+        for (const order of toFix) {
+          if (elapsed() > BUDGET_MS - 5000) break;
+          const o = await fetchWithLimit<DateRepairOrder>(`/orders/${order.external_reference}`);
+          if (o?.dateTimeOrderPlaced) {
+            await supabase.from("sales_orders").update({ order_date: o.dateTimeOrderPlaced }).eq("id", order.id);
+            fixed++;
+
+            // Also fix prices if they're still 0
+            if (o.orderItems?.length) {
+              let total = 0;
+              for (const oi of o.orderItems) {
+                const price = (oi as any).offerPrice || (oi as any).unitPrice || 0;
+                total += price * (oi.quantity || 1);
+              }
+              if (total > 0) {
+                await supabase.from("sales_orders").update({ total, subtotal: total }).eq("id", order.id);
+              }
+            }
+          } else {
+            noDate++;
+          }
+        }
+
+        console.log(`[bolcom-api] repairDates done (${elapsed()}ms): ${fixed} fixed, ${noDate} no date from API`);
+        result = { success: true, data: { toFix: toFix.length, fixed, noDate, elapsed: elapsed() } };
+        break;
+      }
+
+      // ================================================================
       // IMPORT ORDERS — bulk import from CSV data
       // ================================================================
       case "importOrders": {

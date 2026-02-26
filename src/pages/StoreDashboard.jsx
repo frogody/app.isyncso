@@ -305,16 +305,26 @@ export default function StoreDashboard() {
 
     try {
       const now = new Date();
+      // Use UTC dates consistently to avoid local timezone shifting "Today" into the previous day
       const periodStart = (() => {
         if (selectedPeriod === '1d') {
-          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          return today;
+          return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         }
-        if (selectedPeriod === '7d') return new Date(now.getTime() - 7 * 86400000);
-        if (selectedPeriod === '30d') return new Date(now.getTime() - 30 * 86400000);
-        if (selectedPeriod === '90d') return new Date(now.getTime() - 90 * 86400000);
-        if (selectedPeriod === 'all') return new Date('2020-01-01');
-        return new Date(now.getTime() - 7 * 86400000);
+        if (selectedPeriod === '7d') {
+          const d = new Date(now.getTime() - 7 * 86400000);
+          return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+        }
+        if (selectedPeriod === '30d') {
+          const d = new Date(now.getTime() - 30 * 86400000);
+          return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+        }
+        if (selectedPeriod === '90d') {
+          const d = new Date(now.getTime() - 90 * 86400000);
+          return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+        }
+        if (selectedPeriod === 'all') return new Date('2020-01-01T00:00:00Z');
+        const d = new Date(now.getTime() - 7 * 86400000);
+        return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
       })().toISOString();
 
       const safe = (promise, label = '') =>
@@ -330,7 +340,7 @@ export default function StoreDashboard() {
 
       const [
         shopifyCreds, bolcomCreds, b2bConfig,
-        salesMonthly, salesPending, salesRecent,
+        salesStats, salesRecent,
         b2bMonthly, b2bPending, b2bRecent,
         b2bInvoices, b2bTopItems, portalClients,
         bolcomPayouts,
@@ -338,8 +348,8 @@ export default function StoreDashboard() {
         safe(supabase.from('shopify_credentials').select('id, shop_domain, shop_name, status').eq('company_id', companyId).eq('is_active', true).maybeSingle(), 'shopify'),
         safe(supabase.from('bolcom_credentials').select('id, environment').eq('company_id', companyId).eq('is_active', true).maybeSingle(), 'bolcom'),
         safe(supabase.from('portal_settings').select('id, store_subdomain, custom_domain').eq('organization_id', organizationId).eq('enable_wholesale', true).maybeSingle(), 'b2bConfig'),
-        safe(supabase.from('sales_orders').select('id, source, total, status, order_number, order_date, customer_id, customers(name, email)').eq('company_id', companyId).gte('order_date', periodStart).range(0, 49999), 'salesMonthly'),
-        safe(supabase.from('sales_orders').select('id, source, status').eq('company_id', companyId).eq('status', 'pending').range(0, 49999), 'salesPending'),
+        // Use server-side aggregation to avoid Supabase 1000-row limit
+        safe(supabase.rpc('get_store_dashboard_stats', { p_company_id: companyId, p_period_start: periodStart }), 'salesStats'),
         safe(supabase.from('sales_orders').select('id, order_number, source, status, total, order_date, customer_id, customers(name, email)').eq('company_id', companyId).order('order_date', { ascending: false }).limit(20), 'salesRecent'),
         safe(supabase.from('b2b_orders').select('id, total, status').eq('organization_id', organizationId).gte('created_at', periodStart).range(0, 49999), 'b2bMonthly'),
         safe(supabase.from('b2b_orders').select('id, status').eq('organization_id', organizationId).eq('status', 'pending').range(0, 49999), 'b2bPending'),
@@ -362,14 +372,24 @@ export default function StoreDashboard() {
         else if (b2bConfig.data.store_subdomain) setStoreUrl(`https://${b2bConfig.data.store_subdomain}.syncstore.business`);
       }
 
-      // Parse sales_orders by source
-      const salesRows = salesMonthly.data || [];
-      const salesPendingRows = salesPending.data || [];
+      // Parse aggregated stats from RPC (no row limit issues)
+      const statsRows = salesStats.data || [];
       const salesRecentRows = salesRecent.data || [];
 
-      const filterSource = (rows, src) => rows.filter(r => r.source === src);
-      const sumRevenue = (rows) => rows.reduce((s, r) => s + (parseFloat(String(r.total)) || 0), 0);
+      const getStats = (src) => {
+        const row = statsRows.find(r => r.source === src);
+        return { orders: Number(row?.order_count || 0), revenue: Number(row?.revenue || 0), pending: Number(row?.pending_count || 0) };
+      };
       const isManualSource = (src) => !src || src === 'manual' || src === 'email' || src === 'api';
+      // Aggregate all manual-like sources
+      const manualStats = statsRows.filter(r => isManualSource(r.source)).reduce(
+        (acc, r) => ({ orders: acc.orders + Number(r.order_count || 0), revenue: acc.revenue + Number(r.revenue || 0), pending: acc.pending + Number(r.pending_count || 0) }),
+        { orders: 0, revenue: 0, pending: 0 }
+      );
+      const shopifyStats = getStats('shopify');
+      const bolcomStats = getStats('bolcom');
+
+      const filterSource = (rows, src) => rows.filter(r => r.source === src);
 
       const formatSalesOrder = (o) => ({
         id: o.id,
@@ -382,17 +402,10 @@ export default function StoreDashboard() {
         link: null,
       });
 
-      const shopifyOrders = filterSource(salesRows, 'shopify');
-      const bolcomOrders = filterSource(salesRows, 'bolcom');
-      const manualOrders = salesRows.filter(r => isManualSource(r.source));
-
-      const shopifyPending = filterSource(salesPendingRows, 'shopify').length;
-      const bolcomPending = filterSource(salesPendingRows, 'bolcom').length;
-      const manualPending = salesPendingRows.filter(r => isManualSource(r.source)).length;
-
       // B2B data
       const b2bRows = b2bMonthly.data || [];
       const b2bPendingCount = (b2bPending.data || []).length;
+      const sumRevenue = (rows) => rows.reduce((s, r) => s + (parseFloat(String(r.total)) || 0), 0);
       const b2bRecentFormatted = (b2bRecent.data || []).map((o) => ({
         id: o.id,
         orderNumber: o.order_number || `#${o.id.slice(0, 8)}`,
@@ -414,23 +427,23 @@ export default function StoreDashboard() {
         },
         shopify: {
           connected: shopifyConnected,
-          orders: shopifyOrders.length,
-          revenue: sumRevenue(shopifyOrders),
-          pending: shopifyPending,
+          orders: shopifyStats.orders,
+          revenue: shopifyStats.revenue,
+          pending: shopifyStats.pending,
           recentOrders: filterSource(salesRecentRows, 'shopify').map(formatSalesOrder),
         },
         bolcom: {
           connected: bolcomConnected,
-          orders: bolcomOrders.length,
-          revenue: sumRevenue(bolcomOrders),
-          pending: bolcomPending,
+          orders: bolcomStats.orders,
+          revenue: bolcomStats.revenue,
+          pending: bolcomStats.pending,
           recentOrders: filterSource(salesRecentRows, 'bolcom').map(formatSalesOrder),
         },
         manual: {
           connected: true,
-          orders: manualOrders.length,
-          revenue: sumRevenue(manualOrders),
-          pending: manualPending,
+          orders: manualStats.orders,
+          revenue: manualStats.revenue,
+          pending: manualStats.pending,
           recentOrders: salesRecentRows.filter(r => isManualSource(r.source)).map(formatSalesOrder),
         },
       });
