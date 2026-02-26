@@ -747,6 +747,7 @@ const SIDEBAR_CONSTANTS = {
 // Core nav item indices (Dashboard, CRM, Projects, Products, Inbox)
 const CORE_NAV_INDICES = {
   crm: 1,       // CRM is 2nd in core nav
+  projects: 2,  // Projects is 3rd in core nav
   products: 3,  // Products is 4th in core nav
 };
 
