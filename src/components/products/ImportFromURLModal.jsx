@@ -23,7 +23,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://sfxpmzicgpaxf
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export default function ImportFromURLModal({ open, onClose, onSave }) {
-  const { user } = useUser();
+  const { user, companyId } = useUser();
   const { t } = useTheme();
 
   // Step state: 'input' | 'loading' | 'review'
@@ -175,7 +175,7 @@ export default function ImportFromURLModal({ open, onClose, onSave }) {
         slug,
         type: "physical",
         status: "draft",
-        company_id: user?.company_id,
+        company_id: companyId || user?.company_id,
         description: description.trim() || null,
         category: category.trim() || null,
         featured_image: featuredImage,
