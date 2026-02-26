@@ -3,6 +3,9 @@
  *
  * CRUD operations for email_pool_accounts, email_pool_sync_log,
  * and supplier_email_patterns tables.
+ *
+ * NOTE: These tables may not exist yet (migration not applied).
+ * List functions gracefully return empty arrays on missing-table errors.
  */
 
 import { supabase } from '@/api/supabaseClient';
@@ -18,6 +21,18 @@ import type {
   SupplierEmailPatternUpdate,
 } from '../schema';
 
+/** Returns true if the error indicates the table doesn't exist (404 / relation not found). */
+function isTableMissing(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const e = error as Record<string, unknown>;
+  return (
+    e.code === '42P01' ||
+    String(e.message ?? '').includes('relation') ||
+    (typeof e.status === 'number' && e.status === 404) ||
+    String(e.code) === 'PGRST204'
+  );
+}
+
 // =============================================================================
 // EMAIL POOL ACCOUNTS
 // =============================================================================
@@ -29,7 +44,10 @@ export async function listEmailPoolAccounts(companyId: string): Promise<EmailPoo
     .eq('company_id', companyId)
     .order('created_at', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    if (isTableMissing(error)) return [];
+    throw error;
+  }
   return data || [];
 }
 
@@ -116,7 +134,10 @@ export async function listSyncLog(
   }
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) {
+    if (isTableMissing(error)) return [];
+    throw error;
+  }
   return data || [];
 }
 
@@ -159,7 +180,10 @@ export async function listSupplierPatterns(companyId: string): Promise<SupplierE
     .eq('company_id', companyId)
     .order('supplier_name', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    if (isTableMissing(error)) return [];
+    throw error;
+  }
   return data || [];
 }
 
@@ -245,11 +269,16 @@ const DEFAULT_SUPPLIER_PATTERNS: Omit<SupplierEmailPatternInsert, 'company_id'>[
 
 export async function seedDefaultSupplierPatterns(companyId: string): Promise<void> {
   // Check if any patterns exist for this company
-  const { data: existing } = await supabase
+  const { data: existing, error: checkError } = await supabase
     .from('supplier_email_patterns')
     .select('id')
     .eq('company_id', companyId)
     .limit(1);
+
+  if (checkError) {
+    if (isTableMissing(checkError)) return;
+    throw checkError;
+  }
 
   if (existing && existing.length > 0) return;
 

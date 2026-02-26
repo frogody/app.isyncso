@@ -4,6 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getErrorCode, formatErrorMessage, logError, ERROR_CODES } from "@/components/utils/errorHandler";
 
+// Detect chunk/module loading errors caused by stale deployments
+const isChunkLoadError = (error) => {
+  if (!error) return false;
+  const message = (error.message || '').toLowerCase();
+  return (
+    error.name === 'ChunkLoadError' ||
+    message.includes('failed to fetch dynamically imported module') ||
+    message.includes('loading chunk') ||
+    message.includes('loading css chunk') ||
+    message.includes('failed to load module script')
+  );
+};
+
 // Map error codes to user-friendly types for display
 const getErrorType = (error) => {
   const code = getErrorCode(error);
@@ -40,6 +53,16 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
+    // Detect stale chunk errors after deployments — auto-reload instead of showing error UI
+    if (isChunkLoadError(error)) {
+      const lastReload = sessionStorage.getItem('chunk-reload');
+      if (!lastReload || Date.now() - parseInt(lastReload) > 30000) {
+        sessionStorage.setItem('chunk-reload', Date.now().toString());
+        window.location.reload();
+        return { hasError: false };
+      }
+    }
+
     return {
       hasError: true,
       errorType: getErrorType(error),

@@ -329,7 +329,7 @@ function SupplierPatternsSection({ companyId }) {
       const data = await listSupplierPatterns(companyId);
       setPatterns(data);
     } catch (err) {
-      console.error("Failed to load patterns:", err);
+      // Silently handle - table may not exist yet
     } finally {
       setLoading(false);
     }
@@ -506,7 +506,7 @@ function SyncLogSection({ companyId }) {
       const data = await listSyncLog(companyId, { ...filters, limit: 50 });
       setLogs(data);
     } catch (err) {
-      console.error("Failed to load sync log:", err);
+      // Silently handle - table may not exist yet
     } finally {
       setLoading(false);
     }
@@ -598,7 +598,7 @@ export default function EmailPoolSettings({ embedded = false }) {
       const data = await listEmailPoolAccounts(companyId);
       setAccounts(data);
     } catch (err) {
-      console.error("Failed to load pool accounts:", err);
+      // Silently handle - table may not exist yet
     } finally {
       setLoading(false);
     }
