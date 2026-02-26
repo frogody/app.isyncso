@@ -911,6 +911,7 @@ function PagesContent() {
       'financereports', 'financetaxrates', 'financebtwaangifte', 'financerecurringinvoices',
       'financecreditnotes', 'financebankaccounts', 'financebankreconciliation',
       'financebolcompayouts', 'financesmartimport',
+      'financereceivables', 'financesettings', 'financebanking',
       'raise', 'raiseinvestors', 'raisepitchdecks', 'raisedataroom', 'raisecampaigns',
       'raiseenrich', 'teammanagement', 'agentdetail',
       'storedashboard', 'b2b', 'marketplace',
