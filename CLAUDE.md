@@ -2341,3 +2341,61 @@ FROM enrichment_cache_companies;
 | SH | Shopify Admin API | **Complete** (SH-1 through SH-21 done, SH-16/18 deferred, SH-22 through SH-25 = testing) |
 
 ---
+
+## Production Health Audit (Feb 27, 2026)
+
+Two comprehensive audits were completed — frontend (`173db6a`) and backend (`a417afe`) — covering the full stack before production delivery.
+
+### Frontend Audit (commit `173db6a`)
+
+**What was fixed:**
+- Duplicate toast notifications (multiple ToastProvider instances)
+- Code-splitting improvements for bundle size
+- Build warnings cleaned up
+- Profile avatar section layout fixes
+
+### Backend Audit (commit `a417afe`)
+
+**33 files changed, 497 insertions, 87 deletions.**
+
+#### Security Hardening (Critical)
+- **Hardcoded service role key removed** from 4 SQL migration files. New migration `20260226200000_fix_hardcoded_service_keys.sql` redefines `trigger_sync_intel_processor()`, `auto_link_user_to_company()`, and the `product-feed-auto-sync` cron job to use `current_setting('supabase.service_role_key')` instead of a literal JWT
+- **Credentials stripped from CLAUDE.md** — all Supabase keys, PAT, and secrets replaced with env var references
+- **Composio webhook verification implemented** — `verifyWebhookSignature()` now does real HMAC-SHA256 instead of returning `true`. Uses `COMPOSIO_WEBHOOK_SECRET`
+- **Stripe webhook fails closed** — returns 500 if `STRIPE_WEBHOOK_SECRET` is unset (was falling through to unsigned processing)
+- **Twilio signature validation added** — both `sms-webhook` and `voice-webhook` now validate `X-Twilio-Signature` via HMAC-SHA1. Uses `TWILIO_AUTH_TOKEN`
+- **Default encryption keys removed** — `bolcom-api`, `shopify-api`, `sync-studio-publish-bol` no longer fall back to `"...-default-key-change-me"`. They throw on startup if `BOLCOM_ENCRYPTION_KEY` / `SHOPIFY_ENCRYPTION_KEY` are missing
+
+#### Data Integrity
+- **18 duplicate migration timestamps fixed** — 12 collision groups resolved via `git mv` (e.g., `20260226120000` had 2 files, `20260225100000` had 3)
+- **GrowthNest entity wrappers added** — `GrowthNest` and `GrowthNestPurchase` in `supabaseClient.js` (were exported by `entities.js` but never created)
+- **`getLowStockItems` fixed** — removed broken RPC filter that passed a Promise to `.lt()`, made client-side filtering the only path
+
+#### Config & Code Quality
+- **13 missing functions added to `config.toml`** — `agents`, `auto-enrich-company`, `generate-acknowledgments`, `getTeamMembers`, `invokeGrok`, `process-order-email`, `scrape-job-url`, `send-invitation-email`, `send-invoice-email`, `send-license-email`, `send-proposal-email`, `smart-import-invoice`, `tracking-cycle`
+- **Stub functions return 501** — `reach-generate-ad-video`, `reach-fetch-metrics`, `reach-publish-post` now return HTTP 501 (Not Implemented) instead of 200
+
+#### Secrets Deployed
+| Secret | Status |
+|--------|--------|
+| `COMPOSIO_WEBHOOK_SECRET` | Set |
+| `TWILIO_AUTH_TOKEN` | Set |
+| `SHOPIFY_ENCRYPTION_KEY` | Generated and set |
+| `BOLCOM_ENCRYPTION_KEY` | Already existed |
+| Supabase PAT | Rotated (old `sbp_957c...` revoked) |
+
+#### Verification Results
+- All 4 RLS wrapper functions intact (STABLE SECURITY DEFINER)
+- RLS enabled on all 8 core tables
+- Zero functions contain hardcoded JWT (`eyJhbG`)
+- Cron job uses `current_setting()` — confirmed via `pg_proc`
+- All 10 redeployed edge functions responding correctly (webhooks reject unsigned, stubs return 501)
+- Frontend loads at `app.isyncso.com` — 200 OK
+
+#### Still Outstanding (tracked, not blocking delivery)
+- **H-4**: 6 RPCs exist in production but have no migration file (`get_user_roles`, `get_user_permissions`, `check_candidate_current_exclusion`, `get_product_purchase_stats`, `get_reorder_point`, `get_store_dashboard_stats`)
+- **M-4**: CORS is `*` on all functions — should be tightened to `app.isyncso.com`
+- **M-5**: Deno std library version split (90 functions on `0.168.0`, 17 on `0.177.0`)
+- **L-1 to L-6**: ~60 orphaned entity wrappers, ~30 orphaned function wrappers, auth.me() swallowing errors, no enrichment cache cleanup, email queue stub, credit refund gap
+
+---
