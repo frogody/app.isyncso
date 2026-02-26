@@ -734,50 +734,9 @@ const COLOR_CLASSES = {
   }
 };
 
-// Sidebar alignment constants
-const SIDEBAR_CONSTANTS = {
-  AVATAR_SECTION: 80,      // pt-4 (16px) + avatar (52px) + pb-3 (12px)
-  NAV_PADDING: 16,         // py-4 top padding
-  CORE_ITEM_HEIGHT: 44,    // min-h-[44px]
-  ITEM_GAP: 4,             // space-y-1
-  DIVIDER_HEIGHT: 17,      // h-px + my-2 (1px + 8px + 8px)
-  ALIGNMENT_ADJUST: -24,   // Fine-tune adjustment to align items perfectly
-};
-
-// Calculate offset for secondary sidebar based on config
-// visibleCoreNavTitles: actual titles of visible core nav items in order (e.g. ['Dashboard', 'Projects', 'Products', 'B2B Store', 'Inbox'])
-function calculateSecondaryNavOffset(config, visibleEngineIds = [], visibleCoreNavTitles = []) {
-  const { AVATAR_SECTION, NAV_PADDING, CORE_ITEM_HEIGHT, ITEM_GAP, DIVIDER_HEIGHT, ALIGNMENT_ADJUST } = SIDEBAR_CONSTANTS;
-
-  const configTitle = config?.title;
-
-  // Find the actual index of this item in the visible core nav
-  const coreNavIndex = visibleCoreNavTitles.indexOf(configTitle);
-
-  if (coreNavIndex !== -1) {
-    // Core nav item: align with its actual visible position
-    return AVATAR_SECTION + NAV_PADDING + (coreNavIndex * (CORE_ITEM_HEIGHT + ITEM_GAP)) + ALIGNMENT_ADJUST;
-  }
-
-  // Engine app: calculate based on engine index within VISIBLE items only
-  const agentId = config?.agent;
-  const engineIndex = agentId ? visibleEngineIds.indexOf(agentId) : 0;
-
-  // Use actual visible core item count
-  const coreItemsCount = visibleCoreNavTitles.length;
-
-  // Base offset: avatar + nav padding + core items (with gaps) + divider
-  const coreItemsTotal = (coreItemsCount * CORE_ITEM_HEIGHT) + ((coreItemsCount - 1) * ITEM_GAP);
-  const baseOffset = AVATAR_SECTION + NAV_PADDING + coreItemsTotal + DIVIDER_HEIGHT;
-
-  // Add offset for engine items before the active one + alignment adjustment
-  const engineItemsOffset = Math.max(0, engineIndex) * (CORE_ITEM_HEIGHT + ITEM_GAP);
-
-  return baseOffset + engineItemsOffset + ALIGNMENT_ADJUST;
-}
-
 // Submenu Flyout Component - Floating panel that appears on click/hover
-function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibleEngineIds = [], visibleCoreNavTitles = [] }) {
+// Uses navItemTop (from DOM measurement) for pixel-perfect alignment with the trigger icon
+function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, navItemTop = 0 }) {
   // Get submenu identifier (agent for engine apps, title for core items like CRM/Products)
   const submenuId = config?.agent || config?.title?.toLowerCase();
 
@@ -786,16 +745,10 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location, visibl
 
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
 
-  // Calculate dynamic offset to align with the active primary nav item
-  // Subtract header height (title + padding + border + container padding) so first nav item aligns
-  const baseOffset = calculateSecondaryNavOffset(config, visibleEngineIds, visibleCoreNavTitles);
-  const headerHeight = 44; // title (~14px) + pb-2 (8px) + mb-2 (8px) + p-3 container (12px) + border (1px)
-  const navOffset = baseOffset - headerHeight;
-
   return (
     <div
       className="absolute left-[72px] lg:left-[80px] bg-black/95 backdrop-blur-sm border border-white/10 rounded-2xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 duration-200 hidden md:block"
-      style={{ top: `${navOffset}px` }}
+      style={{ top: `${navItemTop}px` }}
       onMouseEnter={onEnter}
       onMouseLeave={onClose}
     >
@@ -991,7 +944,7 @@ function MobileSubNavStrip({ config, location }) {
 }
 
 // Reusable Sidebar Content - must be rendered inside PermissionProvider
-function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, onEngineItemsChange, onCoreNavChange, inboxUnreadCount = 0 }) {
+function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter, inboxUnreadCount = 0 }) {
     const location = useLocation();
     const navigate = useNavigate();
   const [me, setMe] = React.useState(null);
@@ -1065,12 +1018,6 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     });
   }, [hasPermission, permLoading, isAdmin, enabledApps]);
 
-  // Report visible core nav titles to parent for submenu positioning
-  const visibleCoreNavTitles = useMemo(() => filteredNavItems.map(i => i.title), [filteredNavItems]);
-  useEffect(() => {
-    onCoreNavChange?.(visibleCoreNavTitles);
-  }, [visibleCoreNavTitles, onCoreNavChange]);
-
   // Memoize filtered bottom nav items (Settings, Admin)
   const filteredBottomNavItems = useMemo(() => {
     if (permLoading) {
@@ -1112,12 +1059,6 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       .map(appId => ENGINE_ITEMS_CONFIG[appId])
       .filter(Boolean);
   }, [effectiveApps, enabledApps, teamLoading, isPlatformOwner]);
-
-  // Report visible engine IDs to parent for submenu positioning
-  const visibleEngineIds = useMemo(() => engineItems.map(e => e.id), [engineItems]);
-  useEffect(() => {
-    onEngineItemsChange?.(visibleEngineIds);
-  }, [visibleEngineIds, onEngineItemsChange]);
 
   const handleLogin = async () => {
     db.auth.redirectToLogin(window.location.href);
@@ -1190,6 +1131,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               return (
                 <button
                   key={item.title}
+                  data-submenu-id={submenuId}
                   onClick={() => {
                     triggerActivity();
                     setOpenSubmenu?.(submenuId);
@@ -1318,6 +1260,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             return (
               <button
                 key={item.title}
+                data-submenu-id={item.id}
                 onClick={() => {
                   triggerActivity();
                   // Always open submenu on click
@@ -1577,9 +1520,20 @@ export default function Layout({ children, currentPageName }) {
 
   // Submenu flyout state
   const [openSubmenu, setOpenSubmenu] = useState(null); // engine id or null
-  const [visibleEngineIds, setVisibleEngineIds] = useState([]);
-  const [visibleCoreNavTitles, setVisibleCoreNavTitles] = useState([]);
+  const sidebarRef = useRef(null);
+  const [submenuTop, setSubmenuTop] = useState(0);
   const closeTimeoutRef = useRef(null);
+
+  // Compute flyout position from actual DOM when submenu opens
+  useEffect(() => {
+    if (!openSubmenu || !sidebarRef.current) return;
+    const trigger = sidebarRef.current.querySelector(`[data-submenu-id="${openSubmenu}"]`);
+    if (trigger) {
+      const sidebarRect = sidebarRef.current.getBoundingClientRect();
+      const triggerRect = trigger.getBoundingClientRect();
+      setSubmenuTop(triggerRect.top - sidebarRect.top);
+    }
+  }, [openSubmenu]);
 
   const handleSubmenuClose = useCallback(() => {
     closeTimeoutRef.current = setTimeout(() => {
@@ -3549,7 +3503,7 @@ export default function Layout({ children, currentPageName }) {
 
         <div className="flex h-screen overflow-x-hidden">
           {/* Desktop/Tablet Sidebar with Flyout Submenu */}
-          <div className="hidden md:flex flex-col sidebar-shell w-[72px] lg:w-[80px] overflow-visible relative z-20">
+          <div ref={sidebarRef} className="hidden md:flex flex-col sidebar-shell w-[72px] lg:w-[80px] overflow-visible relative z-20">
             <SidebarContent
               currentPageName={currentPageName}
               secondaryNavConfig={secondaryNavConfig}
@@ -3559,8 +3513,6 @@ export default function Layout({ children, currentPageName }) {
               setOpenSubmenu={setOpenSubmenu}
               onSubmenuClose={handleSubmenuClose}
               onSubmenuEnter={handleSubmenuEnter}
-              onEngineItemsChange={setVisibleEngineIds}
-              onCoreNavChange={setVisibleCoreNavTitles}
               inboxUnreadCount={inboxUnreadCount}
             />
             {/* Submenu Flyout - positioned absolutely relative to sidebar */}
@@ -3570,8 +3522,7 @@ export default function Layout({ children, currentPageName }) {
               onClose={handleSubmenuClose}
               onEnter={handleSubmenuEnter}
               location={location}
-              visibleEngineIds={visibleEngineIds}
-              visibleCoreNavTitles={visibleCoreNavTitles}
+              navItemTop={submenuTop}
             />
           </div>
 
