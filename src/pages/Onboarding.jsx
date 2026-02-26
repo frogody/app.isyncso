@@ -361,8 +361,16 @@ export default function Onboarding() {
     try {
       const user = await db.auth.me();
 
-      // Determine invited user status from the user object
-      const invited = !!user?.company_id;
+      // Determine invited user status: a real invite has a company with a domain.
+      // The handle_new_user trigger auto-creates a placeholder company (domain=null)
+      // for every signup, so we can't just check company_id.
+      let existingCompanyData = null;
+      if (user?.company_id) {
+        try {
+          existingCompanyData = await db.entities.Company.get(user.company_id);
+        } catch { /* ignore */ }
+      }
+      const invited = !!(existingCompanyData?.domain);
 
       // 1. Update basic profile
       try {
@@ -383,14 +391,11 @@ export default function Onboarding() {
       let companyDomain = '';
 
       if (invited) {
+        // Real invited user — company already has domain
         companyId = user.company_id;
-        try {
-          const company = await db.entities.Company.get(companyId);
-          companyDomain = company?.domain || '';
-        } catch {
-          // Company loaded from guard
-        }
+        companyDomain = existingCompanyData?.domain || '';
       } else if (immersiveData.companyWebsite) {
+        // Non-invited user with company info from onboarding form
         try {
           const cleanUrl = immersiveData.companyWebsite.trim();
           const urlString = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
@@ -400,6 +405,7 @@ export default function Onboarding() {
         }
 
         try {
+          // Check if a company with this domain already exists
           const existingCompanies = await db.entities.Company.filter({ domain: companyDomain });
           if (existingCompanies.length > 0) {
             companyId = existingCompanies[0].id;
@@ -411,7 +417,23 @@ export default function Onboarding() {
               enriched_at: new Date().toISOString(),
               enrichment_source: 'onboarding_immersive',
             });
+          } else if (user.company_id && existingCompanyData) {
+            // handle_new_user trigger already created a placeholder company — update it
+            companyId = user.company_id;
+            await db.entities.Company.update(companyId, {
+              domain: companyDomain,
+              name: immersiveData.companyName,
+              industry: immersiveData.industry || 'Technology',
+              size_range: immersiveData.companySize || '',
+              website_url: immersiveData.companyWebsite,
+              tech_stack: [],
+              knowledge_files: [],
+              enriched_at: new Date().toISOString(),
+              enrichment_source: 'onboarding_immersive',
+              settings: {},
+            });
           } else {
+            // No existing company at all — create new
             const newCompany = await db.entities.Company.create({
               domain: companyDomain,
               name: immersiveData.companyName,
@@ -427,8 +449,10 @@ export default function Onboarding() {
             companyId = newCompany.id;
           }
 
-          if (companyId) {
+          if (companyId && companyId !== user.company_id) {
             await db.auth.updateMe({ company_id: companyId });
+          }
+          if (companyId) {
             try {
               await supabase.rpc('assign_founder_role', {
                 p_user_id: user.id,
