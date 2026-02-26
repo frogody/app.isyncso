@@ -248,12 +248,12 @@ const navigationItems = [
     requiresAnyApp: ['growth', 'talent'], // Contacts are relevant for sales & recruiting
   },
   {
-    title: "Projects",
-    url: createPageUrl("Projects"),
-    icon: FolderKanban,
+    title: "Tasks",
+    url: createPageUrl("Tasks"),
+    icon: ListTodo,
     permission: null,
     alwaysVisible: true,
-    matchPatterns: ["/projects", "/tasks"],
+    matchPatterns: ["/tasks", "/projects"],
   },
   {
     title: "Products",
@@ -404,14 +404,14 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   // Convert to lowercase for case-insensitive matching
   const path = pathname.toLowerCase();
 
-  // Projects routes
-  if (path.startsWith('/projects') || path.startsWith('/tasks')) {
+  // Tasks / Projects routes
+  if (path.startsWith('/tasks') || path.startsWith('/projects')) {
     return {
-      title: 'Projects',
+      title: 'Tasks',
       color: 'cyan',
       items: [
-        { label: 'Projects', path: createPageUrl('Projects'), icon: FolderKanban },
         { label: 'Tasks', path: createPageUrl('Tasks'), icon: ListTodo, badge: stats.activeTasks },
+        { label: 'Projects', path: createPageUrl('Projects'), icon: FolderKanban },
       ]
     };
   }
@@ -1091,8 +1091,8 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         <div className="space-y-1">
           {filteredNavItems.map((item) => {
             const isActive = isNavItemActive(item, location.pathname);
-            // Check if this item has a secondary nav (CRM, Products, Projects)
-            const hasSecondaryNav = item.matchPatterns && (item.title === 'CRM' || item.title === 'Products' || item.title === 'Projects');
+            // Check if this item has a secondary nav (CRM, Products, Tasks)
+            const hasSecondaryNav = item.matchPatterns && (item.title === 'CRM' || item.title === 'Products' || item.title === 'Tasks');
             const submenuId = item.title.toLowerCase();
 
             // Mobile: always use Link
