@@ -1133,12 +1133,14 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             <p className="text-[11px] uppercase tracking-widest text-zinc-500 font-medium">Navigation</p>
           </div>
         )}
-        {/* SYNC Avatar - top of sidebar: click = chat, double-click = voice */}
-        <SyncAvatarSidebarButton
-          onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
-          voiceHook={syncVoice}
-          knockHook={syncKnock}
-        />
+        {/* SYNC Avatar - top of sidebar: click = chat, double-click = voice (platform owners only while in development) */}
+        {isPlatformOwner && (
+          <SyncAvatarSidebarButton
+            onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
+            voiceHook={syncVoice}
+            knockHook={syncKnock}
+          />
+        )}
 
         {/* Core Navigation - filtered by permissions */}
         <div className="space-y-1">
