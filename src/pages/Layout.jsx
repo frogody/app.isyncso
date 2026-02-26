@@ -253,6 +253,7 @@ const navigationItems = [
     icon: FolderKanban,
     permission: null,
     alwaysVisible: true,
+    matchPatterns: ["/projects", "/tasks"],
   },
   {
     title: "Products",
@@ -401,6 +402,18 @@ function isNavItemActive(item, pathname) {
 function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   // Convert to lowercase for case-insensitive matching
   const path = pathname.toLowerCase();
+
+  // Projects routes
+  if (path.startsWith('/projects') || path.startsWith('/tasks')) {
+    return {
+      title: 'Projects',
+      color: 'cyan',
+      items: [
+        { label: 'Projects', path: createPageUrl('Projects'), icon: FolderKanban },
+        { label: 'Tasks', path: createPageUrl('Tasks'), icon: ListTodo },
+      ]
+    };
+  }
 
   // CRM routes - use startsWith for stricter matching
   if (path.startsWith('/crm') || path.startsWith('/contacts-import')) {
