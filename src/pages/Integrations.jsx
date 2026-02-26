@@ -778,12 +778,12 @@ export default function Integrations({ embedded = false }) {
               <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-blue-400/70" />
+                    <Monitor className="w-5 h-5 text-blue-400/70" />
                   </div>
-                  {googleConnected && <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">Active</Badge>}
+                  {desktopConnected && <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">Active</Badge>}
                 </div>
-                <div className="text-lg font-bold text-zinc-100">{googleConnected ? 'Yes' : 'No'}</div>
-                <div className="text-xs text-zinc-500">Google Workspace</div>
+                <div className="text-lg font-bold text-zinc-100">{desktopConnected ? 'Yes' : 'No'}</div>
+                <div className="text-xs text-zinc-500">SYNC Desktop</div>
               </div>
             </motion.div>
 
@@ -791,12 +791,11 @@ export default function Integrations({ embedded = false }) {
               <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-blue-400/70" />
+                    <Grid3X3 className="w-5 h-5 text-blue-400/70" />
                   </div>
-                  {queuedActions.length > 0 && <Badge className="bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-xs">Pending</Badge>}
                 </div>
-                <div className="text-lg font-bold text-zinc-100">{queuedActions.length}</div>
-                <div className="text-xs text-zinc-500">Queued Actions</div>
+                <div className="text-lg font-bold text-zinc-100">{INTEGRATION_CATEGORIES.length}</div>
+                <div className="text-xs text-zinc-500">Categories</div>
               </div>
             </motion.div>
 
@@ -804,12 +803,11 @@ export default function Integrations({ embedded = false }) {
               <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-cyan-400/70" />
+                    <Plug className="w-5 h-5 text-cyan-400/70" />
                   </div>
-                  <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">{successRate}%</Badge>
                 </div>
-                <div className="text-lg font-bold text-zinc-100">{successfulActions}</div>
-                <div className="text-xs text-zinc-500">Actions Completed</div>
+                <div className="text-lg font-bold text-zinc-100">{INTEGRATION_CATALOG.length}</div>
+                <div className="text-xs text-zinc-500">Available Apps</div>
               </div>
             </motion.div>
           </div>
@@ -827,20 +825,6 @@ export default function Integrations({ embedded = false }) {
               <TabsTrigger value="desktop" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Monitor className="w-4 h-4 mr-2" />SYNC Desktop
                 {desktopConnected && <Badge className="ml-2 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1.5">Active</Badge>}
-              </TabsTrigger>
-              <TabsTrigger value="google" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
-                <Globe className="w-4 h-4 mr-2" />Google Workspace
-              </TabsTrigger>
-              <TabsTrigger value="actions" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
-                <Zap className="w-4 h-4 mr-2" />Actions
-                {queuedActions.length > 0 && <Badge className="ml-2 bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-[10px] px-1.5">{queuedActions.length}</Badge>}
-              </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
-                <History className="w-4 h-4 mr-2" />History
-              </TabsTrigger>
-              <TabsTrigger value="mcp" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
-                <Server className="w-4 h-4 mr-2" />MCP Servers
-                {mcpServers.length > 0 && <Badge className="ml-2 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1.5">{mcpServers.length}</Badge>}
               </TabsTrigger>
             </TabsList>
 
@@ -883,22 +867,6 @@ export default function Integrations({ embedded = false }) {
                           <div className="mt-2 flex gap-1">
                             <span className="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/20 text-cyan-400">Context</span>
                             <span className="px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-400">Sync</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Google Workspace */}
-                      {googleConnected && (
-                        <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-cyan-500/40 transition-all cursor-pointer">
-                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-2 transition-transform">
-                            <Globe className="w-4 h-4 text-white" />
-                          </div>
-                          <h4 className="font-semibold text-white text-sm">Google</h4>
-                          <p className="text-[11px] text-zinc-500 truncate">{googleUserInfo?.email?.split('@')[0]}</p>
-                          <div className="mt-2 flex gap-1">
-                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-400">Gmail</span>
-                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-400">Cal</span>
                           </div>
                         </div>
                       )}
@@ -1026,11 +994,6 @@ export default function Integrations({ embedded = false }) {
                         <History className="w-10 h-10 mx-auto text-zinc-600 mb-2" />
                         <p className="text-zinc-500 text-sm">No recent activity</p>
                       </div>
-                    )}
-                    {actionLogs.length > 5 && (
-                      <button onClick={() => setActiveTab('history')} className="w-full p-3 rounded-xl border border-dashed border-zinc-700 text-zinc-500 hover:text-white hover:border-zinc-600 transition-colors">
-                        View all history
-                      </button>
                     )}
                   </div>
                 </GlassCard>
@@ -1288,388 +1251,6 @@ export default function Integrations({ embedded = false }) {
               )}
             </TabsContent>
 
-            {/* Google Workspace Tab */}
-            <TabsContent value="google" className="mt-4 space-y-4">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`p-4 rounded-xl border transition-all ${googleConnected ? "bg-cyan-500/5 border-cyan-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-sm font-bold text-white">Google Workspace</h2>
-                        {googleConnected ? (
-                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Connected</Badge>
-                        ) : (
-                          <Badge className="bg-zinc-500/20 text-zinc-400 border-zinc-500/30">Not Connected</Badge>
-                        )}
-                      </div>
-                      {googleConnected && googleUserInfo && (
-                        <p className="text-sm text-zinc-400 mt-1">
-                          Connected as <span className="text-white">{googleUserInfo.email}</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {googleConnected && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-                      <span className="text-xs text-cyan-400">Active</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Features Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Mail className="w-5 h-5 text-red-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Gmail</h4>
-                    <p className="text-xs text-zinc-500">Read & send emails</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Calendar className="w-5 h-5 text-blue-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Calendar</h4>
-                    <p className="text-xs text-zinc-500">Manage events</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <FileText className="w-5 h-5 text-cyan-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Drive</h4>
-                    <p className="text-xs text-zinc-500">Access files</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <FileText className="w-5 h-5 text-blue-500 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Docs</h4>
-                    <p className="text-xs text-zinc-500">Read documents</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <FileText className="w-5 h-5 text-cyan-500 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Sheets</h4>
-                    <p className="text-xs text-zinc-500">Read spreadsheets</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Shield className="w-5 h-5 text-cyan-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Secure</h4>
-                    <p className="text-xs text-zinc-500">OAuth 2.0</p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
-                  <a href="https://cloud.google.com/blog/products/ai-machine-learning/announcing-official-mcp-support-for-google-services" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-cyan-400 transition-colors">
-                    <ExternalLink className="w-4 h-4" />
-                    Documentation
-                  </a>
-                  {googleConnected ? (
-                    <Button onClick={handleGoogleDisconnect} variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
-                      <Unlink className="w-4 h-4 mr-2" />
-                      Disconnect
-                    </Button>
-                  ) : (
-                    <Button onClick={handleGoogleConnect} disabled={googleConnecting} className="bg-cyan-600 hover:bg-cyan-500 text-white">
-                      {googleConnecting ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Connecting...</>
-                      ) : (
-                        <><Globe className="w-4 h-4 mr-2" />Connect Google Workspace</>
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-
-              {/* Connection Details */}
-              {googleConnected && googleTokens && (
-                <GlassCard className="p-4">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-cyan-400" />
-                    Connection Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-zinc-500">Account</p>
-                      <p className="text-white">{googleUserInfo?.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-zinc-500">Name</p>
-                      <p className="text-white">{googleUserInfo?.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-zinc-500">Token Type</p>
-                      <p className="text-white">{googleTokens.token_type || 'Bearer'}</p>
-                    </div>
-                    <div>
-                      <p className="text-zinc-500">Scopes</p>
-                      <p className="text-white truncate">{googleTokens.scope?.split(' ').length || GOOGLE_CONFIG.scopes.length} permissions</p>
-                    </div>
-                  </div>
-                </GlassCard>
-              )}
-            </TabsContent>
-
-            {/* Actions Tab */}
-            <TabsContent value="actions" className="mt-4">
-              <Suspense fallback={<Skeleton className="h-96 bg-zinc-800 rounded-lg" />}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-blue-400" />
-                    Action Queue
-                  </h3>
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={loadActionLogs} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white">
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Refresh
-                    </Button>
-                    <Button size="sm" onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600 hover:bg-cyan-500 text-white">
-                      <Plus className="w-4 h-4 mr-2" />
-                      New Action
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {/* Queued & In Progress */}
-                  <div className="lg:col-span-2 space-y-4">
-                    {logsLoading ? (
-                      <div className="space-y-2">
-                        {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-lg" />)}
-                      </div>
-                    ) : [...inProgressActions, ...queuedActions].length === 0 ? (
-                      <GlassCard hover={false} className="p-8">
-                        <div className="text-center">
-                          <div className="w-10 h-10 rounded-lg bg-zinc-800/50 flex items-center justify-center mx-auto mb-3">
-                            <ListTodo className="w-5 h-5 text-zinc-600" />
-                          </div>
-                          <h4 className="text-lg font-semibold text-white mb-2">No Pending Actions</h4>
-                          <p className="text-zinc-500 text-sm mb-6">Create an action to get started</p>
-                          <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600 hover:bg-cyan-500 text-white">
-                            <Plus className="w-4 h-4 mr-2" />Create Action
-                          </Button>
-                        </div>
-                      </GlassCard>
-                    ) : (
-                      <div className="space-y-3">
-                        {[...inProgressActions, ...queuedActions].map((action, i) => (
-                          <ActionQueueCard
-                            key={action.id}
-                            action={action}
-                            index={i}
-                            onExecute={handleExecuteAction}
-                            onCancel={handleCancelAction}
-                            onRetry={handleRetryAction}
-                            onDelete={handleDeleteAction}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Recent Completed */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-cyan-400/70" />
-                      Recently Completed
-                    </h3>
-                    <GlassCard hover={false} className="p-4 space-y-2">
-                      {actionLogs.filter(a => a.status === 'success' || a.status === 'failed').slice(0, 5).length === 0 ? (
-                        <p className="text-sm text-zinc-500 text-center py-4">No completed actions yet</p>
-                      ) : (
-                        actionLogs.filter(a => a.status === 'success' || a.status === 'failed').slice(0, 5).map((action, i) => (
-                          <ActionQueueCard key={action.id} action={action} index={i} compact />
-                        ))
-                      )}
-                    </GlassCard>
-                  </div>
-                </div>
-              </Suspense>
-            </TabsContent>
-
-            {/* History Tab */}
-            <TabsContent value="history" className="mt-4">
-              <Suspense fallback={<Skeleton className="h-96 bg-zinc-800 rounded-lg" />}>
-                <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                        <History className="w-5 h-5 text-cyan-400/70" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-zinc-200">Action History</h3>
-                        <p className="text-sm text-zinc-500">{actionLogs.length} actions executed</p>
-                      </div>
-                    </div>
-                    <Button size="sm" onClick={loadActionLogs} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white">
-                      <RefreshCw className="w-4 h-4 mr-2" />Refresh
-                    </Button>
-                  </div>
-                  <ActionHistoryList actions={actionLogs} loading={logsLoading} />
-                </div>
-              </Suspense>
-            </TabsContent>
-
-            {/* MCP Servers Tab */}
-            <TabsContent value="mcp" className="mt-4 space-y-4">
-              {/* MCP Hero Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-950/40 via-zinc-900/60 to-blue-950/30 border border-cyan-800/30 p-4"
-              >
-                <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/5 rounded-full blur-3xl" />
-                  <div className="absolute bottom-0 left-0 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl" />
-                </div>
-
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                        <Network className="w-4 h-4 text-cyan-400" />
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-bold text-white">MCP Servers</h2>
-                        <p className="text-cyan-400/80 text-sm">
-                          Create managed MCP endpoints to connect SYNC with external AI tools
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => setCreateMcpDialogOpen(true)}
-                      className="bg-cyan-600 hover:bg-cyan-500 text-white"
-                      disabled={composioConnectedCount === 0}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Server
-                    </Button>
-                  </div>
-
-                  {/* Info Alert */}
-                  <Alert className="bg-cyan-950/30 border-cyan-700/40 mb-4">
-                    <AlertCircle className="w-4 h-4 text-cyan-400" />
-                    <AlertDescription className="text-zinc-300">
-                      MCP (Model Context Protocol) allows AI assistants like Claude, Cursor, or other tools to connect to your integrated services via a single URL.
-                      <a href="https://www.anthropic.com/news/model-context-protocol" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline ml-1">
-                        Learn more <ExternalLink className="w-3 h-3 inline" />
-                      </a>
-                    </AlertDescription>
-                  </Alert>
-
-                  {composioConnectedCount === 0 && (
-                    <Alert className="bg-zinc-800/50 border-zinc-700/40">
-                      <AlertCircle className="w-4 h-4 text-zinc-400" />
-                      <AlertDescription className="text-zinc-300">
-                        Connect at least one third-party app to create an MCP server.
-                        <Button
-                          variant="link"
-                          onClick={() => setActiveTab('apps')}
-                          className="text-cyan-400 hover:text-cyan-300 p-0 h-auto ml-1"
-                        >
-                          Go to Third-Party Apps →
-                        </Button>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              </motion.div>
-
-              {/* MCP Servers List */}
-              {loadingMcp ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
-                </div>
-              ) : mcpServers.length === 0 ? (
-                <GlassCard hover={false} className="p-8">
-                  <div className="text-center">
-                    <div className="w-10 h-10 rounded-lg bg-zinc-800/50 flex items-center justify-center mx-auto mb-3">
-                      <Server className="w-5 h-5 text-zinc-600" />
-                    </div>
-                    <h4 className="text-lg font-semibold text-white mb-2">No MCP Servers Yet</h4>
-                    <p className="text-zinc-500 text-sm mb-6 max-w-md mx-auto">
-                      Create an MCP server to expose your connected integrations to AI tools like Claude Desktop or Cursor.
-                    </p>
-                    <Button
-                      onClick={() => setCreateMcpDialogOpen(true)}
-                      className="bg-cyan-600 hover:bg-cyan-500 text-white"
-                      disabled={composioConnectedCount === 0}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />Create Your First Server
-                    </Button>
-                  </div>
-                </GlassCard>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {mcpServers.map((server) => (
-                    <motion.div
-                      key={server.id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-800/60 hover:border-cyan-500/30 transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                            <Server className="w-5 h-5 text-cyan-400" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-white">{server.name}</h4>
-                            <p className="text-xs text-zinc-500">
-                              {server.toolkits?.length || 0} toolkit{(server.toolkits?.length || 0) !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge className={`text-xs ${server.status === 'ACTIVE' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'}`}>
-                          {server.status || 'ACTIVE'}
-                        </Badge>
-                      </div>
-
-                      {/* Toolkits */}
-                      {server.toolkits && server.toolkits.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-4">
-                          {server.toolkits.slice(0, 4).map((toolkit) => (
-                            <span key={toolkit} className="px-2 py-0.5 rounded-full text-[10px] bg-zinc-700/50 text-zinc-400">
-                              {toolkit}
-                            </span>
-                          ))}
-                          {server.toolkits.length > 4 && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-zinc-700/50 text-zinc-400">
-                              +{server.toolkits.length - 4} more
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleGetMcpUrl(server)}
-                          className="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white text-xs"
-                        >
-                          <Copy className="w-3 h-3 mr-1" />
-                          Get URL
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteMcpServer(server.composio_server_id)}
-                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-
-                      {/* Created Date */}
-                      <p className="text-[10px] text-zinc-600 mt-3">
-                        Created {new Date(server.created_at).toLocaleDateString()}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
           </Tabs>
         </div>
 
