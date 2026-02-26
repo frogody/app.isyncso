@@ -12,10 +12,11 @@ const GOOGLE_VEO_API_KEY = Deno.env.get("GOOGLE_VEO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Models to try in order
+// Models to try — same as the working generate-fashion-video function
 const MODEL_IDS = [
   'veo-3.0-generate-001',
-  'veo-2.0-generate-001',
+  'veo-3-generate-preview',
+  'veo-2-generate-preview',
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────

@@ -526,16 +526,20 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
         if (fnError) {
           let errorMsg = fnError.message || 'Video generation failed';
           try {
-            // FunctionsHttpError has response body in context
             if (fnError.context) {
               const errBody = await fnError.context.json();
               errorMsg = errBody?.error || errBody?.debug_last_error || errorMsg;
               if (errBody?.all_errors?.length) {
-                console.error('[ListingVideoStudio] all API errors:', errBody.all_errors);
+                console.error('[ListingVideoStudio] all API errors:', JSON.stringify(errBody.all_errors, null, 2));
+              }
+              // Show quota/rate limit errors clearly
+              const allStr = JSON.stringify(errBody?.all_errors || []);
+              if (allStr.includes('quota') || allStr.includes('429') || allStr.includes('rate')) {
+                errorMsg = 'API rate limit reached. Please wait a few minutes and try again.';
               }
             }
           } catch {
-            // context parsing failed, use original message
+            // context parsing failed
           }
           throw new Error(errorMsg);
         }
