@@ -10,16 +10,45 @@ import { Html5Qrcode } from "html5-qrcode";
 // scannerId defaults to "barcode-scanner-region" - needed to avoid DOM ID conflicts
 // when multiple scanners exist on different tabs.
 
+// Beep feedback using Web Audio API — no file needed
+const playBeep = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 1200;
+    gain.gain.value = 0.3;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch {}
+};
+
+// Warehouse-relevant barcode formats only (faster than scanning all 17)
+const WAREHOUSE_FORMATS = [
+  9,  // EAN_13
+  10, // EAN_8
+  14, // UPC_A
+  15, // UPC_E
+  5,  // CODE_128
+  8,  // ITF
+  3,  // CODE_39
+];
+
 export default function BarcodeScanner({ onScan, isActive, scannerId = "barcode-scanner-region" }) {
   const { t } = useTheme();
   const inputRef = useRef(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  const lastScanRef = useRef({ text: '', time: 0 });
   const [manualEntry, setManualEntry] = useState("");
   const [scanMode, setScanMode] = useState("manual"); // "manual" or "camera"
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [hasCamera, setHasCamera] = useState(false);
+  const [lastScanned, setLastScanned] = useState(null);
+  const [scanFlash, setScanFlash] = useState(false);
 
   // Check if device has camera on mount
   useEffect(() => {
@@ -55,41 +84,34 @@ export default function BarcodeScanner({ onScan, isActive, scannerId = "barcode-
       html5QrCodeRef.current = html5QrCode;
 
       const config = {
-        fps: 10,
-        qrbox: { width: 250, height: 150 },
+        fps: 25,
+        qrbox: (viewfinderWidth, viewfinderHeight) => ({
+          width: Math.floor(viewfinderWidth * 0.8),
+          height: Math.floor(viewfinderHeight * 0.4),
+        }),
         aspectRatio: 1.777778,
-        formatsToSupport: [
-          0,  // QR_CODE
-          1,  // AZTEC
-          2,  // CODABAR
-          3,  // CODE_39
-          4,  // CODE_93
-          5,  // CODE_128
-          6,  // DATA_MATRIX
-          7,  // MAXICODE
-          8,  // ITF
-          9,  // EAN_13
-          10, // EAN_8
-          11, // PDF_417
-          12, // RSS_14
-          13, // RSS_EXPANDED
-          14, // UPC_A
-          15, // UPC_E
-          16, // UPC_EAN_EXTENSION
-        ],
+        formatsToSupport: WAREHOUSE_FORMATS,
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
       };
 
       await html5QrCode.start(
-        { facingMode: "environment" }, // Use back camera
+        { facingMode: "environment" },
         config,
-        (decodedText, decodedResult) => {
-          // Successfully scanned
-          stopCameraScanner();
+        (decodedText) => {
+          // Continuous scanning with cooldown to prevent duplicates
+          const now = Date.now();
+          const last = lastScanRef.current;
+          if (decodedText === last.text && now - last.time < 1500) return;
+          lastScanRef.current = { text: decodedText, time: now };
+          // Feedback
+          playBeep();
+          navigator.vibrate?.(100);
+          setScanFlash(true);
+          setTimeout(() => setScanFlash(false), 300);
+          setLastScanned(decodedText);
           onScan(decodedText);
         },
-        (errorMessage) => {
-          // Scan error - ignore, keep scanning
-        }
+        () => {}
       );
     } catch (err) {
       console.error("Camera scanner error:", err);
@@ -209,27 +231,21 @@ export default function BarcodeScanner({ onScan, isActive, scannerId = "barcode-
               <div
                 id={scannerId}
                 ref={scannerRef}
-                className="rounded-xl overflow-hidden bg-black"
+                className={`rounded-xl overflow-hidden bg-black transition-all duration-300 ${scanFlash ? 'ring-4 ring-green-500' : ''}`}
                 style={{ minHeight: "280px" }}
               />
 
-              {/* Scanning overlay */}
-              {isScanning && (
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="relative">
-                    <div
-                      className="absolute left-0 right-0 h-0.5 bg-cyan-500 shadow-lg shadow-cyan-500/50 animate-pulse"
-                      style={{ width: "250px", marginLeft: "-125px", left: "50%" }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Instructions */}
+              {/* Instructions + last scanned */}
               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                <p className="text-white text-sm text-center">
-                  Point the camera at the barcode
-                </p>
+                {lastScanned ? (
+                  <p className="text-green-400 text-sm text-center font-mono truncate">
+                    {lastScanned}
+                  </p>
+                ) : (
+                  <p className="text-white text-sm text-center">
+                    Point the camera at the barcode
+                  </p>
+                )}
               </div>
             </div>
           )}

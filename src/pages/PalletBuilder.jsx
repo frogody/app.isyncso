@@ -52,16 +52,45 @@ import BolcomReplenishmentDialog from "@/components/inventory/BolcomReplenishmen
 // BARCODE SCANNER (same pattern as InventoryReceiving)
 // =============================================================================
 
+// Beep feedback using Web Audio API
+const playBeep = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 1200;
+    gain.gain.value = 0.3;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  } catch {}
+};
+
+// Warehouse-relevant barcode formats only
+const WAREHOUSE_FORMATS = [
+  9,  // EAN_13
+  10, // EAN_8
+  14, // UPC_A
+  15, // UPC_E
+  5,  // CODE_128
+  8,  // ITF
+  3,  // CODE_39
+];
+
 function BarcodeScanner({ onScan, isActive }) {
   const { t } = useTheme();
   const inputRef = useRef(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
+  const lastScanRef = useRef({ text: '', time: 0 });
   const [manualEntry, setManualEntry] = useState("");
   const [scanMode, setScanMode] = useState("manual");
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [hasCamera, setHasCamera] = useState(false);
+  const [lastScanned, setLastScanned] = useState(null);
+  const [scanFlash, setScanFlash] = useState(false);
 
   useEffect(() => {
     const checkCamera = async () => {
@@ -107,9 +136,26 @@ function BarcodeScanner({ onScan, isActive }) {
       html5QrCodeRef.current = qr;
       await qr.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 150 }, formatsToSupport: [5, 9, 10, 11, 12] },
+        {
+          fps: 25,
+          qrbox: (viewfinderWidth, viewfinderHeight) => ({
+            width: Math.floor(viewfinderWidth * 0.8),
+            height: Math.floor(viewfinderHeight * 0.4),
+          }),
+          formatsToSupport: WAREHOUSE_FORMATS,
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        },
         (decodedText) => {
-          stopCameraScanner();
+          // Continuous scanning with cooldown to prevent duplicates
+          const now = Date.now();
+          const last = lastScanRef.current;
+          if (decodedText === last.text && now - last.time < 1500) return;
+          lastScanRef.current = { text: decodedText, time: now };
+          playBeep();
+          navigator.vibrate?.(100);
+          setScanFlash(true);
+          setTimeout(() => setScanFlash(false), 300);
+          setLastScanned(decodedText);
           onScan(decodedText);
         },
         () => {}
@@ -173,8 +219,17 @@ function BarcodeScanner({ onScan, isActive }) {
           </Button>
         </div>
       ) : (
-        <div>
-          <div id="pallet-scanner-region" ref={scannerRef} className="rounded-lg overflow-hidden" />
+        <div className="relative">
+          <div
+            id="pallet-scanner-region"
+            ref={scannerRef}
+            className={`rounded-lg overflow-hidden transition-all duration-300 ${scanFlash ? 'ring-4 ring-green-500' : ''}`}
+          />
+          {lastScanned && (
+            <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+              <p className="text-green-400 text-xs text-center font-mono truncate">{lastScanned}</p>
+            </div>
+          )}
           {cameraError && (
             <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
               <CameraOff className="w-3 h-3" /> {cameraError}
