@@ -21,6 +21,7 @@ import {
   CheckCircle2, Clock, Scale, Loader2, Download,
 } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
+import { SCANNER_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,16 +68,7 @@ const playBeep = () => {
   } catch {}
 };
 
-// Warehouse-relevant barcode formats only
-const WAREHOUSE_FORMATS = [
-  9,  // EAN_13
-  10, // EAN_8
-  14, // UPC_A
-  15, // UPC_E
-  5,  // CODE_128
-  8,  // ITF
-  3,  // CODE_39
-];
+// WAREHOUSE_FORMATS imported from @/lib/scanner-config
 
 function BarcodeScanner({ onScan, isActive }) {
   const { t } = useTheme();
@@ -136,15 +128,7 @@ function BarcodeScanner({ onScan, isActive }) {
       html5QrCodeRef.current = qr;
       await qr.start(
         { facingMode: "environment" },
-        {
-          fps: 25,
-          qrbox: (viewfinderWidth, viewfinderHeight) => ({
-            width: Math.floor(viewfinderWidth * 0.8),
-            height: Math.floor(viewfinderHeight * 0.4),
-          }),
-          formatsToSupport: WAREHOUSE_FORMATS,
-          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-        },
+        SCANNER_CONFIG,
         (decodedText) => {
           // Continuous scanning with cooldown to prevent duplicates
           const now = Date.now();
@@ -160,6 +144,8 @@ function BarcodeScanner({ onScan, isActive }) {
         },
         () => {}
       );
+
+      optimizeCameraAfterStart(qr);
     } catch (err) {
       setCameraError(err.message || "Camera failed");
       setIsScanning(false);

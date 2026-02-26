@@ -46,6 +46,7 @@ import {
 } from "@/lib/db/queries";
 import { exportSessionCSV, exportSessionPDF } from "@/components/receiving/SessionExport";
 import { Html5Qrcode } from "html5-qrcode";
+import { SCANNER_CONFIG, optimizeCameraAfterStart } from "@/lib/scanner-config";
 
 // Barcode scanner component with camera support for mobile devices
 // Beep feedback using Web Audio API
@@ -62,17 +63,6 @@ const playBeep = () => {
     osc.stop(ctx.currentTime + 0.1);
   } catch {}
 };
-
-// Warehouse-relevant barcode formats only
-const WAREHOUSE_FORMATS = [
-  9,  // EAN_13
-  10, // EAN_8
-  14, // UPC_A
-  15, // UPC_E
-  5,  // CODE_128
-  8,  // ITF
-  3,  // CODE_39
-];
 
 function BarcodeScanner({ onScan, isActive }) {
   const { t } = useTheme();
@@ -123,20 +113,9 @@ function BarcodeScanner({ onScan, isActive }) {
       const html5QrCode = new Html5Qrcode("barcode-scanner-region");
       html5QrCodeRef.current = html5QrCode;
 
-      const config = {
-        fps: 25,
-        qrbox: (viewfinderWidth, viewfinderHeight) => ({
-          width: Math.floor(viewfinderWidth * 0.8),
-          height: Math.floor(viewfinderHeight * 0.4),
-        }),
-        aspectRatio: 1.777778,
-        formatsToSupport: WAREHOUSE_FORMATS,
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-      };
-
       await html5QrCode.start(
         { facingMode: "environment" },
-        config,
+        SCANNER_CONFIG,
         (decodedText) => {
           // Continuous scanning with cooldown to prevent duplicates
           const now = Date.now();
@@ -153,6 +132,8 @@ function BarcodeScanner({ onScan, isActive }) {
         },
         () => {}
       );
+
+      optimizeCameraAfterStart(html5QrCode);
     } catch (err) {
       console.error("Camera scanner error:", err);
       setIsScanning(false);
