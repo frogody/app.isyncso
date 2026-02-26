@@ -456,9 +456,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
 
     // Inventory management items (only for physical products)
     if (physicalEnabled) {
-      items.push({ label: 'Data Health', path: createPageUrl('ProductDataHealth'), icon: ShieldAlert });
       items.push({ label: 'Warehouse', path: createPageUrl('Warehouse'), icon: Boxes });
-      items.push({ label: 'Returns', path: createPageUrl('InventoryReturns'), icon: RotateCcw });
       items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });
     }
 
