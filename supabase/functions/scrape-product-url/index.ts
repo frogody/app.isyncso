@@ -675,7 +675,17 @@ Return ONLY valid JSON with this exact structure (use null for missing fields):
   "currency": "EUR",
   "specifications": [
     {"name": "Color", "value": "Black"},
-    {"name": "Weight", "value": "250g"}
+    {"name": "Weight", "value": "250g"},
+    {"name": "Material", "value": "ABS Plastic"},
+    {"name": "Age Range", "value": "18+"},
+    {"name": "Piece Count", "value": "1Pokemon"}
+  ],
+  "sizes": ["S", "M", "L", "XL"],
+  "colors": ["Black", "White", "Red"],
+  "materials": ["Cotton", "Polyester"],
+  "variants": [
+    {"name": "64GB", "price": 799},
+    {"name": "128GB", "price": 899}
   ],
   "images": [],
   "weight": 0.25,
@@ -685,7 +695,12 @@ Return ONLY valid JSON with this exact structure (use null for missing fields):
 }
 
 Rules:
-- Extract ALL specifications/features you can find from ${siteName}
+- Extract ALL specifications, features, attributes, and technical details you can find from ${siteName}
+- Include things like: material, color, size, age range, piece count, compatibility, model number, power, capacity, etc.
+- SIZES: Extract all available sizes (clothing: S/M/L/XL/XXL or numeric; shoes: EU/US sizes; other: any size variants). Set to null if no sizes found.
+- COLORS: Extract all available color options. Set to null if no colors found.
+- MATERIALS: Extract all materials mentioned (fabric composition, build material, etc.). Set to null if not found.
+- VARIANTS: Extract product variants with their names and prices if different. Set to null if no variants.
 - PRICING IS CRITICAL:
   - "price" = the CURRENT selling price (the price the customer actually pays right now). This is usually the largest/most prominent price on the page, or the sale/discounted price.
   - "compare_at_price" = the original/old/crossed-out price BEFORE any discount (often shown with a strikethrough). If there's no discount, set this to null.
@@ -1144,6 +1159,19 @@ Deno.serve(async (req) => {
     );
 
     // Step 4: Return result
+    // Merge sizes/colors/materials into specifications if present
+    const specs = Array.isArray(extracted.specifications) ? [...extracted.specifications] : [];
+
+    if (Array.isArray(extracted.sizes) && extracted.sizes.length > 0) {
+      specs.push({ name: "Available Sizes", value: extracted.sizes.join(", ") });
+    }
+    if (Array.isArray(extracted.colors) && extracted.colors.length > 0) {
+      specs.push({ name: "Available Colors", value: extracted.colors.join(", ") });
+    }
+    if (Array.isArray(extracted.materials) && extracted.materials.length > 0) {
+      specs.push({ name: "Materials", value: extracted.materials.join(", ") });
+    }
+
     const result = {
       name: extracted.name || null,
       brand: extracted.brand || null,
@@ -1156,9 +1184,11 @@ Deno.serve(async (req) => {
         ? Number(extracted.compare_at_price)
         : null,
       currency: extracted.currency || "EUR",
-      specifications: Array.isArray(extracted.specifications)
-        ? extracted.specifications
-        : [],
+      specifications: specs,
+      sizes: Array.isArray(extracted.sizes) ? extracted.sizes : null,
+      colors: Array.isArray(extracted.colors) ? extracted.colors : null,
+      materials: Array.isArray(extracted.materials) ? extracted.materials : null,
+      variants: Array.isArray(extracted.variants) ? extracted.variants : null,
       images: storedImages,
       weight: extracted.weight ? Number(extracted.weight) : null,
       weight_unit: extracted.weight_unit || "kg",
