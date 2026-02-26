@@ -797,49 +797,49 @@ export default function Settings() {
                       <h2 className={`text-sm font-bold ${st('text-slate-900', 'text-white')}`}>Profile Information</h2>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-6 mb-6">
-                      <div className="flex flex-col items-center gap-3">
-                        {/* Avatar preview with colored ring */}
+                    <div className="mb-6 space-y-5">
+                      {/* Avatar preview + color picker row */}
+                      <div className="flex items-center gap-5">
                         <div
-                          className="rounded-full border-[3px]"
+                          className="rounded-full border-[3px] flex-shrink-0"
                           style={{ borderColor: profileForm.user_color || '#3B82F6' }}
                         >
                           <UserAvatar user={{ ...user, avatar_url: profileForm.avatar_url || user?.avatar_url }} size="2xl" />
                         </div>
-                        <span className={`text-xs ${st('text-slate-500', 'text-zinc-500')}`}>Your team color</span>
-                        <ColorPicker
-                          selected={profileForm.user_color}
-                          onSelect={(hex) => setProfileForm(prev => ({ ...prev, user_color: hex }))}
-                        />
-                      </div>
-
-                      <div className="flex-1 space-y-4">
-                        {/* Avatar selector */}
-                        <div>
-                          <Label className={`${st('text-slate-500', 'text-zinc-400')} text-sm mb-2 block`}>Choose Avatar</Label>
-                          <AvatarSelector
-                            selected={profileForm.avatar_url ? { id: profileForm.avatar_url, url: profileForm.avatar_url } : null}
-                            onSelect={async (avatar) => {
-                              if (avatar.file) {
-                                try {
-                                  const { url } = await db.integrations.Core.UploadFile({ file: avatar.file, bucket: 'avatars' });
-                                  if (url) {
-                                    setProfileForm(prev => ({ ...prev, avatar_url: url }));
-                                    await db.auth.updateMe({ avatar_url: url });
-                                    toast.success('Avatar uploaded!');
-                                  }
-                                } catch (error) {
-                                  console.error("Failed to upload avatar:", error);
-                                  toast.error('Failed to upload avatar');
-                                }
-                              } else {
-                                const url = avatar.url || avatar.id;
-                                setProfileForm(prev => ({ ...prev, avatar_url: url }));
-                              }
-                            }}
-                            allowUpload
+                        <div className="space-y-2">
+                          <Label className={`${st('text-slate-500', 'text-zinc-400')} text-xs block`}>Team color</Label>
+                          <ColorPicker
+                            selected={profileForm.user_color}
+                            onSelect={(hex) => setProfileForm(prev => ({ ...prev, user_color: hex }))}
                           />
                         </div>
+                      </div>
+
+                      {/* Avatar selector */}
+                      <div>
+                        <Label className={`${st('text-slate-500', 'text-zinc-400')} text-sm mb-2 block`}>Choose Avatar</Label>
+                        <AvatarSelector
+                          selected={profileForm.avatar_url ? { id: profileForm.avatar_url, url: profileForm.avatar_url } : null}
+                          onSelect={async (avatar) => {
+                            if (avatar.file) {
+                              try {
+                                const { url } = await db.integrations.Core.UploadFile({ file: avatar.file, bucket: 'avatars' });
+                                if (url) {
+                                  setProfileForm(prev => ({ ...prev, avatar_url: url }));
+                                  await db.auth.updateMe({ avatar_url: url });
+                                  toast.success('Avatar uploaded!');
+                                }
+                              } catch (error) {
+                                console.error("Failed to upload avatar:", error);
+                                toast.error('Failed to upload avatar');
+                              }
+                            } else {
+                              const url = avatar.url || avatar.id;
+                              setProfileForm(prev => ({ ...prev, avatar_url: url }));
+                            }
+                          }}
+                          allowUpload
+                        />
                       </div>
                     </div>
 
