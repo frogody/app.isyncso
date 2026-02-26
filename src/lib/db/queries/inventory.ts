@@ -53,25 +53,10 @@ export async function getLowStockItems(companyId: string): Promise<Inventory[]> 
       *,
       products (id, name, sku, ean, price)
     `)
-    .eq('company_id', companyId)
-    .lt('quantity_on_hand', supabase.rpc('get_reorder_point'))
-    .order('quantity_on_hand');
+    .eq('company_id', companyId);
 
-  // Fallback: filter client-side if RPC doesn't work
-  if (error) {
-    const { data: allData, error: allError } = await supabase
-      .from('inventory')
-      .select(`
-        *,
-        products (id, name, sku, ean, price)
-      `)
-      .eq('company_id', companyId);
-
-    if (allError) throw allError;
-    return (allData || []).filter(i => i.quantity_on_hand <= i.reorder_point);
-  }
-
-  return data || [];
+  if (error) throw error;
+  return (data || []).filter(i => i.quantity_on_hand <= i.reorder_point);
 }
 
 // =============================================================================

@@ -9,6 +9,52 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ─── Twilio Signature Validation ──────────────────────────────────────────────
+
+async function validateTwilioSignature(
+  req: Request,
+  params: Record<string, string>,
+): Promise<boolean> {
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN") || Deno.env.get("TWILIO_MASTER_AUTH_TOKEN");
+  if (!authToken) {
+    throw new Error("TWILIO_AUTH_TOKEN is not configured");
+  }
+
+  const signature = req.headers.get("X-Twilio-Signature");
+  if (!signature) {
+    console.error("[voice-webhook] Missing X-Twilio-Signature header");
+    return false;
+  }
+
+  // Build the validation string: full URL + sorted POST params appended
+  const url = req.url;
+  const sortedKeys = Object.keys(params).sort();
+  let data = url;
+  for (const key of sortedKeys) {
+    data += key + params[key];
+  }
+
+  // HMAC-SHA1 with auth token
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(authToken),
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, encoder.encode(data));
+  const expectedSignature = btoa(String.fromCharCode(...new Uint8Array(sig)));
+
+  // Constant-time comparison
+  if (signature.length !== expectedSignature.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < signature.length; i++) {
+    mismatch |= signature.charCodeAt(i) ^ expectedSignature.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
@@ -279,6 +325,19 @@ serve(async (req) => {
     const callId = url.searchParams.get("callId");
 
     const payload = await parsePayload(req);
+
+    // ── Twilio signature validation (fail closed) ──────────────────────
+    try {
+      const isValid = await validateTwilioSignature(req, payload);
+      if (!isValid) {
+        console.error("[voice-webhook] Invalid Twilio signature — rejecting request");
+        return new Response("Forbidden", { status: 403 });
+      }
+    } catch (err) {
+      // Auth token not configured — fail closed
+      console.error("[voice-webhook] Signature validation error:", err);
+      return new Response("Server configuration error", { status: 500 });
+    }
 
     // ── Status callback ─────────────────────────────────────────────────
     if (action === "status") {

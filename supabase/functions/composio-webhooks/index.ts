@@ -47,19 +47,90 @@ interface ProcessingResult {
 }
 
 // ============================================
-// Webhook Verification (optional but recommended)
+// Webhook Verification (HMAC-SHA256)
 // ============================================
 
-function verifyWebhookSignature(
-  _payload: string,
+async function verifyWebhookSignature(
+  payload: string,
   signature: string | null
-): boolean {
-  // Log signature for debugging, but always allow requests through
-  // TODO: Implement proper verification once Composio's exact HMAC format is confirmed
-  if (signature) {
-    console.log(`[composio-webhooks] Received signature: ${signature.substring(0, 40)}...`);
+): Promise<boolean> {
+  const secret = COMPOSIO_WEBHOOK_SECRET;
+
+  // Fail closed: if no secret is configured, reject all requests
+  if (!secret) {
+    console.warn("[composio-webhooks] COMPOSIO_WEBHOOK_SECRET is not set — rejecting request (fail closed)");
+    return false;
   }
-  return true;
+
+  // If no signature was provided in the request, reject
+  if (!signature) {
+    console.warn("[composio-webhooks] No webhook signature header present — rejecting request");
+    return false;
+  }
+
+  try {
+    // Import the secret as an HMAC key
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const key = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign", "verify"],
+    );
+
+    // Compute HMAC-SHA256 of the raw payload
+    const payloadData = encoder.encode(payload);
+    const expectedSigBuffer = await crypto.subtle.sign("HMAC", key, payloadData);
+
+    // Convert to hex string
+    const expectedHex = Array.from(new Uint8Array(expectedSigBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    // Strip any algorithm prefix (e.g. "sha256=" or "hmac-sha256=")
+    const receivedHex = signature.replace(/^(sha256=|hmac-sha256=)/i, "").toLowerCase();
+
+    // Timing-safe comparison using crypto.subtle.verify:
+    // We compare by signing the received hex and expected hex and checking equality
+    // of fixed-length digests to avoid timing leaks from string comparison.
+    if (receivedHex.length !== expectedHex.length) {
+      console.warn("[composio-webhooks] Signature length mismatch — rejecting request");
+      return false;
+    }
+
+    // Constant-time comparison: compute HMAC of both strings and compare digests
+    const receivedBytes = encoder.encode(receivedHex);
+    const expectedBytes = encoder.encode(expectedHex);
+    const cmpKey = await crypto.subtle.importKey(
+      "raw",
+      keyData,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const hmacReceived = await crypto.subtle.sign("HMAC", cmpKey, receivedBytes);
+    const hmacExpected = await crypto.subtle.sign("HMAC", cmpKey, expectedBytes);
+
+    const a = new Uint8Array(hmacReceived);
+    const b = new Uint8Array(hmacExpected);
+    let match = a.length === b.length ? 1 : 0;
+    for (let i = 0; i < a.length; i++) {
+      match &= a[i] === b[i] ? 1 : 0;
+    }
+
+    if (match !== 1) {
+      console.warn("[composio-webhooks] Webhook signature mismatch — rejecting request");
+      return false;
+    }
+
+    console.log("[composio-webhooks] Webhook signature verified successfully");
+    return true;
+  } catch (err) {
+    console.error("[composio-webhooks] Signature verification error:", err);
+    return false;
+  }
 }
 
 // ============================================
@@ -518,8 +589,8 @@ serve(async (req) => {
     const rawBody = await req.text();
     const signature = req.headers.get("webhook-signature") || req.headers.get("x-composio-signature");
 
-    // Verify webhook signature
-    if (!verifyWebhookSignature(rawBody, signature)) {
+    // Verify webhook signature (async HMAC-SHA256)
+    if (!(await verifyWebhookSignature(rawBody, signature))) {
       return new Response(
         JSON.stringify({ error: "Invalid webhook signature" }),
         {

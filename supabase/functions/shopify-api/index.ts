@@ -39,7 +39,10 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SHOPIFY_API_KEY = Deno.env.get("SHOPIFY_API_KEY") || "";
 const SHOPIFY_API_SECRET = Deno.env.get("SHOPIFY_API_SECRET") || "";
-const SHOPIFY_ENCRYPTION_KEY = Deno.env.get("SHOPIFY_ENCRYPTION_KEY") || "shopify-default-key-change-me";
+const SHOPIFY_ENCRYPTION_KEY = Deno.env.get("SHOPIFY_ENCRYPTION_KEY");
+if (!SHOPIFY_ENCRYPTION_KEY) {
+  throw new Error("SHOPIFY_ENCRYPTION_KEY not configured");
+}
 const SHOPIFY_API_VERSION = "2024-10";
 const SHOPIFY_SCOPES = "read_products,write_products,read_inventory,write_inventory,read_orders,write_orders,read_fulfillments,write_fulfillments";
 const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/shopify-webhooks`;

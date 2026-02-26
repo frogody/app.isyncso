@@ -247,6 +247,9 @@ verify_jwt = false
 [functions.smart-compose]
 verify_jwt = false
 
+[functions.smart-import-invoice]
+verify_jwt = false
+
 [functions.twilio-token]
 verify_jwt = false
 
@@ -335,4 +338,40 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.finance-ai-accountant]
+verify_jwt = false
+
+[functions.agents]
+verify_jwt = false
+
+[functions.auto-enrich-company]
+verify_jwt = false
+
+[functions.generate-acknowledgments]
+verify_jwt = false
+
+[functions.getTeamMembers]
+verify_jwt = false
+
+[functions.invokeGrok]
+verify_jwt = false
+
+[functions.process-order-email]
+verify_jwt = false
+
+[functions.scrape-job-url]
+verify_jwt = false
+
+[functions.send-invitation-email]
+verify_jwt = false
+
+[functions.send-invoice-email]
+verify_jwt = false
+
+[functions.send-license-email]
+verify_jwt = false
+
+[functions.send-proposal-email]
+verify_jwt = false
+
+[functions.tracking-cycle]
 verify_jwt = false

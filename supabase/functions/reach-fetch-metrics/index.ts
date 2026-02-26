@@ -74,8 +74,9 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        status: "not_implemented",
         message:
-          "Metrics fetching requires platform API credentials to be configured. " +
+          "Metrics fetching is not yet implemented. Platform API credentials must be configured. " +
           "Add OAuth credentials for each platform in your Supabase project secrets, " +
           "then redeploy this function. See REACH_SETUP_NOTES.md for instructions.",
         company_id,
@@ -83,7 +84,7 @@ serve(async (req) => {
         platforms_status,
       }),
       {
-        status: 200,
+        status: 501,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

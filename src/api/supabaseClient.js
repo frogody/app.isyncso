@@ -430,6 +430,8 @@ export const entities = {
   GrowthCampaign: createEntityWrapper('GrowthCampaign'),
   GrowthOpportunity: createEntityWrapper('GrowthOpportunity'),
   GrowthSignal: createEntityWrapper('GrowthSignal'),
+  GrowthNest: createEntityWrapper('GrowthNest'),
+  GrowthNestPurchase: createEntityWrapper('GrowthNestPurchase'),
 
   // === Gamification & Achievements ===
   UserGamification: createEntityWrapper('UserGamification'),

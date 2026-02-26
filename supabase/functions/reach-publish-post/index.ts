@@ -147,14 +147,20 @@ serve(async (req: Request) => {
       console.error("Failed to update post:", updateError);
     }
 
+    // All platform publishers are currently stubs — return 501 when all fail
+    const allNotImplemented = Object.values(platformStatuses).every(
+      (s) => (s as any).status === "not_implemented"
+    );
+    const httpStatus = allNotImplemented ? 501 : 200;
+
     return new Response(
       JSON.stringify({
         success: overallStatus !== "failed",
-        status: overallStatus,
+        status: allNotImplemented ? "not_implemented" : overallStatus,
         platform_statuses: platformStatuses,
         errors: Object.keys(errors).length > 0 ? errors : undefined,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: httpStatus, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -174,6 +180,7 @@ interface PublishResult {
   success: boolean;
   post_id?: string;
   error?: string;
+  status?: string;
 }
 
 async function publishToPlatform(
@@ -252,11 +259,12 @@ async function publishToMeta(
   //     }),
   //   });
 
-  // Simulated success for now
-  console.log(`[reach-publish-post] Simulating ${platform} publish for post ${post.id}`);
+  // Not implemented — Meta Graph API integration pending
+  console.log(`[reach-publish-post] ${platform} publishing not implemented for post ${post.id}`);
   return {
-    success: true,
-    post_id: `sim_${platform}_${Date.now()}`,
+    success: false,
+    error: `${platform} publishing is not yet implemented. Meta Graph API integration pending.`,
+    status: "not_implemented",
   };
 }
 
@@ -298,10 +306,12 @@ async function publishToLinkedIn(
   //   }),
   // });
 
-  console.log(`[reach-publish-post] Simulating LinkedIn publish for post ${post.id}`);
+  // Not implemented — LinkedIn API v2 integration pending
+  console.log(`[reach-publish-post] LinkedIn publishing not implemented for post ${post.id}`);
   return {
-    success: true,
-    post_id: `sim_linkedin_${Date.now()}`,
+    success: false,
+    error: "LinkedIn publishing is not yet implemented. LinkedIn API v2 integration pending.",
+    status: "not_implemented",
   };
 }
 
@@ -345,10 +355,12 @@ async function publishToTwitter(
   //   }),
   // });
 
-  console.log(`[reach-publish-post] Simulating Twitter publish for post ${post.id}`);
+  // Not implemented — Twitter API v2 integration pending
+  console.log(`[reach-publish-post] Twitter publishing not implemented for post ${post.id}`);
   return {
-    success: true,
-    post_id: `sim_twitter_${Date.now()}`,
+    success: false,
+    error: "Twitter/X publishing is not yet implemented. Twitter API v2 integration pending.",
+    status: "not_implemented",
   };
 }
 
@@ -395,9 +407,11 @@ async function publishToTikTok(
   //
   // Step 2: Check publish status via /v2/post/publish/status/fetch/
 
-  console.log(`[reach-publish-post] Simulating TikTok publish for post ${post.id}`);
+  // Not implemented — TikTok Content Posting API integration pending
+  console.log(`[reach-publish-post] TikTok publishing not implemented for post ${post.id}`);
   return {
-    success: true,
-    post_id: `sim_tiktok_${Date.now()}`,
+    success: false,
+    error: "TikTok publishing is not yet implemented. TikTok Content Posting API integration pending.",
+    status: "not_implemented",
   };
 }

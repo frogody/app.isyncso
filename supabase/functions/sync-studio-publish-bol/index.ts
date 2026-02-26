@@ -17,8 +17,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const BOLCOM_ENCRYPTION_KEY =
-  Deno.env.get("BOLCOM_ENCRYPTION_KEY") || "bolcom-default-key-change-me";
+const BOLCOM_ENCRYPTION_KEY = Deno.env.get("BOLCOM_ENCRYPTION_KEY");
+if (!BOLCOM_ENCRYPTION_KEY) {
+  throw new Error("BOLCOM_ENCRYPTION_KEY not configured");
+}
 const BOL_API_BASE = "https://api.bol.com/retailer";
 const BOL_AUTH_URL = "https://login.bol.com/token";
 const CHUNK_SIZE = 5; // Products per invocation

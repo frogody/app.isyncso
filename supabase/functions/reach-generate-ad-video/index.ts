@@ -22,6 +22,7 @@ serve(async (req: Request) => {
     if (!RUNWAY_API_KEY) {
       return new Response(
         JSON.stringify({
+          status: "not_implemented",
           video_url: null,
           message:
             "Video generation requires RUNWAY_API_KEY configuration. Set it in your Supabase Edge Function secrets.",
@@ -33,7 +34,7 @@ serve(async (req: Request) => {
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
+          status: 501,
         }
       );
     }
@@ -43,13 +44,14 @@ serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({
+        status: "not_implemented",
         video_url: null,
         message:
           "Video generation API integration is pending implementation.",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        status: 501,
       }
     );
   } catch (err) {
