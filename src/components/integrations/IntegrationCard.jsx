@@ -24,20 +24,30 @@ import {
 } from 'lucide-react';
 import { formatConnectionStatus } from '@/lib/composio';
 
-// Integration icons (using simple div with initials as fallback)
+// Integration icons — renders official logo from Simple Icons CDN, falls back to letter avatar
 const IntegrationIcon = ({ integration, className = '' }) => {
-  const { name, color, icon } = integration;
+  const { name, color, logoUrl } = integration;
+  const [imgError, setImgError] = React.useState(false);
 
-  // Try to render SVG icon if available, otherwise show initials
+  if (logoUrl && !imgError) {
+    return (
+      <div className={`flex items-center justify-center rounded-xl bg-white/[0.06] ${className}`}>
+        <img
+          src={logoUrl}
+          alt={`${name} logo`}
+          className="w-5 h-5 object-contain"
+          onError={() => setImgError(true)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`flex items-center justify-center rounded-lg ${className}`}
+      className={`flex items-center justify-center rounded-xl ${className}`}
       style={{ backgroundColor: color + '20' }}
     >
-      <span
-        className="font-semibold text-sm"
-        style={{ color }}
-      >
+      <span className="font-semibold text-sm" style={{ color }}>
         {name.substring(0, 2).toUpperCase()}
       </span>
     </div>
@@ -76,7 +86,7 @@ export function IntegrationCard({
   };
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg dark:hover:shadow-cyan-500/10 border-slate-800 bg-slate-900/50">
+    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg dark:hover:shadow-cyan-500/10 border-white/[0.06] bg-zinc-900/60 backdrop-blur-xl rounded-xl">
       {/* Status indicator bar */}
       <div
         className="absolute top-0 left-0 right-0 h-1 transition-all duration-300"
@@ -216,7 +226,7 @@ export function IntegrationCardCompact({
   const { name, color } = integration;
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-800 bg-slate-900/30 hover:bg-slate-800/50 transition-colors">
+    <div className="flex items-center justify-between p-3 rounded-lg border border-white/[0.06] bg-zinc-900/40 hover:bg-zinc-800/50 transition-colors">
       <div className="flex items-center gap-3">
         <IntegrationIcon integration={integration} className="w-8 h-8" />
         <span className="font-medium text-white">{name}</span>
