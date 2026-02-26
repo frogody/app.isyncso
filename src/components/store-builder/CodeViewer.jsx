@@ -18,6 +18,7 @@ import {
   Pencil,
 } from 'lucide-react';
 
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { highlight, languages } from 'prismjs';
 import 'prismjs/components/prism-jsx';
 import 'prismjs/components/prism-css';
@@ -240,10 +241,11 @@ function CodePanel({ code, lang, filePath, lineDiff }) {
                 </div>
                 <div className="flex-1 pl-2 pr-6 overflow-x-auto">
                   <pre className="m-0 bg-transparent">
-                    <code
+                    <SafeHTML
+                      as="code"
                       className={`language-${lang} text-[12px] leading-[20px] font-mono`}
                       style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace" }}
-                      dangerouslySetInnerHTML={{ __html: highlightedLines[i] || '' }}
+                      html={highlightedLines[i] || ''}
                     />
                   </pre>
                 </div>

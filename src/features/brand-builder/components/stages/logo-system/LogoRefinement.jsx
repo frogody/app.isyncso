@@ -5,6 +5,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { ICON_LIBRARY, getIconById } from '../../../lib/logo-engine/index.js';
 import {
   buildFontImport,
@@ -149,8 +150,9 @@ export default function LogoRefinement({
             }`}
             style={bgMode === 'brand' ? { backgroundColor: brandBg } : undefined}
           >
-            <div
-              dangerouslySetInnerHTML={{ __html: liveSvg }}
+            <SafeHTML
+              html={liveSvg}
+              svg
               className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
             />
           </div>
@@ -351,8 +353,9 @@ function ContextMockup({ label, svg, bgClass, aspect, round }) {
   return (
     <div className="text-center">
       <div className={`${bgClass} ${aspect} ${round ? 'rounded-full' : 'rounded-xl'} overflow-hidden flex items-center justify-center p-3`}>
-        <div
-          dangerouslySetInnerHTML={{ __html: svg }}
+        <SafeHTML
+          html={svg}
+          svg
           className="w-full h-full [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
           style={{ transform: 'scale(0.4)', transformOrigin: 'center' }}
         />

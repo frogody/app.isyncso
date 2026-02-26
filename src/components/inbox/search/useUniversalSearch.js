@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 
 const RECENT_SEARCHES_KEY = 'isyncso_recent_searches';
 const MAX_RECENT_SEARCHES = 10;
@@ -73,12 +74,16 @@ export default function useUniversalSearch() {
 
       // Messages search
       if (activeTypes.includes('messages')) {
+        const cleanMsgSearch = sanitizeSearchInput(searchTerm);
         let msgQuery = supabase
           .from('messages')
           .select('id, content, sender_name, sender_avatar, channel_id, created_date')
-          .ilike('content', `%${searchTerm}%`)
           .order('created_date', { ascending: false })
           .limit(20);
+
+        if (cleanMsgSearch) {
+          msgQuery = msgQuery.ilike('content', `%${cleanMsgSearch}%`);
+        }
 
         if (filters.channelId) {
           msgQuery = msgQuery.eq('channel_id', filters.channelId);
@@ -105,9 +110,13 @@ export default function useUniversalSearch() {
         let evtQuery = supabase
           .from('calendar_events')
           .select('id, title, description, start_time, end_time, attendees, color')
-          .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
           .order('start_time', { ascending: false })
           .limit(15);
+
+        const cleanEvtSearch = sanitizeSearchInput(searchTerm);
+        if (cleanEvtSearch) {
+          evtQuery = evtQuery.or(`title.ilike.%${cleanEvtSearch}%,description.ilike.%${cleanEvtSearch}%`);
+        }
 
         if (filters.dateRange?.from) {
           evtQuery = evtQuery.gte('start_time', filters.dateRange.from);
@@ -128,12 +137,16 @@ export default function useUniversalSearch() {
 
       // Video calls search
       if (activeTypes.includes('calls')) {
+        const cleanCallSearch = sanitizeSearchInput(searchTerm);
         let callQuery = supabase
           .from('video_calls')
           .select('id, title, started_at, ended_at, participants, status, duration')
-          .ilike('title', `%${searchTerm}%`)
           .order('started_at', { ascending: false })
           .limit(10);
+
+        if (cleanCallSearch) {
+          callQuery = callQuery.ilike('title', `%${cleanCallSearch}%`);
+        }
 
         promises.push(
           callQuery.then(({ data, error }) => ({
@@ -150,9 +163,13 @@ export default function useUniversalSearch() {
         let chQuery = supabase
           .from('channels')
           .select('id, name, description, type, member_count, created_date')
-          .or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
           .order('name', { ascending: true })
           .limit(10);
+
+        const cleanChSearch = sanitizeSearchInput(searchTerm);
+        if (cleanChSearch) {
+          chQuery = chQuery.or(`name.ilike.%${cleanChSearch}%,description.ilike.%${cleanChSearch}%`);
+        }
 
         promises.push(
           chQuery.then(({ data, error }) => ({

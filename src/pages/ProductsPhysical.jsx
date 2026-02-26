@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, PhysicalProduct, ProductCategory, Supplier } from "@/api/entities";
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 import { ProductModal, ImportFromURLModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
 import { toast } from "sonner";
 import {
@@ -272,7 +273,10 @@ export default function ProductsPhysical() {
 
       // Server-side search
       if (debouncedSearch.trim()) {
-        query = query.or(`name.ilike.%${debouncedSearch.trim()}%,ean.ilike.%${debouncedSearch.trim()}%,sku.ilike.%${debouncedSearch.trim()}%,tagline.ilike.%${debouncedSearch.trim()}%`);
+        const cleanSearch = sanitizeSearchInput(debouncedSearch.trim());
+        if (cleanSearch) {
+          query = query.or(`name.ilike.%${cleanSearch}%,ean.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%,tagline.ilike.%${cleanSearch}%`);
+        }
       }
 
       // Server-side status filter

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/api/supabaseClient";
+import { sanitizeSearchInput } from '@/utils/validation';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -53,11 +54,18 @@ function UnmappedProductRow({ item, companyId, t, onResolved }) {
     if (!searchQuery.trim()) return;
     setSearching(true);
     try {
+      const cleanSearch = sanitizeSearchInput(searchQuery);
+      if (!cleanSearch) {
+        setSearchResults([]);
+        setExpanded(true);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("products")
         .select("id, name, sku, ean")
         .eq("company_id", companyId)
-        .or(`name.ilike.%${searchQuery}%,sku.ilike.%${searchQuery}%,ean.ilike.%${searchQuery}%`)
+        .or(`name.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%,ean.ilike.%${cleanSearch}%`)
         .limit(10);
 
       if (error) throw error;

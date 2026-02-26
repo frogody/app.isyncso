@@ -1,11 +1,12 @@
 import React from 'react';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 
 /**
  * RichTextRenderer
  *
  * Renders a rich text / HTML content section for the B2B wholesale storefront.
- * Content is rendered via dangerouslySetInnerHTML (acceptable for user-controlled
- * store content). Prose-like styling is applied to child HTML elements.
+ * Content is sanitized via SafeHTML (DOMPurify) before rendering.
+ * Prose-like styling is applied to child HTML elements.
  *
  * Props from section.props:
  * - heading: string|null
@@ -93,9 +94,9 @@ export default function RichTextRenderer({ section, theme }) {
 
         {/* HTML content */}
         {content && (
-          <div
+          <SafeHTML
             className="ws-prose"
-            dangerouslySetInnerHTML={{ __html: content }}
+            html={content}
           />
         )}
       </div>

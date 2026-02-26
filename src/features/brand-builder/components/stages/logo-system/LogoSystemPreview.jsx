@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 
 const COLOR_MODE_GROUPS = {
   full_color: {
@@ -114,8 +115,9 @@ export default function LogoSystemPreview({ logoSystem, palette }) {
           <div className="rounded-[20px] bg-white/[0.03] border border-white/10 p-8 flex items-center justify-center">
             <div className="relative inline-block">
               {/* Logo */}
-              <div
-                dangerouslySetInnerHTML={{ __html: variations?.primary?.color_modes?.full_color_light || '' }}
+              <SafeHTML
+                html={variations?.primary?.color_modes?.full_color_light || ''}
+                svg
                 className="[&>svg]:w-48 [&>svg]:h-auto"
               />
               {/* Clear space overlay */}
@@ -140,8 +142,9 @@ export default function LogoSystemPreview({ logoSystem, palette }) {
           <div className="flex gap-8">
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center p-3">
-                <div
-                  dangerouslySetInnerHTML={{ __html: variations?.primary?.color_modes?.full_color_light || '' }}
+                <SafeHTML
+                  html={variations?.primary?.color_modes?.full_color_light || ''}
+                  svg
                   className="[&>svg]:max-w-full [&>svg]:max-h-full"
                 />
               </div>
@@ -152,8 +155,9 @@ export default function LogoSystemPreview({ logoSystem, palette }) {
             </div>
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center p-3">
-                <div
-                  dangerouslySetInnerHTML={{ __html: variations?.primary?.color_modes?.mono_black || '' }}
+                <SafeHTML
+                  html={variations?.primary?.color_modes?.mono_black || ''}
+                  svg
                   className="[&>svg]:max-w-full [&>svg]:max-h-full"
                 />
               </div>
@@ -181,8 +185,9 @@ export default function LogoSystemPreview({ logoSystem, palette }) {
       {grid && (
         <Section title="Construction Grid">
           <div className="rounded-[20px] bg-white/[0.03] border border-white/10 p-8 flex items-center justify-center">
-            <div
-              dangerouslySetInnerHTML={{ __html: grid.svg }}
+            <SafeHTML
+              html={grid.svg}
+              svg
               className="[&>svg]:w-full [&>svg]:max-w-lg [&>svg]:h-auto"
             />
           </div>
@@ -214,8 +219,9 @@ function ColorModeCard({ mode, svg, brandBg }) {
         }`}
         style={isOnBrand ? { backgroundColor: brandBg } : undefined}
       >
-        <div
-          dangerouslySetInnerHTML={{ __html: svg }}
+        <SafeHTML
+          html={svg}
+          svg
           className="w-full h-full [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
         />
       </div>
@@ -230,8 +236,9 @@ function DontCard({ dont }) {
   return (
     <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 space-y-2">
       <div className="aspect-square bg-white rounded-lg p-2 flex items-center justify-center relative overflow-hidden">
-        <div
-          dangerouslySetInnerHTML={{ __html: dont.example_svg }}
+        <SafeHTML
+          html={dont.example_svg}
+          svg
           className="w-full h-full [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
         />
         <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">

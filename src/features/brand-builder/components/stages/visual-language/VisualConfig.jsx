@@ -4,6 +4,7 @@
  */
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { ICON_LIBRARY } from '../../../lib/logo-engine/icon-library.js';
 
 const PHOTO_MOODS = [
@@ -220,9 +221,10 @@ export default function VisualConfig({ brandDna, colorSystem, onChange }) {
               {/* Mini icon preview */}
               <div className="flex gap-2 mb-2">
                 {PREVIEW_ICONS.map((icon) => (
-                  <div
+                  <SafeHTML
                     key={icon.id}
-                    dangerouslySetInnerHTML={{ __html: renderMiniIcon(icon, id, iconStyle === id ? primaryColor : '#a1a1aa') }}
+                    html={renderMiniIcon(icon, id, iconStyle === id ? primaryColor : '#a1a1aa')}
+                    svg
                   />
                 ))}
               </div>

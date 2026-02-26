@@ -4,6 +4,7 @@
  */
 import { motion } from 'framer-motion';
 import { Check, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import ImageGenerationCard from '../../shared/ImageGenerationCard';
 import RegenerateButton from '../../shared/RegenerateButton';
 
@@ -174,8 +175,9 @@ function ConceptCard({ concept, index, selected, onSelect, onMoreLikeThis, isLoa
     >
       {/* Main logo preview */}
       <div className="aspect-[4/3] flex items-center justify-center mb-3 rounded-xl bg-white p-4 overflow-hidden">
-        <div
-          dangerouslySetInnerHTML={{ __html: concept.svg_source }}
+        <SafeHTML
+          html={concept.svg_source}
+          svg
           className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
         />
       </div>
@@ -222,8 +224,9 @@ function MicroPreview({ label, svg, bgClass, size }) {
       <div className={`${bgClass} rounded-md overflow-hidden flex items-center justify-center ${
         size === 'wide' ? 'aspect-[3/2] p-1' : 'aspect-square p-1'
       }`}>
-        <div
-          dangerouslySetInnerHTML={{ __html: svg }}
+        <SafeHTML
+          html={svg}
+          svg
           className="w-full h-full [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
           style={{ transform: 'scale(0.5)', transformOrigin: 'center' }}
         />

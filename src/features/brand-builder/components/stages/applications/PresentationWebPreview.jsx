@@ -5,14 +5,16 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, Monitor, Smartphone, Maximize2, X, Sparkles } from 'lucide-react';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import ImageGenerationCard from '../../shared/ImageGenerationCard';
 import RegenerateButton from '../../shared/RegenerateButton';
 
 function SvgPreview({ svg, className = '' }) {
   return (
-    <div
+    <SafeHTML
+      html={svg || ''}
+      svg
       className={`[&>svg]:w-full [&>svg]:h-auto ${className}`}
-      dangerouslySetInnerHTML={{ __html: svg || '' }}
     />
   );
 }

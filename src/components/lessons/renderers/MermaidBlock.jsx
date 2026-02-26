@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, memo } from "react";
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import mermaid from "mermaid";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -148,10 +149,11 @@ function MermaidBlockInner({ content }) {
         </div>
       )}
       {svgContent && (
-        <div
+        <SafeHTML
           className="flex items-center justify-center overflow-x-auto rounded-xl bg-zinc-900/30 p-4"
           style={{ maxHeight: '400px' }}
-          dangerouslySetInnerHTML={{ __html: svgContent }}
+          html={svgContent}
+          svg
         />
       )}
       <style>{`

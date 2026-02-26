@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 
 // =============================================================================
 // TYPES
@@ -1042,7 +1043,10 @@ export async function listB2BProducts(
     query = query.eq('category_id', filters.categoryId);
   }
   if (filters?.search) {
-    query = query.or(`name.ilike.%${filters.search}%,sku.ilike.%${filters.search}%`);
+    const cleanSearch = sanitizeSearchInput(filters.search);
+    if (cleanSearch) {
+      query = query.or(`name.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%`);
+    }
   }
 
   // Sorting

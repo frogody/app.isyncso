@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
+import { sanitizeSearchInput } from '@/utils/validation';
 
 const TASK_STATUSES = ['pending', 'in_progress', 'completed', 'cancelled'];
 const TASK_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
@@ -84,7 +85,10 @@ export function useTasks(options = {}) {
 
       // Search
       if (filters.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+        const cleanSearch = sanitizeSearchInput(filters.search);
+        if (cleanSearch) {
+          query = query.or(`title.ilike.%${cleanSearch}%,description.ilike.%${cleanSearch}%`);
+        }
       }
 
       // Due date range

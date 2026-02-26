@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 
 const ICON_STYLE_OPTIONS = ['outlined', 'filled', 'duotone'];
 
@@ -157,9 +158,10 @@ export default function IconographyPatterns({
               </button>
 
               {/* SVG preview */}
-              <div
+              <SafeHTML
+                html={(icon.svg || '').replace(/width="[^"]*"/, 'width="48"').replace(/height="[^"]*"/, 'height="48"')}
+                svg
                 className="w-12 h-12 mx-auto mb-2"
-                dangerouslySetInnerHTML={{ __html: (icon.svg || '').replace(/width="[^"]*"/, 'width="48"').replace(/height="[^"]*"/, 'height="48"') }}
               />
               <p className="text-[10px] text-zinc-400 truncate">{icon.name}</p>
               <div className="flex flex-wrap justify-center gap-0.5 mt-1">
@@ -217,9 +219,10 @@ export default function IconographyPatterns({
               className="rounded-[16px] bg-white/[0.03] border border-white/10 p-4"
             >
               {/* SVG preview */}
-              <div
+              <SafeHTML
+                html={device.svg || ''}
+                svg
                 className="w-full h-16 flex items-center justify-center mb-3 bg-zinc-900/40 rounded-lg overflow-hidden"
-                dangerouslySetInnerHTML={{ __html: device.svg || '' }}
               />
               <input
                 value={device.name || ''}

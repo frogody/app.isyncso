@@ -4,14 +4,16 @@
  */
 import { motion } from 'framer-motion';
 import { RefreshCw, Sparkles } from 'lucide-react';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import ImageGenerationCard from '../../shared/ImageGenerationCard';
 import RegenerateButton from '../../shared/RegenerateButton';
 
 function SvgPreview({ svg, className = '' }) {
   return (
-    <div
+    <SafeHTML
+      html={svg || ''}
+      svg
       className={`[&>svg]:w-full [&>svg]:h-auto ${className}`}
-      dangerouslySetInnerHTML={{ __html: svg || '' }}
     />
   );
 }
@@ -101,8 +103,8 @@ export default function DigitalPreview({ digital, onRegenerate, aiMockups = {}, 
       >
         <SectionHeader title="Email Signature" onRegenerate={() => onRegenerate('email_signature')} />
         <div className="rounded-[20px] bg-white border border-white/10 p-6 overflow-hidden">
-          <div
-            dangerouslySetInnerHTML={{ __html: digital.email_signature_html || '' }}
+          <SafeHTML
+            html={digital.email_signature_html || ''}
           />
         </div>
       </motion.section>

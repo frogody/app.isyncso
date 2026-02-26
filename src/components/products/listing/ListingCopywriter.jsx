@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { useTheme } from '@/contexts/GlobalThemeContext';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
@@ -664,9 +665,9 @@ export default function ListingCopywriter({
             className={cn(t('bg-white border-slate-200 text-slate-900 placeholder:text-slate-400', 'bg-zinc-900/40 border-white/10 text-zinc-100 placeholder:text-zinc-600'), 'focus-visible:ring-cyan-500/40 min-h-[160px]')}
           />
         ) : (
-          <div
+          <SafeHTML
             className={cn('prose prose-sm max-w-none rounded-lg border p-4 min-h-[160px]', t('bg-white border-slate-200', 'bg-zinc-900/40 border-white/10'), t('prose-slate', 'prose-invert'))}
-            dangerouslySetInnerHTML={{ __html: description || '<p class="text-zinc-500">No description yet.</p>' }}
+            html={description || '<p class="text-zinc-500">No description yet.</p>'}
           />
         )}
       </div>

@@ -949,7 +949,8 @@ export const integrations = {
     },
 
     async UploadPrivateFile({ file, bucket = 'private' }) {
-      const path = `${Date.now()}_${file.name}`;
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${Date.now()}_${sanitizedName}`;
       return storage.upload(bucket, path, file);
     }
   }

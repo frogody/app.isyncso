@@ -28,6 +28,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { useUser } from '@/components/context/UserContext';
@@ -548,7 +549,7 @@ export default function RaiseEnrich() {
     try {
       await supabase.from('enrich_history').insert(entry);
     } catch (err) {
-      console.error('History track error:', err);
+      logger.error('History track error:', err);
     }
   }, [activeWorkspaceId]);
 
@@ -564,7 +565,7 @@ export default function RaiseEnrich() {
         .limit(100);
       setHistoryEntries(data || []);
     } catch (err) {
-      console.error('Load history error:', err);
+      logger.error('Load history error:', err);
     }
     setHistoryLoading(false);
   }, [activeWorkspaceId]);
@@ -579,7 +580,7 @@ export default function RaiseEnrich() {
         .order('created_at', { ascending: false });
       setSnapshots(data || []);
     } catch (err) {
-      console.error('Load snapshots error:', err);
+      logger.error('Load snapshots error:', err);
     }
   }, [activeWorkspaceId]);
 
@@ -605,7 +606,7 @@ export default function RaiseEnrich() {
       if (error) throw error;
       setViews(data || []);
     } catch (err) {
-      console.error('Load views error:', err);
+      logger.error('Load views error:', err);
     }
   }, [activeWorkspaceId]);
 
@@ -665,7 +666,7 @@ export default function RaiseEnrich() {
       }
       setViewHasUnsaved(false);
     } catch (err) {
-      console.error('Save view error:', err);
+      logger.error('Save view error:', err);
       toast.error('Failed to save view');
     }
   }, [activeWorkspaceId, buildViewConfig]);
@@ -683,7 +684,7 @@ export default function RaiseEnrich() {
       }
       toast.success('View deleted');
     } catch (err) {
-      console.error('Delete view error:', err);
+      logger.error('Delete view error:', err);
       toast.error('Failed to delete view');
     }
   }, [activeViewId]);
@@ -695,7 +696,7 @@ export default function RaiseEnrich() {
       setViews(prev => prev.map(v => v.id === viewId ? { ...v, name: newName.trim() } : v));
       setViewRenamingId(null);
     } catch (err) {
-      console.error('Rename view error:', err);
+      logger.error('Rename view error:', err);
     }
   }, []);
 
@@ -711,7 +712,7 @@ export default function RaiseEnrich() {
       setViews(prev => prev.map(v => ({ ...v, is_default: v.id === viewId })));
       toast.success(viewId ? 'Default view updated' : 'Default view cleared');
     } catch (err) {
-      console.error('Set default view error:', err);
+      logger.error('Set default view error:', err);
     }
   }, [activeWorkspaceId]);
 
@@ -866,7 +867,7 @@ export default function RaiseEnrich() {
         setCells({});
       }
     } catch (err) {
-      console.error('Error loading workspace:', err);
+      logger.error('Error loading workspace:', err);
       toast.error('Failed to load workspace');
     } finally {
       setWsLoading(false);
@@ -889,7 +890,7 @@ export default function RaiseEnrich() {
         (cellData || []).forEach(c => { cellMap[`${c.row_id}:${c.column_id}`] = c; });
         setCells(cellMap);
       } else { setCells({}); }
-    } catch (err) { console.error('Switch table error:', err); toast.error('Failed to switch table'); }
+    } catch (err) { logger.error('Switch table error:', err); toast.error('Failed to switch table'); }
   }, [activeWorkspaceId, activeTableId]);
 
   const createNewTable = useCallback(async () => {
@@ -902,7 +903,7 @@ export default function RaiseEnrich() {
       setTables(prev => [...prev, newTable]);
       switchTable(newTable.id);
       toast.success(`Created ${newTable.name}`);
-    } catch (err) { console.error('Create table error:', err); toast.error('Failed to create table'); }
+    } catch (err) { logger.error('Create table error:', err); toast.error('Failed to create table'); }
   }, [activeWorkspaceId, tables.length, switchTable]);
 
   const renameTable = useCallback(async (tableId, newName) => {
@@ -933,7 +934,7 @@ export default function RaiseEnrich() {
       }
       setTables(prev => [...prev, newTable]);
       toast.success('Table duplicated');
-    } catch (err) { console.error('Duplicate table error:', err); toast.error('Failed to duplicate table'); }
+    } catch (err) { logger.error('Duplicate table error:', err); toast.error('Failed to duplicate table'); }
   }, [tables, activeWorkspaceId]);
 
   const deleteTable = useCallback(async (tableId) => {
@@ -991,7 +992,7 @@ export default function RaiseEnrich() {
       loadSnapshots();
       trackChange('snapshot_create', `Created snapshot "${snapshotName}"`);
     } catch (err) {
-      console.error('Create snapshot error:', err);
+      logger.error('Create snapshot error:', err);
       toast.error('Failed to create snapshot');
     }
   }, [snapshotName, snapshotDesc, activeWorkspaceId, columns, rows, cells, loadSnapshots, trackChange]);
@@ -1035,7 +1036,7 @@ export default function RaiseEnrich() {
       trackChange('snapshot_restore', `Restored snapshot "${snap.name}"`);
       loadWorkspaceDetail(activeWorkspaceId);
     } catch (err) {
-      console.error('Restore snapshot error:', err);
+      logger.error('Restore snapshot error:', err);
       toast.error('Failed to restore snapshot');
     }
   }, [activeWorkspaceId, rows, trackChange, loadWorkspaceDetail]);
@@ -1095,7 +1096,7 @@ export default function RaiseEnrich() {
       if (error) throw error;
       setWorkspaces(data || []);
     } catch (err) {
-      console.error('Error loading workspaces:', err);
+      logger.error('Error loading workspaces:', err);
       toast.error('Failed to load workspaces');
     } finally {
       setWorkspacesLoading(false);
@@ -1129,7 +1130,7 @@ export default function RaiseEnrich() {
       if (error) throw error;
       setNests(data || []);
     } catch (err) {
-      console.error('Error loading nests:', err);
+      logger.error('Error loading nests:', err);
     } finally {
       setNestsLoading(false);
     }
@@ -1164,7 +1165,7 @@ export default function RaiseEnrich() {
       loadWorkspaces();
       setActiveWorkspaceId(data.id);
     } catch (err) {
-      console.error('Error creating workspace:', err);
+      logger.error('Error creating workspace:', err);
       toast.error('Failed to create workspace');
     }
   }, [newWsName, newWsNestId, orgId, user?.id, loadWorkspaces]);
@@ -1199,7 +1200,7 @@ export default function RaiseEnrich() {
     try {
       await supabase.from('enrich_workspaces').update({ name: wsName.trim(), updated_at: new Date().toISOString() }).eq('id', workspace.id);
     } catch (err) {
-      console.error('Error updating name:', err);
+      logger.error('Error updating name:', err);
     }
   }, [wsName, workspace]);
 
@@ -1272,7 +1273,7 @@ export default function RaiseEnrich() {
       loadWorkspaceDetail(workspace.id);
     } catch (err) {
       toast.dismiss(loadingToast);
-      console.error('Import error:', err);
+      logger.error('Import error:', err);
       toast.error('Failed to import from nest');
     }
   }, [workspace, loadWorkspaceDetail]);
@@ -1423,7 +1424,7 @@ export default function RaiseEnrich() {
       loadWorkspaceDetail(activeWorkspaceId);
     } catch (err) {
       toast.dismiss(loadingToast);
-      console.error('CSV import error:', err);
+      logger.error('CSV import error:', err);
       toast.error(`Failed to import CSV: ${err.message}`);
     }
   }, [activeWorkspaceId, parseCSV, parseCSVRows, loadWorkspaceDetail, trackChange]);
@@ -1453,7 +1454,7 @@ export default function RaiseEnrich() {
       setHttpTestResult(null);
       loadWorkspaceDetail(activeWorkspaceId);
     } catch (err) {
-      console.error('Error adding column:', err);
+      logger.error('Error adding column:', err);
       toast.error('Failed to add column');
     }
   }, [colName, colType, colConfig, columns.length, activeWorkspaceId, loadWorkspaceDetail, trackChange]);
@@ -1470,7 +1471,7 @@ export default function RaiseEnrich() {
       trackChange('delete_column', `Deleted column "${col?.name}"`, { beforeValue: col ? { name: col.name, type: col.type, config: col.config, position: col.position, width: col.width } : null, metadata: { column_id: colId } });
       loadWorkspaceDetail(activeWorkspaceId);
     } catch (err) {
-      console.error('Error deleting column:', err);
+      logger.error('Error deleting column:', err);
       toast.error('Failed to delete column');
     }
   }, [activeWorkspaceId, loadWorkspaceDetail, columns, trackChange]);
@@ -1578,7 +1579,7 @@ export default function RaiseEnrich() {
         });
       }
     } catch (err) {
-      console.error('Error saving cell:', err);
+      logger.error('Error saving cell:', err);
       toast.error('Failed to save cell');
     }
   }, [cells, cellKey, columns, rows, trackChange]);
@@ -1727,7 +1728,7 @@ export default function RaiseEnrich() {
           }, { onConflict: 'row_id,column_id' });
           completed++;
         } catch (err) {
-          console.error(`Enrichment error row ${row.id}:`, err);
+          logger.error(`Enrichment error row ${row.id}:`, err);
           errors++;
           completed++;
           setCells(prev => ({ ...prev, [key]: { ...prev[key], status: 'error', error_message: err.message } }));
@@ -2750,7 +2751,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
       const finalMessages = [...updated, { role: 'assistant', content: assistantContent, timestamp: Date.now() }];
       saveChatHistory(finalMessages);
     } catch (err) {
-      console.error('Chat error:', err);
+      logger.error('Chat error:', err);
       const errMsg = { role: 'assistant', content: `Sorry, I encountered an error: ${err.message}. Make sure the raise-chat edge function is deployed.`, timestamp: Date.now() };
       setChatMessages(prev => [...prev, errMsg]);
     } finally {
@@ -2917,15 +2918,28 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                               if (!window.confirm(`Delete workspace "${ws.name}" and all its data?`)) return;
                               (async () => {
                                 try {
-                                  await supabase.from('enrich_cells').delete().eq('row_id', 'dummy').or(`column_id.in.(select id from enrich_columns where workspace_id='${ws.id}')`);
-                                  await supabase.from('enrich_cells').delete().in('row_id', (await supabase.from('enrich_rows').select('id').eq('workspace_id', ws.id)).data?.map(r => r.id) || []);
+                                  // Delete cells by column IDs (two-step to avoid SQL sub-select injection)
+                                  const { data: columnsToDelete } = await supabase
+                                    .from('enrich_columns')
+                                    .select('id')
+                                    .eq('workspace_id', ws.id);
+                                  const columnIds = (columnsToDelete || []).map(c => c.id);
+                                  if (columnIds.length > 0) {
+                                    await supabase.from('enrich_cells').delete().in('column_id', columnIds);
+                                  }
+                                  // Delete cells by row IDs
+                                  const { data: rowsToDelete } = await supabase.from('enrich_rows').select('id').eq('workspace_id', ws.id);
+                                  const rowIds = (rowsToDelete || []).map(r => r.id);
+                                  if (rowIds.length > 0) {
+                                    await supabase.from('enrich_cells').delete().in('row_id', rowIds);
+                                  }
                                   await supabase.from('enrich_rows').delete().eq('workspace_id', ws.id);
                                   await supabase.from('enrich_columns').delete().eq('workspace_id', ws.id);
                                   await supabase.from('enrich_workspaces').delete().eq('id', ws.id);
                                   toast.success('Workspace deleted');
                                   loadWorkspaces();
                                 } catch (err) {
-                                  console.error('Error deleting workspace:', err);
+                                  logger.error('Error deleting workspace:', err);
                                   toast.error('Failed to delete workspace');
                                 }
                               })();

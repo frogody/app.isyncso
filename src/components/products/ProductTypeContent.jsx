@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, DigitalProduct, PhysicalProduct, ServiceProduct, ProductCategory, Supplier } from "@/api/entities";
 import { supabase } from '@/api/supabaseClient';
+import { sanitizeSearchInput } from '@/utils/validation';
 import { ProductModal, ProductGridCard, ProductListRow, ProductTableView } from "@/components/products";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -408,7 +409,10 @@ export default function ProductTypeContent({ productType = 'all' }) {
 
       // Server-side search
       if (debouncedSearch.trim()) {
-        query = query.or(`name.ilike.%${debouncedSearch.trim()}%,ean.ilike.%${debouncedSearch.trim()}%,sku.ilike.%${debouncedSearch.trim()}%,tagline.ilike.%${debouncedSearch.trim()}%`);
+        const cleanSearch = sanitizeSearchInput(debouncedSearch.trim());
+        if (cleanSearch) {
+          query = query.or(`name.ilike.%${cleanSearch}%,ean.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%,tagline.ilike.%${cleanSearch}%`);
+        }
       }
 
       // Status filter

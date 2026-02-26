@@ -4,6 +4,7 @@
  */
 import { motion } from 'framer-motion';
 import { RefreshCw, Sparkles } from 'lucide-react';
+import { SafeHTML } from '@/components/ui/SafeHTML';
 import ImageGenerationCard from '../../shared/ImageGenerationCard';
 import RegenerateButton from '../../shared/RegenerateButton';
 
@@ -30,9 +31,10 @@ function MockupCard({ label, svg, aspect, onRegenerate }) {
         className="p-6 flex items-center justify-center bg-zinc-900/40"
         style={{ aspectRatio: aspect }}
       >
-        <div
+        <SafeHTML
+          html={svg || ''}
+          svg
           className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
-          dangerouslySetInnerHTML={{ __html: svg || '' }}
         />
       </div>
     </motion.div>
