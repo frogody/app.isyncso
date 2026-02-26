@@ -609,9 +609,9 @@ export default function Settings() {
   // IMPORTANT: All useEffect hooks MUST be called before any early returns
   // to comply with React's Rules of Hooks (consistent hook call order)
   
-  // Animate header on mount
+  // Animate header on mount (depends on userLoading so it re-fires after data loads)
   useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
+    if (userLoading || !headerRef.current || prefersReducedMotion()) return;
 
     animate({
       targets: headerRef.current,
@@ -620,11 +620,11 @@ export default function Settings() {
       duration: 500,
       easing: 'easeOutQuart',
     });
-  }, []);
+  }, [userLoading]);
 
-  // Animate content area when tab changes
+  // Animate content area when tab changes (depends on userLoading so it re-fires after data loads)
   useEffect(() => {
-    if (!contentRef.current || prefersReducedMotion()) return;
+    if (userLoading || !contentRef.current || prefersReducedMotion()) return;
 
     animate({
       targets: contentRef.current,
@@ -633,7 +633,7 @@ export default function Settings() {
       duration: 400,
       easing: 'easeOutQuad',
     });
-  }, [activeTab]);
+  }, [activeTab, userLoading]);
 
   if (userLoading || !user) {
     return (
@@ -689,7 +689,7 @@ export default function Settings() {
 
       <div className="relative z-10 w-full px-6 py-6 space-y-6">
         {/* Header */}
-        <div ref={headerRef} style={{ opacity: 0 }}>
+        <div ref={headerRef}>
           <div className="flex items-center justify-between">
             <PageHeader
               title="Settings"
@@ -712,7 +712,7 @@ export default function Settings() {
         </div>
 
         {/* Main Content */}
-        <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-4 gap-6" style={{ opacity: 0 }}>
+        <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
             <GlassCard className="p-4 sticky top-6">
