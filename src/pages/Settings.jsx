@@ -225,20 +225,6 @@ export default function Settings() {
     }
   }, [user, userSettings, company]);
 
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const { url } = await db.integrations.Core.UploadFile({ file, bucket: 'avatars' });
-      if (!url) throw new Error('Upload returned no URL');
-      setProfileForm(prev => ({ ...prev, avatar_url: url }));
-      await db.auth.updateMe({ avatar_url: url });
-      toast.success('Avatar updated!');
-    } catch (error) {
-      console.error("Failed to upload avatar:", error);
-      toast.error('Failed to upload avatar');
-    }
-  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -832,10 +818,24 @@ export default function Settings() {
                         <div>
                           <Label className={`${st('text-slate-500', 'text-zinc-400')} text-sm mb-2 block`}>Choose Avatar</Label>
                           <AvatarSelector
-                            selected={profileForm.avatar_url ? { id: profileForm.avatar_url } : null}
-                            onSelect={(avatar) => {
-                              const url = avatar.url || avatar.id;
-                              setProfileForm(prev => ({ ...prev, avatar_url: url }));
+                            selected={profileForm.avatar_url ? { id: profileForm.avatar_url, url: profileForm.avatar_url } : null}
+                            onSelect={async (avatar) => {
+                              if (avatar.file) {
+                                try {
+                                  const { url } = await db.integrations.Core.UploadFile({ file: avatar.file, bucket: 'avatars' });
+                                  if (url) {
+                                    setProfileForm(prev => ({ ...prev, avatar_url: url }));
+                                    await db.auth.updateMe({ avatar_url: url });
+                                    toast.success('Avatar uploaded!');
+                                  }
+                                } catch (error) {
+                                  console.error("Failed to upload avatar:", error);
+                                  toast.error('Failed to upload avatar');
+                                }
+                              } else {
+                                const url = avatar.url || avatar.id;
+                                setProfileForm(prev => ({ ...prev, avatar_url: url }));
+                              }
                             }}
                             allowUpload
                           />

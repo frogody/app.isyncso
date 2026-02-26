@@ -8,6 +8,7 @@ import {
   WelcomeStep,
   PersonaStep,
   CompanyStep,
+  AvatarStep,
   ProgressIndicator,
   PERSONAS
 } from "@/components/onboarding/OnboardingSteps";
@@ -25,6 +26,7 @@ export default function Onboarding() {
     persona: null,
     companyName: '',
     companyWebsite: '',
+    avatarUrl: '',
   });
 
   // Check if user was invited (already has company_id)
@@ -89,11 +91,15 @@ export default function Onboarding() {
       // 1. Update user profile — CRITICAL: must succeed for guard to pass
       let profileUpdated = false;
       try {
-        const result = await db.auth.updateMe({
+        const profileUpdate = {
           full_name: formData.fullName || user.full_name,
           job_title: formData.jobTitle,
-          onboarding_completed: true
-        });
+          onboarding_completed: true,
+        };
+        if (formData.avatarUrl) {
+          profileUpdate.avatar_url = formData.avatarUrl;
+        }
+        const result = await db.auth.updateMe(profileUpdate);
         profileUpdated = !!(result?.onboarding_completed);
         console.log('[Onboarding] Profile update result:', { profileUpdated, result });
       } catch (e) {
@@ -103,13 +109,17 @@ export default function Onboarding() {
       // Fallback: direct supabase update if updateMe failed
       if (!profileUpdated) {
         try {
+          const directUpdate = {
+            full_name: formData.fullName || user.full_name,
+            job_title: formData.jobTitle,
+            onboarding_completed: true,
+          };
+          if (formData.avatarUrl) {
+            directUpdate.avatar_url = formData.avatarUrl;
+          }
           const { data: directResult, error: directErr } = await supabase
             .from('users')
-            .update({
-              full_name: formData.fullName || user.full_name,
-              job_title: formData.jobTitle,
-              onboarding_completed: true
-            })
+            .update(directUpdate)
             .eq('id', user.id)
             .select('onboarding_completed')
             .single();
@@ -322,9 +332,9 @@ export default function Onboarding() {
   // STEP NAVIGATION
   // ─────────────────────────────────────────────
 
-  // For invited users: step 1 (Welcome) → step 2 (Persona) → submit
-  // For new users: step 1 (Welcome) → step 2 (Persona) → step 3 (Company) → submit
-  const totalSteps = isInvitedUser ? 2 : 3;
+  // For invited users: step 1 (Welcome) → step 2 (Persona) → step 3 (Avatar) → submit
+  // For new users: step 1 (Welcome) → step 2 (Persona) → step 3 (Company) → step 4 (Avatar) → submit
+  const totalSteps = isInvitedUser ? 3 : 4;
 
   const handleNext = () => {
     setStep(s => s + 1);
@@ -395,9 +405,9 @@ export default function Onboarding() {
                 key="persona"
                 data={formData}
                 onChange={updateFormData}
-                onNext={isInvitedUser ? handleSubmit : handleNext}
+                onNext={handleNext}
                 onBack={handleBack}
-                isLastStep={isInvitedUser}
+                isLastStep={false}
                 isSubmitting={isSubmitting}
               />
             )}
@@ -407,8 +417,21 @@ export default function Onboarding() {
                 key="company"
                 data={formData}
                 onChange={updateFormData}
-                onSubmit={handleSubmit}
+                onSubmit={handleNext}
                 onBack={handleBack}
+                isSubmitting={isSubmitting}
+              />
+            )}
+
+            {((step === 3 && isInvitedUser) || (step === 4 && !isInvitedUser)) && (
+              <AvatarStep
+                key="avatar"
+                data={formData}
+                onChange={updateFormData}
+                onNext={handleSubmit}
+                onBack={handleBack}
+                onSubmit={handleSubmit}
+                isLastStep={true}
                 isSubmitting={isSubmitting}
               />
             )}

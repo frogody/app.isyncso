@@ -4,12 +4,13 @@ import {
   User, Building2, ChevronRight, ChevronLeft, Globe,
   Users, Rocket, Shield, Briefcase, GraduationCap,
   TrendingUp, Euro, Palette, Package, Brain, Download,
-  Check, Sparkles
+  Check, Sparkles, UserCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import AvatarSelector from "@/components/shared/AvatarSelector";
 
 const fadeIn = {
   initial: { opacity: 0, y: 12 },
@@ -374,6 +375,80 @@ export function CompanyStep({ data, onChange, onSubmit, onBack, isSubmitting }) 
             </>
           )}
         </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Step 4: Avatar
+// ─────────────────────────────────────────────
+
+export function AvatarStep({ data, onChange, onNext, onBack, onSubmit, isLastStep, isSubmitting }) {
+  return (
+    <motion.div {...fadeIn} className="space-y-5">
+      <div className="text-center space-y-2">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 mb-1">
+          <UserCircle className="w-5 h-5 text-cyan-400" />
+        </div>
+        <h2 className="text-xl font-semibold text-white">Choose your avatar</h2>
+        <p className="text-zinc-500 text-xs max-w-sm mx-auto">
+          Pick a style and find one you like, or upload your own photo
+        </p>
+      </div>
+
+      <div className="max-w-md mx-auto">
+        <AvatarSelector
+          selected={data.avatarUrl ? { id: data.avatarUrl, url: data.avatarUrl } : null}
+          onSelect={(avatar) => onChange({ avatarUrl: avatar.url || avatar.id })}
+          allowUpload
+        />
+      </div>
+
+      <div className="flex justify-between pt-1 max-w-md mx-auto">
+        <Button variant="ghost" onClick={onBack} className="text-zinc-500 hover:text-zinc-300">
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+        <div className="flex items-center gap-2">
+          {!data.avatarUrl && (
+            <Button
+              variant="ghost"
+              onClick={isLastStep ? onSubmit : onNext}
+              disabled={isSubmitting}
+              className="text-zinc-500 hover:text-zinc-300 text-sm"
+            >
+              Skip for now
+            </Button>
+          )}
+          <Button
+            onClick={isLastStep ? onSubmit : onNext}
+            disabled={isSubmitting}
+            className={cn(
+              "h-10 px-6 text-white font-medium rounded-xl disabled:opacity-30",
+              isLastStep
+                ? "bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+                : "bg-white/5 hover:bg-white/10 border border-zinc-700 hover:border-zinc-600"
+            )}
+          >
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Setting up...
+              </div>
+            ) : isLastStep ? (
+              <>
+                Launch workspace
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </>
+            ) : (
+              <>
+                Continue
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </motion.div>
   );
