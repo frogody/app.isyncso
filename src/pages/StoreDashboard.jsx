@@ -1422,8 +1422,8 @@ function ChannelStatusCard({ channel, data, config, formatCurrency, navigate, sy
             <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
             <span className="text-xs text-blue-300">
               {syncResult.ordersSynced > 0
-                ? `Synced ${syncResult.ordersSynced} new orders (${syncResult.itemsSynced} items). ${syncResult.alreadySynced || 0} already up to date.`
-                : `All ${syncResult.alreadySynced || syncResult.ordersFound || 0} orders already synced.`}
+                ? `Synced ${syncResult.ordersSynced} new orders (${syncResult.itemsSynced} items). ${syncResult.alreadySynced || 0} already up to date.${syncResult.repaired ? ` Fixed ${syncResult.repaired} orders with missing prices.` : ''}`
+                : `All ${syncResult.alreadySynced || syncResult.ordersFound || 0} orders already synced.${syncResult.repaired ? ` Fixed ${syncResult.repaired} orders with missing prices.` : ''}`}
             </span>
           </div>
         )}

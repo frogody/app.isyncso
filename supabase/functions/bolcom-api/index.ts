@@ -2072,7 +2072,8 @@ serve(async (req) => {
           email?: string; deliveryPhoneNumber?: string;
         }
         interface OItem {
-          orderItemId: string; ean: string; quantity: number; unitPrice: number;
+          orderItemId: string; ean: string; quantity: number;
+          unitPrice?: number; offerPrice?: number;
           fulfilmentMethod?: string; fulfilmentStatus?: string;
           offer?: { offerId?: string; reference?: string };
           product?: { title?: string; ean?: string };
@@ -2263,7 +2264,7 @@ serve(async (req) => {
             items: c.orderItems.map(oi => ({
               id: oi.orderItemId, ean: oi.ean || oi.product?.ean || '',
               title: oi.product?.title || `EAN: ${oi.ean}`,
-              qty: oi.quantity, price: oi.unitPrice || 0,
+              qty: oi.quantity, price: oi.offerPrice || oi.unitPrice || 0,
               sku: oi.offer?.reference, fm: oi.fulfilmentMethod || 'FBB',
             })),
             shipTo: c.shipmentDetails, billTo: c.billingDetails,
@@ -2282,7 +2283,7 @@ serve(async (req) => {
               items: o.orderItems.map(oi => ({
                 id: oi.orderItemId, ean: oi.ean || oi.product?.ean || '',
                 title: oi.product?.title || `EAN: ${oi.ean}`,
-                qty: oi.quantity, price: oi.unitPrice || 0,
+                qty: oi.quantity, price: oi.offerPrice || oi.unitPrice || 0,
                 sku: oi.offer?.reference, fm: oi.fulfilmentMethod || 'FBB',
               })),
               shipTo: o.shipmentDetails, billTo: o.billingDetails,
@@ -2424,12 +2425,74 @@ serve(async (req) => {
           }
         }
 
+        // ── Phase 5: Auto-repair existing zero-total orders ──
+        // Use remaining budget to fix orders that were previously synced with €0 prices
+        let repaired = 0;
+        if (elapsed() < BUDGET_MS - 15_000) {
+          const { data: zeroOrders } = await supabase
+            .from("sales_orders")
+            .select("id, external_reference")
+            .eq("company_id", companyId)
+            .eq("source", "bolcom")
+            .eq("total", 0)
+            .limit(50);
+
+          if (zeroOrders?.length) {
+            console.log(`[bolcom-api] fetchOrders: auto-repairing ${zeroOrders.length} zero-total orders...`);
+            for (const order of zeroOrders) {
+              if (elapsed() > BUDGET_MS - 5_000) break;
+
+              // First try to get price from the order cache (already fetched)
+              const cached = orderCache.get(order.external_reference);
+              let orderTotal = 0;
+              const itemUpdates: Array<{ ean: string; price: number; qty: number }> = [];
+
+              if (cached?.orderItems?.length) {
+                for (const oi of cached.orderItems) {
+                  const price = (oi as any).offerPrice || (oi as any).unitPrice || 0;
+                  const qty = oi.quantity || 1;
+                  orderTotal += price * qty;
+                  itemUpdates.push({ ean: oi.ean || oi.product?.ean || '', price, qty });
+                }
+              }
+
+              // If cache didn't have prices, fetch the individual order
+              if (orderTotal === 0) {
+                const o = await rateLimitedFetch<BolOrder>(`/orders/${order.external_reference}`);
+                if (o?.orderItems?.length) {
+                  for (const oi of o.orderItems) {
+                    const price = (oi as any).offerPrice || (oi as any).unitPrice || 0;
+                    const qty = oi.quantity || 1;
+                    orderTotal += price * qty;
+                    itemUpdates.push({ ean: oi.ean || oi.product?.ean || '', price, qty });
+                  }
+                }
+              }
+
+              if (orderTotal > 0) {
+                await supabase.from("sales_orders").update({ total: orderTotal, subtotal: orderTotal }).eq("id", order.id);
+                // Update item prices
+                for (const item of itemUpdates) {
+                  if (item.price > 0) {
+                    await supabase.from("sales_order_items")
+                      .update({ unit_price: item.price, line_total: item.price * item.qty })
+                      .eq("sales_order_id", order.id)
+                      .eq("ean", item.ean);
+                  }
+                }
+                repaired++;
+              }
+            }
+            console.log(`[bolcom-api] fetchOrders: repaired ${repaired} zero-total orders`);
+          }
+        }
+
         const totalElapsed = elapsed();
         // If we hit the budget limit during discovery, there may be more orders to fetch in a follow-up sync
         const hitBudgetDuringDiscovery = elapsed() >= BUDGET_MS * 0.9;
         const missedOrders = newIds.length - orderMap.size;
-        console.log(`[bolcom-api] fetchOrders done (${totalElapsed}ms): ${ordersSynced} orders, ${itemsSynced} items, ${missedOrders} missed, hitBudget=${hitBudgetDuringDiscovery}`);
-        result = { success: true, data: { ordersFound: allIds.length, ordersSynced, itemsSynced, customersCreated, alreadySynced: existingSet.size, fetchErrors, elapsed: totalElapsed, needsMore: hitBudgetDuringDiscovery || missedOrders > 0 } };
+        console.log(`[bolcom-api] fetchOrders done (${totalElapsed}ms): ${ordersSynced} orders, ${itemsSynced} items, ${repaired} repaired, ${missedOrders} missed, hitBudget=${hitBudgetDuringDiscovery}`);
+        result = { success: true, data: { ordersFound: allIds.length, ordersSynced, itemsSynced, customersCreated, alreadySynced: existingSet.size, repaired, fetchErrors, elapsed: totalElapsed, needsMore: hitBudgetDuringDiscovery || missedOrders > 0 } };
         break;
       }
 
