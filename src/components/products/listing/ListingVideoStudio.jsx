@@ -44,9 +44,15 @@ const VIDEO_PRESETS = [
     label: 'Product Spotlight',
     description: 'A cinematic 360-degree showcase of your product with dramatic lighting',
     icon: Camera,
-    duration: 5,
+    duration: 6,
     gradient: 'from-cyan-500/20 via-blue-500/10 to-transparent',
-    prompt: 'A cinematic 360-degree rotating product showcase with dramatic studio lighting, dark background, smooth camera movement, professional commercial style.',
+    prompt: [
+      'Camera movement: Begin with a slow dolly-in toward the product from a wide establishing shot, then transition into a smooth 180-degree orbit around the product at a slight low angle, revealing all sides and details. End with a slow push-in to a hero close-up of the product\'s most distinctive feature.',
+      'Lighting: Professional studio lighting — dramatic rim lighting with deep shadows on a dark background, gradually introducing fill light as the camera orbits to reveal surface details and material quality.',
+      'Pace: Smooth and deliberate. No fast cuts or jerky movements. Each movement flows naturally into the next with cinematic easing. Real-time speed, no slow motion.',
+      'Style: Premium commercial product film — the visual quality of an Apple or Dyson product video. Shallow depth of field keeping the product razor-sharp while the background falls away into soft bokeh.',
+      'Keep the product exactly as shown in the reference image. Do not alter, modify, or reimagine the product in any way.',
+    ].join(' '),
   },
   {
     id: 'walkthrough',
@@ -55,7 +61,13 @@ const VIDEO_PRESETS = [
     icon: Lightbulb,
     duration: 8,
     gradient: 'from-blue-500/20 via-indigo-500/10 to-transparent',
-    prompt: 'A professional product feature walkthrough video highlighting key features one by one, clean modern style, smooth transitions between features, informative and engaging.',
+    prompt: [
+      'Camera movement: Start with a wide hero shot establishing the full product, then smoothly transition through a series of slow push-in macro close-ups highlighting different key features and details one by one. Use smooth rack focus between foreground and background elements.',
+      'Lighting: Clean, bright studio lighting with soft diffusion. Subtle directional light shifts as the camera moves to accentuate textures, buttons, ports, labels, and material finishes.',
+      'Pace: Methodical and informative. Each feature gets 1-2 seconds of focused attention before the camera glides to the next. Real-time speed, no slow motion.',
+      'Style: High-end product review cinematography. Think professional tech review B-roll — crisp, clean, editorial quality. Shallow depth of field on details.',
+      'Keep the product exactly as shown in the reference image. Do not alter, modify, or reimagine the product in any way.',
+    ].join(' '),
   },
   {
     id: 'lifestyle',
@@ -64,25 +76,37 @@ const VIDEO_PRESETS = [
     icon: Eye,
     duration: 8,
     gradient: 'from-emerald-500/20 via-teal-500/10 to-transparent',
-    prompt: 'A lifestyle product demonstration video showing the product being used naturally in a real-world setting, warm natural lighting, authentic feel, aspirational lifestyle context.',
+    prompt: [
+      'Camera movement: Begin with a wide establishing shot of a beautiful, naturally-lit real-world environment, then smoothly dolly in to reveal the product in context. Orbit gently around the scene showing the product from multiple angles in its natural setting.',
+      'Lighting: Warm, golden-hour natural lighting streaming through windows. Soft ambient fill with gentle shadows creating depth and atmosphere. The product is naturally illuminated within the scene.',
+      'Pace: Relaxed and aspirational. Smooth, flowing camera movements that feel like a high-end lifestyle commercial. Real-time speed, no slow motion. Each shot lingers just enough to convey the mood.',
+      'Style: Premium lifestyle commercial — the visual quality of a Restoration Hardware or Bang & Olufsen ad. Beautiful environment, shallow depth of field, warm color grading, cinematic composition.',
+      'Keep the product exactly as shown in the reference image. Do not alter, modify, or reimagine the product in any way.',
+    ].join(' '),
   },
   {
     id: 'unboxing',
     label: 'Unboxing Experience',
     description: 'A satisfying unboxing reveal of the product',
     icon: Box,
-    duration: 10,
+    duration: 8,
     gradient: 'from-amber-500/20 via-orange-500/10 to-transparent',
-    prompt: 'A satisfying product unboxing reveal video, premium packaging being opened, dramatic reveal moment, close-up details, ASMR-style smooth movements, excitement and anticipation.',
+    prompt: [
+      'Camera movement: Start with a top-down overhead shot of premium packaging, then slowly push in as the box opens. Transition to a low-angle shot as the product is revealed, finishing with a smooth orbit around the unboxed product sitting on its packaging.',
+      'Lighting: Dramatic studio lighting with a strong key light from above creating premium shadows. Soft rim lighting outlines the product edges. The reveal moment gets a subtle lighting shift — darker to brighter as the product emerges.',
+      'Pace: Deliberate and satisfying. The unboxing is slow and premium — each layer of packaging is savored. The big reveal moment is smooth and dramatic. Real-time speed, no slow motion.',
+      'Style: Premium unboxing cinematography — the visual quality of an Apple product unboxing video. Clean backgrounds, meticulous staging, every detail feels intentional and luxurious.',
+      'Keep the product exactly as shown in the reference image. Do not alter, modify, or reimagine the product in any way.',
+    ].join(' '),
   },
 ];
 
 const GENERATION_MESSAGES = [
-  'Preparing scene...',
-  'Composing shots...',
-  'Rendering frames...',
-  'Adding motion...',
-  'Applying effects...',
+  'Generating cinematic reference frame...',
+  'Composing the scene...',
+  'Starting video generation with Veo 3.1...',
+  'Rendering cinematic motion...',
+  'Applying camera movement...',
   'Finalizing video...',
 ];
 
@@ -499,6 +523,21 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
     [product, details]
   );
 
+  // Collect product reference images for FLUX Kontext
+  const productReferenceImages = useMemo(() => {
+    const imgs = [];
+    if (product?.featured_image?.url) imgs.push(product.featured_image.url);
+    else if (typeof product?.featured_image === 'string' && product.featured_image) imgs.push(product.featured_image);
+    if (listing?.hero_image_url) imgs.push(listing.hero_image_url);
+    if (Array.isArray(product?.gallery)) {
+      product.gallery.forEach((g) => {
+        const url = typeof g === 'string' ? g : g?.url;
+        if (url && !imgs.includes(url)) imgs.push(url);
+      });
+    }
+    return imgs.slice(0, 4);
+  }, [product, listing]);
+
   const generateVideo = useCallback(
     async (prompt, duration, presetLabel) => {
       setIsGenerating(true);
@@ -508,17 +547,71 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
       startStatusCycle();
 
       try {
-        const imageUrl =
-          product?.featured_image?.url ||
-          product?.featured_image ||
-          listing?.hero_image_url ||
-          null;
+        // ── Step 1: Generate a cinematic motion frame via FLUX ────────
+        // This dramatically improves Veo output quality
+        let motionFrameUrl = null;
+        const productIdentity = product?.name || 'the product';
 
-        const { data, error: fnError } = await supabase.functions.invoke('generate-video', {
+        const framePrompt = [
+          `Generate a cinematic opening frame for a product video of the ${productIdentity}.`,
+          product?.description ? `Product: ${product.description.substring(0, 150)}.` : '',
+          `The product must look EXACTLY like the reference image(s) — identical shape, color, material, branding, and every visual detail.`,
+          `Setting: Dark reflective surface — polished black acrylic or obsidian — in a controlled studio environment. Deep black background with no visible edges or seams.`,
+          `Lighting: Dramatic three-point cinematic lighting — cool-toned key light at 30 degrees creating defined highlights on the product surface, subtle blue rim light from behind for edge definition, warm accent light from below reflecting off the surface.`,
+          `Composition: Wide 16:9 cinematic frame. Product positioned at center-right using golden ratio. Shot from slightly below eye level for a heroic, commanding perspective.`,
+          `Mood: Premium commercial film still. The kind of frame that opens a 30-second product reveal ad. High contrast, rich shadows, polished and luxurious.`,
+          `Technical: Anamorphic lens look, slight vignette on edges, 24fps motion-picture color science.`,
+        ].filter(Boolean).join('\n');
+
+        try {
+          console.log('[ListingVideoStudio] Step 1: Generating cinematic motion frame...');
+          const { data: imgData, error: imgError } = await supabase.functions.invoke('generate-image', {
+            body: {
+              prompt: framePrompt,
+              product_name: product?.name,
+              product_images: productReferenceImages,
+              use_case: productReferenceImages.length > 0 ? 'product_scene' : 'marketing_creative',
+              model_key: 'nano-banana-pro',
+              style: 'photorealistic',
+              aspect_ratio: '16:9',
+              width: 1280,
+              height: 720,
+              company_id: listing?.company_id,
+              user_id: null,
+              reference_image_url: productReferenceImages[0] || null,
+              is_physical_product: true,
+            },
+          });
+          if (!imgError && imgData?.url) {
+            motionFrameUrl = imgData.url;
+            console.log('[ListingVideoStudio] Motion frame generated:', motionFrameUrl);
+          } else {
+            console.warn('[ListingVideoStudio] Motion frame generation failed, using product image as fallback');
+          }
+        } catch (frameErr) {
+          console.warn('[ListingVideoStudio] Motion frame error, continuing:', frameErr.message);
+        }
+
+        // Fallback to product's existing images
+        const videoReferenceUrl = motionFrameUrl || productReferenceImages[0] || null;
+
+        if (!videoReferenceUrl) {
+          throw new Error('No product image available. Upload a product image first.');
+        }
+
+        // ── Step 2: Generate video via Veo 3.1 (same as listing builder) ──
+        console.log('[ListingVideoStudio] Step 2: Generating video with Veo 3.1...');
+
+        const { data, error: fnError } = await supabase.functions.invoke('generate-fashion-video', {
           body: {
+            image_url: videoReferenceUrl,
             prompt,
-            image_url: imageUrl,
-            duration: duration || 5,
+            model_key: 'veo-3.1-fast',
+            duration_seconds: duration || 6,
+            aspect_ratio: '16:9',
+            generate_audio: false,
+            company_id: listing?.company_id,
+            user_id: null,
           },
         });
 
@@ -532,7 +625,6 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
               if (errBody?.all_errors?.length) {
                 console.error('[ListingVideoStudio] all API errors:', JSON.stringify(errBody.all_errors, null, 2));
               }
-              // Show quota/rate limit errors clearly
               const allStr = JSON.stringify(errBody?.all_errors || []);
               if (allStr.includes('quota') || allStr.includes('429') || allStr.includes('rate')) {
                 errorMsg = 'API rate limit reached. Please wait a few minutes and try again.';
@@ -553,14 +645,14 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
         }
 
         const videoUrl = data.videoUrl || data.url;
-        const thumbnailUrl = data.thumbnail_url || data.thumbnailUrl || null;
+        const thumbnailUrl = data.thumbnail_url || data.thumbnailUrl || motionFrameUrl || null;
 
         const videoRecord = {
           url: videoUrl,
           thumbnail_url: thumbnailUrl,
           prompt,
           preset_label: presetLabel || 'Custom',
-          duration: duration || 5,
+          duration: duration || 6,
           created_at: new Date().toISOString(),
         };
 
@@ -576,7 +668,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
             thumbnail_url: thumbnailUrl,
             prompt,
             preset_label: presetLabel || 'Custom',
-            duration: duration || 5,
+            duration: duration || 6,
           });
           loadVideoHistory();
         } catch {
@@ -593,7 +685,7 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
         stopStatusCycle();
       }
     },
-    [product, listing, channel, startStatusCycle, stopStatusCycle, loadVideoHistory]
+    [product, listing, channel, productReferenceImages, startStatusCycle, stopStatusCycle, loadVideoHistory]
   );
 
   const handlePresetGenerate = useCallback(
