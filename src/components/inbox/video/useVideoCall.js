@@ -422,10 +422,7 @@ export function useVideoCall(userId, companyId, userName) {
     if (!currentCall || !userId) return;
 
     try {
-      // Close all WebRTC peer connections
-      removeAllPeers();
-
-      // Mark participant as left
+      // Mark participant as left — best-effort
       await supabase
         .from('call_participants')
         .update({ left_at: new Date().toISOString() })
@@ -433,11 +430,20 @@ export function useVideoCall(userId, companyId, userName) {
         .eq('user_id', userId)
         .is('left_at', null);
 
-      // Disconnect provider
-      const provider = getProvider();
-      await provider.disconnect();
+      toast.success('Left video call');
+    } catch (error) {
+      console.error('[useVideoCall] Failed to leave call:', error);
+      toast.error('Failed to leave call');
+    } finally {
+      // ALWAYS clean up local state and media, even if DB call fails
+      removeAllPeers();
+      try {
+        const provider = getProvider();
+        await provider.disconnect();
+      } catch (e) {
+        console.warn('[useVideoCall] Provider disconnect error:', e);
+      }
 
-      // Clean up subscription
       if (subscriptionRef.current) {
         supabase.removeChannel(subscriptionRef.current);
         subscriptionRef.current = null;
@@ -449,11 +455,6 @@ export function useVideoCall(userId, companyId, userName) {
       setIsMuted(false);
       setIsCameraOff(false);
       setIsScreenSharing(false);
-
-      toast.success('Left video call');
-    } catch (error) {
-      console.error('[useVideoCall] Failed to leave call:', error);
-      toast.error('Failed to leave call');
     }
   }, [currentCall, userId, getProvider, removeAllPeers]);
 
@@ -464,27 +465,36 @@ export function useVideoCall(userId, companyId, userName) {
     const targetId = callId || currentCall?.id;
     if (!targetId) return;
 
+    const isCurrentCall = currentCall?.id === targetId;
+
     try {
-      await supabase
-        .from('video_calls')
-        .update({
-          status: 'ended',
-          ended_at: new Date().toISOString(),
-        })
-        .eq('id', targetId);
+      // DB updates — best-effort, don't block UI cleanup
+      await Promise.allSettled([
+        supabase
+          .from('video_calls')
+          .update({ status: 'ended', ended_at: new Date().toISOString() })
+          .eq('id', targetId),
+        supabase
+          .from('call_participants')
+          .update({ left_at: new Date().toISOString() })
+          .eq('call_id', targetId)
+          .is('left_at', null),
+      ]);
 
-      // Mark all remaining participants as left
-      await supabase
-        .from('call_participants')
-        .update({ left_at: new Date().toISOString() })
-        .eq('call_id', targetId)
-        .is('left_at', null);
-
-      // Disconnect provider if this is our current call
-      if (currentCall?.id === targetId) {
+      toast.success('Video call ended');
+    } catch (error) {
+      console.error('[useVideoCall] Failed to end call:', error);
+      toast.error('Failed to end call');
+    } finally {
+      // ALWAYS clean up local state and media, even if DB calls fail
+      if (isCurrentCall) {
         removeAllPeers();
-        const provider = getProvider();
-        await provider.disconnect();
+        try {
+          const provider = getProvider();
+          await provider.disconnect();
+        } catch (e) {
+          console.warn('[useVideoCall] Provider disconnect error:', e);
+        }
 
         if (subscriptionRef.current) {
           supabase.removeChannel(subscriptionRef.current);
@@ -495,11 +505,6 @@ export function useVideoCall(userId, companyId, userName) {
         setParticipants([]);
         setIsInCall(false);
       }
-
-      toast.success('Video call ended');
-    } catch (error) {
-      console.error('[useVideoCall] Failed to end call:', error);
-      toast.error('Failed to end call');
     }
   }, [currentCall, getProvider, removeAllPeers]);
 
