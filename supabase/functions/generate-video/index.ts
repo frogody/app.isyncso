@@ -12,9 +12,8 @@ const GOOGLE_VEO_API_KEY = Deno.env.get("GOOGLE_VEO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Available Veo models (all support predictLongRunning)
+// Models to try in order — matching the working fashion-video pattern
 const MODEL_IDS = [
-  'veo-3.0-fast-generate-001',
   'veo-3.0-generate-001',
   'veo-2.0-generate-001',
 ];
@@ -125,7 +124,7 @@ serve(async (req) => {
       user_id,
     } = body;
 
-    const duration = body.duration || body.duration_seconds || 5;
+    const duration = body.duration || body.duration_seconds || 8;
     const aspectRatio = body.aspect_ratio || '16:9';
 
     // ── Credit check ─────────────────────────────────────────────────
@@ -172,6 +171,7 @@ serve(async (req) => {
     }
 
     // ── Step 2: Call Veo predictLongRunning API ─────────────────────────
+    // Uses x-goog-api-key header (matching the working generate-fashion-video pattern)
     let videoUrl: string | null = null;
     let usedModel = 'unknown';
     let lastApiError = '';
@@ -189,15 +189,18 @@ serve(async (req) => {
 
       try {
         const veoResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey,
+            },
             body: JSON.stringify({
               instances: [instance],
               parameters: {
                 aspectRatio: aspectRatio,
-                durationSeconds: Math.min(8, Math.max(5, Number(duration) || 5)),
+                durationSeconds: Number(duration) || 8,
               },
             }),
           }
@@ -222,7 +225,9 @@ serve(async (req) => {
           const immediateUri = findVideoUri(veoData);
           if (immediateUri) {
             console.log('Immediate video URI found');
-            const videoResp = await fetch(immediateUri.includes('key=') ? immediateUri : `${immediateUri}?key=${apiKey}`);
+            const videoResp = await fetch(immediateUri, {
+              headers: { 'x-goog-api-key': apiKey },
+            });
             if (videoResp.ok) {
               const videoBytes = new Uint8Array(await videoResp.arrayBuffer());
               const fileName = `videos/product-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.mp4`;
@@ -233,6 +238,7 @@ serve(async (req) => {
           if (!videoUrl) {
             lastApiError = `${modelId}: no operation name and no immediate result`;
             console.error(lastApiError, JSON.stringify(veoData).substring(0, 500));
+            allErrors.push(lastApiError);
           }
           continue;
         }
@@ -245,11 +251,11 @@ serve(async (req) => {
           await new Promise(r => setTimeout(r, 5000));
 
           try {
-            const pollUrl = operationName.startsWith('http')
-              ? `${operationName}${operationName.includes('?') ? '&' : '?'}key=${apiKey}`
-              : `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`;
-
-            const statusRes = await fetch(pollUrl);
+            // Use header-based auth for polling (matching fashion-video)
+            const statusRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/${operationName}`,
+              { headers: { 'x-goog-api-key': apiKey } }
+            );
 
             if (!statusRes.ok) {
               const statusErr = await statusRes.text();
@@ -266,16 +272,22 @@ serve(async (req) => {
               if (statusData.error) {
                 console.error('Operation error:', JSON.stringify(statusData.error).substring(0, 500));
                 lastApiError = `${modelId}: ${JSON.stringify(statusData.error).substring(0, 300)}`;
+                allErrors.push(lastApiError);
                 break;
               }
+
+              const responseStr = JSON.stringify(statusData.response || statusData);
+              console.log('Response structure:', responseStr.substring(0, 500));
 
               // Try to find video URI in the response
               const foundUri = findVideoUri(statusData.response || statusData);
 
               if (foundUri) {
                 console.log(`Found video URI: ${foundUri.substring(0, 120)}`);
-                const downloadUrl = foundUri.includes('key=') ? foundUri : `${foundUri}?key=${apiKey}`;
-                const videoResp = await fetch(downloadUrl);
+                // Download with header auth (matching fashion-video)
+                const videoResp = await fetch(foundUri, {
+                  headers: { 'x-goog-api-key': apiKey },
+                });
                 if (videoResp.ok) {
                   const videoBytes = new Uint8Array(await videoResp.arrayBuffer());
                   console.log(`Downloaded video: ${videoBytes.length} bytes`);
@@ -284,14 +296,17 @@ serve(async (req) => {
                   usedModel = modelId;
                   console.log(`Uploaded to storage: ${videoUrl}`);
                 } else {
-                  console.error(`Video download failed: ${videoResp.status}`);
+                  const dlErr = await videoResp.text().catch(() => '');
+                  console.error(`Video download failed: ${videoResp.status}`, dlErr.substring(0, 200));
                   lastApiError = `${modelId}: video download failed (${videoResp.status})`;
+                  allErrors.push(lastApiError);
                 }
               } else {
                 // Check for inline base64
                 const inlinePaths = [
                   statusData.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.inlineData,
                   statusData.response?.generatedSamples?.[0]?.video?.inlineData,
+                  statusData.response?.generatedSamples?.[0]?.inlineData,
                 ];
                 for (const inlineData of inlinePaths) {
                   if (inlineData?.data) {
@@ -305,9 +320,9 @@ serve(async (req) => {
                 }
 
                 if (!videoUrl) {
-                  const respStr = JSON.stringify(statusData.response || statusData).substring(0, 1000);
-                  console.error('Done but no video found:', respStr);
+                  console.error('Done but no video found:', responseStr.substring(0, 1000));
                   lastApiError = `${modelId}: done but no video in response`;
+                  allErrors.push(lastApiError);
                 }
               }
               break;
@@ -323,6 +338,7 @@ serve(async (req) => {
       } catch (modelErr: any) {
         console.error(`${modelId} exception:`, modelErr.message);
         lastApiError = `${modelId}: ${modelErr.message}`;
+        allErrors.push(lastApiError);
       }
 
       if (videoUrl) break;

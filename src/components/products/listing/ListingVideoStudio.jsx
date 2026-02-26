@@ -522,7 +522,23 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
           },
         });
 
-        if (fnError) throw fnError;
+        // Extract actual error details from edge function response
+        if (fnError) {
+          let errorMsg = fnError.message || 'Video generation failed';
+          try {
+            // FunctionsHttpError has response body in context
+            if (fnError.context) {
+              const errBody = await fnError.context.json();
+              errorMsg = errBody?.error || errBody?.debug_last_error || errorMsg;
+              if (errBody?.all_errors?.length) {
+                console.error('[ListingVideoStudio] all API errors:', errBody.all_errors);
+              }
+            }
+          } catch {
+            // context parsing failed, use original message
+          }
+          throw new Error(errorMsg);
+        }
 
         if (data?.error) {
           throw new Error(data.error);
