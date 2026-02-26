@@ -209,6 +209,87 @@ function SectionNav({ activeSection, onSectionChange, productType }) {
   );
 }
 
+// ============= PRODUCT VIDEOS SECTION =============
+
+function ProductVideosSection({ productId }) {
+  const { t } = useTheme();
+  const [videos, setVideos] = useState([]);
+  const [playingId, setPlayingId] = useState(null);
+  const videoRefs = useRef({});
+
+  useEffect(() => {
+    if (!productId) return;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('product_listing_videos')
+          .select('id, video_url, thumbnail_url, preset_label, duration, created_at')
+          .eq('product_id', productId)
+          .order('created_at', { ascending: false })
+          .limit(6);
+        setVideos(data || []);
+      } catch { /* ignore */ }
+    })();
+  }, [productId]);
+
+  if (!videos.length) return null;
+
+  const togglePlay = (id) => {
+    const el = videoRefs.current[id];
+    if (!el) return;
+    if (playingId === id) {
+      el.pause();
+      setPlayingId(null);
+    } else {
+      // Pause any other playing video
+      Object.entries(videoRefs.current).forEach(([k, v]) => {
+        if (k !== id && v) v.pause();
+      });
+      el.play();
+      setPlayingId(id);
+    }
+  };
+
+  return (
+    <div className={cn("border rounded-xl p-3", t('bg-white', 'bg-zinc-900/50'), t('border-slate-200', 'border-zinc-800/60'))}>
+      <div className="flex items-center gap-2 mb-3">
+        <Video className="w-4 h-4 text-cyan-400" />
+        <h4 className={cn("text-sm font-medium", t('text-slate-900', 'text-white'))}>Generated Videos</h4>
+        <span className={cn("text-xs", t('text-slate-500', 'text-zinc-500'))}>{videos.length}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {videos.map((v) => (
+          <div
+            key={v.id}
+            className="relative group rounded-lg overflow-hidden cursor-pointer aspect-video bg-black"
+            onClick={() => togglePlay(v.id)}
+          >
+            <video
+              ref={(el) => { videoRefs.current[v.id] = el; }}
+              src={v.video_url}
+              className="w-full h-full object-cover"
+              loop
+              muted
+              playsInline
+              onEnded={() => setPlayingId(null)}
+            />
+            {playingId !== v.id && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                <Play className="w-6 h-6 text-white fill-white" />
+              </div>
+            )}
+            {v.preset_label && (
+              <div className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-gradient-to-t from-black/70 to-transparent">
+                <p className="text-[10px] text-white/80 truncate">{v.preset_label}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ============= OVERVIEW SECTION =============
 
 function OverviewSection({
@@ -285,6 +366,9 @@ function OverviewSection({
             </div>
           </div>
         )}
+
+        {/* Generated Videos */}
+        <ProductVideosSection productId={product.id} />
       </div>
 
       {/* Right Column - Details */}

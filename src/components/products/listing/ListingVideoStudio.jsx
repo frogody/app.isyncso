@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
+import { useUser } from '@/components/context/UserContext';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -467,8 +468,34 @@ function HistoryCard({ video, onPreview, onUse, isActive, t }) {
 // Main component
 // ---------------------------------------------------------------------------
 
+// Helper: save generated video to the Content Library (generated_content table)
+async function saveVideoToLibrary(url, { companyId, userId, productId, productName, label, prompt = '' }) {
+  try {
+    await supabase.from('generated_content').insert({
+      company_id: companyId,
+      created_by: userId,
+      content_type: 'video',
+      status: 'completed',
+      url,
+      thumbnail_url: url,
+      name: `${productName || 'Product'} - ${label}`,
+      generation_config: {
+        source: 'video_studio',
+        label,
+        prompt: prompt?.substring?.(0, 500) || '',
+        product_id: productId,
+      },
+      product_context: { product_id: productId },
+      tags: ['video_studio', label.toLowerCase().replace(/\s+/g, '_')],
+    });
+  } catch (err) {
+    console.warn('[saveVideoToLibrary] Failed:', err.message);
+  }
+}
+
 export default function ListingVideoStudio({ product, details, listing, onUpdate, channel }) {
   const { t } = useTheme();
+  const { user } = useUser();
 
   // State
   const [selectedPreset, setSelectedPreset] = useState(null);
@@ -738,6 +765,16 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
           // non-critical
         }
 
+        // Save to Content Library so it appears in Library & product context
+        saveVideoToLibrary(videoUrl, {
+          companyId: listing?.company_id || user?.company_id,
+          userId: user?.id,
+          productId: product.id,
+          productName: product.name,
+          label: presetLabel || 'Custom Video',
+          prompt,
+        });
+
         toast.success('Video generated successfully');
       } catch (err) {
         console.error('[ListingVideoStudio] generation error:', err);
@@ -986,6 +1023,16 @@ export default function ListingVideoStudio({ product, details, listing, onUpdate
         });
         loadVideoHistory();
       } catch { /* non-critical */ }
+
+      // Save to Content Library
+      saveVideoToLibrary(videoUrl, {
+        companyId: listing?.company_id || user?.company_id,
+        userId: user?.id,
+        productId: product.id,
+        productName: product.name,
+        label: `UGC — ${ugcCreatorStyle.label}`,
+        prompt: veoPrompt,
+      });
 
       toast.success('UGC video generated successfully');
     } catch (err) {
