@@ -1,9 +1,10 @@
 -- Migrate existing ActionLog tasks to tasks table
 -- One-time migration: copies action_type='task' records from action_logs to tasks
+-- Note: action_logs does not have project_id, company_id, or metadata columns on tasks table
 
 INSERT INTO public.tasks (
-  title, description, status, priority, assigned_to, project_id,
-  due_date, metadata, created_date, updated_date, company_id, created_by, source
+  title, description, status, priority, assigned_to,
+  due_date, created_date, updated_date, created_by, source
 )
 SELECT
   COALESCE(al.title, al.action_description, 'Untitled Task'),
@@ -17,12 +18,9 @@ SELECT
   END,
   COALESCE(al.priority, 'medium'),
   al.user_id,
-  al.project_id,
   al.due_date,
-  COALESCE(al.metadata, '{}'),
   al.created_date,
   al.updated_date,
-  al.company_id,
   al.user_id,
   'migrated'
 FROM public.action_logs al
