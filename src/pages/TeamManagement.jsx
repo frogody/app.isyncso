@@ -25,6 +25,7 @@ import {
   Boxes, ToggleLeft, ToggleRight, UserMinus, ClipboardList
 } from "lucide-react";
 import TaskLog from "@/components/tasks/TaskLog";
+import TeamMemberBadge from "@/components/shared/TeamMemberBadge";
 import { createPageUrl } from "@/utils";
 
 // Role hierarchy colors and icons
@@ -923,7 +924,7 @@ export default function TeamManagement({ embedded = false }) {
 
           {/* TASK LOG TAB */}
           <TabsContent value="tasklog" className="space-y-4">
-            <TaskLog teamMembers={teamMembers} />
+            <TaskLog />
           </TabsContent>
         </Tabs>
       </div>
@@ -1100,9 +1101,7 @@ export default function TeamManagement({ embedded = false }) {
                     return (
                       <div key={tm.id} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-medium text-white">
-                            {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}
-                          </div>
+                          <TeamMemberBadge member={member} size="sm" />
                           <div>
                             <div className="text-sm text-white">{member.full_name || 'Unnamed'}</div>
                             <div className="text-xs text-zinc-500">{member.email}</div>
@@ -1132,9 +1131,7 @@ export default function TeamManagement({ embedded = false }) {
                   .map(member => (
                     <div key={member.id} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-medium text-white">
-                          {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}
-                        </div>
+                        <TeamMemberBadge member={member} size="sm" />
                         <div>
                           <div className="text-sm text-white">{member.full_name || 'Unnamed'}</div>
                           <div className="text-xs text-zinc-500">{member.email}</div>
@@ -1204,15 +1201,7 @@ function UserRow({ member, roles, currentUserId, isSuperAdmin, onAssignRole, onR
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="relative">
-          <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden">
-            {member.avatar_url ? (
-              <img src={member.avatar_url} alt="" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-zinc-400 text-lg font-semibold">
-                {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}
-              </div>
-            )}
-          </div>
+          <TeamMemberBadge member={member} size="md" />
           {isCurrentUser && (
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-cyan-500 rounded-full border-2 border-zinc-900" />
           )}
@@ -1561,12 +1550,9 @@ function TeamCard({ team, teamMembers, allApps, onEdit, onDelete, onToggleApp, o
                       return (
                         <div
                           key={tm.id}
-                          className="flex items-center gap-2 px-2 py-1 rounded-full bg-zinc-800/50 border border-zinc-700/50"
+                          className="flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-800/50 border border-zinc-700/50"
                         >
-                          <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-medium text-white">
-                            {member.full_name?.[0] || member.email?.[0]?.toUpperCase()}
-                          </div>
-                          <span className="text-xs text-zinc-300">{member.full_name || member.email}</span>
+                          <TeamMemberBadge member={member} size="xs" showName />
                         </div>
                       );
                     })}

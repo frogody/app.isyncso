@@ -185,7 +185,7 @@ function ChangesList({ items, t }) {
   );
 }
 
-function UserAvatar({ name, avatarUrl, t }) {
+function UserAvatar({ name, avatarUrl, userColor, t }) {
   const initials = (name || '?')
     .split(' ')
     .map(w => w[0])
@@ -196,11 +196,14 @@ function UserAvatar({ name, avatarUrl, t }) {
   const src = avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=0e7490&color=fff&size=64`;
 
   return (
-    <div className={cn(
-      "flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border",
-      t('border-slate-200', 'border-zinc-700/50')
-    )}>
-      <img src={src} alt={initials} className="w-full h-full object-cover"  loading="lazy" decoding="async" />
+    <div
+      className={cn(
+        "flex-shrink-0 w-8 h-8 rounded-full overflow-hidden border",
+        t('border-slate-200', 'border-zinc-700/50')
+      )}
+      style={userColor ? { boxShadow: `0 0 0 2px ${userColor}` } : undefined}
+    >
+      <img src={src} alt={initials} className="w-full h-full object-cover" loading="lazy" decoding="async" />
     </div>
   );
 }
@@ -210,7 +213,7 @@ function ActivityItem({ activity, t }) {
 
   return (
     <div className="flex gap-3 group">
-      <UserAvatar name={activity.user} avatarUrl={activity.avatarUrl} t={t} />
+      <UserAvatar name={activity.user} avatarUrl={activity.avatarUrl} userColor={activity.userColor} t={t} />
 
       <div className="flex-1 min-w-0 pb-4">
         <div className="flex items-start justify-between gap-2">

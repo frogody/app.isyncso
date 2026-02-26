@@ -45,6 +45,9 @@ import ProductFeedSettings from "@/components/settings/ProductFeedSettings";
 import FeedMasterRules from "@/components/settings/FeedMasterRules";
 import EmailPoolSettings from "@/pages/EmailPoolSettings";
 import BillingSettings from "@/pages/BillingSettings";
+import AvatarSelector from "@/components/shared/AvatarSelector";
+import UserAvatar from "@/components/shared/UserAvatar";
+import ColorPicker from "@/components/shared/ColorPicker";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateCompany, updateSettings, isLoading: userLoading } = useUser();
@@ -60,6 +63,7 @@ export default function Settings() {
   const [profileForm, setProfileForm] = useState({
     full_name: "",
     avatar_url: "",
+    user_color: "",
     linkedin_url: "",
     job_title: "",
     phone: "",
@@ -154,6 +158,7 @@ export default function Settings() {
       setProfileForm({
         full_name: user.full_name || "",
         avatar_url: user.avatar_url || "",
+        user_color: user.user_color || "#3B82F6",
         linkedin_url: user.linkedin_url || "",
         job_title: user.job_title || "",
         phone: user.phone || "",
@@ -728,14 +733,12 @@ export default function Settings() {
               {/* Profile Summary */}
               <div className={`flex items-center gap-4 p-4 mb-4 rounded-xl ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700/50')}`}>
                 <div className="relative">
-                  <div className={`w-14 h-14 rounded-full overflow-hidden border-2 ${st('border-slate-200', 'border-zinc-700/50')}`}>
-                    <img 
-                      src={profileForm.avatar_url || user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=0e7490&color=fff&size=128`}
-                      alt="Avatar"
-                      className="w-full h-full object-cover" 
-                     loading="lazy" decoding="async" />
+                  <div
+                    className="w-14 h-14 rounded-full"
+                    style={{ boxShadow: `0 0 0 2px ${user?.user_color || '#3B82F6'}` }}
+                  >
+                    <UserAvatar user={user} size="lg" className="w-14 h-14" />
                   </div>
-                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-cyan-500/70 border-2 ${st('border-white', 'border-zinc-900')}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className={`${st('text-slate-800', 'text-zinc-100')} font-semibold truncate`}>{user?.full_name || 'User'}</h3>
@@ -809,20 +812,38 @@ export default function Settings() {
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-6 mb-6">
-                      <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload').click()}>
-                        <div className={`w-24 h-24 rounded-2xl overflow-hidden border-2 border-cyan-500/30 ${st('bg-slate-200', 'bg-zinc-800')}`}>
-                          <img 
-                            src={profileForm.avatar_url || user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=0e7490&color=fff&size=128`}
-                            alt="Avatar"
-                            className="w-full h-full object-cover" 
-                           loading="lazy" decoding="async" />
+                      <div className="flex flex-col items-center gap-3">
+                        {/* Avatar preview with colored ring */}
+                        <div
+                          className="rounded-full p-1"
+                          style={{ boxShadow: `0 0 0 3px ${profileForm.user_color || '#3B82F6'}` }}
+                        >
+                          <UserAvatar user={{ ...user, avatar_url: profileForm.avatar_url || user?.avatar_url }} size="2xl" />
                         </div>
-                        <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Camera className="w-6 h-6 text-white" />
-                        </div>
-                        <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
+                        <span className={`text-xs ${st('text-slate-500', 'text-zinc-500')}`}>Your team color</span>
+                        <ColorPicker
+                          selected={profileForm.user_color}
+                          onSelect={(hex) => setProfileForm(prev => ({ ...prev, user_color: hex }))}
+                        />
                       </div>
 
+                      <div className="flex-1 space-y-4">
+                        {/* Avatar selector */}
+                        <div>
+                          <Label className={`${st('text-slate-500', 'text-zinc-400')} text-sm mb-2 block`}>Choose Avatar</Label>
+                          <AvatarSelector
+                            selected={profileForm.avatar_url ? { id: profileForm.avatar_url } : null}
+                            onSelect={(avatar) => {
+                              const url = avatar.url || avatar.id;
+                              setProfileForm(prev => ({ ...prev, avatar_url: url }));
+                            }}
+                            allowUpload
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-6 mb-6">
                       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label className={`${st('text-slate-500', 'text-zinc-400')} text-sm`}>Display Name</Label>

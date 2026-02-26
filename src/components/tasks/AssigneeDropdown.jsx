@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, User, Loader2 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
+import TeamMemberBadge from "@/components/shared/TeamMemberBadge";
 import {
   Select,
   SelectContent,
@@ -36,7 +37,7 @@ export default function AssigneeDropdown({
       try {
         const { data, error } = await supabase
           .from("users")
-          .select("id, full_name, email, avatar_url, role")
+          .select("id, full_name, email, avatar_url, user_color, role")
           .eq("company_id", companyId)
           .limit(50);
 
@@ -106,9 +107,7 @@ export default function AssigneeDropdown({
         <SelectValue placeholder={placeholder}>
           {selectedMember ? (
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] text-zinc-300 flex-shrink-0">
-                {selectedMember.full_name?.[0] || <User className="w-3 h-3" />}
-              </div>
+              <TeamMemberBadge member={selectedMember} size="xs" />
               <span className="truncate">{selectedMember.full_name || selectedMember.email}</span>
             </div>
           ) : (
@@ -149,9 +148,7 @@ export default function AssigneeDropdown({
             return (
               <SelectItem key={member.id} value={member.id}>
                 <div className="flex items-center gap-2 w-full">
-                  <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] text-zinc-300 flex-shrink-0">
-                    {member.full_name?.[0] || "?"}
-                  </div>
+                  <TeamMemberBadge member={member} size="xs" />
                   <div className="flex-1 min-w-0">
                     <span className="text-sm truncate">{member.full_name || member.email}</span>
                     {member.role && (

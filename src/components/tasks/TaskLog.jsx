@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import useTeamMembers from "@/hooks/useTeamMembers";
+import TeamMemberBadge from "@/components/shared/TeamMemberBadge";
 import {
   Search, ArrowUpDown, ArrowRight, Calendar, Clock,
   User, Filter, ChevronDown, ChevronRight as ChevronR,
@@ -28,34 +30,15 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString();
 }
 
-export default function TaskLog({ teamMembers = [] }) {
+export default function TaskLog() {
   const { user } = useUser();
+  const { memberMap, getMemberName, getMember } = useTeamMembers();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("delegated"); // delegated | received | all
   const [statusFilter, setStatusFilter] = useState("all");
   const [expandedRows, setExpandedRows] = useState(new Set());
-
-  // Build a lookup map of team members
-  const memberMap = useMemo(() => {
-    const map = {};
-    teamMembers.forEach((m) => {
-      map[m.id] = m;
-    });
-    if (user) map[user.id] = { id: user.id, full_name: user.full_name || "You", email: user.email };
-    return map;
-  }, [teamMembers, user]);
-
-  const getMemberName = useCallback(
-    (id) => {
-      if (!id) return "Unassigned";
-      if (id === user?.id) return "You";
-      const m = memberMap[id];
-      return m?.full_name || m?.email || id.slice(0, 8);
-    },
-    [memberMap, user?.id]
-  );
 
   // Fetch task log
   useEffect(() => {
@@ -288,9 +271,19 @@ export default function TaskLog({ teamMembers = [] }) {
 
                   {/* People flow */}
                   <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500 flex-shrink-0 min-w-[180px] justify-end">
-                    <span className="truncate max-w-[70px]">{getMemberName(task.created_by)}</span>
+                    <TeamMemberBadge
+                      member={getMember(task.created_by)}
+                      size="xs"
+                      nameOverride={getMemberName(task.created_by)}
+                      showName
+                    />
                     <ArrowRight className="w-3 h-3 text-zinc-600" />
-                    <span className="truncate max-w-[70px]">{getMemberName(task.assigned_to)}</span>
+                    <TeamMemberBadge
+                      member={getMember(task.assigned_to)}
+                      size="xs"
+                      nameOverride={getMemberName(task.assigned_to)}
+                      showName
+                    />
                   </div>
 
                   {/* Due date */}
@@ -313,13 +306,23 @@ export default function TaskLog({ teamMembers = [] }) {
                       <p className="text-zinc-400 text-xs">{task.description}</p>
                     )}
                     <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-500">
-                      <span className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        Created by: <span className="text-zinc-300">{getMemberName(task.created_by)}</span>
+                      <span className="flex items-center gap-1.5">
+                        Created by:
+                        <TeamMemberBadge
+                          member={getMember(task.created_by)}
+                          size="xs"
+                          nameOverride={getMemberName(task.created_by)}
+                          showName
+                        />
                       </span>
-                      <span className="flex items-center gap-1">
-                        <ArrowRight className="w-3 h-3" />
-                        Assigned to: <span className="text-zinc-300">{getMemberName(task.assigned_to)}</span>
+                      <span className="flex items-center gap-1.5">
+                        Assigned to:
+                        <TeamMemberBadge
+                          member={getMember(task.assigned_to)}
+                          size="xs"
+                          nameOverride={getMemberName(task.assigned_to)}
+                          showName
+                        />
                       </span>
                       <span className="flex items-center gap-1">
                         Status: <span className="text-zinc-300">{statusConf.label}</span>

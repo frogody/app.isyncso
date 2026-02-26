@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Users, Loader2 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
+import TeamMemberBadge from "@/components/shared/TeamMemberBadge";
 
 /**
  * Per-person workload visualization bar.
@@ -20,7 +21,7 @@ export default function WorkloadBar({ companyId, className = "" }) {
       try {
         const { data: users } = await supabase
           .from("users")
-          .select("id, full_name, email, avatar_url")
+          .select("id, full_name, email, avatar_url, user_color")
           .eq("company_id", companyId)
           .limit(20);
 
@@ -106,9 +107,7 @@ export default function WorkloadBar({ companyId, className = "" }) {
       <div className="space-y-2">
         {members.map((member) => (
           <div key={member.id} className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] text-zinc-300 flex-shrink-0">
-              {member.full_name?.[0] || "?"}
-            </div>
+            <TeamMemberBadge member={member} size="xs" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-0.5">
                 <span className="text-xs text-zinc-300 truncate">
