@@ -172,8 +172,8 @@ export function useTasks(options = {}) {
         is_draft: taskData.is_draft || false,
         created_by: user.id,
         company_id: user.company_id || null,
+        organization_id: user.organization_id || null,
         type: taskData.type || 'follow_up',
-        metadata: taskData.metadata || {},
       };
 
       const { data, error } = await supabase
