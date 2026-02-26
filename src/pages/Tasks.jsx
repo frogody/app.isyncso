@@ -504,7 +504,7 @@ export default function Tasks() {
           setShowModal(open);
           if (!open) { setEditingTask(null); setModalDefaults({}); }
         }}
-        task={editingTask ? { ...editingTask, ...modalDefaults } : modalDefaults.title ? modalDefaults : null}
+        task={editingTask ? { ...editingTask, ...modalDefaults } : Object.keys(modalDefaults).length > 0 ? modalDefaults : null}
         onSave={handleSaveTask}
         onDelete={handleDeleteTask}
         projects={projects}
