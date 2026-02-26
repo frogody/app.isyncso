@@ -293,7 +293,10 @@ export default function InboxPage() {
     if (callParam && user?.id && !videoCall.isInCall && !autoJoinAttempted.current) {
       autoJoinAttempted.current = true;
       setActiveHubTab('calls');
-      videoCall.joinCall(callParam).catch(() => {});
+      videoCall.joinCall(callParam).catch((err) => {
+        console.error('Failed to join call:', err);
+        toast.error('Could not join the call. It may have ended.');
+      });
     }
   }, [callParam, user?.id, videoCall.isInCall]);
 
@@ -365,6 +368,20 @@ export default function InboxPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Handle notification click — navigate to the clicked channel
+  useEffect(() => {
+    const handler = (e) => {
+      const { channelId } = e.detail;
+      if (channelId) {
+        const ch = [...realtimeChannels, ...resolvedDMs, ...resolvedSupportChannels]
+          .find(c => c.id === channelId);
+        if (ch) setSelectedChannel(ch);
+      }
+    };
+    window.addEventListener('notification-click', handler);
+    return () => window.removeEventListener('notification-click', handler);
+  }, [realtimeChannels, resolvedDMs, resolvedSupportChannels]);
 
   // Load team members once (realtime handles channels/messages)
   useEffect(() => {
@@ -1303,7 +1320,7 @@ export default function InboxPage() {
             {/* Connection Status Indicator */}
             {!isConnected && (
               <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10">
-                <div className="flex items-center gap-2 px-4 py-2 bg-amber-600/90 text-white text-sm font-medium rounded-full shadow-lg">
+                <div className="flex items-center gap-2 px-4 py-2 bg-cyan-600/90 text-white text-sm font-medium rounded-full shadow-lg">
                   <WifiOff className="w-4 h-4" />
                   Reconnecting...
                 </div>

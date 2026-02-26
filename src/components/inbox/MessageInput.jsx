@@ -63,7 +63,6 @@ export default function MessageInput({
   // Smart Compose - AI ghost-text suggestions
   const smartCompose = useSmartCompose({
     channelId,
-    userId: null,
     messageText: message,
     recentMessages: [],
   });

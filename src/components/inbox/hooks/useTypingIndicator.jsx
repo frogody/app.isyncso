@@ -56,17 +56,9 @@ export function useTypingIndicator(channelId, user) {
       setTypingUsers(typingNow);
     });
 
-    // Track when users join
-    channel.on('presence', { event: 'join' }, ({ key, newPresences }) => {
-      if (key !== user.id) {
-        console.log('[TypingIndicator] User joined:', key);
-      }
-    });
-
     // Track when users leave
     channel.on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
       if (key !== user.id) {
-        console.log('[TypingIndicator] User left:', key);
         setTypingUsers(prev => prev.filter(u => u.id !== key));
       }
     });
