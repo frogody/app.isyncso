@@ -1142,8 +1142,8 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         <div className="space-y-1">
           {filteredNavItems.map((item) => {
             const isActive = isNavItemActive(item, location.pathname);
-            // Check if this item has a secondary nav (CRM, Products)
-            const hasSecondaryNav = item.matchPatterns && (item.title === 'CRM' || item.title === 'Products');
+            // Check if this item has a secondary nav (CRM, Products, Projects)
+            const hasSecondaryNav = item.matchPatterns && (item.title === 'CRM' || item.title === 'Products' || item.title === 'Projects');
             const submenuId = item.title.toLowerCase();
 
             // Mobile: always use Link
