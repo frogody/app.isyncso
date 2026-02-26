@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { db } from "@/api/supabaseClient";
 import TermsAcceptanceGate from "./TermsAcceptanceGate";
 
 // Dynamically import to avoid circular dependencies
@@ -37,8 +38,6 @@ export default function OnboardingGuard({ children }) {
   useEffect(() => {
     const checkAuthAndOnboarding = async () => {
       try {
-        const { db } = await import("@/api/supabaseClient");
-
         // First check if user is authenticated
         const authStatus = await db.auth.isAuthenticated();
         setIsAuthenticated(authStatus);

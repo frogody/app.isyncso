@@ -2361,7 +2361,7 @@ export default function SyncAgent() {
       {/* Background effects */}
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className={cn(
-          'absolute left-[-15%] top-[-20%] h-[500px] w-[500px] rounded-full blur-[120px] transition-all duration-[2000ms]',
+          'absolute left-[-15%] top-[-20%] h-[500px] w-[500px] rounded-full blur-[120px] transition-all transition-duration-[2000ms]',
           mood === 'speaking'
             ? syt('bg-purple-200/20', 'bg-purple-900/15')
             : mood === 'thinking'
@@ -2369,7 +2369,7 @@ export default function SyncAgent() {
               : syt('bg-cyan-200/15', 'bg-cyan-900/8')
         )} />
         <div className={cn(
-          'absolute right-[-10%] top-[20%] h-[400px] w-[400px] rounded-full blur-[100px] transition-all duration-[2000ms]',
+          'absolute right-[-10%] top-[20%] h-[400px] w-[400px] rounded-full blur-[100px] transition-all transition-duration-[2000ms]',
           syt('bg-purple-200/10', 'bg-purple-900/8')
         )} />
         <div className={cn(

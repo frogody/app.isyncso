@@ -6,6 +6,7 @@
  */
 
 import * as db from '@/lib/db';
+import { supabase } from '@/api/supabaseClient';
 import { getInvoiceProcessorAgent } from '@/lib/agents/inventory';
 import type {
   Customer,
@@ -563,15 +564,14 @@ export async function completeShipping(
   // Auto-push Shopify fulfillment if order source is 'shopify' and auto_fulfill is on
   if (shippingTask.sales_order_id) {
     try {
-      const { supabase: sb } = await import('@/api/supabaseClient');
-      const { data: salesOrder } = await sb
+      const { data: salesOrder } = await supabase
         .from('sales_orders')
         .select('source, shopify_order_id, company_id')
         .eq('id', shippingTask.sales_order_id)
         .single();
 
       if (salesOrder?.source === 'shopify' && salesOrder.shopify_order_id) {
-        const { data: creds } = await sb
+        const { data: creds } = await supabase
           .from('shopify_credentials')
           .select('auto_fulfill')
           .eq('company_id', salesOrder.company_id)
@@ -937,7 +937,7 @@ export async function verifyScanItem(
   ean: string
 ): Promise<{ item: PalletItem; isComplete: boolean }> {
   // Find the pallet item matching this EAN
-  const { data: items, error } = await (await import('@/api/supabaseClient')).supabase
+  const { data: items, error } = await supabase
     .from('pallet_items')
     .select(`*, products (id, name, sku, ean)`)
     .eq('pallet_id', palletId)
@@ -1179,7 +1179,6 @@ export async function syncBolcomReturns(
         // Try to find product by EAN
         let productId: string | undefined;
         if (ean) {
-          const { supabase } = await import('@/api/supabaseClient');
           const { data: found } = await supabase
             .from('products')
             .select('id')

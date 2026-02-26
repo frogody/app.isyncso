@@ -4,6 +4,7 @@ import {
   ChevronLeft, ChevronRight, Calendar, Plus,
   LayoutGrid, List, Clock, Sun
 } from 'lucide-react';
+import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { useCalendar, EVENT_COLORS } from './useCalendar';
 import { useCalendarSync } from './useCalendarSync';
@@ -77,7 +78,6 @@ export default function CalendarView() {
   React.useEffect(() => {
     if (!user?.company_id) return;
     const fetchTeam = async () => {
-      const { supabase } = await import('@/api/supabaseClient');
       const { data } = await supabase
         .from('users')
         .select('id, full_name, email, avatar_url')

@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { OuterRing, InnerViz } from '@/pages/SyncAgent';
+
+const OuterRing = lazy(() => import('@/pages/SyncAgent').then(m => ({ default: m.OuterRing })));
+const InnerViz = lazy(() => import('@/pages/SyncAgent').then(m => ({ default: m.InnerViz })));
 import {
   Brain, BarChart3, Shield, Puzzle, Activity,
   Rocket, Euro, GraduationCap, UserPlus, Palette, Package,
@@ -987,8 +989,10 @@ export default function DemoIntroScreen({ recipientName, companyName, onStart, l
               />
 
               <div className="relative" style={{ width: 180, height: 180 }}>
-                <OuterRing size={180} mood={avatarMood === 'idle' ? 'listening' : avatarMood} level={avatarLevel} />
-                <InnerViz size={180} mood={avatarMood === 'idle' ? 'listening' : avatarMood} level={avatarLevel} seed={1} />
+                <Suspense fallback={<div style={{ width: 180, height: 180 }} />}>
+                  <OuterRing size={180} mood={avatarMood === 'idle' ? 'listening' : avatarMood} level={avatarLevel} />
+                  <InnerViz size={180} mood={avatarMood === 'idle' ? 'listening' : avatarMood} level={avatarLevel} seed={1} />
+                </Suspense>
               </div>
             </motion.div>
           )}

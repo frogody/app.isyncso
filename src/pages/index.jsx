@@ -201,7 +201,6 @@ const InventoryShipping = lazy(() => import("./InventoryShipping"));
 const PalletBuilder = lazy(() => import("./PalletBuilder"));
 const ShipmentVerification = lazy(() => import("./ShipmentVerification"));
 const Warehouse = lazy(() => import("./Warehouse"));
-const InventoryExpenses = lazy(() => import("./InventoryExpenses"));
 const InventoryReturns = lazy(() => import("./InventoryReturns"));
 const StockPurchases = lazy(() => import("./StockPurchases"));
 const EmailPoolSettings = lazy(() => import("./EmailPoolSettings"));
@@ -607,8 +606,6 @@ const PAGES = {
     PalletBuilder: PalletBuilder,
     ShipmentVerification: ShipmentVerification,
     Warehouse: Warehouse,
-
-    InventoryExpenses: InventoryExpenses,
 
     InventoryReturns: InventoryReturns,
 

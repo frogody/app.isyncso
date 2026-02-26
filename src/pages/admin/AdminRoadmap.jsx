@@ -50,9 +50,10 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import TreeRoadmap from '@/components/admin/TreeRoadmap';
-import AdminCommander from '@/pages/admin/AdminCommander';
-import AdminAgentDashboard from '@/pages/admin/AdminAgentDashboard';
-import AdminHealthDashboard from '@/pages/admin/AdminHealthDashboard';
+
+const AdminCommander = React.lazy(() => import('@/pages/admin/AdminCommander'));
+const AdminAgentDashboard = React.lazy(() => import('@/pages/admin/AdminAgentDashboard'));
+const AdminHealthDashboard = React.lazy(() => import('@/pages/admin/AdminHealthDashboard'));
 
 // ─── Config ─────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -1231,11 +1232,17 @@ export default function AdminRoadmap() {
 
       {/* Tab Content */}
       {activeTab === 'commander' ? (
-        <AdminCommander embedded />
+        <React.Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="w-6 h-6 animate-spin text-cyan-400" /></div>}>
+          <AdminCommander embedded />
+        </React.Suspense>
       ) : activeTab === 'agents' ? (
-        <AdminAgentDashboard embedded />
+        <React.Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="w-6 h-6 animate-spin text-cyan-400" /></div>}>
+          <AdminAgentDashboard embedded />
+        </React.Suspense>
       ) : activeTab === 'health' ? (
-        <AdminHealthDashboard embedded />
+        <React.Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="w-6 h-6 animate-spin text-cyan-400" /></div>}>
+          <AdminHealthDashboard embedded />
+        </React.Suspense>
       ) : (
       <>
 

@@ -1560,7 +1560,7 @@ export default function Layout({ children, currentPageName }) {
     // Load stats for secondary nav badges
     const loadStats = async () => {
       try {
-        const { db } = await import("@/api/supabaseClient");
+        // db already imported at top level
         // Convert pathname to lowercase for case-insensitive matching
         const path = location.pathname.toLowerCase();
 
