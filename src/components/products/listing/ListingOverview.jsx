@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles,
@@ -13,98 +13,14 @@ import {
   ArrowRight,
   Loader2,
   TrendingUp,
+  RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/GlobalThemeContext';
+import { supabase } from '@/api/supabaseClient';
 import ListingGenerationView from './ListingGenerationView';
 import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
-
-// --- Score Calculation ---
-// ONLY scores listing-specific data. Product catalog data (name, description, featured_image) does NOT count.
-// A listing with no AI-generated content should score 0.
-
-function calculateScores(listing) {
-  if (!listing) {
-    return {
-      total: 0,
-      images: { score: 0, max: 30, pct: 0 },
-      copy: { score: 0, max: 35, pct: 0 },
-      seo: { score: 0, max: 20, pct: 0 },
-      media: { score: 0, max: 15, pct: 0 },
-    };
-  }
-
-  // ── Images (max 30) ──────────────────────────────────────────
-  // Hero image from listing (NOT product.featured_image)
-  const hasHero = !!listing.hero_image_url;
-  const galleryCount = listing.gallery_urls?.length || 0;
-  let imagesScore = 0;
-  imagesScore += hasHero ? 10 : 0;
-  imagesScore += Math.min(galleryCount, 4) * 5; // 5 per gallery image, max 4 = 20
-
-  // ── Copy (max 35) ────────────────────────────────────────────
-  // Only listing-specific fields, not product.name/description
-  const title = listing.listing_title || '';
-  const description = listing.listing_description || '';
-  const bullets = listing.bullet_points || [];
-  let copyScore = 0;
-
-  // Title quality: exists (3), decent length (4), good length (3)
-  if (title.length > 0) copyScore += 3;
-  if (title.length >= 20) copyScore += 4;
-  if (title.length >= 40 && title.length <= 200) copyScore += 3;
-
-  // Description quality: exists (3), substantial (4), rich/detailed (3)
-  if (description.length > 0) copyScore += 3;
-  if (description.length >= 100) copyScore += 4;
-  if (description.length >= 300) copyScore += 3;
-
-  // Bullet points: 2 per bullet up to 5 bullets = max 10
-  copyScore += Math.min(bullets.length, 5) * 2;
-
-  // Reasoning/tagline bonus
-  if (listing.short_tagline) copyScore += 2;
-
-  // Cap at 35
-  copyScore = Math.min(copyScore, 35);
-
-  // ── SEO (max 20) ────────────────────────────────────────────
-  const seoTitle = listing.seo_title || '';
-  const seoDescription = listing.seo_description || '';
-  const keywords = listing.search_keywords || [];
-  let seoScore = 0;
-
-  // SEO title: exists (2), good length 30-70 chars (3)
-  if (seoTitle.length > 0) seoScore += 2;
-  if (seoTitle.length >= 30 && seoTitle.length <= 70) seoScore += 3;
-
-  // SEO description: exists (2), good length 100-160 chars (3)
-  if (seoDescription.length > 0) seoScore += 2;
-  if (seoDescription.length >= 100 && seoDescription.length <= 160) seoScore += 3;
-
-  // Keywords: 1 per keyword up to 7 = max 7
-  seoScore += Math.min(keywords.length, 7);
-
-  // Cap at 20
-  seoScore = Math.min(seoScore, 20);
-
-  // ── Media / Video (max 15) ──────────────────────────────────
-  const hasVideo = !!listing.video_url;
-  const hasVideoFrames = (listing.video_reference_frames?.length || 0) > 0;
-  let mediaScore = 0;
-  mediaScore += hasVideo ? 10 : 0;
-  mediaScore += hasVideoFrames ? 5 : 0;
-
-  const total = imagesScore + copyScore + seoScore + mediaScore;
-
-  return {
-    total,
-    images: { score: imagesScore, max: 30, pct: Math.round((imagesScore / 30) * 100) },
-    copy: { score: copyScore, max: 35, pct: Math.round((copyScore / 35) * 100) },
-    seo: { score: seoScore, max: 20, pct: Math.round((seoScore / 20) * 100) },
-    media: { score: mediaScore, max: 15, pct: Math.round((mediaScore / 15) * 100) },
-  };
-}
 
 // --- Quality Score Ring (SVG) ---
 
@@ -123,12 +39,11 @@ function QualityRing({ score, size = 140, strokeWidth = 10 }) {
     return () => clearTimeout(timer);
   }, [targetOffset]);
 
-  // Color based on score
   const getColor = () => {
-    if (score >= 80) return { stroke: '#22d3ee', glow: 'rgba(34, 211, 238, 0.3)' }; // cyan-400
-    if (score >= 50) return { stroke: '#60a5fa', glow: 'rgba(96, 165, 250, 0.3)' }; // blue-400
-    if (score >= 25) return { stroke: '#fbbf24', glow: 'rgba(251, 191, 36, 0.3)' }; // amber-400
-    return { stroke: '#f87171', glow: 'rgba(248, 113, 113, 0.3)' }; // red-400
+    if (score >= 80) return { stroke: '#22d3ee', glow: 'rgba(34, 211, 238, 0.3)' };
+    if (score >= 50) return { stroke: '#60a5fa', glow: 'rgba(96, 165, 250, 0.3)' };
+    if (score >= 25) return { stroke: '#fbbf24', glow: 'rgba(251, 191, 36, 0.3)' };
+    return { stroke: '#f87171', glow: 'rgba(248, 113, 113, 0.3)' };
   };
 
   const color = getColor();
@@ -136,7 +51,6 @@ function QualityRing({ score, size = 140, strokeWidth = 10 }) {
   return (
     <div className="relative inline-flex items-center justify-center">
       <svg width={size} height={size} className="transform -rotate-90">
-        {/* Background track */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -145,7 +59,6 @@ function QualityRing({ score, size = 140, strokeWidth = 10 }) {
           stroke={t('rgba(0,0,0,0.06)', 'rgba(255,255,255,0.06)')}
           strokeWidth={strokeWidth}
         />
-        {/* Glow layer */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -158,7 +71,6 @@ function QualityRing({ score, size = 140, strokeWidth = 10 }) {
           strokeLinecap="round"
           style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)' }}
         />
-        {/* Main arc */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -172,7 +84,6 @@ function QualityRing({ score, size = 140, strokeWidth = 10 }) {
           style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)' }}
         />
       </svg>
-      {/* Center score */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={cn('text-3xl font-bold tabular-nums', t('text-slate-900', 'text-white'))}>
           {score}
@@ -310,7 +221,79 @@ function ChecklistItem({ label, completed }) {
 export default function ListingOverview({ product, details, listing, onGenerateAll, onTabChange, loading, generatingProgress }) {
   const { t } = useTheme();
 
-  const scores = useMemo(() => calculateScores(listing), [listing]);
+  const [auditData, setAuditData] = useState(null);
+  const [auditing, setAuditing] = useState(false);
+  const [auditError, setAuditError] = useState(null);
+
+  // Run AI audit automatically when listing changes
+  const runAudit = useCallback(async () => {
+    if (!listing?.listing_title && !listing?.listing_description && !listing?.hero_image_url) {
+      setAuditData(null);
+      return;
+    }
+
+    setAuditing(true);
+    setAuditError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('audit-listing', {
+        body: {
+          listing_title: listing?.listing_title || '',
+          short_tagline: listing?.short_tagline || '',
+          listing_description: listing?.listing_description || '',
+          bullet_points: listing?.bullet_points || [],
+          seo_title: listing?.seo_title || '',
+          seo_description: listing?.seo_description || '',
+          search_keywords: listing?.search_keywords || [],
+          hero_image_url: listing?.hero_image_url || null,
+          gallery_urls: listing?.gallery_urls || [],
+          video_url: listing?.video_url || null,
+          video_reference_frames: listing?.video_reference_frames || [],
+          product_name: product?.name || '',
+          product_brand: product?.brand || '',
+          product_category: product?.category || details?.category || '',
+          channel: listing?.channel || 'General marketplace',
+        },
+      });
+      if (error) throw error;
+      setAuditData(data);
+    } catch (err) {
+      console.error('[ListingOverview] Audit failed:', err);
+      setAuditError('Audit failed. Click to retry.');
+    } finally {
+      setAuditing(false);
+    }
+  }, [listing, product, details]);
+
+  // Auto-run audit on mount if listing has content
+  useEffect(() => {
+    if (listing?.listing_title || listing?.listing_description || listing?.hero_image_url) {
+      runAudit();
+    }
+  }, [listing?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Extract audit scores for the bars
+  // categories comes back as an array: [{ name: "Title & Tagline", score: 60, ... }, ...]
+  const auditScores = useMemo(() => {
+    if (!auditData) return null;
+    const cats = auditData.categories || [];
+    const findScore = (name) => {
+      if (Array.isArray(cats)) {
+        const cat = cats.find(c => c.name === name);
+        return cat?.score ?? 0;
+      }
+      // Fallback if categories is an object
+      return cats[name] ?? 0;
+    };
+    return {
+      overall: auditData.overall_score ?? auditData.score ?? 0,
+      title: findScore('Title & Tagline'),
+      bullets: findScore('Bullet Points'),
+      description: findScore('Description'),
+      visual: findScore('Visual Content'),
+      seo: findScore('SEO & Discoverability'),
+      conversion: findScore('Conversion Readiness'),
+    };
+  }, [auditData]);
 
   // Checklist — only listing-specific fields
   const checklist = useMemo(() => {
@@ -345,6 +328,10 @@ export default function ListingOverview({ product, details, listing, onGenerateA
     );
   }
 
+  const overallScore = auditScores?.overall ?? 0;
+  const hasAudit = !!auditScores;
+  const hasListingContent = !!(listing?.listing_title || listing?.listing_description || listing?.hero_image_url);
+
   return (
     <div className="space-y-4">
       {/* Quality Score + Breakdown */}
@@ -355,31 +342,136 @@ export default function ListingOverview({ product, details, listing, onGenerateA
         <div className="grid lg:grid-cols-2 gap-6 items-center">
           {/* Left: Score Ring */}
           <div className="flex flex-col items-center gap-4">
-            <QualityRing score={scores.total} />
-            <div className="text-center">
-              <p className={cn('text-sm font-semibold', t('text-slate-900', 'text-white'))}>
-                Listing Quality
-              </p>
-              <p className={cn('text-sm mt-0.5', t('text-slate-500', 'text-zinc-500'))}>
-                {scores.total >= 80
-                  ? 'Excellent - ready to publish'
-                  : scores.total >= 50
-                    ? 'Good - a few improvements needed'
-                    : scores.total >= 25
-                      ? 'Fair - needs more content'
-                      : 'Getting started'}
-              </p>
-            </div>
+            {auditing ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
+                <p className={cn('text-sm', t('text-slate-500', 'text-zinc-500'))}>
+                  Running deep AI audit...
+                </p>
+              </div>
+            ) : hasAudit ? (
+              <>
+                <QualityRing score={overallScore} />
+                <div className="text-center">
+                  <p className={cn('text-sm font-semibold', t('text-slate-900', 'text-white'))}>
+                    Listing Quality
+                  </p>
+                  <p className={cn('text-sm mt-0.5', t('text-slate-500', 'text-zinc-500'))}>
+                    {overallScore >= 80
+                      ? 'Excellent - ready to publish'
+                      : overallScore >= 60
+                        ? 'Good - a few improvements needed'
+                        : overallScore >= 40
+                          ? 'Fair - needs attention'
+                          : overallScore > 0
+                            ? 'Needs significant improvement'
+                            : 'Getting started'}
+                  </p>
+                  <button
+                    onClick={runAudit}
+                    className={cn(
+                      'mt-2 flex items-center gap-1.5 mx-auto text-xs font-medium transition-colors',
+                      t('text-slate-400 hover:text-slate-600', 'text-zinc-500 hover:text-zinc-300')
+                    )}
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Re-audit
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-3 py-4">
+                {auditError ? (
+                  <>
+                    <AlertTriangle className="w-8 h-8 text-amber-400" />
+                    <button
+                      onClick={runAudit}
+                      className="text-sm text-amber-400 hover:text-amber-300 underline underline-offset-2"
+                    >
+                      {auditError}
+                    </button>
+                  </>
+                ) : hasListingContent ? (
+                  <button
+                    onClick={runAudit}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                      'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 border border-cyan-500/20'
+                    )}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Run AI Quality Audit
+                  </button>
+                ) : (
+                  <>
+                    <QualityRing score={0} />
+                    <div className="text-center">
+                      <p className={cn('text-sm font-semibold', t('text-slate-900', 'text-white'))}>
+                        Listing Quality
+                      </p>
+                      <p className={cn('text-sm mt-0.5', t('text-slate-500', 'text-zinc-500'))}>
+                        Generate content to get started
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right: Score Breakdown */}
           <div className="space-y-3">
-            <ScoreBar label="Images" pct={scores.images.pct} color="bg-gradient-to-r from-cyan-500 to-cyan-400" />
-            <ScoreBar label="Copy" pct={scores.copy.pct} color="bg-gradient-to-r from-blue-500 to-blue-400" />
-            <ScoreBar label="SEO" pct={scores.seo.pct} color="bg-gradient-to-r from-violet-500 to-violet-400" />
-            <ScoreBar label="Video" pct={scores.media.pct} color="bg-gradient-to-r from-emerald-500 to-emerald-400" />
+            {hasAudit ? (
+              <>
+                <ScoreBar label="Title & Tagline" pct={auditScores.title} color="bg-gradient-to-r from-cyan-500 to-cyan-400" />
+                <ScoreBar label="Bullet Points" pct={auditScores.bullets} color="bg-gradient-to-r from-blue-500 to-blue-400" />
+                <ScoreBar label="Description" pct={auditScores.description} color="bg-gradient-to-r from-indigo-500 to-indigo-400" />
+                <ScoreBar label="Visual Content" pct={auditScores.visual} color="bg-gradient-to-r from-violet-500 to-violet-400" />
+                <ScoreBar label="SEO & Discoverability" pct={auditScores.seo} color="bg-gradient-to-r from-emerald-500 to-emerald-400" />
+                <ScoreBar label="Conversion Readiness" pct={auditScores.conversion} color="bg-gradient-to-r from-amber-500 to-amber-400" />
+              </>
+            ) : (
+              <>
+                <ScoreBar label="Title & Tagline" pct={0} color="bg-gradient-to-r from-cyan-500 to-cyan-400" />
+                <ScoreBar label="Bullet Points" pct={0} color="bg-gradient-to-r from-blue-500 to-blue-400" />
+                <ScoreBar label="Description" pct={0} color="bg-gradient-to-r from-indigo-500 to-indigo-400" />
+                <ScoreBar label="Visual Content" pct={0} color="bg-gradient-to-r from-violet-500 to-violet-400" />
+                <ScoreBar label="SEO & Discoverability" pct={0} color="bg-gradient-to-r from-emerald-500 to-emerald-400" />
+                <ScoreBar label="Conversion Readiness" pct={0} color="bg-gradient-to-r from-amber-500 to-amber-400" />
+              </>
+            )}
           </div>
         </div>
+
+        {/* AI Summary */}
+        {auditData?.summary && (
+          <div className={cn(
+            'mt-4 pt-4 border-t text-sm leading-relaxed',
+            t('border-slate-100 text-slate-600', 'border-white/5 text-zinc-400')
+          )}>
+            {auditData.summary}
+          </div>
+        )}
+
+        {/* Top Priorities */}
+        {auditData?.top_priorities?.length > 0 && (
+          <div className={cn(
+            'mt-4 pt-4 border-t',
+            t('border-slate-100', 'border-white/5')
+          )}>
+            <p className={cn('text-xs font-semibold uppercase tracking-wider mb-2', t('text-red-500', 'text-red-400'))}>
+              Top Priorities
+            </p>
+            <ol className="space-y-1.5">
+              {auditData.top_priorities.slice(0, 5).map((p, i) => (
+                <li key={i} className={cn('text-sm flex gap-2', t('text-slate-600', 'text-zinc-400'))}>
+                  <span className={cn('text-xs font-bold mt-0.5 flex-shrink-0', t('text-slate-400', 'text-zinc-600'))}>{i + 1}.</span>
+                  {p}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
       </div>
 
       {/* Channel Status Cards */}
