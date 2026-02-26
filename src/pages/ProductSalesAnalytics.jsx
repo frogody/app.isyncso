@@ -24,6 +24,7 @@ import {
   ShoppingBag,
   Layers,
   Image as ImageIcon,
+  Download,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -120,8 +121,18 @@ export default function ProductSalesAnalytics() {
   const [rawOrders, setRawOrders] = useState([]);
   const [productsMap, setProductsMap] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sortKey, setSortKey] = useState('revenue');
   const [sortDir, setSortDir] = useState('desc');
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => { setPage(0); }, [debouncedSearch, sortKey, sortDir]);
 
   // ---- Data fetching ----
 
@@ -160,7 +171,7 @@ export default function ProductSalesAnalytics() {
       setRawItems(itemsRes.data || []);
 
       // Fetch product details for linked items
-      const productIds = [...new Set((items || []).map(i => i.product_id).filter(Boolean))];
+      const productIds = [...new Set((itemsRes.data || []).map(i => i.product_id).filter(Boolean))];
       if (productIds.length > 0) {
         const { data: prods } = await supabase
           .from('products')
@@ -237,8 +248,8 @@ export default function ProductSalesAnalytics() {
     let rows = aggregated.rows;
 
     // Search
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       rows = rows.filter(r => {
         const prod = productsMap[r.product_id];
         const name = prod?.name || r.description || '';
@@ -266,7 +277,12 @@ export default function ProductSalesAnalytics() {
     });
 
     return rows;
-  }, [aggregated.rows, searchQuery, sortKey, sortDir, productsMap]);
+  }, [aggregated.rows, debouncedSearch, sortKey, sortDir, productsMap]);
+
+  const paginatedRows = useMemo(() => {
+    const start = page * pageSize;
+    return displayRows.slice(start, start + pageSize);
+  }, [displayRows, page, pageSize]);
 
   // Top 5 by revenue
   const top5 = useMemo(() => {
@@ -290,6 +306,26 @@ export default function ProductSalesAnalytics() {
       ? <ArrowUp className="w-3 h-3 text-cyan-400" />
       : <ArrowDown className="w-3 h-3 text-cyan-400" />;
   };
+
+  const exportCSV = useCallback(() => {
+    const headers = ['Product', 'EAN', 'SKU', 'Units', 'Revenue', 'Orders', 'Avg Price', 'Share %'];
+    const csvRows = [headers.join(',')];
+    displayRows.forEach(row => {
+      const prod = productsMap[row.product_id];
+      const name = (prod?.name || row.description || row.ean || 'Unknown').replace(/,/g, ' ');
+      const ean = prod?.ean || row.ean || '';
+      const sku = prod?.sku || '';
+      const share = aggregated.totalRevenue > 0 ? ((row.totalRevenue / aggregated.totalRevenue) * 100).toFixed(1) : '0.0';
+      csvRows.push([name, ean, sku, row.totalQty, row.totalRevenue.toFixed(2), row.orderCount, row.avgPrice.toFixed(2), share].join(','));
+    });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sales-analytics-${selectedPeriod}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [displayRows, productsMap, aggregated.totalRevenue, selectedPeriod]);
 
   // ---- Render ----
 
@@ -393,6 +429,13 @@ export default function ProductSalesAnalytics() {
                 <span className="text-xs text-zinc-500 shrink-0">
                   {fmtNum(displayRows.length)} products
                 </span>
+                <button
+                  onClick={exportCSV}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border border-zinc-800/40 bg-zinc-900/40 text-zinc-400 hover:text-cyan-400 hover:border-cyan-500/20 transition-all"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export
+                </button>
               </div>
 
               {/* Table header */}
@@ -426,6 +469,7 @@ export default function ProductSalesAnalytics() {
                           Avg. Price <SortIcon col="avgPrice" />
                         </button>
                       </th>
+                      <th className="text-right px-5 py-3 font-medium">Share</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -438,26 +482,24 @@ export default function ProductSalesAnalytics() {
                           <td className="px-3 py-3"><div className="h-4 bg-zinc-800/40 rounded animate-pulse w-16 ml-auto" /></td>
                           <td className="px-3 py-3"><div className="h-4 bg-zinc-800/40 rounded animate-pulse w-10 ml-auto" /></td>
                           <td className="px-5 py-3"><div className="h-4 bg-zinc-800/40 rounded animate-pulse w-14 ml-auto" /></td>
+                          <td className="px-5 py-3"><div className="h-4 bg-zinc-800/40 rounded animate-pulse w-10 ml-auto" /></td>
                         </tr>
                       ))
                     ) : displayRows.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-5 py-12 text-center text-zinc-500 text-sm">
+                        <td colSpan={7} className="px-5 py-12 text-center text-zinc-500 text-sm">
                           No product sales found for this period.
                         </td>
                       </tr>
                     ) : (
-                      displayRows.map((row, i) => {
+                      paginatedRows.map((row, i) => {
                         const prod = productsMap[row.product_id];
                         const name = prod?.name || row.description || row.ean || 'Unknown Product';
                         const ean = prod?.ean || row.ean || '—';
                         const img = prod?.featured_image?.url || (typeof prod?.featured_image === 'string' ? prod.featured_image : null);
                         return (
-                          <motion.tr
+                          <tr
                             key={row.key}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: i * 0.02 }}
                             onClick={() => row.product_id && navigate(`/ProductDetail?id=${row.product_id}`)}
                             className={`border-b border-zinc-800/20 ${row.product_id ? 'cursor-pointer hover:bg-zinc-800/20' : ''} transition-colors`}
                           >
@@ -478,13 +520,67 @@ export default function ProductSalesAnalytics() {
                             <td className="px-3 py-3 text-right text-white font-medium tabular-nums">{fmt(row.totalRevenue)}</td>
                             <td className="px-3 py-3 text-right text-zinc-400 tabular-nums">{row.orderCount}</td>
                             <td className="px-5 py-3 text-right text-zinc-400 tabular-nums">{fmt(row.avgPrice)}</td>
-                          </motion.tr>
+                            <td className="px-5 py-3 text-right text-zinc-500 tabular-nums text-xs">
+                              {aggregated.totalRevenue > 0 ? ((row.totalRevenue / aggregated.totalRevenue) * 100).toFixed(1) : '0.0'}%
+                            </td>
+                          </tr>
                         );
                       })
                     )}
                   </tbody>
                 </table>
               </div>
+              {!loading && displayRows.length > 0 && (
+                <div className="px-5 py-3 border-t border-zinc-800/40 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-zinc-500">
+                      Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, displayRows.length)} of {displayRows.length} products
+                    </span>
+                    <select
+                      value={pageSize}
+                      onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }}
+                      className="text-xs bg-zinc-800/30 border border-zinc-800/40 rounded-lg px-2 py-1 text-zinc-400 focus:outline-none focus:border-cyan-500/30"
+                    >
+                      <option value={10}>10 / page</option>
+                      <option value={25}>25 / page</option>
+                      <option value={50}>50 / page</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setPage(0)}
+                      disabled={page === 0}
+                      className="px-2 py-1 text-xs rounded-lg border border-zinc-800/40 text-zinc-400 hover:text-cyan-400 hover:border-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      First
+                    </button>
+                    <button
+                      onClick={() => setPage(p => Math.max(0, p - 1))}
+                      disabled={page === 0}
+                      className="px-2 py-1 text-xs rounded-lg border border-zinc-800/40 text-zinc-400 hover:text-cyan-400 hover:border-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      Prev
+                    </button>
+                    <span className="px-2 text-xs text-zinc-500">
+                      {page + 1} / {Math.max(1, Math.ceil(displayRows.length / pageSize))}
+                    </span>
+                    <button
+                      onClick={() => setPage(p => Math.min(Math.ceil(displayRows.length / pageSize) - 1, p + 1))}
+                      disabled={(page + 1) * pageSize >= displayRows.length}
+                      className="px-2 py-1 text-xs rounded-lg border border-zinc-800/40 text-zinc-400 hover:text-cyan-400 hover:border-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      Next
+                    </button>
+                    <button
+                      onClick={() => setPage(Math.ceil(displayRows.length / pageSize) - 1)}
+                      disabled={(page + 1) * pageSize >= displayRows.length}
+                      className="px-2 py-1 text-xs rounded-lg border border-zinc-800/40 text-zinc-400 hover:text-cyan-400 hover:border-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    >
+                      Last
+                    </button>
+                  </div>
+                </div>
+              )}
             </GlassCard>
           </motion.div>
 
