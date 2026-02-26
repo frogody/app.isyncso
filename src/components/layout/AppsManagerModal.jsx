@@ -147,22 +147,7 @@ const AVAILABLE_APPS = [
       { icon: BookOpen, text: 'Content library and asset management' }
     ]
   },
-  {
-    id: 'products',
-    name: 'Products',
-    description: 'Inventory, catalog, B2B commerce & shipping',
-    icon: Package,
-    color: 'teal',
-    defaultEnabled: false,
-    widgets: COMMERCE_WIDGETS,
-    purpose: 'Manage your product catalog, inventory, B2B orders, receiving, shipping and stock tracking.',
-    capabilities: [
-      { icon: ShoppingCart, text: 'B2B commerce and order management' },
-      { icon: Package, text: 'Product catalog with variants' },
-      { icon: Zap, text: 'Purchase orders and receiving' },
-      { icon: Target, text: 'Multi-channel sales integration' }
-    ]
-  },
+  // Products is a core app — always in the primary sidebar, not toggleable here
   {
     id: 'reach',
     name: 'Reach',
