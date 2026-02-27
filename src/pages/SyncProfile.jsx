@@ -118,19 +118,35 @@ function OverviewChapter({ biography, user, company }) {
 function SuperpowersChapter({ biography }) {
   const skills = biography?.skills || [];
   if (skills.length === 0) return <EmptyState icon={Zap} title="No superpowers discovered yet" description="Generate your profile to reveal your skills" />;
+  const skillNames = skills.map(s => typeof s === 'string' ? s : s.name || s.label || '').filter(Boolean);
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-400">Your top skills and competencies as observed by SYNC.</p>
-      <div className="flex flex-wrap gap-2">
-        {skills.map((skill, i) => {
-          const name = typeof skill === 'string' ? skill : skill.name || skill.label || JSON.stringify(skill);
-          const level = typeof skill === 'object' ? skill.level : null;
-          return (
-            <span key={i} className="px-3 py-1.5 text-sm font-medium rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              {name}{level ? ` · ${level}` : ''}
-            </span>
-          );
-        })}
+    <div className="space-y-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            Based on observed activity patterns, SYNC has identified <span className="text-cyan-400 font-medium">{skills.length} core competencies</span> that
+            define your professional toolkit. {skillNames.length >= 2 ? (
+              <>Your strongest signals come from <span className="text-white font-medium">{skillNames[0]}</span> and <span className="text-white font-medium">{skillNames[1]}</span>, which appear consistently across your work.</>
+            ) : skillNames.length === 1 ? (
+              <>Your primary strength centers around <span className="text-white font-medium">{skillNames[0]}</span>.</>
+            ) : null}
+          </p>
+          {biography?.superpowers_summary && <p>{biography.superpowers_summary}</p>}
+        </div>
+      </div>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Skill Map</h3>
+        <div className="flex flex-wrap gap-2">
+          {skills.map((skill, i) => {
+            const name = typeof skill === 'string' ? skill : skill.name || skill.label || JSON.stringify(skill);
+            const level = typeof skill === 'object' ? skill.level : null;
+            return (
+              <span key={i} className="px-3 py-1.5 text-sm font-medium rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                {name}{level ? ` · ${level}` : ''}
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -140,15 +156,31 @@ function SuperpowersChapter({ biography }) {
 function WorkDNAChapter({ biography }) {
   const workStyle = biography?.work_style || [];
   if (workStyle.length === 0) return <EmptyState icon={Briefcase} title="No work DNA yet" description="SYNC needs more activity data" />;
+  const traits = workStyle.map(w => typeof w === 'string' ? w : w.label || w.name || '').filter(Boolean);
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-400">How you work — your patterns, preferences, and style.</p>
-      <div className="flex flex-wrap gap-2">
-        {workStyle.map((item, i) => (
-          <span key={i} className="px-3 py-1.5 text-sm font-medium rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            {typeof item === 'string' ? item : item.label || item.name || JSON.stringify(item)}
-          </span>
-        ))}
+    <div className="space-y-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            Your work DNA reveals <span className="text-blue-400 font-medium">{workStyle.length} defining traits</span> that shape how you approach tasks and collaboration.
+            {traits.length >= 2 ? (
+              <> You're characterized as a <span className="text-white font-medium">{traits[0]}</span> with a strong tendency toward being a <span className="text-white font-medium">{traits[1]}</span>. These traits influence everything from how you search for information to how you deliver results.</>
+            ) : traits.length === 1 ? (
+              <> The trait that stands out most is being a <span className="text-white font-medium">{traits[0]}</span>.</>
+            ) : null}
+          </p>
+          {biography?.work_dna_summary && <p>{biography.work_dna_summary}</p>}
+        </div>
+      </div>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Work Traits</h3>
+        <div className="flex flex-wrap gap-2">
+          {workStyle.map((item, i) => (
+            <span key={i} className="px-3 py-1.5 text-sm font-medium rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              {typeof item === 'string' ? item : item.label || item.name || JSON.stringify(item)}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -158,19 +190,38 @@ function WorkDNAChapter({ biography }) {
 function SocialCircleChapter({ biography }) {
   const coworkers = biography?.top_coworkers || [];
   if (coworkers.length === 0) return <EmptyState icon={Users} title="No social circle data" description="Interact more to build your network map" />;
+  const totalInteractions = coworkers.reduce((sum, cw) => sum + (cw.interaction_count || cw.interactions || 0), 0);
+  const topName = coworkers[0]?.name || coworkers[0]?.full_name || 'your closest colleague';
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-400">The people you interact with most.</p>
-      <div className="space-y-3">
-        {coworkers.map((cw, i) => (
-          <div key={i} className="flex items-center justify-between bg-zinc-900/40 border border-zinc-800/30 rounded-xl p-3">
-            <div className="min-w-0">
-              <p className="text-sm text-white truncate">{cw.name || cw.full_name || 'Unknown'}</p>
-              {cw.context && <p className="text-xs text-zinc-500 truncate">{cw.context}</p>}
+    <div className="space-y-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            SYNC has mapped <span className="text-purple-400 font-medium">{coworkers.length} key relationships</span> in your professional network,
+            totaling <span className="text-white font-medium">{totalInteractions} interactions</span>.
+            Your closest collaboration is with <span className="text-white font-medium">{topName}</span>,
+            suggesting a strong working dynamic that drives much of your daily communication.
+          </p>
+        </div>
+      </div>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Network</h3>
+        <div className="space-y-3">
+          {coworkers.map((cw, i) => (
+            <div key={i} className="flex items-center justify-between bg-zinc-800/30 border border-zinc-700/20 rounded-xl p-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/20 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-purple-400">{(cw.name || cw.full_name || '?')[0].toUpperCase()}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-white truncate">{cw.name || cw.full_name || 'Unknown'}</p>
+                  {cw.context && <p className="text-xs text-zinc-500 truncate">{cw.context}</p>}
+                </div>
+              </div>
+              <span className="text-xs text-zinc-400 whitespace-nowrap ml-3">{cw.interaction_count || cw.interactions || 0} interactions</span>
             </div>
-            <span className="text-xs text-zinc-400 whitespace-nowrap ml-3">{cw.interaction_count || cw.interactions || 0} interactions</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -181,25 +232,39 @@ function DigitalLifeChapter({ biography }) {
   const apps = biography?.top_apps || [];
   if (apps.length === 0) return <EmptyState icon={Monitor} title="No app data yet" description="SYNC will track your most-used tools" />;
   const maxMins = Math.max(...apps.map(a => a.avg_daily_minutes || a.daily_minutes || 0), 1);
+  const totalDaily = apps.reduce((sum, a) => sum + (a.avg_daily_minutes || a.daily_minutes || 0), 0);
+  const topApp = apps[0]?.name || apps[0]?.app_name || 'your top tool';
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-400">Your most-used applications and daily screen time.</p>
-      <div className="space-y-3">
-        {apps.map((app, i) => {
-          const mins = app.avg_daily_minutes || app.daily_minutes || 0;
-          const pct = Math.round((mins / maxMins) * 100);
-          return (
-            <div key={i}>
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-sm text-white truncate">{app.name || app.app_name || 'Unknown'}</p>
-                <span className="text-xs text-zinc-400 whitespace-nowrap ml-3">{mins} min/day</span>
+    <div className="space-y-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            Your digital footprint spans <span className="text-green-400 font-medium">{apps.length} applications</span> with
+            an estimated <span className="text-white font-medium">{totalDaily} minutes</span> of daily active use.
+            <span className="text-white font-medium"> {topApp}</span> dominates your screen time, accounting for the largest share of your daily workflow.
+            {apps.length >= 3 && <> Your toolkit suggests a blend of research, creative, and productivity tools.</>}
+          </p>
+        </div>
+      </div>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Daily Usage</h3>
+        <div className="space-y-3">
+          {apps.map((app, i) => {
+            const mins = app.avg_daily_minutes || app.daily_minutes || 0;
+            const pct = Math.round((mins / maxMins) * 100);
+            return (
+              <div key={i}>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm text-white truncate">{app.name || app.app_name || 'Unknown'}</p>
+                  <span className="text-xs text-zinc-400 whitespace-nowrap ml-3">{mins} min/day</span>
+                </div>
+                <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-cyan-500/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
               </div>
-              <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full bg-cyan-500/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -209,19 +274,38 @@ function DigitalLifeChapter({ biography }) {
 function ClientWorldChapter({ biography }) {
   const clients = biography?.top_clients || [];
   if (clients.length === 0) return <EmptyState icon={Star} title="No client data yet" description="SYNC will learn about your key clients" />;
+  const topClient = clients[0]?.name || clients[0]?.client_name || 'your top account';
+  const totalTouches = clients.reduce((sum, c) => sum + (c.interaction_count || c.interactions || 0), 0);
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-400">Your most-engaged clients and accounts.</p>
-      <div className="space-y-3">
-        {clients.map((client, i) => (
-          <div key={i} className="flex items-center justify-between bg-zinc-900/40 border border-zinc-800/30 rounded-xl p-3">
-            <div className="min-w-0">
-              <p className="text-sm text-white truncate">{client.name || client.client_name || 'Unknown'}</p>
-              {client.context && <p className="text-xs text-zinc-500 truncate">{client.context}</p>}
+    <div className="space-y-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            SYNC tracks your engagement across <span className="text-amber-400 font-medium">{clients.length} client accounts</span> with
+            a combined <span className="text-white font-medium">{totalTouches} touchpoints</span>.
+            <span className="text-white font-medium"> {topClient}</span> is your most active relationship, receiving the most attention in your recent workflow.
+            {clients.length >= 3 && <> The distribution of your client interactions shows where your focus and expertise are concentrated.</>}
+          </p>
+        </div>
+      </div>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Client Accounts</h3>
+        <div className="space-y-3">
+          {clients.map((client, i) => (
+            <div key={i} className="flex items-center justify-between bg-zinc-800/30 border border-zinc-700/20 rounded-xl p-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
+                  <Star className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-white truncate">{client.name || client.client_name || 'Unknown'}</p>
+                  {client.context && <p className="text-xs text-zinc-500 truncate">{client.context}</p>}
+                </div>
+              </div>
+              <span className="text-xs text-zinc-400 whitespace-nowrap ml-3">{client.interaction_count || client.interactions || 0} touches</span>
             </div>
-            <span className="text-xs text-zinc-400 whitespace-nowrap ml-3">{client.interaction_count || client.interactions || 0} touches</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -231,15 +315,32 @@ function ClientWorldChapter({ biography }) {
 function InterestsChapter({ biography }) {
   const interests = biography?.interests || [];
   if (interests.length === 0) return <EmptyState icon={Heart} title="No interests discovered" description="SYNC will learn what you're passionate about" />;
+  const names = interests.map(i => typeof i === 'string' ? i : i.name || '').filter(Boolean);
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-400">Topics and hobbies you gravitate towards.</p>
-      <div className="flex flex-wrap gap-2">
-        {interests.map((item, i) => (
-          <span key={i} className="px-3 py-1.5 text-sm font-medium rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
-            {typeof item === 'string' ? item : item.name || JSON.stringify(item)}
-          </span>
-        ))}
+    <div className="space-y-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            Beyond your professional focus, SYNC has picked up on <span className="text-pink-400 font-medium">{interests.length} areas of interest</span> that
+            surface through your conversations and activity.
+            {names.length >= 2 ? (
+              <> Topics like <span className="text-white font-medium">{names[0]}</span> and <span className="text-white font-medium">{names[1]}</span> appear
+              frequently, suggesting these passions influence how you approach your work and creativity.</>
+            ) : names.length === 1 ? (
+              <> <span className="text-white font-medium">{names[0]}</span> stands out as a recurring theme across your activity.</>
+            ) : null}
+          </p>
+        </div>
+      </div>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Passion Tags</h3>
+        <div className="flex flex-wrap gap-2">
+          {interests.map((item, i) => (
+            <span key={i} className="px-3 py-1.5 text-sm font-medium rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
+              {typeof item === 'string' ? item : item.name || JSON.stringify(item)}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -259,21 +360,36 @@ function DailyRhythmsChapter({ biography }) {
 
   if (hours.length === 0) return <EmptyState icon={Clock} title="No rhythm data yet" />;
   const maxVal = Math.max(...hours.map(h => h.activity_count || h.count || 0), 1);
+  const sorted = [...hours].sort((a, b) => a.hour - b.hour);
+  const peakHour = sorted.reduce((max, h) => (h.activity_count || h.count || 0) > (max.activity_count || max.count || 0) ? h : max, sorted[0]);
+  const peakLabel = `${peakHour.hour}:00`;
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-400">Your activity patterns throughout the day.</p>
-      <div className="flex items-end gap-1 h-32">
-        {hours.sort((a, b) => a.hour - b.hour).map((h, i) => {
-          const val = h.activity_count || h.count || 0;
-          const height = Math.max((val / maxVal) * 100, 4);
-          return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${h.hour}:00 — ${val} actions`}>
-              <div className="w-full bg-cyan-500/40 rounded-t" style={{ height: `${height}%` }} />
-              {i % 4 === 0 && <span className="text-[10px] text-zinc-600">{h.hour}</span>}
-            </div>
-          );
-        })}
+    <div className="space-y-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            Your productivity peaks around <span className="text-cyan-400 font-medium">{peakLabel}</span>, when your activity
+            levels are at their highest. Understanding these rhythms helps SYNC time suggestions and nudges
+            for when you're most receptive — and know when to hold back during your quieter hours.
+          </p>
+        </div>
+      </div>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Activity by Hour</h3>
+        <div className="flex items-end gap-1 h-40">
+          {sorted.map((h, i) => {
+            const val = h.activity_count || h.count || 0;
+            const height = Math.max((val / maxVal) * 100, 4);
+            const isPeak = h.hour === peakHour.hour;
+            return (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${h.hour}:00 — ${val} actions`}>
+                <div className={`w-full rounded-t transition-all ${isPeak ? 'bg-cyan-400' : 'bg-cyan-500/40'}`} style={{ height: `${height}%` }} />
+                {i % 3 === 0 && <span className="text-[10px] text-zinc-600">{h.hour}h</span>}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -283,41 +399,56 @@ function DailyRhythmsChapter({ biography }) {
 function AssumptionsChapter({ assumptions, onConfirm, onReject }) {
   const active = assumptions.filter(a => a.status === 'active' || !a.status);
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-zinc-400">Review what SYNC believes about you.</p>
-        <span className="text-xs text-zinc-500">{active.length} remaining</span>
+    <div className="space-y-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            SYNC forms assumptions about you based on your behavior patterns, conversations, and activity.
+            These are educated guesses — confirm the ones that resonate, and correct the ones that miss the mark.
+            {active.length > 0 ? (
+              <> You have <span className="text-cyan-400 font-medium">{active.length} assumptions</span> waiting for your review.</>
+            ) : (
+              <> You've reviewed all current assumptions. New ones will appear as SYNC learns more about you.</>
+            )}
+          </p>
+        </div>
       </div>
-      <AnimatePresence mode="popLayout">
-        {active.map(a => (
-          <motion.div
-            key={a.id}
-            layout
-            initial={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, x: -60, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="border-b border-zinc-800/30 pb-4 mb-4 last:border-0"
-          >
-            <p className="text-sm text-white mb-1">"{a.assumption}"</p>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-zinc-500">
-                {(a.category || 'general').replace('_', ' ')} &middot; {Math.round((a.confidence || 0) * 100)}% confidence
-              </span>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" className="h-7 text-xs text-green-400 hover:bg-green-500/10" onClick={() => onConfirm(a)}>
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Yes
-                </Button>
-                <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400 hover:bg-red-500/10" onClick={() => onReject(a)}>
-                  <XCircle className="w-3 h-3 mr-1" /> No
-                </Button>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Pending Review</h3>
+          <span className="text-xs text-zinc-500">{active.length} remaining</span>
+        </div>
+        <AnimatePresence mode="popLayout">
+          {active.map(a => (
+            <motion.div
+              key={a.id}
+              layout
+              initial={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, x: -60, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="border-b border-zinc-800/30 pb-4 mb-4 last:border-0"
+            >
+              <p className="text-sm text-white mb-1">"{a.assumption}"</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">
+                  {(a.category || 'general').replace('_', ' ')} &middot; {Math.round((a.confidence || 0) * 100)}% confidence
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="ghost" className="h-7 text-xs text-green-400 hover:bg-green-500/10" onClick={() => onConfirm(a)}>
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> Yes
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400 hover:bg-red-500/10" onClick={() => onReject(a)}>
+                    <XCircle className="w-3 h-3 mr-1" /> No
+                  </Button>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-      {active.length === 0 && (
-        <EmptyState icon={Brain} title="All caught up!" description="You've reviewed all of SYNC's assumptions" />
-      )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {active.length === 0 && (
+          <EmptyState icon={Brain} title="All caught up!" description="You've reviewed all of SYNC's assumptions" />
+        )}
+      </div>
     </div>
   );
 }
@@ -394,9 +525,16 @@ function MemoryImportChapter({ userId, companyId }) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-zinc-400">
-        Import your AI conversation history to instantly boost SYNC's understanding of you.
-      </p>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            Your AI conversations contain rich insights about your preferences, knowledge areas, and thinking style.
+            By importing exports from <span className="text-white font-medium">ChatGPT</span>, <span className="text-white font-medium">Claude</span>, or other AI tools,
+            SYNC can instantly deepen its understanding of who you are — extracting topics, key facts, and preferences
+            that would otherwise take weeks of activity to discover.
+          </p>
+        </div>
+      </div>
       {/* Provider cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {PROVIDERS.map(p => (
@@ -495,10 +633,21 @@ function ActivityLogChapter({ userId }) {
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push(ev);
   });
+  const dateCount = Object.keys(grouped).length;
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-zinc-400">Your recent activity within iSyncSO.</p>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+          <p>
+            SYNC tracks your journey through the platform to build a richer understanding of your workflow.
+            You have <span className="text-cyan-400 font-medium">{events.length} logged events</span> across <span className="text-white font-medium">{dateCount} day{dateCount !== 1 ? 's' : ''}</span>.
+            This activity feeds into your profile during regeneration, helping SYNC understand which areas of the platform matter most to you.
+          </p>
+        </div>
+      </div>
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+        <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Timeline</h3>
       {Object.entries(grouped).map(([dateLabel, evts]) => (
         <div key={dateLabel}>
           <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">{dateLabel}</h4>
@@ -521,6 +670,7 @@ function ActivityLogChapter({ userId }) {
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }
@@ -619,7 +769,7 @@ export default function SyncProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="w-full px-6 py-8">
           <div className="grid lg:grid-cols-[240px_1fr] gap-8">
             <Skeleton className="h-96 rounded-2xl bg-zinc-800/50 hidden lg:block" />
             <div className="space-y-6">
@@ -637,7 +787,7 @@ export default function SyncProfile() {
   if (!biography) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="w-full px-6 py-8">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-24">
             <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-12 max-w-md text-center space-y-6">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
@@ -678,7 +828,7 @@ export default function SyncProfile() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="w-full px-4 sm:px-6 py-8">
         <div className="grid lg:grid-cols-[240px_1fr] gap-8">
           {/* ─── Sidebar ─────────────────────────────────────── */}
           <aside className="hidden lg:block">
