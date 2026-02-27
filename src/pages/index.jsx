@@ -923,7 +923,7 @@ function PagesContent() {
       'studiofashionbooth', 'studioavatar',
       'warehouse', 'inventoryreceiving', 'inventoryshipping', 'palletbuilder',
       'shipmentverification', 'stockpurchases', 'emailpoolsettings',
-      'syncagent', 'syncphone', 'inventoryreturns', 'inventoryexpenses',
+      'syncagent', 'syncprofile', 'syncphone', 'inventoryreturns', 'inventoryexpenses',
       'inventoryimport', 'contactsimport', 'integrations',
       'talentdashboard', 'talentclients', 'talentdeals', 'talentcandidates', 'candidates',
       'talentcandidateprofile', 'talentcampaigns', 'talentcampaigndetail',
