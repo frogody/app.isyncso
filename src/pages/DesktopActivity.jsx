@@ -786,32 +786,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
     };
   })();
 
-  // ---------------------------------------------------------------------------
-  // Loading state
-  // ---------------------------------------------------------------------------
-
-  if (loading) {
-    return (
-      <div className={embedded ? '' : 'min-h-screen bg-black px-4 lg:px-6 py-4'}>
-        <div className="space-y-4">
-          <div className="h-10 w-64 bg-zinc-800/50 rounded-[20px] animate-pulse" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-24 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
-            ))}
-          </div>
-          <div className="grid lg:grid-cols-2 gap-4">
-            <div className="h-80 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
-            <div className="h-80 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const maxDailyMinutes = Math.max(...stats.dailyBreakdown.map(d => d.minutes), 1);
-
-  // ── Header controls for embedded mode ──
+  // ── Header controls for embedded mode (must be before early returns) ──
   const dateRangePills = (
     <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40">
       {[
@@ -857,7 +832,6 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
     </div>
   );
 
-  // Register header controls for embedded mode
   useEffect(() => {
     if (embedded && onRegisterControls) {
       onRegisterControls(
@@ -869,6 +843,31 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
     }
     return () => { if (embedded && onRegisterControls) onRegisterControls(null); };
   }, [embedded, onRegisterControls, dateRange, refreshing]);
+
+  // ---------------------------------------------------------------------------
+  // Loading state
+  // ---------------------------------------------------------------------------
+
+  if (loading) {
+    return (
+      <div className={embedded ? '' : 'min-h-screen bg-black px-4 lg:px-6 py-4'}>
+        <div className="space-y-4">
+          <div className="h-10 w-64 bg-zinc-800/50 rounded-[20px] animate-pulse" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-24 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
+            ))}
+          </div>
+          <div className="grid lg:grid-cols-2 gap-4">
+            <div className="h-80 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
+            <div className="h-80 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const maxDailyMinutes = Math.max(...stats.dailyBreakdown.map(d => d.minutes), 1);
 
   // ---------------------------------------------------------------------------
   // Render
