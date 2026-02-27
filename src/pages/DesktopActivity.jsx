@@ -92,6 +92,156 @@ const APP_COLORS = {
   'Spotify': 'from-green-500 to-green-600',
 };
 
+// ---------------------------------------------------------------------------
+// Deep Context Tab — commitments & skills from desktop_context_events
+// ---------------------------------------------------------------------------
+
+function DeepContextTab({ userId }) {
+  const [commitments, setCommitments] = useState([]);
+  const [skills, setSkills] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchDeepContext() {
+      setLoading(true);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data, error } = await db.from('desktop_context_events')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('created_at', today.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (data) {
+        const allCommitments = [];
+        const allSkills = new Set();
+
+        for (const event of data) {
+          for (const c of (event.commitments || [])) {
+            allCommitments.push({ ...c, timestamp: event.created_at, app: event.source_application });
+          }
+          for (const s of (event.skill_signals || [])) {
+            const path = Array.isArray(s.skillPath) ? s.skillPath.join(' > ') : s.skillCategory;
+            if (path) allSkills.add(path);
+          }
+        }
+
+        setCommitments(allCommitments);
+        setSkills([...allSkills]);
+      }
+      setLoading(false);
+    }
+    if (userId) fetchDeepContext();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2].map(i => (
+          <div key={i} className="h-40 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Commitments */}
+      <motion.div {...SLIDE_UP}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Target className="w-4 h-4 text-cyan-400" />
+              Commitments Today
+            </h3>
+            <span className="text-[10px] text-zinc-500 font-medium">{commitments.length} detected</span>
+          </div>
+
+          {commitments.length === 0 ? (
+            <div className="text-center py-10">
+              <Target className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+              <p className="text-zinc-500 text-sm">No commitments detected today</p>
+              <p className="text-xs text-zinc-600 mt-1">Commitments appear as SYNC Desktop detects them in your conversations</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {commitments.map((c, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="flex items-start gap-3 p-3 rounded-[14px] border border-zinc-800/40 bg-zinc-800/20"
+                >
+                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                    c.status === 'overdue' ? 'bg-red-400' :
+                    c.status === 'fulfilled' ? 'bg-green-400' : 'bg-cyan-400'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-white">{c.description}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className="text-[10px] text-zinc-500">
+                        {c.dueDate ? `Due: ${new Date(c.dueDate).toLocaleString()}` : 'No deadline'}
+                      </span>
+                      {c.involvedParties?.length > 0 && (
+                        <span className="text-[10px] text-cyan-400/70">
+                          {c.involvedParties.join(', ')}
+                        </span>
+                      )}
+                      {c.app && (
+                        <span className="text-[10px] text-zinc-500 bg-zinc-800/60 border border-zinc-700/40 rounded-full px-1.5 py-0.5">
+                          {c.app}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Skills Exercised */}
+      <motion.div {...stagger(0.1)}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <Zap className="w-4 h-4 text-cyan-400" />
+              Skills Exercised Today
+            </h3>
+            <span className="text-[10px] text-zinc-500 font-medium">{skills.length} detected</span>
+          </div>
+
+          {skills.length === 0 ? (
+            <div className="text-center py-10">
+              <Zap className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+              <p className="text-zinc-500 text-sm">No skills detected today</p>
+              <p className="text-xs text-zinc-600 mt-1">Skills are detected from your coding patterns and tool usage</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {skills.map((skill, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="px-3 py-1.5 bg-cyan-500/10 text-cyan-400 rounded-full text-xs border border-cyan-500/20 font-medium"
+                >
+                  {skill}
+                </motion.span>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function DesktopActivity() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -115,6 +265,7 @@ export default function DesktopActivity() {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
   const [expandedOcr, setExpandedOcr] = useState(new Set());
+  const [activeView, setActiveView] = useState('overview');
 
   const DOWNLOAD_URL_ARM64 = "https://github.com/frogody/sync.desktop/releases/download/v2.1.0/SYNC.Desktop-2.1.0-arm64.dmg";
   const DOWNLOAD_URL_INTEL = "https://github.com/frogody/sync.desktop/releases/download/v2.1.0/SYNC.Desktop-2.1.0-x64.dmg";
@@ -641,6 +792,35 @@ export default function DesktopActivity() {
           />
         </div>
 
+        {/* View Tabs */}
+        <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40 w-fit">
+          {[
+            { key: 'overview', label: 'Overview', icon: BarChart3 },
+            { key: 'deep-context', label: 'Deep Context', icon: Brain },
+          ].map(({ key, label, icon: TabIcon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveView(key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                activeView === key
+                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent'
+              }`}
+            >
+              <TabIcon className="w-3.5 h-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Deep Context View */}
+        {activeView === 'deep-context' && user && (
+          <DeepContextTab userId={user.id} />
+        )}
+
+        {/* Overview Content */}
+        {activeView === 'overview' && (
+        <>
         {/* Content Grid */}
         <div className="grid lg:grid-cols-2 gap-4">
 
@@ -1033,6 +1213,8 @@ export default function DesktopActivity() {
               </div>
             </div>
           </motion.div>
+        )}
+        </>
         )}
       </div>
 
