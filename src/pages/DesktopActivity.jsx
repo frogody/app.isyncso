@@ -118,6 +118,8 @@ function DeepContextTab({ userId }) {
   const [commitments, setCommitments] = useState([]);
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
+  const [showAllSessions, setShowAllSessions] = useState(false);
 
   useEffect(() => {
     async function fetchDeepContext() {
@@ -130,15 +132,20 @@ function DeepContextTab({ userId }) {
         .eq('user_id', userId)
         .gte('created_at', today.toISOString())
         .order('created_at', { ascending: false })
-        .limit(500);
+        .limit(1000);
 
       if (data) {
         setEvents(data);
+        setHasMore(data.length === 1000);
 
         const allCommitments = [];
+        const seenCommitments = new Set();
         const allSkills = new Set();
         for (const event of data) {
           for (const c of (event.commitments || [])) {
+            const key = c.description?.toLowerCase().trim();
+            if (key && seenCommitments.has(key)) continue;
+            if (key) seenCommitments.add(key);
             allCommitments.push({ ...c, timestamp: event.created_at, app: event.source_application });
           }
           for (const s of (event.skill_signals || [])) {
@@ -154,16 +161,36 @@ function DeepContextTab({ userId }) {
     if (userId) fetchDeepContext();
   }, [userId]);
 
-  // Group events by hour for timeline
-  const hourlyGroups = React.useMemo(() => {
-    const groups = {};
-    for (const e of events) {
-      const d = new Date(e.created_at);
-      const hourKey = `${d.getHours().toString().padStart(2, '0')}:00`;
-      if (!groups[hourKey]) groups[hourKey] = [];
-      groups[hourKey].push(e);
+  // Build work sessions - consecutive events on same topic
+  const workSessions = React.useMemo(() => {
+    const sessions = [];
+    let current = null;
+
+    const sorted = [...events].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+    for (const e of sorted) {
+      const topic = e.source_window_title || e.summary || `${e.event_type} in ${e.source_application}`;
+
+      if (current && current.app === e.source_application && current.topic === topic) {
+        current.end = new Date(e.created_at);
+        current.eventCount++;
+      } else {
+        if (current) sessions.push(current);
+        current = {
+          topic,
+          app: e.source_application,
+          eventType: e.event_type,
+          summary: e.summary,
+          windowTitle: e.source_window_title,
+          start: new Date(e.created_at),
+          end: new Date(e.created_at),
+          eventCount: 1,
+        };
+      }
     }
-    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+    if (current) sessions.push(current);
+
+    return sessions.reverse();
   }, [events]);
 
   // App breakdown stats
@@ -180,25 +207,24 @@ function DeepContextTab({ userId }) {
       .slice(0, 8);
   }, [events]);
 
-  // Deduplicate consecutive same-app events within each hour for cleaner display
-  const dedupeHourEvents = (hourEvents) => {
-    const result = [];
-    let prev = null;
-    for (const e of [...hourEvents].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))) {
-      if (prev && prev.source_application === e.source_application && prev.event_type === e.event_type) {
-        prev._count = (prev._count || 1) + 1;
-        prev._lastSeen = e.created_at;
-      } else {
-        const entry = { ...e, _count: 1 };
-        result.push(entry);
-        prev = entry;
-      }
-    }
-    return result;
+  // Strip app suffixes from window titles for cleaner display
+  const stripAppSuffix = (title) => {
+    if (!title) return title;
+    return title
+      .replace(/\s*[-—–]\s*(Google Chrome|Chrome|Safari|Firefox|Microsoft Edge|Arc|Brave|Terminal|iTerm2?|VS Code|Visual Studio Code|Cursor|Zed|Warp|Alacritty|Hyper|kitty)\s*$/i, '')
+      .replace(/\s*[-—–]\s*[A-Za-z]+\s*$/, '')
+      .trim() || title;
   };
 
   const totalEvents = events.length;
-  const totalMinutesTracked = Math.round(totalEvents * 0.5); // ~30s per event
+  const totalMinutesTracked = Math.round(totalEvents * 0.5);
+  const uniqueHours = React.useMemo(() => {
+    const hours = new Set();
+    for (const e of events) {
+      hours.add(new Date(e.created_at).getHours());
+    }
+    return hours.size;
+  }, [events]);
 
   if (loading) {
     return (
@@ -224,13 +250,15 @@ function DeepContextTab({ userId }) {
     );
   }
 
+  const visibleSessions = showAllSessions ? workSessions : workSessions.slice(0, 20);
+
   return (
     <div className="space-y-4">
       {/* Summary Stats Row */}
       <motion.div {...SLIDE_UP} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-[16px] border border-zinc-800/60 bg-zinc-900/40 p-3">
           <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Events</p>
-          <p className="text-lg font-semibold text-white mt-0.5">{totalEvents}</p>
+          <p className="text-lg font-semibold text-white mt-0.5">{totalEvents}{hasMore ? '+' : ''}</p>
         </div>
         <div className="rounded-[16px] border border-zinc-800/60 bg-zinc-900/40 p-3">
           <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Minutes Tracked</p>
@@ -242,12 +270,69 @@ function DeepContextTab({ userId }) {
         </div>
         <div className="rounded-[16px] border border-zinc-800/60 bg-zinc-900/40 p-3">
           <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Hours Active</p>
-          <p className="text-lg font-semibold text-white mt-0.5">{hourlyGroups.length}</p>
+          <p className="text-lg font-semibold text-white mt-0.5">{uniqueHours}</p>
+        </div>
+      </motion.div>
+
+      {/* Work Sessions */}
+      <motion.div {...stagger(0.05)}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4 text-cyan-400" />
+            Work Sessions
+            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{workSessions.length} sessions</span>
+          </h3>
+          <div className="space-y-2">
+            {visibleSessions.map((session, i) => {
+              const style = getActivityStyle(session.eventType);
+              const rawTitle = session.windowTitle || session.summary || session.topic;
+              const displayTitle = stripAppSuffix(rawTitle);
+              const startTime = session.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const endTime = session.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const durationMs = session.end - session.start;
+              const durationMin = Math.max(1, Math.round(durationMs / 60000));
+              const timeRange = startTime === endTime ? startTime : `${startTime} - ${endTime}`;
+
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.02 }}
+                >
+                  <div className="flex items-start gap-3 p-3 rounded-[14px] border border-zinc-800/40 bg-zinc-800/20">
+                    <div className={`w-8 h-8 rounded-lg ${style.bg} ${style.border} border flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      <style.icon className={`w-4 h-4 ${style.color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white font-medium truncate">{displayTitle}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-zinc-500">{timeRange}</span>
+                        <span className="text-[10px] text-zinc-500">&middot;</span>
+                        <span className="text-[10px] text-zinc-500">{durationMin}m</span>
+                        <span className="text-[10px] text-zinc-400 bg-zinc-800/60 border border-zinc-700/40 rounded-full px-1.5 py-0.5">
+                          {session.app}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+          {workSessions.length > 20 && !showAllSessions && (
+            <button
+              onClick={() => setShowAllSessions(true)}
+              className="mt-3 w-full text-center text-xs text-cyan-400 hover:text-cyan-300 transition-colors py-2 rounded-lg border border-zinc-800/40 bg-zinc-800/20 hover:bg-zinc-800/40"
+            >
+              Show {workSessions.length - 20} more sessions
+            </button>
+          )}
         </div>
       </motion.div>
 
       {/* App Breakdown */}
-      <motion.div {...stagger(0.05)}>
+      <motion.div {...stagger(0.1)}>
         <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <Monitor className="w-4 h-4 text-cyan-400" />
@@ -282,66 +367,6 @@ function DeepContextTab({ userId }) {
                         className="h-full rounded-full bg-cyan-500/60"
                       />
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Activity Timeline */}
-      <motion.div {...stagger(0.1)}>
-        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
-            <Clock className="w-4 h-4 text-cyan-400" />
-            Activity Timeline
-          </h3>
-
-          <div className="space-y-4">
-            {hourlyGroups.map(([hour, hourEvents], gi) => {
-              const deduped = dedupeHourEvents(hourEvents);
-              return (
-                <motion.div
-                  key={hour}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: gi * 0.04 }}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-mono text-cyan-400/80 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2 py-0.5">
-                      {hour}
-                    </span>
-                    <div className="h-px flex-1 bg-zinc-800/40" />
-                    <span className="text-[10px] text-zinc-600">{hourEvents.length} events</span>
-                  </div>
-
-                  <div className="ml-3 border-l border-zinc-800/40 pl-4 space-y-1.5">
-                    {deduped.slice(0, 10).map((e, i) => {
-                      const style = getActivityStyle(e.event_type);
-                      const time = new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                      return (
-                        <div key={e.id || i} className="flex items-center gap-2.5 py-1">
-                          <div className={`w-5 h-5 rounded-md ${style.bg} flex items-center justify-center flex-shrink-0`}>
-                            <style.icon className={`w-3 h-3 ${style.color}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-xs text-zinc-300 truncate block">
-                              {e.summary || `${e.event_type} in ${e.source_application}`}
-                            </span>
-                          </div>
-                          {e._count > 1 && (
-                            <span className="text-[10px] text-zinc-500 bg-zinc-800/60 rounded-full px-1.5 py-0.5 flex-shrink-0">
-                              {e._count}x
-                            </span>
-                          )}
-                          <span className="text-[10px] text-zinc-600 flex-shrink-0">{time}</span>
-                        </div>
-                      );
-                    })}
-                    {deduped.length > 10 && (
-                      <p className="text-[10px] text-zinc-600 pl-7">+{deduped.length - 10} more</p>
-                    )}
                   </div>
                 </motion.div>
               );
