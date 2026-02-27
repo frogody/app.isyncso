@@ -164,7 +164,7 @@ async function executeTaskCreate(
     description: (params.description as string) || null,
     priority: (params.priority as string) || "medium",
     due_date: (params.due_date as string) || null,
-    status: "todo",
+    status: "pending",
     created_by: action.user_id,
     company_id: action.company_id,
     source: "notch_action",
