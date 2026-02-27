@@ -249,7 +249,7 @@ export default function ManualPurchaseModal({
         }
       }
 
-      // Create stock purchase
+      // Step 1: Create stock purchase as draft (line items need to exist before approval)
       const { data: purchase, error: purchaseErr } = await supabase
         .from("stock_purchases")
         .insert({
@@ -265,16 +265,16 @@ export default function ManualPurchaseModal({
           tax_amount: grandTotal * 0.21,
           total: grandTotal * 1.21,
           currency: "EUR",
-          status: "approved",
+          status: "draft",
           needs_review: false,
-          review_status: "approved",
+          review_status: "pending",
           source_type: "manual",
         })
         .select("id")
         .single();
       if (purchaseErr) throw purchaseErr;
 
-      // Create line items
+      // Step 2: Create line items
       const lineItemInserts = validLines.map((li, idx) => ({
         stock_purchase_id: purchase.id,
         product_id: li.product_id || null,
@@ -294,6 +294,18 @@ export default function ManualPurchaseModal({
         .from("stock_purchase_line_items")
         .insert(lineItemInserts);
       if (lineErr) throw lineErr;
+
+      // Step 3: Approve the purchase (fires DB trigger to create expected deliveries + update inventory)
+      const { error: approveErr } = await supabase
+        .from("stock_purchases")
+        .update({
+          status: "approved",
+          needs_review: false,
+          review_status: "approved",
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", purchase.id);
+      if (approveErr) throw approveErr;
 
       toast.success(
         `Purchase created with ${validLines.length} product${validLines.length > 1 ? "s" : ""}`

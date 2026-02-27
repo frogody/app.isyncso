@@ -249,8 +249,8 @@ const navigationItems = [
     url: createPageUrl("CRMDashboard"),
     icon: Contact,
     permission: null,
+    alwaysVisible: true,
     matchPatterns: ["/crm", "/contacts-import"],
-    requiresAnyApp: ['growth', 'talent'], // Contacts are relevant for sales & recruiting
   },
   {
     title: "Tasks",

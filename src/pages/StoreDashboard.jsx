@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 
 import { ORDER_STATUS_COLORS, DEFAULT_STATUS_COLOR } from '@/components/b2b-admin/shared/b2bConstants';
+import PrepOrderModal from '@/components/store/PrepOrderModal';
 
 // ---------------------------------------------------------------------------
 // Motion presets
@@ -257,6 +258,7 @@ export default function StoreDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showPrepOrder, setShowPrepOrder] = useState(false);
 
   // Raw data
   const [channelData, setChannelData] = useState({
@@ -658,6 +660,15 @@ export default function StoreDashboard() {
                 Visit Store
               </motion.a>
             )}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowPrepOrder(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 hover:text-cyan-300 transition-all text-sm font-medium"
+            >
+              <PlusCircle className="w-4 h-4" />
+              Prep Order
+            </motion.button>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -1195,6 +1206,16 @@ export default function StoreDashboard() {
           </div>
         )}
       </div>
+
+      {/* Prep Order Modal */}
+      <PrepOrderModal
+        isOpen={showPrepOrder}
+        onClose={() => setShowPrepOrder(false)}
+        onOrderCreated={fetchData}
+        companyId={companyId}
+        organizationId={organizationId}
+        userId={user?.id}
+      />
     </div>
   );
 }
