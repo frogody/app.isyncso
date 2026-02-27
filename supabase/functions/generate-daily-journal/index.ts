@@ -226,7 +226,8 @@ async function generateAIContent(
     ocrTexts: { hour: number; text: string }[];
     semanticCategories: { hour: number; category: string }[];
     commitments: any[];
-  }
+  },
+  contextEventsData?: DeepContextAggregation
 ): Promise<AIGeneratedContent | null> {
   if (!TOGETHER_API_KEY) {
     console.log('[generate-daily-journal] No TOGETHER_API_KEY, skipping AI generation');
@@ -307,6 +308,56 @@ async function generateAIContent(
     }
   }
 
+  // Append rich context events data
+  if (contextEventsData) {
+    // Work sessions — what the user actually did, with durations
+    if (contextEventsData.workSessions.length > 0) {
+      const sessionLines = contextEventsData.workSessions
+        .filter(s => s.durationMin >= 2)
+        .slice(0, 20)
+        .map(s => {
+          const start = new Date(s.startTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          const end = new Date(s.endTime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+          let line = `  ${start}-${end} (${s.durationMin}m): ${s.app}`;
+          if (s.window) line += ` — "${s.window.slice(0, 120)}"`;
+          if (s.summary) line += ` [${s.summary.slice(0, 80)}]`;
+          return line;
+        })
+        .join('\n');
+      deepContextSection += `\nDetailed Work Sessions (what was actively worked on):\n${sessionLines}\n`;
+    }
+
+    // Window titles — specific projects, documents, conversations visible on screen
+    if (contextEventsData.windowTitles.length > 0) {
+      const windowLines = contextEventsData.windowTitles
+        .filter(w => w.title && w.count >= 2)
+        .slice(0, 15)
+        .map(w => `  ${w.app}: "${w.title.slice(0, 100)}" (${w.count}x)`)
+        .join('\n');
+      if (windowLines) {
+        deepContextSection += `\nFrequent Window Titles (projects, documents, people):\n${windowLines}\n`;
+      }
+    }
+
+    // Entities — people, companies, projects detected on screen
+    if (contextEventsData.entities.length > 0) {
+      const entityLines = contextEventsData.entities
+        .slice(0, 20)
+        .map(e => `  ${e.name} (${e.type}, seen ${e.count}x)`)
+        .join('\n');
+      deepContextSection += `\nPeople, Projects & Entities Detected:\n${entityLines}\n`;
+    }
+
+    // Skill signals — what skills were being exercised
+    if (contextEventsData.skillSignals.length > 0) {
+      const skillLines = contextEventsData.skillSignals
+        .slice(0, 15)
+        .map(s => `  ${s.skillPath} (${s.count}x)`)
+        .join('\n');
+      deepContextSection += `\nSkills Exercised Today:\n${skillLines}\n`;
+    }
+  }
+
   // Also generate per-hour activity summaries for the timeline view
   const hourlyActivities = hourlyData
     .filter(h => h.minutes > 0)
@@ -321,26 +372,30 @@ async function generateAIContent(
     .join('\n');
 
   const hasDeepContext = deepContextSection.length > 0;
+  const hasRichContext = !!(contextEventsData && (contextEventsData.workSessions.length > 0 || contextEventsData.entities.length > 0));
 
-  const systemPrompt = `You are a workplace activity report generator for a business productivity platform. Your job is to produce factual, concise daily activity reports in third person. Write like a professional executive assistant summarizing what an employee did during the day.
+  const systemPrompt = `You are a workplace activity report generator for a business productivity platform. Your job is to produce detailed, factual daily activity reports in third person. Write like a professional executive assistant who has been watching over someone's shoulder all day and can give a thorough account.
 
 Rules:
-- Be factual and specific. State what was done, when, and for how long.
+- Be factual, specific, and DETAILED. State what was done, when, for how long, and with what tools/people.
 - Use third person ("The user worked on..." or "Spent 2 hours in...").
 - Never use flowery language, metaphors, or creative writing.
-- Never write "like a campfire" or any poetic comparisons.
 - Do NOT use markdown formatting, bullet points with *, or headers with #.
-- If screen content or OCR data is available, reference specific projects, documents, emails, meetings, and conversations by name.
-- If communication apps were used (Slack, Teams, Zoom, Google Meet, Mail, etc.), note who was communicated with if detectable from screen content.
-- Keep it professional and to the point. This is a business tool, not a personal diary.`;
+- Reference SPECIFIC projects, documents, emails, meetings, code repos, and conversations by name when available from screen/window data.
+- If work sessions data is provided, use it to build an accurate timeline of what was actually worked on.
+- If entities (people, companies, projects) are detected, mention them by name throughout the report.
+- If skill signals are provided, weave them into the narrative (e.g., "exercised TypeScript and API design skills while building...").
+- If communication apps were used (Slack, Teams, Zoom, Google Meet, Mail, etc.), note who was communicated with and what topics if detectable.
+- Be THOROUGH. The user wants an extensive, valuable record of their day — not a brief summary.
+- Keep it professional. This is a business productivity tool.`;
 
-  const userPrompt = `Generate a daily activity report for ${dayName}, ${dateStr}.
+  const userPrompt = `Generate a comprehensive daily activity report for ${dayName}, ${dateStr}.
 
 Activity Data:
 - Total active time: ${hours} hours (${totalMinutes} minutes)
 - Overall focus score: ${focusPercent}%
-- Top applications: ${topApps.slice(0, 5).map(a => `${a.name} (${a.minutes}m)`).join(', ')}
-- Focus areas: ${focusAreas.slice(0, 3).map(f => `${f.category}: ${f.percentage}%`).join(', ')}
+- Top applications: ${topApps.slice(0, 8).map(a => `${a.name} (${a.minutes}m)`).join(', ')}
+- Focus areas: ${focusAreas.slice(0, 5).map(f => `${f.category}: ${f.percentage}% (${f.minutes}m)`).join(', ')}
 - Highlights: ${highlights.map(h => h.description).join(', ') || 'None detected'}
 
 Hourly Activity:
@@ -348,14 +403,14 @@ ${hourlyBreakdown || 'No detailed hourly data'}
 ${deepContextSection}
 ${weeklyContext ? `Weekly Context: ${weeklyContext}` : ''}
 
-Generate the following sections in JSON format:
+Generate the following sections in JSON format. Be THOROUGH and DETAILED — the user wants an extensive record:
 {
-  "overview": "2-3 factual sentences summarizing the day: total active hours, primary focus areas, and key accomplishments. Example: 'Active for 6.2 hours with 72% focus. Primarily worked on development (3.5h) and communication (1.2h). Peak productivity between 10am-12pm.'",
-  "summaryPoints": ["5-8 factual bullet points of key activities and tasks completed. Each should state WHAT was done and for HOW LONG. ${hasDeepContext ? 'Reference specific project names, document titles, email threads, code repos, and websites from the screen content data.' : 'Reference the applications and categories used.'} Example: 'Worked in VS Code for 3 hours on the sync-desktop project.' or 'Attended a 45-minute Zoom meeting from 2pm-2:45pm.'"],
-  "timelineNarrative": "A chronological hour-by-hour activity log. For each active hour, state the time range, what apps were used, what category of work it was, and what specifically was being done if known from screen content. Write as compact paragraphs grouped by time blocks, not as a list. Example: '9:00-10:00: Started the day in Terminal and VS Code working on the scheduler service. Focus score 85%. 10:00-11:30: Switched to Chrome for research, then back to VS Code for implementation.'",
-  "communications": "Summary of all detected communications: emails sent/read, Slack/Teams messages, video calls, meetings. Include who was communicated with if detectable from screen content, and what topics were discussed. If no communication detected, state 'No communication activity detected.'",
-  "actionItems": "List any commitments, follow-ups, or action items detected during the day.${hasDeepContext && deepContext?.commitments?.length ? ' Include the commitments detected from screen content.' : ''} If none detected, state 'No action items detected.'",
-  "personalNotes": "1-2 factual observations about work patterns. Example: 'Focus score dropped after 3pm — consider scheduling deep work in the morning.' or 'Spent 40% of the day in meetings, higher than this week\\'s average of 25%.'"
+  "overview": "3-5 factual sentences summarizing the day: total active hours, primary focus areas, key accomplishments, notable interactions, and productivity patterns. Mention specific projects and people if detected.",
+  "summaryPoints": ["8-12 detailed bullet points covering ALL significant activities. Each should state WHAT was done, for HOW LONG, and reference specific ${hasRichContext ? 'project names, document titles, people interacted with, code repos, and tools from the work session and entity data' : hasDeepContext ? 'project names, documents, and tools from screen content' : 'applications and categories'}. Include both primary work AND secondary activities (breaks, communication, research)."],
+  "timelineNarrative": "A thorough chronological narrative of the entire workday. For each active period, describe the time range, applications used, specific work being done (referencing project names, window titles, people), and the quality of focus. ${hasRichContext ? 'Use the work sessions data to build an accurate picture of what was worked on and for how long. Mention entities and people by name.' : ''} Write as flowing paragraphs grouped by 1-2 hour blocks. Be detailed enough that someone could reconstruct the day from this narrative alone.",
+  "communications": "Detailed summary of all communication activity: emails sent/read (to/from whom if known), Slack/Teams messages (which channels/people), video calls and meetings (duration, participants if detected), phone calls. ${hasRichContext ? 'Reference specific people and topics from the entity data.' : ''} If no communication detected, state 'No communication activity detected.'",
+  "actionItems": "List ALL commitments, follow-ups, action items, and unfinished work detected during the day. ${deepContext?.commitments?.length ? `There were ${deepContext.commitments.length} commitments detected from screen activity — include them all.` : ''} Include both explicit commitments and implicit ones (e.g., unfinished code, draft emails). If none detected, state 'No action items detected.'",
+  "personalNotes": "2-4 factual observations about work patterns, productivity trends, and suggestions. Compare to weekly averages if available. Note focus score variations throughout the day, time allocation efficiency, and any notable patterns (e.g., context switching frequency, deep work blocks, meeting density).${hasRichContext ? ' Reference specific skills exercised and how they relate to work patterns.' : ''}"
 }
 
 Respond ONLY with valid JSON, no additional text.`;
@@ -376,7 +431,7 @@ Respond ONLY with valid JSON, no additional text.`;
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.3,
-        max_tokens: 2000,
+        max_tokens: 4000,
       }),
     });
 
@@ -423,6 +478,156 @@ Respond ONLY with valid JSON, no additional text.`;
     console.error('[generate-daily-journal] AI generation error:', error.message);
     return null;
   }
+}
+
+interface ContextEvent {
+  event_type: string;
+  source_application: string;
+  source_window_title: string;
+  summary?: string;
+  entities?: any;
+  commitments?: any;
+  skill_signals?: any[];
+  confidence?: number;
+  created_at: string;
+}
+
+interface DeepContextAggregation {
+  ocrTexts: { hour: number; text: string }[];
+  semanticCategories: { hour: number; category: string }[];
+  commitments: any[];
+  // New from context events
+  entities: { name: string; type: string; count: number }[];
+  skillSignals: { skillPath: string; count: number }[];
+  workSessions: { app: string; window: string; startTime: string; endTime: string; durationMin: number; summary?: string }[];
+  windowTitles: { app: string; title: string; count: number }[];
+}
+
+function aggregateContextEvents(events: ContextEvent[]): DeepContextAggregation {
+  const entityMap = new Map<string, { type: string; count: number }>();
+  const skillMap = new Map<string, number>();
+  const windowMap = new Map<string, { app: string; title: string; count: number }>();
+  const contextCommitments: any[] = [];
+
+  // Build work sessions by grouping consecutive events with same app+window
+  const workSessions: DeepContextAggregation['workSessions'] = [];
+  let currentSession: { app: string; window: string; start: string; end: string; summaries: string[] } | null = null;
+
+  for (const evt of events) {
+    // Extract entities
+    if (evt.entities) {
+      const ents = typeof evt.entities === 'string' ? JSON.parse(evt.entities) : evt.entities;
+      if (Array.isArray(ents)) {
+        for (const e of ents) {
+          const name = typeof e === 'string' ? e : (e.name || e.text || '');
+          const type = typeof e === 'string' ? 'unknown' : (e.type || e.category || 'unknown');
+          if (name) {
+            const key = `${name}::${type}`;
+            const existing = entityMap.get(key);
+            entityMap.set(key, { type, count: (existing?.count || 0) + 1 });
+          }
+        }
+      } else if (typeof ents === 'object') {
+        for (const [type, items] of Object.entries(ents)) {
+          const arr = Array.isArray(items) ? items : [items];
+          for (const item of arr) {
+            const name = typeof item === 'string' ? item : (item?.name || '');
+            if (name) {
+              const key = `${name}::${type}`;
+              const existing = entityMap.get(key);
+              entityMap.set(key, { type, count: (existing?.count || 0) + 1 });
+            }
+          }
+        }
+      }
+    }
+
+    // Extract skill signals
+    if (evt.skill_signals && Array.isArray(evt.skill_signals)) {
+      for (const sig of evt.skill_signals) {
+        const path = sig.skillPath || sig.skill || sig.name || '';
+        if (path) skillMap.set(path, (skillMap.get(path) || 0) + 1);
+      }
+    }
+
+    // Extract commitments
+    if (evt.commitments) {
+      const comms = typeof evt.commitments === 'string' ? JSON.parse(evt.commitments) : evt.commitments;
+      if (Array.isArray(comms)) contextCommitments.push(...comms);
+      else if (comms && typeof comms === 'object') contextCommitments.push(comms);
+    }
+
+    // Track window titles
+    const winKey = `${evt.source_application}::${evt.source_window_title || ''}`;
+    const existing = windowMap.get(winKey);
+    windowMap.set(winKey, {
+      app: evt.source_application || 'Unknown',
+      title: evt.source_window_title || '',
+      count: (existing?.count || 0) + 1,
+    });
+
+    // Build work sessions (group consecutive same-app events)
+    const app = evt.source_application || 'Unknown';
+    const window = evt.source_window_title || '';
+    if (currentSession && currentSession.app === app && currentSession.window === window) {
+      currentSession.end = evt.created_at;
+      if (evt.summary) currentSession.summaries.push(evt.summary);
+    } else {
+      if (currentSession) {
+        const dur = (new Date(currentSession.end).getTime() - new Date(currentSession.start).getTime()) / 60000;
+        if (dur >= 1) {
+          workSessions.push({
+            app: currentSession.app,
+            window: currentSession.window,
+            startTime: currentSession.start,
+            endTime: currentSession.end,
+            durationMin: Math.round(dur),
+            summary: currentSession.summaries[0] || undefined,
+          });
+        }
+      }
+      currentSession = { app, window, start: evt.created_at, end: evt.created_at, summaries: evt.summary ? [evt.summary] : [] };
+    }
+  }
+  // Close last session
+  if (currentSession) {
+    const dur = (new Date(currentSession.end).getTime() - new Date(currentSession.start).getTime()) / 60000;
+    if (dur >= 1) {
+      workSessions.push({
+        app: currentSession.app,
+        window: currentSession.window,
+        startTime: currentSession.start,
+        endTime: currentSession.end,
+        durationMin: Math.round(dur),
+        summary: currentSession.summaries[0] || undefined,
+      });
+    }
+  }
+
+  // Convert maps to sorted arrays
+  const entities = Array.from(entityMap.entries())
+    .map(([key, val]) => ({ name: key.split('::')[0], type: val.type, count: val.count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 30);
+
+  const skillSignals = Array.from(skillMap.entries())
+    .map(([path, count]) => ({ skillPath: path, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20);
+
+  const windowTitles = Array.from(windowMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 25);
+
+  return {
+    ocrTexts: [],
+    semanticCategories: [],
+    commitments: contextCommitments,
+    entities,
+    skillSignals,
+    workSessions: workSessions.sort((a, b) => b.durationMin - a.durationMin).slice(0, 30),
+    windowTitles,
+  };
 }
 
 function computeJournal(summaries: HourlySummary[], date: Date) {
@@ -586,14 +791,27 @@ serve(async (req) => {
     // Create Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch hourly summaries for the day
-    const { data: summaries, error: summariesError } = await supabase
-      .from('desktop_activity_logs')
-      .select('*')
-      .eq('user_id', user_id)
-      .gte('hour_start', dayStart)
-      .lt('hour_start', dayEnd)
-      .order('hour_start', { ascending: true });
+    // Fetch hourly summaries AND deep context events in parallel
+    const [summariesResult, contextEventsResult] = await Promise.all([
+      supabase
+        .from('desktop_activity_logs')
+        .select('*')
+        .eq('user_id', user_id)
+        .gte('hour_start', dayStart)
+        .lt('hour_start', dayEnd)
+        .order('hour_start', { ascending: true }),
+      supabase
+        .from('desktop_context_events')
+        .select('event_type, source_application, source_window_title, summary, entities, commitments, skill_signals, confidence, created_at')
+        .eq('user_id', user_id)
+        .gte('created_at', dayStart)
+        .lt('created_at', dayEnd)
+        .order('created_at', { ascending: true })
+        .limit(500),
+    ]);
+
+    const { data: summaries, error: summariesError } = summariesResult;
+    const { data: contextEvents } = contextEventsResult;
 
     if (summariesError) {
       console.error('[generate-daily-journal] Error fetching summaries:', summariesError);
@@ -603,7 +821,10 @@ serve(async (req) => {
       );
     }
 
-    if (!summaries || summaries.length === 0) {
+    const hasActivityLogs = summaries && summaries.length > 0;
+    const hasContextEvents = contextEvents && contextEvents.length > 0;
+
+    if (!hasActivityLogs && !hasContextEvents) {
       return new Response(
         JSON.stringify({
           error: 'No activity data for this date',
@@ -614,10 +835,27 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[generate-daily-journal] Found ${summaries.length} hourly summaries`);
+    console.log(`[generate-daily-journal] Found ${summaries?.length || 0} hourly summaries, ${contextEvents?.length || 0} context events`);
 
     // Generate the deterministic journal data
-    const journalData = computeJournal(summaries as HourlySummary[], targetDate);
+    const journalData = computeJournal((summaries || []) as HourlySummary[], targetDate);
+
+    // Aggregate deep context events (window titles, entities, skills, work sessions)
+    const deepContextFromEvents = hasContextEvents
+      ? aggregateContextEvents(contextEvents as ContextEvent[])
+      : null;
+
+    // Merge context event data into journal deep context
+    if (deepContextFromEvents) {
+      // Merge commitments from context events into journal commitments
+      if (deepContextFromEvents.commitments.length > 0) {
+        journalData.commitments_detected = [
+          ...journalData.commitments_detected,
+          ...deepContextFromEvents.commitments,
+        ];
+      }
+      journalData.has_deep_context = true;
+    }
 
     // Fetch last 7 days of journals for weekly context
     const weekStart = new Date(targetDate);
@@ -659,14 +897,15 @@ serve(async (req) => {
           ocrTexts: journalData.ocr_texts,
           semanticCategories: journalData.semantic_categories,
           commitments: journalData.commitments_detected,
-        } : undefined
+        } : undefined,
+        deepContextFromEvents || undefined
       );
     }
 
     // Prepare journal record with AI content if available
-    const journalRecord = {
+    const journalRecord: Record<string, any> = {
       user_id,
-      company_id: company_id || summaries[0]?.company_id,
+      company_id: company_id || summaries?.[0]?.company_id,
       journal_date: journalDate,
       overview: aiContent?.overview || journalData.overview,
       highlights: journalData.highlights,
@@ -674,7 +913,7 @@ serve(async (req) => {
       total_active_minutes: journalData.total_active_minutes,
       productivity_score: journalData.productivity_score,
       top_apps: journalData.top_apps,
-      // New AI-generated fields
+      // AI-generated fields
       summary_points: aiContent?.summaryPoints || [],
       timeline_narrative: aiContent?.timelineNarrative || null,
       personal_notes: aiContent?.personalNotes || null,
@@ -683,6 +922,18 @@ serve(async (req) => {
       weekly_context: weeklyContext || null,
       ai_generated: !!aiContent,
     };
+
+    // Store deep context aggregations if available (entities, skills, work sessions)
+    if (deepContextFromEvents) {
+      journalRecord.deep_context = {
+        entities_detected: deepContextFromEvents.entities.slice(0, 20),
+        skills_exercised: deepContextFromEvents.skillSignals.slice(0, 15),
+        work_sessions: deepContextFromEvents.workSessions.slice(0, 20),
+        window_titles: deepContextFromEvents.windowTitles.slice(0, 15),
+        commitments: journalData.commitments_detected.slice(0, 20),
+        context_events_count: contextEvents?.length || 0,
+      };
+    }
 
     // Upsert the journal
     const { data: journal, error: journalError } = await supabase
