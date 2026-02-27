@@ -96,7 +96,25 @@ const APP_COLORS = {
 // Deep Context Tab — commitments & skills from desktop_context_events
 // ---------------------------------------------------------------------------
 
+// Map event_type/app to icon + color
+const ACTIVITY_ICONS = {
+  coding: { icon: Code, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
+  browsing: { icon: Chrome, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+  communication: { icon: MessageSquare, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' },
+  writing: { icon: FileText, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  email: { icon: Mail, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+  meeting: { icon: Video, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+  design: { icon: Sparkles, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
+  idle: { icon: Coffee, color: 'text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' },
+};
+const DEFAULT_ACTIVITY = { icon: Activity, color: 'text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' };
+
+function getActivityStyle(eventType) {
+  return ACTIVITY_ICONS[eventType] || DEFAULT_ACTIVITY;
+}
+
 function DeepContextTab({ userId }) {
+  const [events, setEvents] = useState([]);
   const [commitments, setCommitments] = useState([]);
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,17 +125,18 @@ function DeepContextTab({ userId }) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const { data, error } = await db.from('desktop_context_events')
+      const { data } = await db.from('desktop_context_events')
         .select('*')
         .eq('user_id', userId)
         .gte('created_at', today.toISOString())
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(500);
 
       if (data) {
+        setEvents(data);
+
         const allCommitments = [];
         const allSkills = new Set();
-
         for (const event of data) {
           for (const c of (event.commitments || [])) {
             allCommitments.push({ ...c, timestamp: event.created_at, app: event.source_application });
@@ -127,7 +146,6 @@ function DeepContextTab({ userId }) {
             if (path) allSkills.add(path);
           }
         }
-
         setCommitments(allCommitments);
         setSkills([...allSkills]);
       }
@@ -136,45 +154,216 @@ function DeepContextTab({ userId }) {
     if (userId) fetchDeepContext();
   }, [userId]);
 
+  // Group events by hour for timeline
+  const hourlyGroups = React.useMemo(() => {
+    const groups = {};
+    for (const e of events) {
+      const d = new Date(e.created_at);
+      const hourKey = `${d.getHours().toString().padStart(2, '0')}:00`;
+      if (!groups[hourKey]) groups[hourKey] = [];
+      groups[hourKey].push(e);
+    }
+    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+  }, [events]);
+
+  // App breakdown stats
+  const appBreakdown = React.useMemo(() => {
+    const counts = {};
+    for (const e of events) {
+      const app = e.source_application || 'Unknown';
+      const type = e.event_type || 'other';
+      if (!counts[app]) counts[app] = { count: 0, type };
+      counts[app].count++;
+    }
+    return Object.entries(counts)
+      .sort(([, a], [, b]) => b.count - a.count)
+      .slice(0, 8);
+  }, [events]);
+
+  // Deduplicate consecutive same-app events within each hour for cleaner display
+  const dedupeHourEvents = (hourEvents) => {
+    const result = [];
+    let prev = null;
+    for (const e of [...hourEvents].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))) {
+      if (prev && prev.source_application === e.source_application && prev.event_type === e.event_type) {
+        prev._count = (prev._count || 1) + 1;
+        prev._lastSeen = e.created_at;
+      } else {
+        const entry = { ...e, _count: 1 };
+        result.push(entry);
+        prev = entry;
+      }
+    }
+    return result;
+  };
+
+  const totalEvents = events.length;
+  const totalMinutesTracked = Math.round(totalEvents * 0.5); // ~30s per event
+
   if (loading) {
     return (
       <div className="space-y-4">
-        {[1, 2].map(i => (
-          <div key={i} className="h-40 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-32 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
         ))}
       </div>
     );
   }
 
+  if (events.length === 0) {
+    return (
+      <motion.div {...SLIDE_UP}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-8 text-center">
+          <Brain className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+          <p className="text-zinc-400 text-sm font-medium">No deep context events today</p>
+          <p className="text-xs text-zinc-600 mt-2 max-w-sm mx-auto">
+            Events appear as SYNC Desktop captures your screen activity. Make sure the desktop app is running.
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {/* Commitments */}
-      <motion.div {...SLIDE_UP}>
-        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Target className="w-4 h-4 text-cyan-400" />
-              Commitments Today
-            </h3>
-            <span className="text-[10px] text-zinc-500 font-medium">{commitments.length} detected</span>
-          </div>
+      {/* Summary Stats Row */}
+      <motion.div {...SLIDE_UP} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="rounded-[16px] border border-zinc-800/60 bg-zinc-900/40 p-3">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Events</p>
+          <p className="text-lg font-semibold text-white mt-0.5">{totalEvents}</p>
+        </div>
+        <div className="rounded-[16px] border border-zinc-800/60 bg-zinc-900/40 p-3">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Minutes Tracked</p>
+          <p className="text-lg font-semibold text-white mt-0.5">{totalMinutesTracked}</p>
+        </div>
+        <div className="rounded-[16px] border border-zinc-800/60 bg-zinc-900/40 p-3">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Apps Used</p>
+          <p className="text-lg font-semibold text-white mt-0.5">{appBreakdown.length}</p>
+        </div>
+        <div className="rounded-[16px] border border-zinc-800/60 bg-zinc-900/40 p-3">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Hours Active</p>
+          <p className="text-lg font-semibold text-white mt-0.5">{hourlyGroups.length}</p>
+        </div>
+      </motion.div>
 
-          {commitments.length === 0 ? (
-            <div className="text-center py-10">
-              <Target className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-              <p className="text-zinc-500 text-sm">No commitments detected today</p>
-              <p className="text-xs text-zinc-600 mt-1">Commitments appear as SYNC Desktop detects them in your conversations</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {commitments.map((c, i) => (
+      {/* App Breakdown */}
+      <motion.div {...stagger(0.05)}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+            <Monitor className="w-4 h-4 text-cyan-400" />
+            App Usage Breakdown
+          </h3>
+          <div className="space-y-2.5">
+            {appBreakdown.map(([app, { count, type }], i) => {
+              const style = getActivityStyle(type);
+              const pct = Math.round((count / totalEvents) * 100);
+              const mins = Math.round(count * 0.5);
+              return (
                 <motion.div
-                  key={i}
+                  key={app}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  className="flex items-start gap-3 p-3 rounded-[14px] border border-zinc-800/40 bg-zinc-800/20"
+                  transition={{ delay: i * 0.03 }}
+                  className="flex items-center gap-3"
                 >
+                  <div className={`w-7 h-7 rounded-lg ${style.bg} ${style.border} border flex items-center justify-center flex-shrink-0`}>
+                    <style.icon className={`w-3.5 h-3.5 ${style.color}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-white font-medium truncate">{app}</span>
+                      <span className="text-[10px] text-zinc-500 ml-2 flex-shrink-0">{mins}m ({pct}%)</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-zinc-800/60 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, delay: i * 0.05 }}
+                        className="h-full rounded-full bg-cyan-500/60"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Activity Timeline */}
+      <motion.div {...stagger(0.1)}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4 text-cyan-400" />
+            Activity Timeline
+          </h3>
+
+          <div className="space-y-4">
+            {hourlyGroups.map(([hour, hourEvents], gi) => {
+              const deduped = dedupeHourEvents(hourEvents);
+              return (
+                <motion.div
+                  key={hour}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: gi * 0.04 }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-mono text-cyan-400/80 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-2 py-0.5">
+                      {hour}
+                    </span>
+                    <div className="h-px flex-1 bg-zinc-800/40" />
+                    <span className="text-[10px] text-zinc-600">{hourEvents.length} events</span>
+                  </div>
+
+                  <div className="ml-3 border-l border-zinc-800/40 pl-4 space-y-1.5">
+                    {deduped.slice(0, 10).map((e, i) => {
+                      const style = getActivityStyle(e.event_type);
+                      const time = new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      return (
+                        <div key={e.id || i} className="flex items-center gap-2.5 py-1">
+                          <div className={`w-5 h-5 rounded-md ${style.bg} flex items-center justify-center flex-shrink-0`}>
+                            <style.icon className={`w-3 h-3 ${style.color}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs text-zinc-300 truncate block">
+                              {e.summary || `${e.event_type} in ${e.source_application}`}
+                            </span>
+                          </div>
+                          {e._count > 1 && (
+                            <span className="text-[10px] text-zinc-500 bg-zinc-800/60 rounded-full px-1.5 py-0.5 flex-shrink-0">
+                              {e._count}x
+                            </span>
+                          )}
+                          <span className="text-[10px] text-zinc-600 flex-shrink-0">{time}</span>
+                        </div>
+                      );
+                    })}
+                    {deduped.length > 10 && (
+                      <p className="text-[10px] text-zinc-600 pl-7">+{deduped.length - 10} more</p>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Commitments (if any) */}
+      {commitments.length > 0 && (
+        <motion.div {...stagger(0.15)}>
+          <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Target className="w-4 h-4 text-cyan-400" />
+                Commitments Detected
+              </h3>
+              <span className="text-[10px] text-zinc-500 font-medium">{commitments.length}</span>
+            </div>
+            <div className="space-y-2">
+              {commitments.map((c, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-[14px] border border-zinc-800/40 bg-zinc-800/20">
                   <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
                     c.status === 'overdue' ? 'bg-red-400' :
                     c.status === 'fulfilled' ? 'bg-green-400' : 'bg-cyan-400'
@@ -185,11 +374,6 @@ function DeepContextTab({ userId }) {
                       <span className="text-[10px] text-zinc-500">
                         {c.dueDate ? `Due: ${new Date(c.dueDate).toLocaleString()}` : 'No deadline'}
                       </span>
-                      {c.involvedParties?.length > 0 && (
-                        <span className="text-[10px] text-cyan-400/70">
-                          {c.involvedParties.join(', ')}
-                        </span>
-                      )}
                       {c.app && (
                         <span className="text-[10px] text-zinc-500 bg-zinc-800/60 border border-zinc-700/40 rounded-full px-1.5 py-0.5">
                           {c.app}
@@ -197,47 +381,34 @@ function DeepContextTab({ userId }) {
                       )}
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
-          )}
-        </div>
-      </motion.div>
-
-      {/* Skills Exercised */}
-      <motion.div {...stagger(0.1)}>
-        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Zap className="w-4 h-4 text-cyan-400" />
-              Skills Exercised Today
-            </h3>
-            <span className="text-[10px] text-zinc-500 font-medium">{skills.length} detected</span>
           </div>
+        </motion.div>
+      )}
 
-          {skills.length === 0 ? (
-            <div className="text-center py-10">
-              <Zap className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-              <p className="text-zinc-500 text-sm">No skills detected today</p>
-              <p className="text-xs text-zinc-600 mt-1">Skills are detected from your coding patterns and tool usage</p>
+      {/* Skills (if any) */}
+      {skills.length > 0 && (
+        <motion.div {...stagger(0.2)}>
+          <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Zap className="w-4 h-4 text-cyan-400" />
+                Skills Exercised
+              </h3>
+              <span className="text-[10px] text-zinc-500 font-medium">{skills.length}</span>
             </div>
-          ) : (
             <div className="flex flex-wrap gap-2">
               {skills.map((skill, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="px-3 py-1.5 bg-cyan-500/10 text-cyan-400 rounded-full text-xs border border-cyan-500/20 font-medium"
-                >
+                <span key={i} className="px-3 py-1.5 bg-cyan-500/10 text-cyan-400 rounded-full text-xs border border-cyan-500/20 font-medium">
                   {skill}
-                </motion.span>
+                </span>
               ))}
             </div>
-          )}
-        </div>
-      </motion.div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
