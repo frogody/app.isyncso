@@ -144,6 +144,7 @@ import { ENGINE_ITEMS_CONFIG } from "@/lib/engineAppsConfig";
 
 // Import providers
 import { AchievementProvider } from "@/components/learn/AchievementContext";
+import { ActivityLoggerProvider } from "@/components/context/ActivityLoggerContext";
 import { UserProvider, useTeamAccess } from "@/components/context/UserContext";
 import { PermissionProvider, usePermissions } from "@/components/context/PermissionContext";
 import { AnimationProvider, useAnimation } from "@/components/context/AnimationContext";
@@ -1670,6 +1671,7 @@ export default function Layout({ children, currentPageName }) {
           <KeyboardShortcutsProvider>
           <NotificationsProvider>
             <AchievementProvider>
+            <ActivityLoggerProvider>
               <Toaster />
               <GlobalShortcuts />
               {/* Skip to main content link for keyboard navigation */}
@@ -3562,6 +3564,7 @@ export default function Layout({ children, currentPageName }) {
 
         {/* EnrichmentProgressBar removed from Layout — now rendered only on TalentCandidates page */}
         </div>
+          </ActivityLoggerProvider>
           </AchievementProvider>
           </NotificationsProvider>
           </KeyboardShortcutsProvider>
