@@ -1,3 +1,9 @@
+[functions.analyze-action]
+verify_jwt = false
+
+[functions.execute-action]
+verify_jwt = false
+
 [functions.task-pixel]
 verify_jwt = false
 
