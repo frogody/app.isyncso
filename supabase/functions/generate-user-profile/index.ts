@@ -73,6 +73,7 @@ serve(async (req) => {
       deepContentResult,
       memoryImportsResult,
       activityLogResult,
+      deepContextResult,
     ] = await Promise.all([
       // User data
       supabase
@@ -81,13 +82,13 @@ serve(async (req) => {
         .eq('id', effectiveUserId)
         .single(),
 
-      // Last 10 sync sessions
+      // Last 20 sync sessions
       supabase
         .from('sync_sessions')
         .select('conversation_summary, active_entities, context')
         .eq('user_id', effectiveUserId)
         .order('updated_at', { ascending: false })
-        .limit(10),
+        .limit(20),
 
       // Top 20 sync entities
       supabase
@@ -121,13 +122,13 @@ serve(async (req) => {
         .gte('hour_start', thirtyDaysAgo)
         .limit(100),
 
-      // Last 7 daily journals (with ALL rich fields)
+      // Last 14 daily journals (with ALL rich fields)
       supabase
         .from('daily_journals')
-        .select('journal_date, content, highlights, productivity_score, summary_points, timeline_narrative, personal_notes, weekly_context, communications, action_items')
+        .select('journal_date, content, highlights, productivity_score, summary_points, timeline_narrative, personal_notes, weekly_context, communications, action_items, focus_areas, overview')
         .eq('user_id', effectiveUserId)
         .order('journal_date', { ascending: false })
-        .limit(7),
+        .limit(14),
 
       // Existing rejected assumptions (corrections)
       supabase
@@ -158,6 +159,15 @@ serve(async (req) => {
         .eq('user_id', effectiveUserId)
         .order('created_at', { ascending: false })
         .limit(50),
+
+      // Deep context events (semantic screen captures from desktop)
+      supabase
+        .from('desktop_context_events')
+        .select('event_type, source_application, source_window_title, summary, entities, commitments, skill_signals, created_at')
+        .eq('user_id', effectiveUserId)
+        .gte('created_at', thirtyDaysAgo)
+        .order('created_at', { ascending: false })
+        .limit(200),
     ]);
 
     // Extract data, continuing even if some sources fail
@@ -172,13 +182,14 @@ serve(async (req) => {
     const deepContent = deepContentResult.data || [];
     const memoryImports = memoryImportsResult.data || [];
     const inAppActivity = activityLogResult.data || [];
+    const deepContextEvents = deepContextResult.data || [];
 
     if (!effectiveCompanyId && userData?.company_id) {
       effectiveCompanyId = userData.company_id;
     }
 
     // Log data availability
-    console.log(`[generate-user-profile] Data gathered: user=${!!userData}, sessions=${sessions.length}, entities=${entities.length}, memory=${memoryChunks.length}, templates=${actionTemplates.length}, activity=${activityLogs.length}, journals=${journals.length}, rejections=${rejections.length}, deepContent=${deepContent.length}, memoryImports=${memoryImports.length}, inAppActivity=${inAppActivity.length}`);
+    console.log(`[generate-user-profile] Data gathered: user=${!!userData}, sessions=${sessions.length}, entities=${entities.length}, memory=${memoryChunks.length}, templates=${actionTemplates.length}, activity=${activityLogs.length}, journals=${journals.length}, rejections=${rejections.length}, deepContent=${deepContent.length}, memoryImports=${memoryImports.length}, inAppActivity=${inAppActivity.length}, deepContext=${deepContextEvents.length}`);
 
     // Build user data string for LLM prompt
     let userDataStr = '';
@@ -252,50 +263,59 @@ serve(async (req) => {
     }
 
     if (journals.length > 0) {
-      userDataStr += 'RECENT DAILY JOURNALS:\n';
+      userDataStr += 'RECENT DAILY JOURNALS (rich detail — use heavily for profile):\n';
       for (const j of journals) {
-        userDataStr += `- ${j.journal_date}: productivity ${Math.round((j.productivity_score || 0) * 100)}%`;
+        userDataStr += `\n=== ${j.journal_date} (productivity: ${Math.round((j.productivity_score || 0) * 100)}%) ===\n`;
+        if (j.overview) {
+          userDataStr += `Overview: ${truncateText(j.overview, 400)}\n`;
+        }
+        if (j.content) {
+          userDataStr += `Full narrative: ${truncateText(j.content, 800)}\n`;
+        }
+        if (j.focus_areas && Array.isArray(j.focus_areas) && j.focus_areas.length > 0) {
+          const areas = j.focus_areas.slice(0, 6).map((a: any) =>
+            typeof a === 'string' ? a : `${a.category || a.area || ''}: ${a.percentage || a.minutes || ''}${a.percentage ? '%' : 'm'}`
+          ).filter(Boolean);
+          if (areas.length > 0) {
+            userDataStr += `Focus areas: ${areas.join(', ')}\n`;
+          }
+        }
         if (j.highlights && Array.isArray(j.highlights)) {
-          const highlightTexts = j.highlights.slice(0, 3).map((h: any) =>
+          const highlightTexts = j.highlights.slice(0, 5).map((h: any) =>
             typeof h === 'string' ? h : h.description || ''
           ).filter(Boolean);
           if (highlightTexts.length > 0) {
-            userDataStr += ` — ${highlightTexts.join('; ')}`;
+            userDataStr += `Highlights: ${highlightTexts.join('; ')}\n`;
           }
         }
-        if (j.content) {
-          userDataStr += `\n  ${truncateText(j.content, 150)}`;
-        }
-        // Rich journal fields
         if (j.summary_points && Array.isArray(j.summary_points) && j.summary_points.length > 0) {
-          const points = j.summary_points.slice(0, 5).map((p: any) =>
+          const points = j.summary_points.slice(0, 8).map((p: any) =>
             typeof p === 'string' ? p : p.point || p.text || ''
           ).filter(Boolean);
           if (points.length > 0) {
-            userDataStr += `\n  Summary: ${points.join('; ')}`;
+            userDataStr += `Key points: ${points.join('; ')}\n`;
           }
         }
         if (j.timeline_narrative) {
-          userDataStr += `\n  Day timeline: ${truncateText(j.timeline_narrative, 200)}`;
+          userDataStr += `Day timeline: ${truncateText(j.timeline_narrative, 500)}\n`;
         }
         if (j.weekly_context) {
-          userDataStr += `\n  Weekly context: ${truncateText(j.weekly_context, 150)}`;
+          userDataStr += `Weekly context: ${truncateText(j.weekly_context, 300)}\n`;
         }
         if (j.personal_notes) {
-          userDataStr += `\n  Personal notes: ${truncateText(j.personal_notes, 150)}`;
+          userDataStr += `Personal notes: ${truncateText(j.personal_notes, 300)}\n`;
         }
         if (j.communications) {
-          userDataStr += `\n  Communications: ${truncateText(j.communications, 150)}`;
+          userDataStr += `Communications: ${truncateText(j.communications, 300)}\n`;
         }
         if (j.action_items && Array.isArray(j.action_items) && j.action_items.length > 0) {
-          const items = j.action_items.slice(0, 5).map((a: any) =>
+          const items = j.action_items.slice(0, 8).map((a: any) =>
             typeof a === 'string' ? a : a.item || a.task || a.text || ''
           ).filter(Boolean);
           if (items.length > 0) {
-            userDataStr += `\n  Action items: ${items.join('; ')}`;
+            userDataStr += `Action items: ${items.join('; ')}\n`;
           }
         }
-        userDataStr += '\n';
       }
       userDataStr += '\n';
     }
@@ -379,9 +399,73 @@ serve(async (req) => {
       userDataStr += '\n';
     }
 
-    // Truncate total data to keep under 20000 chars (increased for richer data)
-    if (userDataStr.length > 20000) {
-      userDataStr = userDataStr.slice(0, 20000) + '\n...(truncated)';
+    if (deepContextEvents.length > 0) {
+      userDataStr += 'DEEP CONTEXT — WHAT THE USER ACTUALLY WORKS ON (screen captures with semantic analysis):\n';
+
+      // Aggregate by summary/window title to show work patterns
+      const workPatterns = new Map<string, { count: number; apps: Set<string>; types: Set<string>; lastSeen: string }>();
+      const allCommitmentsFromContext: string[] = [];
+      const allSkillsFromContext = new Set<string>();
+
+      for (const ev of deepContextEvents) {
+        // Aggregate work patterns
+        const topic = ev.source_window_title || ev.summary || `${ev.event_type} in ${ev.source_application}`;
+        const existing = workPatterns.get(topic);
+        if (existing) {
+          existing.count++;
+          existing.apps.add(ev.source_application);
+          existing.types.add(ev.event_type);
+        } else {
+          workPatterns.set(topic, {
+            count: 1,
+            apps: new Set([ev.source_application]),
+            types: new Set([ev.event_type]),
+            lastSeen: ev.created_at,
+          });
+        }
+
+        // Collect commitments
+        if (ev.commitments && Array.isArray(ev.commitments)) {
+          for (const c of ev.commitments) {
+            const desc = c.description || c.text || '';
+            if (desc && !allCommitmentsFromContext.includes(desc)) {
+              allCommitmentsFromContext.push(desc);
+            }
+          }
+        }
+
+        // Collect skills
+        if (ev.skill_signals && Array.isArray(ev.skill_signals)) {
+          for (const s of ev.skill_signals) {
+            const path = Array.isArray(s.skillPath) ? s.skillPath.join(' > ') : (s.skillCategory || '');
+            if (path) allSkillsFromContext.add(path);
+          }
+        }
+      }
+
+      // Sort by frequency and show top work topics
+      const sortedPatterns = Array.from(workPatterns.entries())
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 30);
+
+      userDataStr += 'Top work topics (by time spent):\n';
+      for (const [topic, data] of sortedPatterns) {
+        const mins = Math.round(data.count * 0.5);
+        userDataStr += `- "${truncateText(topic, 120)}" — ${mins}m across ${[...data.apps].join(', ')} (${[...data.types].join('/')})\n`;
+      }
+
+      if (allCommitmentsFromContext.length > 0) {
+        userDataStr += `\nCommitments detected from screen: ${allCommitmentsFromContext.slice(0, 10).join('; ')}\n`;
+      }
+      if (allSkillsFromContext.size > 0) {
+        userDataStr += `Skills detected from screen: ${[...allSkillsFromContext].slice(0, 15).join(', ')}\n`;
+      }
+      userDataStr += '\n';
+    }
+
+    // Truncate total data to keep under 40000 chars for richer profiles
+    if (userDataStr.length > 40000) {
+      userDataStr = userDataStr.slice(0, 40000) + '\n...(truncated)';
     }
 
     // Build corrections string from rejected assumptions
@@ -393,31 +477,40 @@ serve(async (req) => {
     }
 
     // Build LLM prompt
-    const systemPrompt = `You are building a personal profile biography for a user of iSyncSO, an AI-powered business platform.
+    const systemPrompt = `You are building a rich, detailed personal profile for a user of iSyncSO, an AI-powered business platform. This profile should read like a fascinating character study — someone who knows this person deeply and can paint a vivid picture of who they are professionally and personally.
 
-Based on the following data about the user, generate a comprehensive profile in JSON format:
+You have access to their actual screen activity, daily journals, conversations, work patterns, and more. Use ALL of this data to build the most comprehensive, specific, and accurate profile possible.
+
+Generate a profile in JSON format:
 
 {
-  "biography": "A warm, insightful biography (2-3 paragraphs) written in third person. Reference specific details from their work patterns, interests, and interactions.",
-  "tagline": "A single catchy sentence summarizing this person (e.g. 'Product-focused founder who lives in spreadsheets and dreams in APIs')",
-  "work_style": ["trait1", "trait2", ...],
-  "interests": ["interest1", "interest2", ...],
-  "skills": ["skill1", "skill2", ...],
-  "top_coworkers": [{"name": "...", "interaction_count": 0, "context": "..."}],
+  "biography": "A rich, detailed biography (5-7 paragraphs) written in third person. This should read like a well-written profile piece:\n\n- Paragraph 1: Who they are — their role, what they build, what drives them\n- Paragraph 2: How they work — their daily rhythm, tools, workflow patterns\n- Paragraph 3: What they're building right now — current projects, features, technical focus\n- Paragraph 4: Their technical identity — languages, frameworks, architecture preferences\n- Paragraph 5: Their communication and collaboration style\n- Paragraph 6: Their interests, passions, and what makes them unique\n- Paragraph 7: The bigger picture — where they seem to be heading, their ambitions\n\nBe SPECIFIC. Reference actual apps they use, actual projects they work on, actual patterns from their journals. Never be generic.",
+  "tagline": "A memorable one-liner that captures their essence (be creative and specific, not generic)",
+  "work_style": ["8-12 specific traits derived from actual behavior patterns"],
+  "interests": ["6-10 interests inferred from browsing, conversations, and activity"],
+  "skills": ["10-15 specific technical and professional skills observed in their work"],
+  "top_coworkers": [{"name": "...", "interaction_count": 0, "context": "how they interact"}],
   "top_apps": [{"name": "...", "avg_daily_minutes": 0, "category": "..."}],
   "top_clients": [{"name": "...", "interaction_count": 0}],
   "assumptions": [
     {
-      "category": "work_style|preference|skill|interest|personality|habit",
-      "assumption": "A specific statement about the user",
-      "confidence": 0.0,
-      "evidence": "What data supports this assumption",
-      "source": "conversation|activity|entity|journal"
+      "category": "work_style|preference|skill|interest|personality|habit|goal|strength|weakness",
+      "assumption": "A specific, insightful statement about the user",
+      "confidence": 0.0-1.0,
+      "evidence": "What specific data supports this — quote actual journal entries, activity patterns, or conversations",
+      "source": "conversation|activity|entity|journal|deep_context|memory_import"
     }
   ]
 }
 
-Generate 10-20 assumptions. Be specific and insightful, not generic. Base everything on actual data provided.
+GUIDELINES:
+- The biography should be 800-1200 words. Make it rich and detailed.
+- Generate 20-30 assumptions. Be bold and specific, not safe and generic.
+- Reference SPECIFIC projects, tools, files, and patterns from the data.
+- Use the daily journals heavily — they contain the richest narrative about their actual days.
+- Use deep context events to understand what they actually work on hour-by-hour.
+- Infer personality from behavior patterns (e.g., late-night coding = night owl, frequent context-switching = multitasker).
+- Don't be afraid to make educated guesses — that's what assumptions are for.
 
 IMPORTANT: If the user has corrected previous assumptions (listed below as CORRECTIONS), respect those corrections and do NOT repeat the same wrong assumptions.
 
@@ -450,8 +543,8 @@ ${userDataStr}`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        temperature: 0.4,
-        max_tokens: 4000,
+        temperature: 0.5,
+        max_tokens: 10000,
       }),
     });
 
@@ -524,6 +617,7 @@ ${userDataStr}`;
       deep_content: deepContent.length,
       memory_imports: memoryImports.length,
       in_app_activity: inAppActivity.length,
+      deep_context_events: deepContextEvents.length,
     };
 
     // Upsert into user_profile_biography
