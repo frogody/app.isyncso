@@ -529,9 +529,10 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if ((path.startsWith('/sync') && !path.startsWith('/syncstudio')) || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
     const activityItems = [
-      { label: 'Journal', path: '/sync', icon: BookOpen },
-      { label: 'Story', path: '/sync/story', icon: UserIcon },
-      { label: 'Connections', path: '/sync/connections', icon: Link2 },
+      { label: 'SYNC Agent', path: '/sync?view=agent', icon: Brain },
+      { label: 'Daily Journals', path: '/sync?view=journal', icon: BookOpen },
+      { label: 'Profile', path: '/sync?view=profile', icon: UserIcon },
+      { label: 'Activity', path: '/sync?view=activity', icon: BarChart3 },
     ];
     return {
       title: 'SYNC',
@@ -811,10 +812,19 @@ function isSubmenuItemActive(item, location) {
   const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
 
   if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
-    const itemType = itemUrl.searchParams.get('type');
-    const currentType = currentUrl.searchParams.get('type');
-    if (itemType) return itemType === currentType;
-    return true;
+    // Check all search params from the item URL — they must all match
+    let allMatch = true;
+    for (const [key, value] of itemUrl.searchParams) {
+      if (currentUrl.searchParams.get(key) !== value) {
+        allMatch = false;
+        break;
+      }
+    }
+    // If item has search params, all must match. If no params, pathname match is enough.
+    if (itemUrl.search) return allMatch;
+    // Pathname-only match: only active if current URL also has no distinguishing params
+    // (e.g. /sync with no ?view= should match the first/default item)
+    return !currentUrl.searchParams.has('view') && !currentUrl.searchParams.has('type');
   }
   const basePath = itemUrl.pathname.toLowerCase();
   return currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
@@ -1017,7 +1027,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             <SyncAvatarSidebarButton
               onSingleClick={() => {
                 setOpenSubmenu?.('sync');
-                navigate('/sync');
+                navigate('/sync?view=agent');
               }}
               voiceHook={syncVoice}
               knockHook={syncKnock}

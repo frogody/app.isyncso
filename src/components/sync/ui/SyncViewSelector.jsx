@@ -1,32 +1,27 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Brain, Zap, BarChart3, BookOpen, UserCircle } from 'lucide-react';
-import { createPageUrl } from '@/utils';
 
 const SYNC_TABS = [
-  { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
-  { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
-  { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
-  { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
-  { label: 'Profile', path: createPageUrl('SyncProfile'), icon: UserCircle },
+  { label: 'SYNC Agent', view: 'agent', icon: Brain },
+  { label: 'Daily Journals', view: 'journal', icon: BookOpen },
+  { label: 'Profile', view: 'profile', icon: UserCircle },
+  { label: 'Activity', view: 'activity', icon: BarChart3 },
 ];
 
 export function SyncViewSelector({ className = '' }) {
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'agent';
 
   return (
     <div className={`flex items-center gap-0.5 bg-zinc-900/60 border border-zinc-800/50 rounded-lg p-1 ${className}`}>
       {SYNC_TABS.map((item) => {
         const Icon = item.icon;
-        const fullUrl = location.pathname + location.search;
-        const itemBase = item.path?.split('?')[0];
-        const isActive = item.matchPath
-          ? location.pathname.toLowerCase().startsWith(item.matchPath)
-          : location.pathname === itemBase;
+        const isActive = currentView === item.view;
 
         return (
           <Link
-            key={item.label}
-            to={item.path}
+            key={item.view}
+            to={`/sync?view=${item.view}`}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
               isActive
                 ? 'bg-zinc-800/80 text-cyan-300/90'
