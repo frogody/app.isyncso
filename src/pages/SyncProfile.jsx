@@ -131,7 +131,9 @@ function SuperpowersChapter({ biography }) {
               <>Your primary strength centers around <span className="text-white font-medium">{skillNames[0]}</span>.</>
             ) : null}
           </p>
-          {biography?.superpowers_summary && <p>{biography.superpowers_summary}</p>}
+          {biography?.superpowers_summary && biography.superpowers_summary.split('\n').filter(Boolean).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
         </div>
       </div>
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
@@ -169,7 +171,9 @@ function WorkDNAChapter({ biography }) {
               <> The trait that stands out most is being a <span className="text-white font-medium">{traits[0]}</span>.</>
             ) : null}
           </p>
-          {biography?.work_dna_summary && <p>{biography.work_dna_summary}</p>}
+          {biography?.work_dna_summary && biography.work_dna_summary.split('\n').filter(Boolean).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
         </div>
       </div>
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
@@ -202,6 +206,9 @@ function SocialCircleChapter({ biography }) {
             Your closest collaboration is with <span className="text-white font-medium">{topName}</span>,
             suggesting a strong working dynamic that drives much of your daily communication.
           </p>
+          {biography?.social_circle_summary && biography.social_circle_summary.split('\n').filter(Boolean).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
         </div>
       </div>
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
@@ -244,6 +251,9 @@ function DigitalLifeChapter({ biography }) {
             <span className="text-white font-medium"> {topApp}</span> dominates your screen time, accounting for the largest share of your daily workflow.
             {apps.length >= 3 && <> Your toolkit suggests a blend of research, creative, and productivity tools.</>}
           </p>
+          {biography?.digital_life_summary && biography.digital_life_summary.split('\n').filter(Boolean).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
         </div>
       </div>
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
@@ -286,6 +296,9 @@ function ClientWorldChapter({ biography }) {
             <span className="text-white font-medium"> {topClient}</span> is your most active relationship, receiving the most attention in your recent workflow.
             {clients.length >= 3 && <> The distribution of your client interactions shows where your focus and expertise are concentrated.</>}
           </p>
+          {biography?.client_world_summary && biography.client_world_summary.split('\n').filter(Boolean).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
         </div>
       </div>
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
@@ -330,6 +343,9 @@ function InterestsChapter({ biography }) {
               <> <span className="text-white font-medium">{names[0]}</span> stands out as a recurring theme across your activity.</>
             ) : null}
           </p>
+          {biography?.interests_summary && biography.interests_summary.split('\n').filter(Boolean).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
         </div>
       </div>
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
@@ -373,6 +389,9 @@ function DailyRhythmsChapter({ biography }) {
             levels are at their highest. Understanding these rhythms helps SYNC time suggestions and nudges
             for when you're most receptive — and know when to hold back during your quieter hours.
           </p>
+          {biography?.daily_rhythms_summary && biography.daily_rhythms_summary.split('\n').filter(Boolean).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
         </div>
       </div>
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">

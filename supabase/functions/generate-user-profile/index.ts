@@ -486,6 +486,23 @@ Generate a profile in JSON format:
 {
   "biography": "A rich, detailed biography (5-7 paragraphs) written in third person. This should read like a well-written profile piece:\n\n- Paragraph 1: Who they are — their role, what they build, what drives them\n- Paragraph 2: How they work — their daily rhythm, tools, workflow patterns\n- Paragraph 3: What they're building right now — current projects, features, technical focus\n- Paragraph 4: Their technical identity — languages, frameworks, architecture preferences\n- Paragraph 5: Their communication and collaboration style\n- Paragraph 6: Their interests, passions, and what makes them unique\n- Paragraph 7: The bigger picture — where they seem to be heading, their ambitions\n\nBe SPECIFIC. Reference actual apps they use, actual projects they work on, actual patterns from their journals. Never be generic.",
   "tagline": "A memorable one-liner that captures their essence (be creative and specific, not generic)",
+
+  "superpowers_summary": "2-3 paragraphs (150-300 words) about their key skills and superpowers. Go deep — explain HOW they use each skill, what makes their approach unique, and how these skills interconnect. Reference specific projects, tools, or patterns from the data. Don't just list skills — tell the story of their technical mastery.",
+
+  "work_dna_summary": "2-3 paragraphs (150-300 words) about their work style and DNA. Describe their working patterns in vivid detail: when they're most productive, how they handle context-switching, their approach to deep work vs collaboration, their decision-making style. Reference actual journal entries and activity data.",
+
+  "social_circle_summary": "2-3 paragraphs (150-300 words) about their professional relationships and collaboration patterns. Who do they work with most? What kind of dynamic do they have with their closest collaborators? How do they communicate — async vs sync, formal vs casual? What role do they play in team dynamics?",
+
+  "digital_life_summary": "2-3 paragraphs (150-300 words) about their digital ecosystem and tool usage. Paint a picture of their digital workspace: which tools dominate their day, how they flow between applications, what their tool choices reveal about their work philosophy. Reference actual apps and usage patterns.",
+
+  "client_world_summary": "2-3 paragraphs (150-300 words) about their client relationships and business focus. Who are their key clients? How do they manage client relationships? What industries or domains do they serve? What does their client portfolio reveal about their professional niche?",
+
+  "interests_summary": "2-3 paragraphs (150-300 words) about their personal interests, passions, and what drives them beyond work. What topics light them up? How do their personal interests influence their professional work? What communities or subjects do they engage with outside of work?",
+
+  "daily_rhythms_summary": "2-3 paragraphs (150-300 words) about their daily schedule and productivity patterns. When do they start and end their day? What does a typical day look like hour by hour? When are their creative peaks and low points? How do they structure breaks and transitions between tasks?",
+
+  "daily_rhythms": [{"hour": 9, "activity_count": 15, "primary_activity": "coding"}],
+
   "work_style": ["8-12 specific traits derived from actual behavior patterns"],
   "interests": ["6-10 interests inferred from browsing, conversations, and activity"],
   "skills": ["10-15 specific technical and professional skills observed in their work"],
@@ -505,6 +522,8 @@ Generate a profile in JSON format:
 
 GUIDELINES:
 - The biography should be 800-1200 words. Make it rich and detailed.
+- EVERY chapter summary (superpowers_summary, work_dna_summary, social_circle_summary, digital_life_summary, client_world_summary, interests_summary, daily_rhythms_summary) MUST be 150-300 words of rich narrative. These are the MOST IMPORTANT outputs after the biography. Each one should read like a mini-essay about that aspect of the person.
+- The daily_rhythms array should have entries for each active hour of the day (typically 8-23), with activity_count and primary_activity.
 - Generate 20-30 assumptions. Be bold and specific, not safe and generic.
 - Reference SPECIFIC projects, tools, files, and patterns from the data.
 - Use the daily journals heavily — they contain the richest narrative about their actual days.
@@ -544,7 +563,7 @@ ${userDataStr}`;
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.5,
-        max_tokens: 10000,
+        max_tokens: 16000,
       }),
     });
 
@@ -605,6 +624,16 @@ ${userDataStr}`;
     const topClients = Array.isArray(parsed.top_clients) ? parsed.top_clients : [];
     const assumptions = Array.isArray(parsed.assumptions) ? parsed.assumptions : [];
 
+    // Chapter narrative summaries
+    const superpowersSummary = parsed.superpowers_summary || '';
+    const workDnaSummary = parsed.work_dna_summary || '';
+    const socialCircleSummary = parsed.social_circle_summary || '';
+    const digitalLifeSummary = parsed.digital_life_summary || '';
+    const clientWorldSummary = parsed.client_world_summary || '';
+    const interestsSummary = parsed.interests_summary || '';
+    const dailyRhythmsSummary = parsed.daily_rhythms_summary || '';
+    const dailyRhythms = Array.isArray(parsed.daily_rhythms) ? parsed.daily_rhythms : [];
+
     // Track data source counts
     const dataSources: Record<string, number> = {
       sessions: sessions.length,
@@ -634,6 +663,14 @@ ${userDataStr}`;
         top_coworkers: topCoworkers,
         top_apps: topApps,
         top_clients: topClients,
+        superpowers_summary: superpowersSummary,
+        work_dna_summary: workDnaSummary,
+        social_circle_summary: socialCircleSummary,
+        digital_life_summary: digitalLifeSummary,
+        client_world_summary: clientWorldSummary,
+        interests_summary: interestsSummary,
+        daily_rhythms_summary: dailyRhythmsSummary,
+        daily_rhythms: dailyRhythms,
         data_sources_used: dataSources,
         generation_model: 'moonshotai/Kimi-K2-Instruct',
         last_generated_at: new Date().toISOString(),
