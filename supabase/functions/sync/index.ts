@@ -957,6 +957,95 @@ const AGENTS: Record<string, AgentRouting> = {
 };
 
 // ============================================================================
+// Desktop Deep Context
+// ============================================================================
+
+/**
+ * Fetch recent deep context events for a user from the desktop app.
+ * Returns a formatted string to inject into the system prompt.
+ */
+async function getDesktopDeepContext(
+  supabaseClient: any,
+  userId: string
+): Promise<string> {
+  try {
+    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+    const { data: events, error } = await supabaseClient
+      .from('desktop_context_events')
+      .select('event_type, source_application, summary, entities, intent, commitments, skill_signals, created_at')
+      .eq('user_id', userId)
+      .gte('created_at', fifteenMinAgo)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error || !events || events.length === 0) return '';
+
+    const lines: string[] = ['--- Desktop Deep Context ---'];
+
+    // Latest activity
+    const latest = events[0];
+    if (latest.summary) lines.push(`Current: ${latest.summary}`);
+    if (latest.intent) lines.push(`Intent: ${latest.intent}`);
+
+    // Context switches
+    const switches = events.filter((e: any) => e.event_type === 'context_switch');
+    if (switches.length > 0) lines.push(`Context switches (15 min): ${switches.length}`);
+
+    // All entities mentioned
+    const allEntities = new Set<string>();
+    for (const event of events.slice(0, 10)) {
+      const entities = event.entities || [];
+      for (const e of entities) allEntities.add(e);
+    }
+    if (allEntities.size > 0) {
+      lines.push(`Entities mentioned: ${Array.from(allEntities).slice(0, 10).join(', ')}`);
+    }
+
+    // Pending commitments (from all recent events)
+    const allCommitments: any[] = [];
+    for (const event of events) {
+      const cmts = event.commitments || [];
+      for (const c of cmts) {
+        if (c.status === 'detected' || c.status === 'pending_action') {
+          allCommitments.push(c);
+        }
+      }
+    }
+    if (allCommitments.length > 0) {
+      lines.push(`Pending commitments (${allCommitments.length}):`);
+      for (const c of allCommitments.slice(0, 5)) {
+        const due = c.dueDate ? ` (due: ${new Date(c.dueDate).toLocaleString()})` : '';
+        lines.push(`  - ${c.description}${due}`);
+      }
+    }
+
+    // Skills being used
+    const skillSet = new Set<string>();
+    for (const event of events.slice(0, 10)) {
+      const skills = event.skill_signals || [];
+      for (const s of skills) {
+        const path = Array.isArray(s.skillPath) ? s.skillPath.join(' > ') : s.skillCategory;
+        skillSet.add(path);
+      }
+    }
+    if (skillSet.size > 0) {
+      lines.push(`Active skills: ${Array.from(skillSet).slice(0, 5).join(', ')}`);
+    }
+
+    // Recent apps
+    const apps = [...new Set(events.map((e: any) => e.source_application).filter(Boolean))];
+    if (apps.length > 0) lines.push(`Recent apps: ${apps.slice(0, 5).join(', ')}`);
+
+    lines.push('---');
+    return lines.join('\n');
+  } catch (err) {
+    console.error('[sync] Error fetching desktop deep context:', err);
+    return '';
+  }
+}
+
+// ============================================================================
 // Routing Logic
 // ============================================================================
 
@@ -2915,6 +3004,15 @@ serve(async (req) => {
     let enhancedSystemPrompt = memoryContextStr
       ? `${SYNC_SYSTEM_PROMPT}\n\n${memoryContextStr}${dateContext}`
       : `${SYNC_SYSTEM_PROMPT}${dateContext}`;
+
+    // Inject desktop deep context if available
+    if (userId) {
+      const desktopContext = await getDesktopDeepContext(supabase, userId);
+      if (desktopContext) {
+        enhancedSystemPrompt += `\n\n${desktopContext}`;
+        console.log('[SYNC] Injected desktop deep context into system prompt');
+      }
+    }
 
     // Voice mode: inject conversational voice instructions
     if (voice) {
