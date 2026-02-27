@@ -438,7 +438,7 @@ function DeepContextTab({ userId }) {
   );
 }
 
-export default function DesktopActivity() {
+export default function DesktopActivity({ embedded = false, onRegisterControls } = {}) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -792,7 +792,7 @@ export default function DesktopActivity() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className={embedded ? '' : 'min-h-screen bg-black px-4 lg:px-6 py-4'}>
         <div className="space-y-4">
           <div className="h-10 w-64 bg-zinc-800/50 rounded-[20px] animate-pulse" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -811,57 +811,80 @@ export default function DesktopActivity() {
 
   const maxDailyMinutes = Math.max(...stats.dailyBreakdown.map(d => d.minutes), 1);
 
+  // ── Header controls for embedded mode ──
+  const dateRangePills = (
+    <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40">
+      {[
+        { key: '1d', label: 'Today' },
+        { key: '7d', label: '7d' },
+        { key: '30d', label: '30d' },
+        { key: '90d', label: '90d' },
+        { key: 'all', label: 'All' },
+      ].map((p) => (
+        <button
+          key={p.key}
+          onClick={() => setDateRange(p.key)}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+            dateRange === p.key
+              ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+              : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent'
+          }`}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const actionButtons = (
+    <div className="flex items-center gap-2">
+      <Button
+        onClick={handleDownload}
+        variant="outline"
+        size="sm"
+        className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200 text-xs h-8 rounded-full"
+      >
+        <Download className="w-3.5 h-3.5 mr-1.5" />
+        Desktop App
+      </Button>
+      <button
+        onClick={handleRefresh}
+        disabled={refreshing}
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-700/50 bg-zinc-800/30 text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-all text-xs font-medium disabled:opacity-50"
+      >
+        {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+      </button>
+    </div>
+  );
+
+  // Register header controls for embedded mode
+  useEffect(() => {
+    if (embedded && onRegisterControls) {
+      onRegisterControls(
+        <div className="flex items-center gap-3">
+          {dateRangePills}
+          {actionButtons}
+        </div>
+      );
+    }
+    return () => { if (embedded && onRegisterControls) onRegisterControls(null); };
+  }, [embedded, onRegisterControls, dateRange, refreshing]);
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+    <div className={embedded ? '' : 'min-h-screen bg-black'}>
+      <div className={embedded ? '' : 'w-full px-4 lg:px-6 py-4 space-y-4'}>
 
-        {/* Header */}
-        <SyncPageHeader icon={BarChart3} title="Activity" subtitle="Desktop usage analytics">
-          {/* Date range pills */}
-          <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40">
-            {[
-              { key: '1d', label: 'Today' },
-              { key: '7d', label: '7d' },
-              { key: '30d', label: '30d' },
-              { key: '90d', label: '90d' },
-              { key: 'all', label: 'All' },
-            ].map((p) => (
-              <button
-                key={p.key}
-                onClick={() => setDateRange(p.key)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  dateRange === p.key
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleDownload}
-              variant="outline"
-              size="sm"
-              className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200 text-xs h-8 rounded-full"
-            >
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-              Desktop App
-            </Button>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-700/50 bg-zinc-800/30 text-zinc-300 hover:bg-zinc-800/60 hover:text-white transition-all text-xs font-medium disabled:opacity-50"
-            >
-              {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            </button>
-          </div>
-        </SyncPageHeader>
+        {/* Header (standalone only) */}
+        {!embedded && (
+          <SyncPageHeader icon={BarChart3} title="Activity" subtitle="Desktop usage analytics">
+            {dateRangePills}
+            {actionButtons}
+          </SyncPageHeader>
+        )}
 
         {/* Privacy Notice */}
         <motion.div {...stagger(0.05)}>

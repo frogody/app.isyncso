@@ -32,7 +32,7 @@ const stagger = (delay = 0) => ({
   transition: { ...SLIDE_UP.transition, delay },
 });
 
-export default function DailyJournal() {
+export default function DailyJournal({ embedded = false, onRegisterControls } = {}) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [journals, setJournals] = useState([]);
@@ -269,13 +269,40 @@ export default function DailyJournal() {
     return { total: journals.length, thisWeek, streak };
   }, [journals]);
 
+  // ── Register header controls for embedded mode ──
+  useEffect(() => {
+    if (embedded && onRegisterControls) {
+      onRegisterControls(
+        <Button
+          onClick={() => generateJournal(new Date())}
+          disabled={generatingJournal}
+          className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full text-xs px-4"
+        >
+          {generatingJournal ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+              Generate Today's Journal
+              <CreditCostBadge credits={1} />
+            </>
+          )}
+        </Button>
+      );
+    }
+    return () => { if (embedded && onRegisterControls) onRegisterControls(null); };
+  }, [embedded, onRegisterControls, generatingJournal]);
+
   // ---------------------------------------------------------------------------
   // Loading state
   // ---------------------------------------------------------------------------
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className={embedded ? '' : 'min-h-screen bg-black px-4 lg:px-6 py-4'}>
         <div className="space-y-4">
           <div className="h-10 w-64 bg-zinc-800/50 rounded-[20px] animate-pulse" />
           <div className="grid grid-cols-3 gap-4">
@@ -293,36 +320,11 @@ export default function DailyJournal() {
   }
 
   // ---------------------------------------------------------------------------
-  // Render
+  // Journal content (shared between embedded + standalone)
   // ---------------------------------------------------------------------------
 
-  return (
-    <div className="min-h-screen bg-black">
-      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-
-        {/* Header */}
-        <SyncPageHeader icon={BookOpen} title="Daily Journals" subtitle="AI-generated daily summaries">
-          <div />
-          <Button
-            onClick={() => generateJournal(new Date())}
-            disabled={generatingJournal}
-            className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full text-xs px-4"
-          >
-            {generatingJournal ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                Generate Today's Journal
-                <CreditCostBadge credits={1} />
-              </>
-            )}
-          </Button>
-        </SyncPageHeader>
-
+  const journalContent = (
+    <>
         {/* Privacy Notice */}
         <motion.div {...stagger(0.05)}>
           <InfoCard
@@ -359,8 +361,11 @@ export default function DailyJournal() {
             delay={0.2}
           />
         </div>
+    </>
+  );
 
-        {/* Content Grid: List + Detail */}
+  // ── Content Grid (shared between embedded + standalone) ──
+  const contentGrid = (
         <div className="grid lg:grid-cols-3 gap-4">
 
           {/* Journal List Card */}
@@ -747,6 +752,48 @@ export default function DailyJournal() {
             </div>
           </motion.div>
         </div>
+  );
+
+  // ── Embedded mode: content only, no outer shell ──
+  if (embedded) {
+    return (
+      <>
+        {journalContent}
+        {contentGrid}
+      </>
+    );
+  }
+
+  // ── Standalone mode: full page wrapper ──
+  return (
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
+
+        {/* Header */}
+        <SyncPageHeader icon={BookOpen} title="Daily Journals" subtitle="AI-generated daily summaries">
+          <div />
+          <Button
+            onClick={() => generateJournal(new Date())}
+            disabled={generatingJournal}
+            className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full text-xs px-4"
+          >
+            {generatingJournal ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Generate Today's Journal
+                <CreditCostBadge credits={1} />
+              </>
+            )}
+          </Button>
+        </SyncPageHeader>
+
+        {journalContent}
+        {contentGrid}
       </div>
     </div>
   );

@@ -1650,7 +1650,7 @@ const DEFAULT_MESSAGES = [
   { role: 'assistant', text: 'Tip: click and drag inside the avatar to interact with the visualization.', ts: Date.now() - 1000 * 60 * 1 },
 ];
 
-export default function SyncAgent() {
+export default function SyncAgent({ embedded = false, onRegisterControls } = {}) {
   const { theme, toggleTheme, syt } = useTheme();
   const { user } = useUser();
   const syncStateContext = useSyncState();
@@ -1958,25 +1958,8 @@ export default function SyncAgent() {
 
   const moodLabel = mood === 'speaking' ? 'Active' : mood === 'thinking' ? 'Thinking' : 'Idle';
 
-  return (
-    <SyncPageTransition>
-    <div ref={pageRef} className="min-h-screen bg-black text-white overflow-hidden">
-      <div className="mx-auto max-w-[1600px] px-4 lg:px-6 py-4 flex flex-col gap-4 h-[calc(100dvh-3.5rem)]">
-
-        {/* ── Header ── */}
-        <div className="shrink-0">
-          <SyncPageHeader icon={Brain} title="SYNC Agent" subtitle="Your AI assistant" />
-        </div>
-
-        {/* ── Stats Row ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
-          <StatCard icon={Brain} label="Sessions Today" value={1} color="cyan" delay={0.05} />
-          <StatCard icon={MessageSquare} label="Messages Sent" value={messages.length} color="blue" delay={0.10} />
-          <StatCard icon={Zap} label="Actions Run" value={actionsCount} color="indigo" delay={0.15} />
-          <StatCard icon={Sparkles} label="Mood" value={moodLabel} color="purple" delay={0.20} />
-        </div>
-
-        {/* ── Main Content: 2-column ── */}
+  // ── Main content grid (shared between embedded + standalone) ──
+  const mainContent = (
         <div className="flex-1 min-h-0 grid lg:grid-cols-3 gap-4">
 
           {/* Chat Card (2/3 width) */}
@@ -2272,14 +2255,48 @@ export default function SyncAgent() {
             </div>
           </motion.div>
         </div>
-      </div>
+  );
 
-      {/* Voice Mode Overlay */}
+  const voiceOverlay = (
       <SyncVoiceMode
         isOpen={voiceModeOpen}
         onClose={() => setVoiceModeOpen(false)}
         onSwitchToChat={() => setVoiceModeOpen(false)}
       />
+  );
+
+  // ── Embedded mode: content only, no outer shell ──
+  if (embedded) {
+    return (
+      <>
+        {mainContent}
+        {voiceOverlay}
+      </>
+    );
+  }
+
+  return (
+    <SyncPageTransition>
+    <div ref={pageRef} className="min-h-screen bg-black text-white overflow-hidden">
+      <div className="mx-auto max-w-[1600px] px-4 lg:px-6 py-4 flex flex-col gap-4 h-[calc(100dvh-3.5rem)]">
+
+        {/* ── Header ── */}
+        <div className="shrink-0">
+          <SyncPageHeader icon={Brain} title="SYNC Agent" subtitle="Your AI assistant" />
+        </div>
+
+        {/* ── Stats Row ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+          <StatCard icon={Brain} label="Sessions Today" value={1} color="cyan" delay={0.05} />
+          <StatCard icon={MessageSquare} label="Messages Sent" value={messages.length} color="blue" delay={0.10} />
+          <StatCard icon={Zap} label="Actions Run" value={actionsCount} color="indigo" delay={0.15} />
+          <StatCard icon={Sparkles} label="Mood" value={moodLabel} color="purple" delay={0.20} />
+        </div>
+
+        {mainContent}
+      </div>
+
+      {voiceOverlay}
     </div>
     </SyncPageTransition>
   );

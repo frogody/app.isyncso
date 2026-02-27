@@ -695,7 +695,7 @@ function ActivityLogChapter({ userId }) {
 }
 
 // ─── Main Component ────────────────────────────────────────────────
-export default function SyncProfile() {
+export default function SyncProfile({ embedded = false, onRegisterControls } = {}) {
   const { user, company } = useUser();
   const [biography, setBiography] = useState(null);
   const [assumptions, setAssumptions] = useState([]);
@@ -787,8 +787,8 @@ export default function SyncProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black">
-        <div className="w-full px-6 py-8">
+      <div className={embedded ? '' : 'min-h-screen bg-black'}>
+        <div className={embedded ? '' : 'w-full px-6 py-8'}>
           <div className="grid lg:grid-cols-[240px_1fr] gap-8">
             <Skeleton className="h-96 rounded-2xl bg-zinc-800/50 hidden lg:block" />
             <div className="space-y-6">
@@ -846,8 +846,8 @@ export default function SyncProfile() {
   const currentChapter = CHAPTERS.find(c => c.id === activeChapter) || CHAPTERS[0];
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="w-full px-4 sm:px-6 py-8">
+    <div className={embedded ? '' : 'min-h-screen bg-black'}>
+      <div className={embedded ? '' : 'w-full px-4 sm:px-6 py-8'}>
         <div className="grid lg:grid-cols-[240px_1fr] gap-8">
           {/* ─── Sidebar ─────────────────────────────────────── */}
           <aside className="hidden lg:block">
