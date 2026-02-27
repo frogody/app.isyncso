@@ -541,8 +541,8 @@ export default function SyncStory() {
   // Loading
   if (loading) {
     return (
-      <div className="min-h-screen bg-black px-4 py-8">
-        <div className="mx-auto max-w-5xl grid lg:grid-cols-[200px_1fr] gap-8">
+      <div className="min-h-screen bg-black px-6 py-8">
+        <div className="mx-auto w-full grid lg:grid-cols-[200px_1fr] gap-8">
           <Skeleton className="h-80 rounded-lg bg-zinc-800/30 hidden lg:block" />
           <div className="space-y-4">
             <Skeleton className="h-8 w-48 rounded bg-zinc-800/30" />
@@ -570,7 +570,7 @@ export default function SyncStory() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="min-h-screen bg-black text-zinc-200">
-      <div className="mx-auto max-w-5xl px-4 py-6">
+      <div className="mx-auto w-full px-6 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-lg font-medium text-zinc-200">My Story</h1>

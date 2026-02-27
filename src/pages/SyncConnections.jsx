@@ -142,8 +142,8 @@ export default function SyncConnections() {
   // Loading state
   if (loading && userLoading) {
     return (
-      <div className="min-h-screen bg-black px-4 py-6">
-        <div className="mx-auto max-w-3xl space-y-6">
+      <div className="min-h-screen bg-black px-6 py-6">
+        <div className="mx-auto w-full max-w-6xl space-y-6">
           <Skeleton className="h-8 w-48 rounded bg-zinc-800/30" />
           <div className="grid grid-cols-3 gap-4">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-lg bg-zinc-800/30" />)}
@@ -161,7 +161,7 @@ export default function SyncConnections() {
       transition={{ duration: 0.3 }}
       className="min-h-screen bg-black text-zinc-200"
     >
-      <div className="mx-auto max-w-3xl px-4 py-6">
+      <div className="mx-auto w-full max-w-6xl px-6 py-6">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

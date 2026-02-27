@@ -1003,11 +1003,26 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         )}
         {/* Top of sidebar: SYNC avatar for platform owners, logo for everyone else */}
         {isPlatformOwner ? (
-          <SyncAvatarSidebarButton
-            onSingleClick={() => navigate(createPageUrl("SyncAgent"))}
-            voiceHook={syncVoice}
-            knockHook={syncKnock}
-          />
+          <div
+            data-submenu-id="sync"
+            onMouseEnter={() => {
+              const path = location.pathname.toLowerCase();
+              if ((path.startsWith('/sync') && !path.startsWith('/syncstudio')) || path.startsWith('/aiassistant') || path.startsWith('/actions') || path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
+                onSubmenuEnter?.();
+                setOpenSubmenu?.('sync');
+              }
+            }}
+            onMouseLeave={() => onSubmenuClose?.()}
+          >
+            <SyncAvatarSidebarButton
+              onSingleClick={() => {
+                setOpenSubmenu?.('sync');
+                navigate('/sync');
+              }}
+              voiceHook={syncVoice}
+              knockHook={syncKnock}
+            />
+          </div>
         ) : (
           <div className="flex items-center justify-center min-h-[44px] w-full p-2 mb-2 rounded-xl">
             <img src="/isyncso-logo.png" alt="iSyncSO" className="w-9 h-9 object-contain" />

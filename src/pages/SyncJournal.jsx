@@ -476,7 +476,7 @@ export default function SyncJournal() {
       transition={{ duration: 0.3 }}
       className="min-h-screen bg-black text-zinc-200"
     >
-      <div className="mx-auto max-w-3xl px-4 py-4 flex flex-col h-[calc(100dvh-3.5rem)]">
+      <div className="mx-auto w-full max-w-6xl px-6 py-4 flex flex-col h-[calc(100dvh-3.5rem)]">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
