@@ -1,21 +1,11 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 import anime from '@/lib/anime-wrapper';
 import { cn } from '@/lib/utils';
 import { useSyncState } from '@/components/context/SyncStateContext';
-
-// Agent color segments - MUST match SyncAgent.jsx exactly
-const AGENT_SEGMENTS = [
-  { id: 'orchestrator', color: '#ec4899', from: 0.02, to: 0.08 },  // pink
-  { id: 'learn', color: '#06b6d4', from: 0.12, to: 0.18 },         // cyan
-  { id: 'growth', color: '#6366f1', from: 0.22, to: 0.28 },        // indigo
-  { id: 'products', color: '#10b981', from: 0.32, to: 0.38 },      // emerald
-  { id: 'sentinel', color: '#86EFAC', from: 0.42, to: 0.48 },      // sage green
-  { id: 'finance', color: '#f59e0b', from: 0.52, to: 0.58 },       // amber
-  { id: 'create', color: '#f43f5e', from: 0.62, to: 0.68 },        // rose
-  { id: 'tasks', color: '#f97316', from: 0.72, to: 0.78 },         // orange
-  { id: 'research', color: '#3b82f6', from: 0.82, to: 0.88 },      // blue
-  { id: 'inbox', color: '#14b8a6', from: 0.92, to: 0.98 },         // teal
-];
+import { useActiveAppSegments } from '@/hooks/useActiveAppSegments';
+import { useUser } from '@/components/context/UserContext';
+import { getAgentColor } from '@/lib/appColors';
+import { User } from 'lucide-react';
 
 // Check for reduced motion preference
 const prefersReducedMotion = () =>
@@ -27,15 +17,14 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
   const syncState = useSyncState();
   const { mood, level, activeAgent, isProcessing, showSuccess } = syncState;
 
-  const canvasRef = useRef(null);
-  const animationRef = useRef(null);
+  const { user } = useUser();
+  const { segments } = useActiveAppSegments();
+
   const segmentsRef = useRef(null);
   const glowRef = useRef(null);
-  const stateRef = useRef({
-    particles: [],
-    time: 0,
-    currentLevel: 0.18,
-  });
+  const [imgError, setImgError] = useState(false);
+
+  const avatarUrl = user?.avatar_url || null;
 
   // Derive animation state from sync state
   const animationState = useMemo(() => {
@@ -71,7 +60,6 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
     const paths = segmentsRef.current.querySelectorAll('path');
     anime.remove(paths);
 
-    // Different animation parameters based on state
     const configs = {
       knocking: {
         strokeWidth: [3, 6, 3],
@@ -113,13 +101,12 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
     });
 
     return () => anime.remove(paths);
-  }, [animationState]);
+  }, [animationState, segments.length]);
 
   // Highlight active agent segment
   useEffect(() => {
     if (!segmentsRef.current || !activeAgent) return;
 
-    const paths = segmentsRef.current.querySelectorAll('path');
     const activePath = segmentsRef.current.querySelector(`path[data-agent="${activeAgent}"]`);
 
     if (activePath) {
@@ -166,162 +153,15 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
     return () => anime.remove(glowRef.current);
   }, [animationState]);
 
-  // Initialize particles
-  useEffect(() => {
-    const st = stateRef.current;
-    const N = 18; // More particles for richer visualization
-    const rand = (a) => {
-      const x = Math.sin(a * 9999) * 10000;
-      return x - Math.floor(x);
-    };
-
-    st.particles = Array.from({ length: N }).map((_, i) => {
-      const pr = innerR * 0.8 * Math.sqrt(rand(i + 1));
-      const ang = rand(i + 7) * Math.PI * 2;
-      return {
-        x: r + pr * Math.cos(ang),
-        y: r + pr * Math.sin(ang),
-        vx: (rand(i + 11) - 0.5) * 0.12,
-        vy: (rand(i + 17) - 0.5) * 0.12,
-        s: 0.5 + rand(i + 23) * 0.7,
-        hue: rand(i + 31) * 60 + 250, // Purple-ish hue variation
-      };
-    });
-  }, [size, innerR, r]);
-
-  // Canvas animation for inner visualization - synchronized with mood/level
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || prefersReducedMotion()) return;
-
-    const ctx = canvas.getContext('2d');
-    const st = stateRef.current;
-    let running = true;
-
-    const render = () => {
-      if (!running) return;
-
-      st.time += 0.016;
-
-      // Smoothly interpolate to target level
-      const targetLevel = level || 0.18;
-      st.currentLevel += (targetLevel - st.currentLevel) * 0.05;
-
-      const cx = size / 2;
-      const cy = size / 2;
-      const intensity = st.currentLevel;
-
-      // Handle DPR
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      if (canvas.width !== size * dpr || canvas.height !== size * dpr) {
-        canvas.width = size * dpr;
-        canvas.height = size * dpr;
-        canvas.style.width = `${size}px`;
-        canvas.style.height = `${size}px`;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      }
-
-      ctx.clearRect(0, 0, size, size);
-
-      // Inner dark background
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.beginPath();
-      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Clip to inner circle
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
-      ctx.clip();
-
-      // Purple gradient - intensity based on level
-      const g = ctx.createRadialGradient(cx - 2, cy - 2, 1, cx, cy, innerR);
-      const baseAlpha = 0.3 + intensity * 0.4;
-      g.addColorStop(0, `rgba(168,85,247,${baseAlpha})`);
-      g.addColorStop(0.5, `rgba(139,92,246,${baseAlpha * 0.6})`);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, size, size);
-
-      // Update and draw particles - speed based on level
-      const speedBoost = 0.5 + intensity * 1.5;
-      ctx.globalCompositeOperation = 'screen';
-
-      for (let i = 0; i < st.particles.length; i++) {
-        const a = st.particles[i];
-
-        // Orbital motion - faster when active
-        const dx = a.x - cx;
-        const dy = a.y - cy;
-        const ang = Math.atan2(dy, dx) + 0.003 * speedBoost;
-        const pr = Math.sqrt(dx * dx + dy * dy);
-        a.vx += (cx + pr * Math.cos(ang) - a.x) * 0.002 * speedBoost;
-        a.vy += (cy + pr * Math.sin(ang) - a.y) * 0.002 * speedBoost;
-
-        a.x += a.vx * speedBoost;
-        a.y += a.vy * speedBoost;
-
-        // Keep inside
-        const rr = Math.sqrt((a.x - cx) ** 2 + (a.y - cy) ** 2);
-        const maxR = innerR * 0.85;
-        if (rr > maxR) {
-          const k = maxR / rr;
-          a.x = cx + (a.x - cx) * k;
-          a.y = cy + (a.y - cy) * k;
-          a.vx *= -0.3;
-          a.vy *= -0.3;
-        }
-
-        // Draw links - more visible when active
-        const linkOpacityBase = 0.15 + intensity * 0.3;
-        for (let j = i + 1; j < st.particles.length; j++) {
-          const b = st.particles[j];
-          const dist = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
-          if (dist < 12) {
-            const o = (1 - dist / 12) * linkOpacityBase;
-            ctx.strokeStyle = `rgba(255,255,255,${o})`;
-            ctx.lineWidth = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw dots - brighter when active
-      ctx.globalCompositeOperation = 'lighter';
-      const dotOpacity = 0.2 + intensity * 0.4;
-      for (const p of st.particles) {
-        ctx.fillStyle = `rgba(255,255,255,${dotOpacity})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.s * (0.8 + intensity * 0.4), 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.restore();
-      ctx.globalCompositeOperation = 'source-over';
-
-      animationRef.current = requestAnimationFrame(render);
-    };
-
-    animationRef.current = requestAnimationFrame(render);
-
-    return () => {
-      running = false;
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [size, level, innerR]);
-
   // Get active agent color for glow — amber when knocking
   const activeAgentColor = mood === 'knocking'
     ? '#f59e0b'
     : activeAgent
-      ? AGENT_SEGMENTS.find(s => s.id === activeAgent)?.color || '#a855f7'
+      ? getAgentColor(activeAgent)
       : '#a855f7';
+
+  // Avatar photo diameter
+  const avatarSize = Math.round(innerR * 2 - 4);
 
   return (
     <div className={cn('relative', mood === 'knocking' && 'knock-shake', className)} style={{ width: size, height: size }}>
@@ -351,11 +191,24 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <clipPath id={`avatarClip-${size}`}>
+            <circle cx={r} cy={r} r={innerR - 2} />
+          </clipPath>
         </defs>
 
-        {/* Colored segments - THE outer ring */}
+        {/* Base ring (visible when no/few segments) */}
+        <circle
+          cx={r}
+          cy={r}
+          r={segmentR}
+          fill="none"
+          stroke="rgba(255,255,255,0.06)"
+          strokeWidth={3}
+        />
+
+        {/* Colored segments - dynamic from user's active apps */}
         <g ref={segmentsRef} filter="url(#miniGlow)">
-          {AGENT_SEGMENTS.map((segment) => (
+          {segments.map((segment) => (
             <path
               key={segment.id}
               data-agent={segment.id}
@@ -368,14 +221,42 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
             />
           ))}
         </g>
-      </svg>
 
-      {/* Canvas for inner particle visualization */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 pointer-events-none"
-        style={{ width: size, height: size }}
-      />
+        {/* Inner dark circle background */}
+        <circle cx={r} cy={r} r={innerR} fill="rgba(0,0,0,0.6)" />
+
+        {/* User avatar image or fallback */}
+        {avatarUrl && !imgError ? (
+          <image
+            href={avatarUrl}
+            x={r - innerR + 2}
+            y={r - innerR + 2}
+            width={avatarSize}
+            height={avatarSize}
+            clipPath={`url(#avatarClip-${size})`}
+            preserveAspectRatio="xMidYMid slice"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <>
+            {/* Fallback gradient */}
+            <circle cx={r} cy={r} r={innerR - 2} fill="url(#fallbackGrad)" />
+            <defs>
+              <linearGradient id="fallbackGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#7c3aed" />
+                <stop offset="100%" stopColor="#a855f7" />
+              </linearGradient>
+            </defs>
+            {/* Fallback user icon */}
+            <g transform={`translate(${r - 6}, ${r - 6})`}>
+              <path
+                d="M6 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 1c-3.3 0-6 1.8-6 4v1h12v-1c0-2.2-2.7-4-6-4z"
+                fill="rgba(255,255,255,0.7)"
+              />
+            </g>
+          </>
+        )}
+      </svg>
 
       {/* Success flash overlay */}
       {showSuccess && (

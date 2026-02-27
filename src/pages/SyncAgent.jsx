@@ -17,6 +17,8 @@ import { AGENTS_DATA, AGENT_COLOR_STYLES } from '@/data/agents';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncState } from '@/components/context/SyncStateContext';
+import { useActiveAppSegments } from '@/hooks/useActiveAppSegments';
+import { getAgentColor } from '@/lib/appColors';
 import anime from '@/lib/anime-wrapper';
 import { prefersReducedMotion } from '@/lib/animations';
 import { useLocalStorage } from '@/components/hooks/useLocalStorage';
@@ -384,8 +386,8 @@ const AGENT_SEGMENTS = [
   { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.21, to: 0.29, icon: '📈' },     // indigo
   { id: 'products', name: 'Products', color: '#10b981', from: 0.31, to: 0.39, icon: '📦' }, // emerald
   { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.41, to: 0.49, icon: '🛡️' }, // sage
-  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.51, to: 0.59, icon: '💰' },   // amber
-  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.61, to: 0.69, icon: '🎨' },     // rose
+  { id: 'finance', name: 'Finance', color: '#3b82f6', from: 0.51, to: 0.59, icon: '💰' },   // blue
+  { id: 'create', name: 'Create', color: '#06b6d4', from: 0.61, to: 0.69, icon: '🎨' },     // cyan
   { id: 'tasks', name: 'Tasks', color: '#f97316', from: 0.71, to: 0.79, icon: '✅' },       // orange
   { id: 'research', name: 'Research', color: '#3b82f6', from: 0.81, to: 0.89, icon: '🔍' }, // blue
   { id: 'inbox', name: 'Inbox', color: '#14b8a6', from: 0.91, to: 0.99, icon: '📬' },       // teal
@@ -435,6 +437,8 @@ function AgentChannelMessage({ message, isLatest, highlightBorders }) {
   const { syt } = useTheme();
   const messageRef = useRef(null);
   const agent = AGENT_SEGMENTS.find(a => a.id === message.agentId) || AGENT_SEGMENTS.find(a => a.id === 'sync');
+  // Use platform-consistent colors
+  const agentColor = getAgentColor(message.agentId || 'sync');
   const isSyncMessage = message.agentId === 'sync' || !message.agentId;
 
   // Animate message entrance
@@ -466,9 +470,9 @@ function AgentChannelMessage({ message, isLatest, highlightBorders }) {
       <div
         className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 shadow-lg"
         style={{
-          backgroundColor: `${agent?.color}15`,
-          borderColor: `${agent?.color}50`,
-          boxShadow: `0 4px 12px ${agent?.color}20`,
+          backgroundColor: `${agentColor}15`,
+          borderColor: `${agentColor}50`,
+          boxShadow: `0 4px 12px ${agentColor}20`,
         }}
       >
         {agent?.icon || '🤖'}
@@ -479,7 +483,7 @@ function AgentChannelMessage({ message, isLatest, highlightBorders }) {
         <div className={cn("flex items-center gap-2 mb-1", !isSyncMessage && "justify-end")}>
           <span
             className="text-sm font-semibold"
-            style={{ color: agent?.color }}
+            style={{ color: agentColor }}
           >
             {agent?.name || 'Agent'}
           </span>
@@ -545,7 +549,7 @@ function AgentChannel({ messages, isActive, highlightBorders }) {
   );
 }
 
-export function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null, activeAgentAngle = null }) {
+export function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null, activeAgentAngle = null, segments = null }) {
   const ringRef = useRef(null);
   const segmentsRef = useRef(null);
   const dotsRef = useRef(null);
@@ -749,9 +753,9 @@ export function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeA
           })}
         </g>
 
-        {/* Colored segments - each represents an agent */}
+        {/* Colored segments - dynamic from user's active apps */}
         <g ref={segmentsRef} filter="url(#softGlow)">
-          {AGENT_SEGMENTS.filter(s => s.from !== s.to).map((segment) => {
+          {(segments || AGENT_SEGMENTS.filter(s => s.from !== s.to)).map((segment) => {
             const midAngle = (segment.from + segment.to) / 2;
             const midPoint = polar(r, r, ringR, midAngle);
             return (
@@ -897,7 +901,7 @@ export function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeA
 // INNER VISUALIZATION COMPONENT (Canvas-based particles + waves)
 // ============================================================================
 
-export function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null, activeAgentColor = null, showSuccess = false, activeAgentAngle = null }) {
+export function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null, activeAgentColor = null, showSuccess = false, activeAgentAngle = null, userAvatarUrl = null }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const stateRef = useRef({
@@ -1087,102 +1091,6 @@ export function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 
       g.addColorStop(1, 'rgba(0,0,0,0.0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
-
-      // Waves
-      const amp = 8 + level * 28;
-      const bands = 12;
-      ctx.globalCompositeOperation = 'lighter';
-
-      for (let i = 0; i < bands; i++) {
-        const y0 = (h * 0.28) + (i / (bands - 1)) * (h * 0.44);
-        const ph = time * (0.9 + i * 0.06);
-        ctx.beginPath();
-        for (let x = 0; x <= w; x += 6) {
-          const nx = x / w;
-          const wobble = Math.sin(nx * Math.PI * 2 + ph) * amp * (0.35 + i / bands);
-          const curve = Math.sin((nx * 1.7 + ph * 0.25) * Math.PI * 2) * amp * 0.12;
-          const y = y0 + wobble + curve;
-          if (x === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(255,255,255,${0.02 + level * 0.06})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-
-      // Particle physics
-      const px = st.pointer.x;
-      const py = st.pointer.y;
-      const attract = st.pointer.down ? 1.0 : 0.35;
-      const speedBoost = mood === 'speaking' ? 1.3 : mood === 'thinking' ? 0.95 : 0.85;
-
-      // Draw links
-      ctx.globalCompositeOperation = 'screen';
-      for (let i = 0; i < st.particles.length; i++) {
-        const a = st.particles[i];
-        const dxp = px - a.x;
-        const dyp = py - a.y;
-        const d2 = dxp * dxp + dyp * dyp;
-        const pull = (attract * 0.00018) / (1 + d2 * 0.0009);
-        a.vx += dxp * pull;
-        a.vy += dyp * pull;
-
-        // Orbit around center
-        const dx = a.x - cx;
-        const dy = a.y - cy;
-        const ang = Math.atan2(dy, dx) + 0.0025 * speedBoost;
-        const r = Math.sqrt(dx * dx + dy * dy);
-        a.vx += (cx + r * Math.cos(ang) - a.x) * 0.0009;
-        a.vy += (cy + r * Math.sin(ang) - a.y) * 0.0009;
-
-        a.x += a.vx * (1.0 + level * 0.9) * speedBoost;
-        a.y += a.vy * (1.0 + level * 0.9) * speedBoost;
-
-        // Keep inside lens
-        const ddx = a.x - cx;
-        const ddy = a.y - cy;
-        const rr = Math.sqrt(ddx * ddx + ddy * ddy);
-        const maxR = w * 0.34;
-        if (rr > maxR) {
-          const k = maxR / rr;
-          a.x = cx + ddx * k;
-          a.y = cy + ddy * k;
-          a.vx *= -0.35;
-          a.vy *= -0.35;
-        }
-
-        // Draw links
-        for (let j = i + 1; j < st.particles.length; j += 6) {
-          const b = st.particles[j];
-          const lx = b.x - a.x;
-          const ly = b.y - a.y;
-          const dist = Math.sqrt(lx * lx + ly * ly);
-          if (dist < 36) {
-            const o = (1 - dist / 36) * (0.10 + level * 0.25);
-            ctx.strokeStyle = `rgba(255,255,255,${o})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Draw dots
-      ctx.globalCompositeOperation = 'lighter';
-      for (const p of st.particles) {
-        ctx.fillStyle = P.dot;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.s * (0.55 + level * 0.25), 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Scan line
-      const scanY = cy + Math.sin(time * (mood === 'speaking' ? 2.8 : 1.8)) * (h * 0.14);
-      ctx.globalCompositeOperation = 'screen';
-      ctx.fillStyle = mood === 'speaking' ? 'rgba(192,132,252,0.18)' : 'rgba(255,255,255,0.08)';
-      ctx.fillRect(0, scanY - 2, w, 4);
 
       // ========== ACTION-SPECIFIC VISUAL EFFECTS ==========
       const effect = st.actionEffect;
@@ -1468,6 +1376,10 @@ export function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 
     };
   }, [mood, level, actionEffect]);
 
+  const avatarDiameter = Math.round(size * 0.52);
+  const avatarOffset = (size - avatarDiameter) / 2;
+  const [imgError, setImgError] = React.useState(false);
+
   return (
     <div className="absolute inset-0 grid place-items-center">
       <canvas
@@ -1479,7 +1391,7 @@ export function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
           stateRef.current.pointer = { x, y, down: true };
-          
+
           // Create ripple effect on click
           stateRef.current.ripples.push({
             x,
@@ -1505,6 +1417,30 @@ export function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 
           stateRef.current.pointer = { ...stateRef.current.pointer, down: false };
         }}
       />
+
+      {/* User avatar photo overlay */}
+      <div
+        className="absolute rounded-full overflow-hidden pointer-events-none"
+        style={{
+          width: avatarDiameter,
+          height: avatarDiameter,
+          top: avatarOffset,
+          left: avatarOffset,
+        }}
+      >
+        {userAvatarUrl && !imgError ? (
+          <img
+            src={userAvatarUrl}
+            alt="User avatar"
+            className="w-full h-full object-cover"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-violet-600 to-purple-500 flex items-center justify-center">
+            <User className="w-1/3 h-1/3 text-white/70" />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1518,9 +1454,16 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
   const labelRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Get active agent info for display and positioning
-  const activeAgentInfo = activeAgent ? AGENT_SEGMENTS.find(a => a.id === activeAgent) : null;
-  const activeAgentColor = activeAgentInfo?.color || null;
+  // Dynamic ring segments from user's active apps
+  const { segments } = useActiveAppSegments();
+  const { user } = useUser();
+  const userAvatarUrl = user?.avatar_url || null;
+
+  // Get active agent info — try dynamic segments first, then fall back to static lookup
+  const activeAgentInfo = activeAgent
+    ? segments.find(a => a.id === activeAgent) || AGENT_SEGMENTS.find(a => a.id === activeAgent)
+    : null;
+  const activeAgentColor = activeAgent ? getAgentColor(activeAgent) : null;
   // Calculate the angle to point towards (center of the agent's segment on the ring)
   const activeAgentAngle = activeAgentInfo && activeAgentInfo.from !== activeAgentInfo.to
     ? (activeAgentInfo.from + activeAgentInfo.to) / 2  // Middle of the segment
@@ -1554,8 +1497,8 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
 
   return (
     <div ref={containerRef} className="relative" style={{ width: size, height: size }}>
-      <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} activeAgentAngle={activeAgentAngle} />
-      <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} activeAgentColor={activeAgentColor} showSuccess={showSuccess} activeAgentAngle={activeAgentAngle} />
+      <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} activeAgentAngle={activeAgentAngle} segments={segments} />
+      <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} activeAgentColor={activeAgentColor} showSuccess={showSuccess} activeAgentAngle={activeAgentAngle} userAvatarUrl={userAvatarUrl} />
 
       {/* Label - positioned below avatar */}
       <div className="absolute inset-x-0 bottom-[-52px] flex justify-center">
@@ -1567,8 +1510,8 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
             <span
               className="inline-block h-2 w-2 rounded-full animate-pulse"
               style={{
-                backgroundColor: actionEffect?.color || activeAgentInfo?.color || (mood === 'speaking' ? '#a855f7' : mood === 'thinking' ? '#f59e0b' : '#22c55e'),
-                boxShadow: `0 0 10px ${actionEffect?.color || activeAgentInfo?.color || 'rgba(168,85,247,0.6)'}`,
+                backgroundColor: actionEffect?.color || activeAgentColor || (mood === 'speaking' ? '#a855f7' : mood === 'thinking' ? '#f59e0b' : '#22c55e'),
+                boxShadow: `0 0 10px ${actionEffect?.color || activeAgentColor || 'rgba(168,85,247,0.6)'}`,
               }}
             />
             {actionEffect?.icon && (
