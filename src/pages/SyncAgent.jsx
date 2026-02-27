@@ -1376,7 +1376,7 @@ export function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 
     };
   }, [mood, level, actionEffect]);
 
-  const avatarDiameter = Math.round(size * 0.52);
+  const avatarDiameter = Math.round(size * 0.68);
   const avatarOffset = (size - avatarDiameter) / 2;
   const [imgError, setImgError] = React.useState(false);
 
