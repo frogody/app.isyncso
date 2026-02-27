@@ -375,3 +375,6 @@ verify_jwt = false
 
 [functions.tracking-cycle]
 verify_jwt = false
+
+[functions.generate-user-profile]
+verify_jwt = false

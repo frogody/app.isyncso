@@ -205,6 +205,7 @@ const InventoryReturns = lazy(() => import("./InventoryReturns"));
 const StockPurchases = lazy(() => import("./StockPurchases"));
 const EmailPoolSettings = lazy(() => import("./EmailPoolSettings"));
 const SyncAgent = lazy(() => import("./SyncAgent"));
+const SyncProfile = lazy(() => import("./SyncProfile"));
 const SyncPhone = lazy(() => import("./SyncPhone"));
 const InventoryImport = lazy(() => import("./InventoryImport"));
 const ContactsImport = lazy(() => import("./ContactsImport"));
@@ -614,6 +615,7 @@ const PAGES = {
     EmailPoolSettings: EmailPoolSettings,
 
     SyncAgent: SyncAgent,
+    SyncProfile: SyncProfile,
     SyncPhone: SyncPhone,
 
     InventoryImport: InventoryImport,
@@ -1315,6 +1317,7 @@ function PagesContent() {
                 <Route path="/EmailPoolSettings" element={<Navigate to="/Settings?tab=email-pool" replace />} />
 
                 <Route path="/SyncAgent" element={<SyncAgent />} />
+                <Route path="/SyncProfile" element={<SyncProfile />} />
                 <Route path="/SyncPhone" element={<SyncPhone />} />
 
                 <Route path="/InventoryReturns" element={<InventoryReturns />} />

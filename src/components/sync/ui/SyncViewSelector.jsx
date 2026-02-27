@@ -1,5 +1,5 @@
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
-import { Brain, Zap, BarChart3, BookOpen } from 'lucide-react';
+import { Brain, Zap, BarChart3, BookOpen, UserCircle } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 const SYNC_TABS = [
@@ -7,6 +7,7 @@ const SYNC_TABS = [
   { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
   { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
   { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
+  { label: 'Profile', path: createPageUrl('SyncProfile'), icon: UserCircle },
 ];
 
 export function SyncViewSelector({ className = '' }) {
