@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Copy, Check, ExternalLink, Shield } from 'lucide-react';
 import { StatCard } from '@/components/ui/GlassCard';
-import { SyncViewSelector } from '@/components/sync/ui';
+import { SyncPageHeader } from '@/components/sync/ui';
 import InfoCard from '@/components/shared/InfoCard';
 
 // ---------------------------------------------------------------------------
@@ -473,40 +473,30 @@ export default function DesktopActivity() {
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
 
         {/* Header */}
-        <motion.div {...stagger(0)} className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[20px] flex items-center justify-center bg-cyan-500/10">
-              <BarChart3 className="w-5 h-5 text-cyan-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-white">Activity</h1>
-              <p className="text-xs text-zinc-500">Desktop usage analytics</p>
-            </div>
+        <SyncPageHeader icon={BarChart3} title="Activity" subtitle="Desktop usage analytics">
+          {/* Date range pills */}
+          <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40">
+            {[
+              { key: '1d', label: 'Today' },
+              { key: '7d', label: '7d' },
+              { key: '30d', label: '30d' },
+              { key: '90d', label: '90d' },
+              { key: 'all', label: 'All' },
+            ].map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setDateRange(p.key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  dateRange === p.key
+                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
           <div className="flex items-center gap-2">
-            {/* Date range pills */}
-            <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40">
-              {[
-                { key: '1d', label: 'Today' },
-                { key: '7d', label: '7d' },
-                { key: '30d', label: '30d' },
-                { key: '90d', label: '90d' },
-                { key: 'all', label: 'All' },
-              ].map((p) => (
-                <button
-                  key={p.key}
-                  onClick={() => setDateRange(p.key)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    dateRange === p.key
-                      ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
             <Button
               onClick={handleDownload}
               variant="outline"
@@ -523,9 +513,8 @@ export default function DesktopActivity() {
             >
               {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             </button>
-            <SyncViewSelector />
           </div>
-        </motion.div>
+        </SyncPageHeader>
 
         {/* Privacy Notice */}
         <motion.div {...stagger(0.05)}>

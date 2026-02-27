@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StatCard } from '@/components/ui/GlassCard';
-import { SyncViewSelector } from '@/components/sync/ui';
+import { SyncPageHeader } from '@/components/sync/ui';
 import InfoCard from '@/components/shared/InfoCard';
 import { createPageUrl } from "@/utils";
 import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
@@ -301,38 +301,27 @@ export default function DailyJournal() {
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
 
         {/* Header */}
-        <motion.div {...stagger(0)} className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[20px] flex items-center justify-center bg-cyan-500/10">
-              <BookOpen className="w-5 h-5 text-cyan-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-white">Daily Journals</h1>
-              <p className="text-xs text-zinc-500">AI-generated daily summaries</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => generateJournal(new Date())}
-              disabled={generatingJournal}
-              className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full text-xs px-4"
-            >
-              {generatingJournal ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                  Generate Today's
-                  <CreditCostBadge credits={1} />
-                </>
-              )}
-            </Button>
-            <SyncViewSelector />
-          </div>
-        </motion.div>
+        <SyncPageHeader icon={BookOpen} title="Daily Journals" subtitle="AI-generated daily summaries">
+          <div />
+          <Button
+            onClick={() => generateJournal(new Date())}
+            disabled={generatingJournal}
+            className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full text-xs px-4"
+          >
+            {generatingJournal ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Generate Today's Journal
+                <CreditCostBadge credits={1} />
+              </>
+            )}
+          </Button>
+        </SyncPageHeader>
 
         {/* Privacy Notice */}
         <motion.div {...stagger(0.05)}>

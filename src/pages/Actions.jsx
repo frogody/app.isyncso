@@ -40,7 +40,7 @@ import {
   Link
 } from 'lucide-react';
 
-import { SyncViewSelector } from '@/components/sync/ui';
+import { SyncPageHeader } from '@/components/sync/ui';
 import IntegrationCard from '@/components/actions/IntegrationCard';
 import ConnectIntegrationModal from '@/components/actions/ConnectIntegrationModal';
 import ExecuteActionModal from '@/components/actions/ExecuteActionModal';
@@ -279,23 +279,35 @@ export default function Actions() {
     <div className="bg-black min-h-screen px-4 lg:px-6 py-4 space-y-4">
 
       {/* ── Header ── */}
-      <motion.div {...stagger(0)} className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-            <Zap className="w-4.5 h-4.5 text-cyan-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-white">Actions</h1>
-            <p className="text-sm text-zinc-400">Automations & integrations</p>
-          </div>
+      <SyncPageHeader icon={Zap} title="Actions" subtitle="Automations & integrations">
+        <div className="flex items-center gap-2">
           {approvalActions.length > 0 && (
-            <Badge className="bg-amber-950/40 text-amber-300/80 border-amber-800/30 text-[10px] ml-1">
+            <Badge className="bg-amber-950/40 text-amber-300/80 border-amber-800/30 text-[10px]">
               {approvalActions.length} Needs Approval
             </Badge>
           )}
+          <Button onClick={() => setConnectModalOpen(true)} className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 text-xs px-3 py-1.5 h-auto">
+            <Plug className="w-3 h-3 mr-1.5" />
+            Connect
+          </Button>
+          <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-xs px-3 py-1.5 h-auto">
+            <Plus className="w-3 h-3 mr-1.5" />
+            New Action
+          </Button>
+          <Button onClick={() => { setShowRides(!showRides); setShowPhone(false); }} className={`border text-xs px-3 py-1.5 h-auto ${showRides ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' : 'border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
+            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-3.5 h-3.5 mr-1.5" loading="lazy" decoding="async" />
+            Rides
+          </Button>
+          <Button onClick={() => { setShowPhone(!showPhone); setShowRides(false); }} className={`border text-xs px-3 py-1.5 h-auto ${showPhone ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' : 'border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
+            <Phone className="w-3 h-3 mr-1.5" />
+            Phone
+          </Button>
         </div>
-        <SyncViewSelector />
-      </motion.div>
+        <Button onClick={loadActionLogs} className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 text-xs px-3 py-1.5 h-auto">
+          <RefreshCw className="w-3 h-3 mr-1.5" />
+          Refresh
+        </Button>
+      </SyncPageHeader>
 
       {/* ── Stats Row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -329,30 +341,6 @@ export default function Actions() {
         />
       </div>
 
-      {/* ── Action Buttons ── */}
-      <motion.div {...stagger(0.25)} className="flex items-center gap-2">
-        <Button onClick={() => setConnectModalOpen(true)} className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 text-xs px-3 py-1.5 h-auto">
-          <Plug className="w-3 h-3 mr-1.5" />
-          Connect
-        </Button>
-        <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-xs px-3 py-1.5 h-auto">
-          <Plus className="w-3 h-3 mr-1.5" />
-          New Action
-        </Button>
-        <Button onClick={() => { setShowRides(!showRides); setShowPhone(false); }} className={`border text-xs px-3 py-1.5 h-auto ${showRides ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' : 'border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
-          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-3.5 h-3.5 mr-1.5" loading="lazy" decoding="async" />
-          Rides
-        </Button>
-        <Button onClick={() => { setShowPhone(!showPhone); setShowRides(false); }} className={`border text-xs px-3 py-1.5 h-auto ${showPhone ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300' : 'border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
-          <Phone className="w-3 h-3 mr-1.5" />
-          Phone
-        </Button>
-        <div className="flex-1" />
-        <Button onClick={loadActionLogs} className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 text-xs px-3 py-1.5 h-auto">
-          <RefreshCw className="w-3 h-3 mr-1.5" />
-          Refresh
-        </Button>
-      </motion.div>
 
       {/* ── Rides Panel (expandable) ── */}
       {showRides && (

@@ -10,7 +10,7 @@ import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Pl
 import { motion } from 'framer-motion';
 import SyncVoiceMode from '@/components/sync/SyncVoiceMode';
 import { useTheme } from '@/contexts/GlobalThemeContext';
-import { SyncPageTransition, SyncViewSelector } from '@/components/sync/ui';
+import { SyncPageTransition, SyncPageHeader } from '@/components/sync/ui';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { StatCard } from '@/components/ui/GlassCard';
@@ -1964,45 +1964,29 @@ export default function SyncAgent() {
       <div className="mx-auto max-w-[1600px] px-4 lg:px-6 py-4 flex flex-col gap-4 h-[calc(100dvh-3.5rem)]">
 
         {/* ── Header ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="flex items-center justify-between gap-4 shrink-0"
-        >
-          {/* Left: icon + title */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-[14px] bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-              <Brain className="w-4.5 h-4.5 text-cyan-400" />
+        <div className="shrink-0">
+          <SyncPageHeader icon={Brain} title="SYNC Agent" subtitle="Your AI assistant">
+            <div />
+            <div className="flex items-center gap-2">
+              <button
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]"
+                onClick={() => setVoiceModeOpen(true)}
+                title="Start voice conversation"
+              >
+                <Mic className="h-3.5 w-3.5" />
+                <span>Voice</span>
+              </button>
+              <button
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]"
+                onClick={handleNewChat}
+                title="Start new conversation"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>New Chat</span>
+              </button>
             </div>
-            <div>
-              <h1 className="text-xl font-semibold text-white">SYNC Agent</h1>
-              <p className="text-sm text-zinc-400">Your AI assistant</p>
-            </div>
-          </div>
-
-          {/* Right: view selector + action buttons */}
-          <div className="flex items-center gap-2">
-            <SyncViewSelector />
-            <div className="w-px h-6 bg-zinc-800 mx-1" />
-            <button
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]"
-              onClick={() => setVoiceModeOpen(true)}
-              title="Start voice conversation"
-            >
-              <Mic className="h-3.5 w-3.5" />
-              <span>Voice</span>
-            </button>
-            <button
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]"
-              onClick={handleNewChat}
-              title="Start new conversation"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>New Chat</span>
-            </button>
-          </div>
-        </motion.div>
+          </SyncPageHeader>
+        </div>
 
         {/* ── Stats Row ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
