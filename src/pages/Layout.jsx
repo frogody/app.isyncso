@@ -96,6 +96,7 @@ import {
   ShieldAlert,
   Globe,
   Phone,
+  Link2,
   PenLine,
   Landmark,
   Percent,
@@ -528,11 +529,9 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if ((path.startsWith('/sync') && !path.startsWith('/syncstudio')) || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
     const activityItems = [
-      { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
-      { label: 'Phone', path: createPageUrl('SyncPhone'), icon: Phone },
-      { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
-      { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
-      { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
+      { label: 'Journal', path: '/sync', icon: BookOpen },
+      { label: 'Story', path: '/sync/story', icon: UserIcon },
+      { label: 'Connections', path: '/sync/connections', icon: Link2 },
     ];
     return {
       title: 'SYNC',

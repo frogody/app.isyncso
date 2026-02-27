@@ -207,6 +207,9 @@ const EmailPoolSettings = lazy(() => import("./EmailPoolSettings"));
 const SyncAgent = lazy(() => import("./SyncAgent"));
 const SyncProfile = lazy(() => import("./SyncProfile"));
 const SyncPhone = lazy(() => import("./SyncPhone"));
+const SyncJournal = lazy(() => import("./SyncJournal"));
+const SyncStory = lazy(() => import("./SyncStory"));
+const SyncConnections = lazy(() => import("./SyncConnections"));
 const InventoryImport = lazy(() => import("./InventoryImport"));
 const ContactsImport = lazy(() => import("./ContactsImport"));
 const Integrations = lazy(() => import("./Integrations"));
@@ -949,7 +952,10 @@ function PagesContent() {
 
                 <Route path="/AIAssistant" element={<AIAssistant />} />
 
-                <Route path="/Sync" element={<AIAssistant />} />
+                <Route path="/sync" element={<SyncJournal />} />
+                <Route path="/sync/story" element={<SyncStory />} />
+                <Route path="/sync/connections" element={<SyncConnections />} />
+                <Route path="/Sync" element={<Navigate to="/sync" replace />} />
 
                 <Route path="/AISystemInventory" element={<AISystemInventory />} />
 
@@ -959,7 +965,7 @@ function PagesContent() {
 
                 <Route path="/Login" element={<Login />} />
 
-                <Route path="/Actions" element={<Actions />} />
+                <Route path="/Actions" element={<Navigate to="/sync/connections" replace />} />
 
                 <Route path="/ActivityTimeline" element={<ActivityTimeline />} />
 
@@ -1027,9 +1033,9 @@ function PagesContent() {
 
                 <Route path="/DocumentGenerator" element={<DocumentGenerator />} />
 
-                <Route path="/DesktopActivity" element={<DesktopActivity />} />
+                <Route path="/DesktopActivity" element={<Navigate to="/sync/story" replace />} />
 
-                <Route path="/DailyJournal" element={<DailyJournal />} />
+                <Route path="/DailyJournal" element={<Navigate to="/sync" replace />} />
 
                 <Route path="/PrivacyAIAct" element={<PrivacyAIAct />} />
 
@@ -1316,8 +1322,8 @@ function PagesContent() {
 
                 <Route path="/EmailPoolSettings" element={<Navigate to="/Settings?tab=email-pool" replace />} />
 
-                <Route path="/SyncAgent" element={<SyncAgent />} />
-                <Route path="/SyncProfile" element={<SyncProfile />} />
+                <Route path="/SyncAgent" element={<Navigate to="/sync" replace />} />
+                <Route path="/SyncProfile" element={<Navigate to="/sync/story" replace />} />
                 <Route path="/SyncPhone" element={<SyncPhone />} />
 
                 <Route path="/InventoryReturns" element={<InventoryReturns />} />
