@@ -6,12 +6,14 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon, Mic } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon, Mic, MessageSquare, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 import SyncVoiceMode from '@/components/sync/SyncVoiceMode';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { SyncPageTransition, SyncViewSelector } from '@/components/sync/ui';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { StatCard } from '@/components/ui/GlassCard';
 import { cn } from '@/lib/utils';
 import { AGENTS_DATA, AGENT_COLOR_STYLES } from '@/data/agents';
 import { supabase } from '@/api/supabaseClient';
@@ -1949,197 +1951,152 @@ export default function SyncAgent() {
     { label: 'Find prospects', action: 'Find prospects in the SaaS industry' },
   ];
 
+  // Derived stats
+  const actionsCount = useMemo(() => {
+    return messages.filter(m => m.role === 'assistant' && m.text && /\[ACTION\]/.test(m.text)).length;
+  }, [messages]);
+
+  const moodLabel = mood === 'speaking' ? 'Active' : mood === 'thinking' ? 'Thinking' : 'Idle';
+
   return (
     <SyncPageTransition>
-    <div ref={pageRef} className={`h-[calc(100dvh-3.5rem)] flex flex-col ${syt('bg-slate-50', 'bg-black')} ${syt('text-slate-900', 'text-white')} overflow-hidden`}>
-      {/* Top bar */}
-      <div className="shrink-0 z-20">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-1.5 px-4 lg:px-6 py-2">
-          {/* Left: title + action buttons */}
+    <div ref={pageRef} className="min-h-screen bg-black text-white overflow-hidden">
+      <div className="mx-auto max-w-[1600px] px-4 lg:px-6 py-4 flex flex-col gap-4 h-[calc(100dvh-3.5rem)]">
+
+        {/* ── Header ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="flex items-center justify-between gap-4 shrink-0"
+        >
+          {/* Left: icon + title */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3">
-              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center border', syt('bg-slate-100 border-slate-200', 'bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border-cyan-500/20'))}>
-                <Brain className={cn('w-4 h-4', syt('text-slate-600', 'text-cyan-400'))} />
+            <div className="w-9 h-9 rounded-[14px] bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+              <Brain className="w-4.5 h-4.5 text-cyan-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-white">SYNC Agent</h1>
+              <p className="text-sm text-zinc-400">Your AI assistant</p>
+            </div>
+          </div>
+
+          {/* Right: view selector + action buttons */}
+          <div className="flex items-center gap-2">
+            <SyncViewSelector />
+            <div className="w-px h-6 bg-zinc-800 mx-1" />
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]"
+              onClick={() => setVoiceModeOpen(true)}
+              title="Start voice conversation"
+            >
+              <Mic className="h-3.5 w-3.5" />
+              <span>Voice</span>
+            </button>
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]"
+              onClick={handleNewChat}
+              title="Start new conversation"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>New Chat</span>
+            </button>
+          </div>
+        </motion.div>
+
+        {/* ── Stats Row ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+          <StatCard icon={Brain} label="Sessions Today" value={1} color="cyan" delay={0.05} />
+          <StatCard icon={MessageSquare} label="Messages Sent" value={messages.length} color="blue" delay={0.10} />
+          <StatCard icon={Zap} label="Actions Run" value={actionsCount} color="indigo" delay={0.15} />
+          <StatCard icon={Sparkles} label="Mood" value={moodLabel} color="purple" delay={0.20} />
+        </div>
+
+        {/* ── Main Content: 2-column ── */}
+        <div className="flex-1 min-h-0 grid lg:grid-cols-3 gap-4">
+
+          {/* Chat Card (2/3 width) */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="lg:col-span-2 flex flex-col min-h-0 rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm"
+          >
+            {/* Chat card header */}
+            <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-zinc-800/40">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-white">Conversation</h2>
+                <span className="flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  {activeAgent ? `${activeAgent}` : 'SYNC'}
+                </span>
               </div>
-              <div>
-                <h1 className={cn('text-base font-bold', syt('text-slate-900', 'text-white'))}>SYNC Agent</h1>
-                <p className={cn('text-xs', syt('text-slate-500', 'text-zinc-500'))}>Your AI assistant</p>
+              <div className="flex items-center gap-1">
+                <button
+                  className="inline-flex items-center justify-center rounded-lg p-1.5 transition-all duration-200 text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]"
+                  onClick={() => setSeed((s) => s + 1)}
+                  title="Refresh visual"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+                <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+                  <SheetTrigger asChild>
+                    <button className="inline-flex items-center justify-center rounded-lg p-1.5 transition-all duration-200 text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]">
+                      <Bot className="w-3.5 h-3.5" />
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[400px] sm:w-[440px] border-l bg-zinc-950 border-white/10">
+                    <SheetHeader>
+                      <SheetTitle className="text-white">Specialized Agents</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4 space-y-3 overflow-y-auto max-h-[calc(100vh-120px)] pr-1">
+                      {AGENTS_DATA.map(agent => {
+                        const colors = AGENT_COLOR_STYLES[agent.color];
+                        const Icon = agent.icon;
+                        return (
+                          <div key={agent.id} className="p-4 rounded-xl border bg-white/[0.03] border-white/10">
+                            <div className="flex items-start gap-3">
+                              <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center border', colors.bg, colors.border)}>
+                                <Icon className={cn('w-5 h-5', colors.text)} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-semibold text-sm text-white">{agent.name}</h4>
+                                  {agent.status === 'active' ? (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Active</span>
+                                  ) : (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">Soon</span>
+                                  )}
+                                </div>
+                                <p className="text-xs mt-1 line-clamp-2 text-zinc-400">{agent.description}</p>
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {agent.capabilities.slice(0, 3).map((cap, i) => (
+                                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-zinc-400">{cap}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
-            <div className={cn('w-px h-6', syt('bg-slate-200', 'bg-zinc-800'))} />
-          <button
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
-              syt(
-                'bg-slate-100 text-slate-600 hover:bg-slate-200 ring-1 ring-slate-200/80',
-                'bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]'
-              )
-            )}
-            onClick={() => setVoiceModeOpen(true)}
-            title="Start voice conversation"
-          >
-            <Mic className="h-3.5 w-3.5" />
-            <span>Voice</span>
-          </button>
-          <button
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
-              syt(
-                'bg-slate-100 text-slate-600 hover:bg-slate-200 ring-1 ring-slate-200/80',
-                'bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]'
-              )
-            )}
-            onClick={handleNewChat}
-            title="Start new conversation"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>New</span>
-          </button>
-          <div className={cn('w-px h-5 mx-1', syt('bg-slate-200', 'bg-zinc-800'))} />
-          <button
-            className={cn(
-              'inline-flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
-              syt('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]')
-            )}
-            onClick={() => setSeed((s) => s + 1)}
-            title="Refresh visual"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-          <button
-            onClick={toggleTheme}
-            className={cn(
-              'inline-flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
-              syt('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]')
-            )}
-            title="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
-            <SheetTrigger asChild>
-              <button className={cn(
-                'inline-flex items-center justify-center rounded-lg p-1.5 transition-all duration-200',
-                syt('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]')
-              )}>
-                <Bot className="w-4 h-4" />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="right" className={cn('w-[400px] sm:w-[440px] border-l', syt('bg-white border-slate-200', 'bg-zinc-950 border-white/10'))}>
-              <SheetHeader>
-                <SheetTitle className={syt('text-slate-900', 'text-white')}>Specialized Agents</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4 space-y-3 overflow-y-auto max-h-[calc(100vh-120px)] pr-1">
-                {AGENTS_DATA.map(agent => {
-                  const colors = AGENT_COLOR_STYLES[agent.color];
-                  const Icon = agent.icon;
-                  return (
-                    <div key={agent.id} className={cn('p-4 rounded-xl border', syt('bg-slate-50 border-slate-200', 'bg-white/[0.03] border-white/10'))}>
-                      <div className="flex items-start gap-3">
-                        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center border', colors.bg, colors.border)}>
-                          <Icon className={cn('w-5 h-5', colors.text)} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <h4 className={cn('font-semibold text-sm', syt('text-slate-900', 'text-white'))}>{agent.name}</h4>
-                            {agent.status === 'active' ? (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span>
-                            ) : (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">Soon</span>
-                            )}
-                          </div>
-                          <p className={cn('text-xs mt-1 line-clamp-2', syt('text-slate-500', 'text-zinc-400'))}>{agent.description}</p>
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {agent.capabilities.slice(0, 3).map((cap, i) => (
-                              <span key={i} className={cn('text-[10px] px-2 py-0.5 rounded-full', syt('bg-slate-200 text-slate-600', 'bg-white/[0.06] text-zinc-400'))}>{cap}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </SheetContent>
-          </Sheet>
-          </div>
-          {/* Right: view selector */}
-          <SyncViewSelector />
-        </div>
-      </div>
 
-      {/* Layout - fills remaining height, minimal top padding to align with buttons */}
-      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-3 px-4 lg:px-6 pb-4 lg:grid-cols-[400px_1fr]">
-        {/* Left: Avatar + Agent Channel */}
-        <div
-          data-animate
-          className={cn(
-            'flex flex-col rounded-2xl overflow-hidden transition-all duration-500 relative',
-            syt(
-              'bg-gradient-to-b from-white to-slate-50/80 ring-1 ring-slate-200 shadow-sm',
-              'bg-gradient-to-b from-zinc-900/90 to-zinc-950/90 ring-1 ring-white/[0.06] backdrop-blur-sm'
-            ),
-            highlightBorders && 'ring-2 ring-cyan-400/60 shadow-[0_0_40px_rgba(34,211,238,0.25)]'
-          )}
-          style={{ opacity: 0 }}
-        >
-          {/* Ambient glow behind avatar — color shifts with mood */}
-          <div className={cn(
-            'absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full blur-[80px] pointer-events-none transition-all duration-1000',
-            mood === 'speaking'
-              ? syt('bg-purple-300/30', 'bg-purple-500/20')
-              : mood === 'thinking'
-                ? syt('bg-amber-300/25', 'bg-amber-500/15')
-                : syt('bg-cyan-200/20', 'bg-cyan-500/10')
-          )} />
-
-          {/* Avatar */}
-          <div className="shrink-0 grid place-items-center pt-6 pb-10 relative z-10">
-            <AgentAvatar size={240} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
-          </div>
-
-          {/* Separator */}
-          <div className={cn('mx-6', syt('border-t border-slate-200/60', 'border-t border-white/[0.04]'))} />
-
-          {/* Agent orchestration channel */}
-          <div className="flex-1 min-h-0 overflow-hidden py-3 relative z-10">
-            <AgentChannel messages={agentMessages} isActive={isSending} highlightBorders={highlightBorders} />
-          </div>
-        </div>
-
-        {/* Right: Chat Panel */}
-        <div
-          data-animate
-          className={cn(
-            'flex flex-col justify-end min-h-0 rounded-2xl',
-            syt(
-              'bg-gradient-to-b from-white/60 to-slate-50/40 ring-1 ring-slate-200/60',
-              'bg-gradient-to-b from-zinc-900/40 to-zinc-950/40 ring-1 ring-white/[0.04]'
-            )
-          )}
-          style={{ opacity: 0 }}
-        >
-          {/* Messages */}
-          <div ref={scrollerRef} className="min-h-0 max-h-full overflow-y-auto px-4 pt-5 pb-3">
+            {/* Messages area */}
+            <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-5 pb-3">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-6">
                   <div className="relative mb-8">
-                    <div className={cn('absolute inset-0 rounded-full blur-3xl scale-[3]', syt('bg-purple-200/20', 'bg-purple-500/10'))} />
-                    <div className={cn(
-                      'relative w-16 h-16 rounded-2xl flex items-center justify-center',
-                      syt(
-                        'bg-gradient-to-br from-purple-100 to-cyan-100 shadow-lg shadow-purple-200/30',
-                        'bg-gradient-to-br from-purple-500/20 to-cyan-500/10 ring-1 ring-white/10 shadow-lg shadow-purple-500/10'
-                      )
-                    )}>
-                      <Sparkles className={cn('w-8 h-8', syt('text-purple-600', 'text-purple-400'))} />
+                    <div className="absolute inset-0 rounded-full blur-3xl scale-[3] bg-purple-500/10" />
+                    <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-500/20 to-cyan-500/10 ring-1 ring-white/10 shadow-lg shadow-purple-500/10">
+                      <Sparkles className="w-8 h-8 text-purple-400" />
                     </div>
                   </div>
-                  <h4 className={cn(
-                    'text-xl font-semibold mb-2 bg-gradient-to-r bg-clip-text text-transparent',
-                    syt('from-slate-900 to-slate-600', 'from-white to-zinc-400')
-                  )}>What can I help with?</h4>
-                  <p className={cn('text-sm mb-10 max-w-xs', syt('text-slate-400', 'text-zinc-500'))}>
+                  <h4 className="text-xl font-semibold mb-2 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">What can I help with?</h4>
+                  <p className="text-sm mb-10 max-w-xs text-zinc-500">
                     Invoices, prospects, compliance, learning, and more.
                   </p>
                   <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
@@ -2147,13 +2104,7 @@ export default function SyncAgent() {
                       <button
                         key={idx}
                         onClick={() => { setInput(suggestion.action); setTimeout(() => send(), 100); }}
-                        className={cn(
-                          'group px-4 py-3 text-sm rounded-xl text-left transition-all duration-200',
-                          syt(
-                            'bg-white ring-1 ring-slate-200/80 text-slate-600 hover:ring-cyan-300 hover:bg-cyan-50/50 hover:text-cyan-700 shadow-sm hover:shadow-md hover:shadow-cyan-500/5',
-                            'bg-white/[0.03] ring-1 ring-white/[0.06] text-zinc-400 hover:ring-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-400'
-                          )
-                        )}
+                        className="group px-4 py-3 text-sm rounded-xl text-left transition-all duration-200 bg-white/[0.03] ring-1 ring-white/[0.06] text-zinc-400 hover:ring-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-400"
                       >
                         <span className="flex items-center gap-2">
                           {suggestion.isOrchestration && <Sparkles className="w-3.5 h-3.5 opacity-40" />}
@@ -2171,26 +2122,17 @@ export default function SyncAgent() {
 
                   {isSending && (
                     <div className="flex items-end gap-2.5">
-                      <div className={cn(
-                        'shrink-0 w-7 h-7 rounded-lg flex items-center justify-center',
-                        syt('bg-purple-100', 'bg-purple-500/15 ring-1 ring-purple-500/20')
-                      )}>
-                        <Bot className={cn('h-3.5 w-3.5', syt('text-purple-600', 'text-purple-400'))} />
+                      <div className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center bg-purple-500/15 ring-1 ring-purple-500/20">
+                        <Bot className="h-3.5 w-3.5 text-purple-400" />
                       </div>
-                      <div className={cn(
-                        'rounded-2xl rounded-bl-sm px-4 py-3',
-                        syt(
-                          'bg-white ring-1 ring-slate-200/80 shadow-sm',
-                          'bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm'
-                        )
-                      )}>
+                      <div className="rounded-2xl rounded-bl-sm px-4 py-3 bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm">
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1">
                             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }} />
                             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }} />
                             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }} />
                           </div>
-                          <span className={cn('text-xs', syt('text-slate-400', 'text-zinc-500'))}>
+                          <span className="text-xs text-zinc-500">
                             {mood === 'thinking' ? 'Thinking...' : 'Responding...'}
                           </span>
                         </div>
@@ -2199,23 +2141,17 @@ export default function SyncAgent() {
                   )}
 
                   {error && (
-                    <div className={cn(
-                      'flex items-start gap-3 p-4 rounded-2xl',
-                      syt(
-                        'bg-red-50 ring-1 ring-red-200/80',
-                        'bg-red-500/10 ring-1 ring-red-500/20 backdrop-blur-sm'
-                      )
-                    )}>
+                    <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-500/10 ring-1 ring-red-500/20 backdrop-blur-sm">
                       <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <p className={cn('text-sm font-medium', syt('text-red-600', 'text-red-400'))}>Something went wrong</p>
-                        <p className={cn('text-xs mt-1', syt('text-red-400', 'text-red-400/70'))}>{error}</p>
+                        <p className="text-sm font-medium text-red-400">Something went wrong</p>
+                        <p className="text-xs mt-1 text-red-400/70">{error}</p>
                       </div>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={handleRetry}
-                        className={cn('text-red-400 hover:text-red-300', syt('hover:bg-red-100', 'hover:bg-red-500/10'))}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                       >
                         <RefreshCw className="w-4 h-4 mr-1" />
                         Retry
@@ -2223,7 +2159,7 @@ export default function SyncAgent() {
                     </div>
                   )}
 
-                  {/* Suggestion chips — inside scroll area, right after messages */}
+                  {/* Suggestion chips */}
                   {messages.length > 0 && messages.length <= 4 && !isSending && (
                     <div className="pt-2">
                       <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
@@ -2231,13 +2167,7 @@ export default function SyncAgent() {
                           <button
                             key={idx}
                             onClick={() => { setInput(s.action); setTimeout(() => send(), 100); }}
-                            className={cn(
-                              'shrink-0 px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all duration-200',
-                              syt(
-                                'bg-slate-100 text-slate-600 hover:bg-cyan-50 hover:text-cyan-700 ring-1 ring-slate-200/80',
-                                'bg-white/[0.04] text-zinc-400 hover:bg-cyan-500/10 hover:text-cyan-400 ring-1 ring-white/[0.06]'
-                              )
-                            )}
+                            className="shrink-0 px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-all duration-200 bg-white/[0.04] text-zinc-400 hover:bg-cyan-500/10 hover:text-cyan-400 ring-1 ring-white/[0.06]"
                           >
                             {s.isOrchestration && <Sparkles className="inline w-3 h-3 mr-1 opacity-50" />}
                             {s.label}
@@ -2250,80 +2180,148 @@ export default function SyncAgent() {
               )}
             </div>
 
-          {/* Input Area */}
-          <div className="shrink-0 px-3 pb-3 pt-1">
-            <div className={cn(
-              'flex items-end gap-2 rounded-2xl p-1.5 transition-all duration-300',
-              syt(
-                'bg-white ring-1 ring-slate-200/80 shadow-sm focus-within:ring-cyan-400/50 focus-within:shadow-md focus-within:shadow-cyan-500/5',
-                'bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm focus-within:ring-cyan-500/30 focus-within:shadow-lg focus-within:shadow-cyan-500/5'
-              )
-            )}>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                  }
-                }}
-                placeholder="Message SYNC..."
-                rows={1}
-                disabled={isSending}
-                className={cn(
-                  'flex-1 resize-none bg-transparent text-sm outline-none disabled:opacity-50 px-3 py-2.5 min-h-[40px] max-h-[120px]',
-                  syt('text-slate-900 placeholder:text-slate-400', 'text-white/90 placeholder:text-zinc-500')
-                )}
-              />
-              <button
-                onClick={send}
-                disabled={isSending || !input.trim()}
-                className={cn(
-                  'shrink-0 h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-300',
-                  isSending || !input.trim()
-                    ? syt('bg-slate-100 text-slate-400', 'bg-zinc-800/60 text-zinc-600')
-                    : 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-105 active:scale-95'
-                )}
-                title="Send (Enter)"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </div>
-            <div className={cn('px-3 pt-1.5 flex items-center justify-between text-[10px]', syt('text-slate-400', 'text-zinc-600'))}>
-              <span>Enter to send · Shift+Enter for newline</span>
-              <div className="flex items-center gap-3">
-                <span className="text-zinc-500">1 credit per message</span>
-                <span className="tabular-nums">{input.length}</span>
+            {/* Input Area */}
+            <div className="shrink-0 px-3 pb-3 pt-1">
+              <div className="flex items-end gap-2 rounded-2xl p-1.5 transition-all duration-300 bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm focus-within:ring-cyan-500/30 focus-within:shadow-lg focus-within:shadow-cyan-500/5">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  placeholder="Message SYNC..."
+                  rows={1}
+                  disabled={isSending}
+                  className="flex-1 resize-none bg-transparent text-sm outline-none disabled:opacity-50 px-3 py-2.5 min-h-[40px] max-h-[120px] text-white/90 placeholder:text-zinc-500"
+                />
+                <button
+                  onClick={send}
+                  disabled={isSending || !input.trim()}
+                  className={cn(
+                    'shrink-0 h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-300',
+                    isSending || !input.trim()
+                      ? 'bg-zinc-800/60 text-zinc-600'
+                      : 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30 hover:scale-105 active:scale-95'
+                  )}
+                  title="Send (Enter)"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="px-3 pt-1.5 flex items-center justify-between text-[10px] text-zinc-600">
+                <span>Enter to send · Shift+Enter for newline</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-zinc-500">1 credit per message</span>
+                  <span className="tabular-nums">{input.length}</span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </motion.div>
 
-      {/* Background effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className={cn(
-          'absolute left-[-15%] top-[-20%] h-[500px] w-[500px] rounded-full blur-[120px] transition-all transition-duration-[2000ms]',
-          mood === 'speaking'
-            ? syt('bg-purple-200/20', 'bg-purple-900/15')
-            : mood === 'thinking'
-              ? syt('bg-amber-200/15', 'bg-amber-900/10')
-              : syt('bg-cyan-200/15', 'bg-cyan-900/8')
-        )} />
-        <div className={cn(
-          'absolute right-[-10%] top-[20%] h-[400px] w-[400px] rounded-full blur-[100px] transition-all transition-duration-[2000ms]',
-          syt('bg-purple-200/10', 'bg-purple-900/8')
-        )} />
-        <div className={cn(
-          'absolute bottom-[-20%] left-[20%] h-[500px] w-[500px] rounded-full blur-[120px]',
-          syt('bg-slate-200/20', 'bg-zinc-800/20')
-        )} />
-        {/* Subtle dot pattern overlay */}
-        <div className={cn(
-          'absolute inset-0 opacity-[0.015]',
-          syt('bg-[radial-gradient(circle,_#000_1px,_transparent_1px)]', 'bg-[radial-gradient(circle,_#fff_1px,_transparent_1px)]')
-        )} style={{ backgroundSize: '24px 24px' }} />
+          {/* Avatar Sidebar Card (1/3 width) */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.30, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="lg:col-span-1 flex flex-col rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm overflow-hidden"
+          >
+            {/* Avatar area */}
+            <div className="shrink-0 grid place-items-center pt-6 pb-10 relative">
+              {/* Ambient glow behind avatar */}
+              <div className={cn(
+                'absolute top-[30%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 rounded-full blur-[80px] pointer-events-none transition-all duration-1000',
+                mood === 'speaking'
+                  ? 'bg-purple-500/20'
+                  : mood === 'thinking'
+                    ? 'bg-amber-500/15'
+                    : 'bg-cyan-500/10'
+              )} />
+              <div className="relative z-10">
+                <AgentAvatar size={240} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
+              </div>
+            </div>
+
+            {/* Separator */}
+            <div className="mx-5 border-t border-zinc-800/40" />
+
+            {/* Agent info + quick actions */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
+              {/* Active agent label */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-white">
+                    {activeAgent ? `SYNC → ${AGENT_SEGMENTS.find(a => a.id === activeAgent)?.name || activeAgent}` : 'SYNC'}
+                  </span>
+                  <span
+                    className="inline-block h-2 w-2 rounded-full animate-pulse"
+                    style={{
+                      backgroundColor: currentActionEffect?.color || (activeAgent ? getAgentColor(activeAgent) : (mood === 'speaking' ? '#a855f7' : mood === 'thinking' ? '#f59e0b' : '#22c55e')),
+                    }}
+                  />
+                </div>
+                <span className="text-xs text-zinc-500 capitalize">{mood}</span>
+              </div>
+
+              {/* Mood indicator */}
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-3 py-2.5">
+                <div className="flex items-center gap-2 text-xs text-zinc-400">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                  <span>
+                    {mood === 'speaking' ? 'Delivering response...' : mood === 'thinking' ? 'Processing your request...' : 'Ready for input'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Agent channel messages (compact) */}
+              {agentMessages.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Agent Activity</p>
+                  <div className="space-y-1.5 max-h-[180px] overflow-y-auto">
+                    {agentMessages.slice(-5).map((msg, idx) => {
+                      const agent = AGENT_SEGMENTS.find(a => a.id === msg.agentId) || AGENT_SEGMENTS.find(a => a.id === 'sync');
+                      return (
+                        <div key={msg.id || idx} className="flex items-start gap-2 text-xs">
+                          <span className="shrink-0 mt-0.5">{agent?.icon || '🤖'}</span>
+                          <span className="text-zinc-400 leading-relaxed">{msg.text}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick action buttons */}
+              <div className="space-y-2 pt-2">
+                <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Quick Actions</p>
+                <button
+                  onClick={() => setVoiceModeOpen(true)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-zinc-300 bg-white/[0.03] border border-white/[0.06] hover:bg-cyan-500/5 hover:border-cyan-500/20 hover:text-cyan-400 transition-all"
+                >
+                  <Mic className="w-4 h-4" />
+                  Start Voice
+                </button>
+                <button
+                  onClick={handleNewChat}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-zinc-300 bg-white/[0.03] border border-white/[0.06] hover:bg-cyan-500/5 hover:border-cyan-500/20 hover:text-cyan-400 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Chat
+                </button>
+                <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+                  <SheetTrigger asChild>
+                    <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-zinc-300 bg-white/[0.03] border border-white/[0.06] hover:bg-cyan-500/5 hover:border-cyan-500/20 hover:text-cyan-400 transition-all">
+                      <Bot className="w-4 h-4" />
+                      View Agents
+                    </button>
+                  </SheetTrigger>
+                </Sheet>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       {/* Voice Mode Overlay */}
