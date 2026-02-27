@@ -1965,27 +1965,7 @@ export default function SyncAgent() {
 
         {/* ── Header ── */}
         <div className="shrink-0">
-          <SyncPageHeader icon={Brain} title="SYNC Agent" subtitle="Your AI assistant">
-            <div />
-            <div className="flex items-center gap-2">
-              <button
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]"
-                onClick={() => setVoiceModeOpen(true)}
-                title="Start voice conversation"
-              >
-                <Mic className="h-3.5 w-3.5" />
-                <span>Voice</span>
-              </button>
-              <button
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-white/[0.06] text-zinc-400 hover:bg-white/[0.10] hover:text-zinc-200 ring-1 ring-white/[0.08]"
-                onClick={handleNewChat}
-                title="Start new conversation"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>New Chat</span>
-              </button>
-            </div>
-          </SyncPageHeader>
+          <SyncPageHeader icon={Brain} title="SYNC Agent" subtitle="Your AI assistant" />
         </div>
 
         {/* ── Stats Row ── */}
@@ -2280,20 +2260,6 @@ export default function SyncAgent() {
               {/* Quick action buttons */}
               <div className="space-y-2 pt-2">
                 <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Quick Actions</p>
-                <button
-                  onClick={() => setVoiceModeOpen(true)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-zinc-300 bg-white/[0.03] border border-white/[0.06] hover:bg-cyan-500/5 hover:border-cyan-500/20 hover:text-cyan-400 transition-all"
-                >
-                  <Mic className="w-4 h-4" />
-                  Start Voice
-                </button>
-                <button
-                  onClick={handleNewChat}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-zinc-300 bg-white/[0.03] border border-white/[0.06] hover:bg-cyan-500/5 hover:border-cyan-500/20 hover:text-cyan-400 transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Chat
-                </button>
                 <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
                   <SheetTrigger asChild>
                     <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-zinc-300 bg-white/[0.03] border border-white/[0.06] hover:bg-cyan-500/5 hover:border-cyan-500/20 hover:text-cyan-400 transition-all">
