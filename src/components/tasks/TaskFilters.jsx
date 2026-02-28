@@ -44,16 +44,16 @@ export default function TaskFilters({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-col sm:flex-row gap-3 items-center">
       {/* Search */}
       <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
         <Input
           ref={searchRef}
           placeholder="Search tasks... (/)"
           value={filters.search || ""}
           onChange={(e) => updateFilter("search", e.target.value || undefined)}
-          className="pl-10 bg-zinc-900 border-zinc-800 h-9"
+          className="pl-10 rounded-[14px] bg-zinc-900/40 backdrop-blur-sm border-zinc-800/60 focus:border-cyan-500/30 h-10"
         />
         {filters.search && (
           <button
@@ -71,7 +71,7 @@ export default function TaskFilters({
           value={filters.status || "all"}
           onValueChange={(v) => updateFilter("status", v)}
         >
-          <SelectTrigger className="w-[130px] bg-zinc-900 border-zinc-800 h-9 text-sm">
+          <SelectTrigger className={`w-[130px] rounded-[14px] bg-zinc-900/40 backdrop-blur-sm h-10 text-sm ${filters.status ? "border-cyan-500/20" : "border-zinc-800/60"}`}>
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -91,7 +91,7 @@ export default function TaskFilters({
           value={filters.priority || "all"}
           onValueChange={(v) => updateFilter("priority", v)}
         >
-          <SelectTrigger className="w-[130px] bg-zinc-900 border-zinc-800 h-9 text-sm">
+          <SelectTrigger className={`w-[130px] rounded-[14px] bg-zinc-900/40 backdrop-blur-sm h-10 text-sm ${filters.priority ? "border-cyan-500/20" : "border-zinc-800/60"}`}>
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -112,7 +112,7 @@ export default function TaskFilters({
             value={filters.project_id || "all"}
             onValueChange={(v) => updateFilter("project_id", v)}
           >
-            <SelectTrigger className="w-[140px] bg-zinc-900 border-zinc-800 h-9 text-sm">
+            <SelectTrigger className={`w-[140px] rounded-[14px] bg-zinc-900/40 backdrop-blur-sm h-10 text-sm ${filters.project_id ? "border-cyan-500/20" : "border-zinc-800/60"}`}>
               <SelectValue placeholder="Project" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -131,7 +131,7 @@ export default function TaskFilters({
             variant="ghost"
             size="sm"
             onClick={clearFilters}
-            className="text-zinc-400 hover:text-white h-9 px-2"
+            className="rounded-full text-zinc-500 hover:text-cyan-400 h-10 px-2"
           >
             <X className="w-3.5 h-3.5 mr-1" />
             Clear ({activeFilterCount})

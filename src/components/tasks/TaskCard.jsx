@@ -33,6 +33,13 @@ export function PriorityDot({ priority }) {
   return <div className={`w-2 h-2 rounded-full flex-shrink-0 ${config.dot}`} />;
 }
 
+const PRIORITY_BORDER = {
+  urgent: 'border-l-2 border-l-red-500/50',
+  high: 'border-l-2 border-l-cyan-400/40',
+  medium: 'border-l-2 border-l-cyan-400/20',
+  low: '',
+};
+
 export default function TaskCard({
   task,
   index,
@@ -48,6 +55,7 @@ export default function TaskCard({
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const checklistTotal = task.checklist?.length || 0;
   const checklistDone = task.checklist?.filter(i => i.done)?.length || 0;
+  const priorityBorder = PRIORITY_BORDER[task.priority] || '';
 
   return (
     <Draggable draggableId={String(task.id)} index={index}>
@@ -60,16 +68,16 @@ export default function TaskCard({
             if (e.target.closest('button') || e.target.closest('[role="menu"]')) return;
             onSelect?.(task);
           }}
-          className={`group bg-zinc-900/80 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
+          className={`group rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm hover:border-zinc-700/80 hover:bg-zinc-900/50 transition-all cursor-grab active:cursor-grabbing ${priorityBorder} ${
             snapshot.isDragging
-              ? "shadow-xl shadow-cyan-500/10 border-cyan-500/40 scale-[1.02] z-50"
+              ? "shadow-xl shadow-cyan-500/10 border-cyan-500/40 scale-[1.02] bg-zinc-900/60 z-50"
               : isSelected
-                ? "border-cyan-500/50 bg-cyan-500/5"
-                : "border-zinc-800/60 hover:border-zinc-700"
+                ? "border-cyan-500/40 bg-cyan-500/[0.03]"
+                : ""
           }`}
           style={provided.draggableProps.style}
         >
-          <div className="p-3">
+          <div className="p-4">
             {/* Header */}
             <div className="flex items-start justify-between gap-2 mb-1.5">
               <div className="flex items-center gap-2 flex-1 min-w-0">

@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import anime from '@/lib/anime-wrapper';
-import { prefersReducedMotion } from '@/lib/animations';
 import { useUser } from "@/components/context/UserContext";
 import { useSearchParams } from "react-router-dom";
 import { supabase, functions } from "@/api/supabaseClient";
 import {
-  Plus, Sparkles, Keyboard, ChevronRight, InboxIcon
+  Plus, Sparkles, Keyboard, InboxIcon,
+  ListChecks, CheckCircle2, AlertTriangle, Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +26,21 @@ import TaskTemplates from "@/components/tasks/TaskTemplates";
 
 // Hooks
 import { useTasks, TASK_STATUSES, TASK_PRIORITIES } from "@/hooks/useTasks";
+
+// ---------------------------------------------------------------------------
+// Motion presets (matching StoreDashboard)
+// ---------------------------------------------------------------------------
+
+const SLIDE_UP = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
+};
+
+const stagger = (delay = 0) => ({
+  ...SLIDE_UP,
+  transition: { ...SLIDE_UP.transition, delay },
+});
 
 const VIEW_ORDER = ["kanban", "list", "calendar"];
 
@@ -50,10 +64,6 @@ export default function Tasks() {
   // Projects + team (for dropdowns)
   const [projects, setProjects] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
-
-  // Refs for animations
-  const headerRef = useRef(null);
-  const statsRef = useRef(null);
 
   // Tasks hook — fetches from `tasks` table with filtering and real-time
   const {
@@ -112,42 +122,6 @@ export default function Tasks() {
 
     loadMeta();
   }, [user?.id, user?.company_id]);
-
-  // Animate header on mount
-  useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
-    anime({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
-  // Animate stats counters
-  const animateStats = useCallback(() => {
-    if (!statsRef.current || prefersReducedMotion()) return;
-    const statElements = statsRef.current.querySelectorAll('.stat-count');
-    statElements.forEach(el => {
-      const endValue = parseInt(el.dataset.count) || 0;
-      const obj = { value: 0 };
-      anime({
-        targets: obj,
-        value: endValue,
-        round: 1,
-        duration: 800,
-        easing: 'easeOutExpo',
-        update: () => { el.textContent = obj.value; },
-      });
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!loading && tasks.length > 0) {
-      setTimeout(animateStats, 300);
-    }
-  }, [loading, tasks.length, animateStats]);
 
   // View change
   const handleViewChange = (v) => {
@@ -319,8 +293,18 @@ export default function Tasks() {
     return (
       <div className="min-h-screen bg-black p-4 sm:p-6">
         <div className="max-w-full mx-auto">
-          <Skeleton className="h-10 w-48 bg-zinc-800 mb-6" />
-          <Skeleton className="h-9 w-full max-w-md bg-zinc-800 mb-6" />
+          <div className="flex items-center gap-3 mb-6">
+            <Skeleton className="w-10 h-10 rounded-[14px] bg-zinc-800" />
+            <div>
+              <Skeleton className="h-6 w-24 bg-zinc-800 mb-1" />
+              <Skeleton className="h-4 w-44 bg-zinc-800" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton key={i} className="h-28 rounded-[20px] bg-zinc-800" />
+            ))}
+          </div>
           <div className="flex gap-4 overflow-x-auto pb-4">
             {[1, 2, 3].map(i => (
               <Skeleton key={i} className="w-72 h-96 bg-zinc-800 rounded-lg flex-shrink-0" />
@@ -365,26 +349,14 @@ export default function Tasks() {
 
       <div className="max-w-full mx-auto p-4 sm:p-6">
         {/* Header */}
-        <div ref={headerRef} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-lg font-bold text-white">Tasks</h1>
-            <div ref={statsRef} className="flex items-center gap-4 mt-1 text-sm text-zinc-400">
-              <span>
-                <span className="stat-count" data-count={stats.total}>{stats.total}</span> total
-              </span>
-              <span className="text-cyan-400/80">
-                <span className="stat-count" data-count={stats.completed}>{stats.completed}</span> completed
-              </span>
-              {stats.overdue > 0 && (
-                <span className="text-red-400">
-                  <span className="stat-count" data-count={stats.overdue}>{stats.overdue}</span> overdue
-                </span>
-              )}
-              {stats.highPriority > 0 && (
-                <span className="text-cyan-300">
-                  <span className="stat-count" data-count={stats.highPriority}>{stats.highPriority}</span> high priority
-                </span>
-              )}
+        <motion.div {...SLIDE_UP} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-[14px] bg-cyan-500/10 flex items-center justify-center">
+              <ListChecks className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-white">Tasks</h1>
+              <p className="text-zinc-500 text-sm">Task management overview</p>
             </div>
           </div>
 
@@ -394,7 +366,7 @@ export default function Tasks() {
               variant="outline"
               size="sm"
               onClick={() => setShowPixelSidebar(!showPixelSidebar)}
-              className={`border-zinc-700 gap-1.5 ${showPixelSidebar ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : "text-zinc-400"}`}
+              className={`rounded-full border-zinc-800/60 gap-1.5 ${showPixelSidebar ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" : "text-zinc-400"}`}
             >
               <Sparkles className="w-3.5 h-3.5" /> Pixel
               {draftTasks.length > 0 && (
@@ -407,17 +379,43 @@ export default function Tasks() {
               variant="outline"
               size="sm"
               onClick={() => setShowTemplates(true)}
-              className="border-zinc-700 text-zinc-400"
+              className="rounded-full border-zinc-800/60 text-zinc-400"
             >
               <InboxIcon className="w-3.5 h-3.5 mr-1" /> Templates
             </Button>
             <Button
               onClick={() => handleAddTask("pending")}
-              className="bg-cyan-600/80 hover:bg-cyan-600 text-white"
+              className="bg-cyan-600 hover:bg-cyan-500 text-white rounded-full px-4 gap-1.5"
             >
-              <Plus className="w-4 h-4 mr-1" /> New Task
+              <Plus className="w-4 h-4" /> New Task
             </Button>
           </div>
+        </motion.div>
+
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {[
+            { icon: ListChecks, label: "Total Tasks", value: stats.total, color: "cyan" },
+            { icon: CheckCircle2, label: "Completed", value: stats.completed, color: "cyan" },
+            { icon: AlertTriangle, label: "Overdue", value: stats.overdue, color: stats.overdue > 0 ? "red" : "cyan" },
+            { icon: Flame, label: "High Priority", value: stats.highPriority, color: "cyan" },
+          ].map((stat, i) => {
+            const iconColors = stat.color === "red" ? "bg-red-500/10 text-red-400" : "bg-cyan-500/10 text-cyan-400";
+            const valueColor = stat.color === "red" && stat.value > 0 ? "text-red-400" : "text-white";
+            return (
+              <motion.div
+                key={stat.label}
+                {...stagger(0.05 * i)}
+                className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5"
+              >
+                <div className={`w-9 h-9 rounded-[12px] ${iconColors.split(" ")[0]} flex items-center justify-center mb-3`}>
+                  <stat.icon className={`w-5 h-5 ${iconColors.split(" ")[1]}`} />
+                </div>
+                <div className={`text-2xl font-bold ${valueColor}`}>{stat.value}</div>
+                <div className="text-xs text-zinc-500 mt-0.5">{stat.label}</div>
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* Filters */}
@@ -431,7 +429,7 @@ export default function Tasks() {
         </div>
 
         {/* Keyboard hints */}
-        <div className="flex items-center gap-3 mb-4 text-[10px] text-zinc-600">
+        <div className="flex items-center gap-3 mb-4 text-[10px] text-zinc-600 opacity-40 hover:opacity-100 transition-opacity">
           <Keyboard className="w-3 h-3" />
           <span><kbd className="px-1 py-0.5 bg-zinc-800 rounded text-zinc-400">C</kbd> create</span>
           <span><kbd className="px-1 py-0.5 bg-zinc-800 rounded text-zinc-400">V</kbd> switch view</span>

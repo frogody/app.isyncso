@@ -16,15 +16,15 @@ function KanbanColumn({ column, tasks, onAddTask, onEdit, onDelete, onSelect, se
   const Icon = column.icon;
 
   return (
-    <div className="flex-shrink-0 w-[260px] sm:w-72 md:w-[280px] lg:w-80">
+    <div className="flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px]">
       {/* Column Header */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <div className={`w-6 h-6 rounded flex items-center justify-center bg-${column.color === 'zinc' ? 'zinc' : 'cyan'}-500/10`}>
-            <Icon className={`w-4 h-4 text-${column.color === 'zinc' ? 'zinc' : 'cyan'}-400`} />
+        <div className="flex items-center gap-2.5">
+          <div className={`w-8 h-8 rounded-[12px] ${column.color === 'zinc' ? 'bg-zinc-500/10' : 'bg-cyan-500/10'} flex items-center justify-center`}>
+            <Icon className={`w-4 h-4 ${column.color === 'zinc' ? 'text-zinc-400' : 'text-cyan-400'}`} />
           </div>
-          <span className="font-medium text-white text-sm">{column.label}</span>
-          <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">{tasks.length}</span>
+          <span className="font-semibold text-white text-sm">{column.label}</span>
+          <span className="text-xs text-zinc-500 bg-zinc-800/60 px-2.5 py-0.5 rounded-full">{tasks.length}</span>
         </div>
         <Button
           variant="ghost"
@@ -52,9 +52,9 @@ function KanbanColumn({ column, tasks, onAddTask, onEdit, onDelete, onSelect, se
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`space-y-2 min-h-[300px] rounded-xl p-2 transition-all ${
+            className={`space-y-3 min-h-[300px] rounded-[16px] p-2 transition-all ${
               snapshot.isDraggingOver
-                ? "bg-cyan-500/5 border-2 border-dashed border-cyan-500/30"
+                ? "bg-cyan-500/[0.03] border-2 border-dashed border-cyan-500/20"
                 : "border-2 border-transparent"
             }`}
           >
@@ -76,10 +76,12 @@ function KanbanColumn({ column, tasks, onAddTask, onEdit, onDelete, onSelect, se
 
             {tasks.length === 0 && !snapshot.isDraggingOver && (
               <div
-                className="flex flex-col items-center justify-center py-8 text-center border border-dashed border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-700 transition-colors"
+                className="flex flex-col items-center justify-center py-10 text-center rounded-[20px] border border-dashed border-zinc-800/40 bg-zinc-900/20 cursor-pointer hover:border-zinc-700/50 transition-all"
                 onClick={() => onAddTask(column.id)}
               >
-                <Plus className="w-6 h-6 text-zinc-600 mb-2" />
+                <div className="w-10 h-10 rounded-[14px] bg-zinc-800/40 flex items-center justify-center mb-3">
+                  <Plus className="w-5 h-5 text-zinc-600" />
+                </div>
                 <p className="text-zinc-600 text-sm">Add a task</p>
               </div>
             )}

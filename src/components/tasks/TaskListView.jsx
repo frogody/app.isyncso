@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
 import {
   Calendar, Clock, CheckCircle2, Circle, MoreHorizontal,
-  Edit2, Trash2, ChevronDown, ChevronRight, Sparkles, Flag
+  Edit2, Trash2, ChevronDown, ChevronRight, Sparkles, Flag,
+  XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { STATUS_CONFIG, PRIORITY_CONFIG, PriorityDot } from "./TaskCard";
 import TaskQuickCreate from "./TaskQuickCreate";
+
+const SECTION_STATUS_STYLES = {
+  pending: {
+    bg: "bg-zinc-500/10",
+    text: "text-zinc-400",
+    icon: Circle,
+  },
+  in_progress: {
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-400",
+    icon: Clock,
+  },
+  completed: {
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-400",
+    icon: CheckCircle2,
+  },
+  cancelled: {
+    bg: "bg-zinc-500/5",
+    text: "text-zinc-500",
+    icon: XCircle,
+  },
+};
 
 function TaskListRow({ task, onEdit, onDelete, onStatusChange, onSelect, isSelected, onAIAction }) {
   const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
@@ -34,8 +58,8 @@ function TaskListRow({ task, onEdit, onDelete, onStatusChange, onSelect, isSelec
       onClick={() => onSelect?.(task)}
       className={`flex items-center gap-2 px-3 py-2 transition-colors cursor-pointer group ${
         isSelected
-          ? "bg-cyan-500/5 border-l-2 border-l-cyan-500"
-          : "hover:bg-white/[0.03] border-l-2 border-l-transparent"
+          ? "bg-cyan-500/[0.03] border-l-2 border-l-cyan-400"
+          : "hover:bg-white/[0.02] border-l-2 border-l-transparent"
       }`}
     >
       {/* Status checkbox */}
@@ -159,10 +183,12 @@ export default function TaskListView({
 
   if (tasks.length === 0) {
     return (
-      <div className="text-center py-16 text-zinc-500">
-        <Circle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-        <p className="text-lg">No tasks yet</p>
-        <p className="text-sm mt-1">Create your first task to get started</p>
+      <div className="text-center py-16">
+        <div className="w-14 h-14 rounded-[16px] bg-zinc-800/40 flex items-center justify-center mx-auto mb-4">
+          <Circle className="w-7 h-7 text-zinc-600" />
+        </div>
+        <p className="text-lg text-zinc-400 font-medium">No tasks yet</p>
+        <p className="text-sm text-zinc-600 mt-1">Create your first task to get started</p>
       </div>
     );
   }
@@ -179,10 +205,11 @@ export default function TaskListView({
       </div>
 
       {/* Grouped sections */}
-      <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 overflow-hidden">
+      <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm overflow-hidden">
         {Object.entries(groupedTasks).map(([status, statusTasks]) => {
           const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
-          const Icon = config.icon;
+          const sectionStyle = SECTION_STATUS_STYLES[status] || SECTION_STATUS_STYLES.pending;
+          const SectionIcon = sectionStyle.icon;
           const isCollapsed = collapsedSections[status];
 
           return (
@@ -190,21 +217,23 @@ export default function TaskListView({
               {/* Section header */}
               <button
                 onClick={() => toggleSection(status)}
-                className="flex items-center gap-2 w-full px-3 py-2 bg-zinc-900/60 hover:bg-zinc-900/80 transition-colors border-b border-zinc-800/40"
+                className="flex items-center gap-2 w-full px-3 py-2 bg-zinc-900/60 backdrop-blur-sm hover:bg-zinc-900/80 transition-colors border-b border-zinc-800/40"
               >
                 {isCollapsed ? (
                   <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
                 ) : (
                   <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
                 )}
-                <div className={`w-2 h-2 rounded-full ${config.dotColor}`} />
+                <div className={`w-6 h-6 rounded-[8px] ${sectionStyle.bg} flex items-center justify-center`}>
+                  <SectionIcon className={`w-3.5 h-3.5 ${sectionStyle.text}`} />
+                </div>
                 <span className="text-sm font-medium text-zinc-300">{config.label}</span>
-                <span className="text-xs text-zinc-500">{statusTasks.length}</span>
+                <span className="bg-zinc-800/60 px-2 py-0.5 rounded-full text-xs text-zinc-500">{statusTasks.length}</span>
               </button>
 
               {/* Tasks */}
               {!isCollapsed && (
-                <div className="divide-y divide-zinc-800/40">
+                <div className="divide-y divide-zinc-800/30">
                   {statusTasks.map((task) => (
                     <TaskListRow
                       key={task.id}

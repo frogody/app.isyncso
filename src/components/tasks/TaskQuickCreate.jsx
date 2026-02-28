@@ -38,31 +38,31 @@ export default function TaskQuickCreate({ onCreateTask, onOpenFullModal, status 
 
   return (
     <div
-      className={`flex items-center gap-2 rounded-lg border transition-all ${
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-[16px] bg-zinc-900/30 border border-dashed transition-all ${
         focused
-          ? "border-cyan-500/30 bg-cyan-500/5"
-          : "border-transparent hover:border-zinc-800 bg-transparent"
+          ? "border-cyan-500/20 bg-zinc-900/40"
+          : "border-zinc-800/50 hover:border-zinc-700/60"
       }`}
     >
-      <div className="flex items-center gap-2 flex-1 px-2 py-1.5">
-        <Plus className={`w-4 h-4 flex-shrink-0 transition-colors ${focused ? "text-cyan-400" : "text-zinc-600"}`} />
-        <input
-          ref={inputRef}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => { setFocused(false); }}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="flex-1 bg-transparent text-sm text-white placeholder:text-zinc-600 outline-none"
-        />
+      <div className="w-6 h-6 rounded-full bg-zinc-800/60 flex items-center justify-center flex-shrink-0">
+        <Plus className={`w-3.5 h-3.5 transition-colors ${focused ? "text-cyan-400" : "text-zinc-500"}`} />
       </div>
+      <input
+        ref={inputRef}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => { setFocused(false); }}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        className="flex-1 bg-transparent text-sm text-zinc-300 placeholder:text-zinc-600 outline-none"
+      />
       {focused && title.trim() && (
-        <div className="flex items-center gap-1 pr-2 text-[10px] text-zinc-500">
-          <kbd className="px-1 py-0.5 bg-zinc-800 rounded text-zinc-400">Enter</kbd>
+        <div className="flex items-center gap-1 text-[10px] text-zinc-500 flex-shrink-0">
+          <kbd className="px-1 py-0.5 bg-zinc-800/80 rounded-full text-zinc-400">Enter</kbd>
           <span>create</span>
           <span className="mx-1">|</span>
-          <kbd className="px-1 py-0.5 bg-zinc-800 rounded text-zinc-400">Shift+Enter</kbd>
+          <kbd className="px-1 py-0.5 bg-zinc-800/80 rounded-full text-zinc-400">Shift+Enter</kbd>
           <span>details</span>
         </div>
       )}

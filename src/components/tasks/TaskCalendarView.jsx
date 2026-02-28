@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PriorityDot, STATUS_CONFIG } from "./TaskCard";
+import { PriorityDot, STATUS_CONFIG, PRIORITY_CONFIG } from "./TaskCard";
 
 function getDaysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate();
@@ -79,30 +79,51 @@ export default function TaskCalendarView({
 
   const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+  const getChipStyle = (task) => {
+    if (task.status === "completed") {
+      return "bg-zinc-800/40 text-zinc-500 border-zinc-700/30 line-through";
+    }
+    if (selectedTaskId === task.id) {
+      return "bg-cyan-500/15 text-cyan-300 border-cyan-500/30";
+    }
+    const config = PRIORITY_CONFIG[task.priority];
+    if (config) return config.color;
+    return "bg-zinc-800/50 text-zinc-300 border-zinc-700/40";
+  };
+
   return (
     <div className="space-y-4">
       {/* Month navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8 text-zinc-400">
+          <button
+            onClick={prevMonth}
+            className="w-8 h-8 rounded-full bg-zinc-900/40 border border-zinc-800/60 hover:border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-all"
+          >
             <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <h3 className="text-lg font-medium text-white min-w-[200px] text-center">{monthName}</h3>
-          <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8 text-zinc-400">
+          </button>
+          <h3 className="text-lg font-semibold text-white min-w-[200px] text-center">{monthName}</h3>
+          <button
+            onClick={nextMonth}
+            className="w-8 h-8 rounded-full bg-zinc-900/40 border border-zinc-800/60 hover:border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-all"
+          >
             <ChevronRight className="w-4 h-4" />
-          </Button>
+          </button>
         </div>
-        <Button variant="outline" size="sm" onClick={goToday} className="border-zinc-700 text-zinc-300 text-xs">
+        <button
+          onClick={goToday}
+          className="px-3 py-1.5 rounded-full bg-zinc-900/40 border border-zinc-800/60 hover:border-zinc-700 text-zinc-300 text-xs font-medium transition-all"
+        >
           Today
-        </Button>
+        </button>
       </div>
 
       {/* Calendar grid */}
-      <div className="border border-zinc-800/60 rounded-xl overflow-hidden">
+      <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm overflow-hidden">
         {/* Day headers */}
-        <div className="grid grid-cols-7 bg-zinc-900/60">
+        <div className="grid grid-cols-7 border-b border-zinc-800/40">
           {DAYS.map((day) => (
-            <div key={day} className="text-center text-xs font-medium text-zinc-500 py-2 border-b border-zinc-800/40">
+            <div key={day} className="text-center text-xs font-medium text-zinc-500 uppercase tracking-wider py-3">
               {day}
             </div>
           ))}
@@ -119,9 +140,9 @@ export default function TaskCalendarView({
               return (
                 <div
                   key={ci}
-                  className={`min-h-[90px] border-b border-r border-zinc-800/30 p-1.5 transition-colors ${
-                    cell.inMonth ? "bg-transparent" : "bg-zinc-900/30"
-                  } ${isToday ? "bg-cyan-500/5" : ""} hover:bg-white/[0.02]`}
+                  className={`group relative min-h-[100px] border border-zinc-800/30 p-2 transition-colors cursor-pointer ${
+                    !cell.inMonth ? "opacity-30" : ""
+                  } ${isToday ? "bg-cyan-500/[0.03] border-cyan-500/20" : "hover:bg-white/[0.01]"}`}
                   onClick={() => {
                     if (cell.inMonth) {
                       const y = cell.date.getFullYear();
@@ -132,7 +153,7 @@ export default function TaskCalendarView({
                   }}
                 >
                   {/* Day number */}
-                  <div className={`text-xs mb-1 ${
+                  <div className={`text-xs mb-1.5 ${
                     isToday
                       ? "text-cyan-400 font-bold"
                       : cell.inMonth
@@ -143,7 +164,7 @@ export default function TaskCalendarView({
                   </div>
 
                   {/* Tasks */}
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {dayTasks.slice(0, 3).map((task) => (
                       <button
                         key={task.id}
@@ -151,26 +172,27 @@ export default function TaskCalendarView({
                           e.stopPropagation();
                           onEdit(task);
                         }}
-                        className={`w-full text-left text-[10px] px-1.5 py-0.5 rounded truncate transition-colors ${
-                          task.status === "completed"
-                            ? "bg-zinc-800/50 text-zinc-500 line-through"
-                            : selectedTaskId === task.id
-                              ? "bg-cyan-500/20 text-cyan-300"
-                              : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
-                        }`}
+                        className={`w-full text-left rounded-full px-2 py-0.5 text-[10px] font-medium border truncate max-w-full transition-colors ${getChipStyle(task)}`}
                       >
                         <span className="flex items-center gap-1">
                           <PriorityDot priority={task.priority} />
-                          {task.title}
+                          <span className="truncate">{task.title}</span>
                         </span>
                       </button>
                     ))}
                     {dayTasks.length > 3 && (
-                      <span className="text-[10px] text-zinc-500 px-1.5">
+                      <span className="text-[10px] text-zinc-500 px-2">
                         +{dayTasks.length - 3} more
                       </span>
                     )}
                   </div>
+
+                  {/* Hover add indicator */}
+                  {cell.inMonth && dayTasks.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <Plus className="w-4 h-4 text-zinc-600" />
+                    </div>
+                  )}
                 </div>
               );
             })}

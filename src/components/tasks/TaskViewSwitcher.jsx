@@ -9,20 +9,20 @@ const VIEWS = [
 
 export default function TaskViewSwitcher({ view, onViewChange }) {
   return (
-    <div className="flex items-center bg-zinc-800/50 rounded-lg p-1">
+    <div className="flex items-center bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/60 rounded-full p-1 gap-0.5">
       {VIEWS.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
           onClick={() => onViewChange(id)}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-sm transition-colors ${
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
             view === id
-              ? "bg-zinc-700 text-white"
+              ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30"
               : "text-zinc-400 hover:text-zinc-300"
           }`}
           title={label}
         >
           <Icon className="w-4 h-4" />
-          <span className="hidden sm:inline text-xs">{label}</span>
+          <span>{label}</span>
         </button>
       ))}
     </div>
