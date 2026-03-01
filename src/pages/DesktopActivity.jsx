@@ -484,7 +484,8 @@ const THREAD_STATUS_COLORS = {
 
 function IntelligenceTab({ userId }) {
   const [semanticData, setSemanticData] = useState({
-    activities: [], entities: [], threads: [], intents: [], signatures: [],
+    activityDist: [], activityTimeline: [], entities: [], threads: [], intents: [], signatures: [],
+    counts: { activities: 0, entities: 0, threads: 0, intents: 0 },
   });
   const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState({ projects: true, technologies: true, tools: true });
@@ -495,25 +496,42 @@ function IntelligenceTab({ userId }) {
       setLoading(true);
 
       try {
-        const [activities, entities, threads, intents, signatures] = await Promise.all([
-          db.from('semantic_activities').select('*').eq('user_id', userId)
-            .order('created_at', { ascending: false }).limit(1000),
+        // Exact counts + server-side aggregations (no row limit issues)
+        const [activityCount, entityCount, threadCount, intentCount,
+               activityDist, activityTimeline,
+               entities, threads, intents, signatures] = await Promise.all([
+          // Exact counts using head:true + count:'exact'
+          db.from('semantic_activities').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+          db.from('semantic_entities').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+          db.from('semantic_threads').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+          db.from('semantic_intents').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+          // Server-side aggregations for activity charts (avoids 1K row cap)
+          db.rpc('get_activity_type_distribution', { p_user_id: userId }),
+          db.rpc('get_activity_hourly_timeline', { p_user_id: userId }),
+          // Other data (well under 1K rows each)
           db.from('semantic_entities').select('*').eq('user_id', userId)
-            .order('occurrence_count', { ascending: false }).limit(100),
+            .order('occurrence_count', { ascending: false }),
           db.from('semantic_threads').select('*').eq('user_id', userId)
-            .order('last_activity_at', { ascending: false }).limit(50),
+            .order('last_activity_at', { ascending: false }),
           db.from('semantic_intents').select('*').eq('user_id', userId)
-            .order('created_at', { ascending: false }).limit(50),
+            .order('created_at', { ascending: false }),
           db.from('behavioral_signatures').select('*').eq('user_id', userId)
-            .order('computed_at', { ascending: false }).limit(20),
+            .order('computed_at', { ascending: false }),
         ]);
 
         setSemanticData({
-          activities: activities.data || [],
+          activityDist: activityDist.data || [],
+          activityTimeline: activityTimeline.data || [],
           entities: entities.data || [],
           threads: threads.data || [],
           intents: intents.data || [],
           signatures: signatures.data || [],
+          counts: {
+            activities: activityCount.count || 0,
+            entities: entityCount.count || 0,
+            threads: threadCount.count || 0,
+            intents: intentCount.count || 0,
+          },
         });
       } catch (err) {
         console.error('Failed to fetch semantic data:', err);
@@ -527,38 +545,39 @@ function IntelligenceTab({ userId }) {
 
   // ── Derived data ──
 
+  // Built from server-side RPC aggregation (no 1K row cap)
   const activityTypeDist = useMemo(() => {
-    const counts = {};
-    for (const a of semanticData.activities) {
-      const t = a.activity_type || 'UNKNOWN';
-      counts[t] = (counts[t] || 0) + 1;
-    }
-    return Object.entries(counts)
-      .map(([name, value]) => ({ name: ACTIVITY_TYPE_LABELS[name] || name, value, key: name }))
+    return semanticData.activityDist
+      .map(row => ({
+        name: ACTIVITY_TYPE_LABELS[row.activity_type] || row.activity_type,
+        value: Number(row.count),
+        key: row.activity_type,
+      }))
       .sort((a, b) => b.value - a.value);
-  }, [semanticData.activities]);
+  }, [semanticData.activityDist]);
 
   const hourlyTimeline = useMemo(() => {
     const buckets = {};
-    for (const a of semanticData.activities) {
-      const hour = new Date(a.created_at).getHours();
-      if (!buckets[hour]) buckets[hour] = {};
-      const t = a.activity_type || 'UNKNOWN';
-      buckets[hour][t] = (buckets[hour][t] || 0) + 1;
+    const allTypes = new Set();
+    for (const row of semanticData.activityTimeline) {
+      const h = row.hour;
+      if (!buckets[h]) buckets[h] = {};
+      buckets[h][row.activity_type] = Number(row.count);
+      allTypes.add(row.activity_type);
     }
-    const allTypes = [...new Set(semanticData.activities.map(a => a.activity_type))].filter(Boolean);
+    const types = [...allTypes];
     return Array.from({ length: 24 }, (_, h) => {
       const entry = { hour: `${h}:00` };
-      for (const t of allTypes) {
+      for (const t of types) {
         entry[t] = buckets[h]?.[t] || 0;
       }
       return entry;
     }).filter((_, h) => h >= 6 && h <= 23);
-  }, [semanticData.activities]);
+  }, [semanticData.activityTimeline]);
 
   const activeTypes = useMemo(() =>
-    [...new Set(semanticData.activities.map(a => a.activity_type))].filter(Boolean),
-    [semanticData.activities]
+    semanticData.activityDist.map(row => row.activity_type).filter(Boolean),
+    [semanticData.activityDist]
   );
 
   const entityGroups = useMemo(() => ({
@@ -602,7 +621,7 @@ function IntelligenceTab({ userId }) {
     );
   }
 
-  const hasData = semanticData.activities.length > 0 || semanticData.entities.length > 0;
+  const hasData = semanticData.counts.activities > 0 || semanticData.entities.length > 0;
 
   if (!hasData) {
     return (
@@ -626,10 +645,10 @@ function IntelligenceTab({ userId }) {
 
       {/* Stat Cards */}
       <motion.div {...SLIDE_UP} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={Activity} label="Activities" value={semanticData.activities.length.toLocaleString()} color="cyan" delay={0} />
+        <StatCard icon={Activity} label="Activities" value={semanticData.counts.activities.toLocaleString()} color="cyan" delay={0} />
         <StatCard icon={GitBranch} label="Active Threads" value={activeThreadCount} color="blue" delay={0.05} />
-        <StatCard icon={Database} label="Entities" value={semanticData.entities.length} color="indigo" delay={0.1} />
-        <StatCard icon={Target} label="Intents" value={semanticData.intents.length} color="amber" delay={0.15} />
+        <StatCard icon={Database} label="Entities" value={semanticData.counts.entities.toLocaleString()} color="indigo" delay={0.1} />
+        <StatCard icon={Target} label="Intents" value={semanticData.counts.intents.toLocaleString()} color="amber" delay={0.15} />
       </motion.div>
 
       {/* Activity Distribution + Timeline */}
@@ -656,8 +675,9 @@ function IntelligenceTab({ userId }) {
                 </ResponsiveContainer>
                 <div className="flex-1 space-y-1.5">
                   {activityTypeDist.map((entry) => {
-                    const pct = semanticData.activities.length > 0
-                      ? Math.round((entry.value / semanticData.activities.length) * 100)
+                    const totalActs = semanticData.counts.activities || semanticData.activities.length;
+                    const pct = totalActs > 0
+                      ? Math.round((entry.value / totalActs) * 100)
                       : 0;
                     return (
                       <div key={entry.key} className="flex items-center gap-2">
@@ -706,7 +726,7 @@ function IntelligenceTab({ userId }) {
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <Database className="w-4 h-4 text-cyan-400" />
             Entities
-            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{semanticData.entities.length} total</span>
+            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{semanticData.counts.entities} total</span>
           </h3>
 
           {[
@@ -748,7 +768,7 @@ function IntelligenceTab({ userId }) {
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <GitBranch className="w-4 h-4 text-cyan-400" />
             Work Threads
-            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{semanticData.threads.length} threads</span>
+            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{semanticData.counts.threads} threads</span>
           </h3>
 
           {semanticData.threads.length > 0 ? (
