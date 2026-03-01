@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Monitor, Clock, Zap, TrendingUp, Calendar, BarChart3, PieChart,
+  Monitor, Clock, Zap, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon,
   RefreshCw, Download, ChevronLeft, ChevronRight, Loader2, Laptop,
   Target, Activity, Brain, Coffee, Code, Chrome, MessageSquare, FileText,
-  Music, Video, Mail, Terminal, Folder, Settings, Plus, Sparkles, BookOpen, ArrowRight
+  Music, Video, Mail, Terminal, Folder, Settings, Plus, Sparkles, BookOpen, ArrowRight,
+  GitBranch, Database, Layers, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownRight, Minus
 } from 'lucide-react';
+import {
+  PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
 import { toast } from 'sonner';
 import { db } from "@/api/supabaseClient";
 import { createPageUrl } from "@/utils";
@@ -434,6 +438,442 @@ function DeepContextTab({ userId }) {
           </div>
         </motion.div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Activity Type Colors (semantic pipeline)
+// ---------------------------------------------------------------------------
+
+const ACTIVITY_TYPE_COLORS = {
+  BUILDING: '#22d3ee',
+  INVESTIGATING: '#60a5fa',
+  ORGANIZING: '#fbbf24',
+  OPERATING: '#34d399',
+  COMMUNICATING: '#a78bfa',
+  CONTEXT_SWITCHING: '#a1a1aa',
+};
+
+const ACTIVITY_TYPE_LABELS = {
+  BUILDING: 'Building',
+  INVESTIGATING: 'Investigating',
+  ORGANIZING: 'Organizing',
+  OPERATING: 'Operating',
+  COMMUNICATING: 'Communicating',
+  CONTEXT_SWITCHING: 'Context Switching',
+};
+
+const INTENT_COLORS = {
+  SHIP: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
+  LEARN: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
+  PLAN: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
+  COMMUNICATE: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
+  MAINTAIN: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+};
+
+const THREAD_STATUS_COLORS = {
+  active: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+  paused: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
+  abandoned: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/20' },
+};
+
+// ---------------------------------------------------------------------------
+// Intelligence Tab — semantic pipeline data visualization
+// ---------------------------------------------------------------------------
+
+function IntelligenceTab({ userId }) {
+  const [semanticData, setSemanticData] = useState({
+    activities: [], entities: [], threads: [], intents: [], signatures: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [expandedSections, setExpandedSections] = useState({ projects: true, technologies: true, tools: true });
+
+  useEffect(() => {
+    async function fetchSemanticData() {
+      if (!userId) return;
+      setLoading(true);
+
+      try {
+        const [activities, entities, threads, intents, signatures] = await Promise.all([
+          db.from('semantic_activities').select('*').eq('user_id', userId)
+            .order('created_at', { ascending: false }).limit(1000),
+          db.from('semantic_entities').select('*').eq('user_id', userId)
+            .order('occurrence_count', { ascending: false }).limit(100),
+          db.from('semantic_threads').select('*').eq('user_id', userId)
+            .order('last_activity_at', { ascending: false }).limit(50),
+          db.from('semantic_intents').select('*').eq('user_id', userId)
+            .order('created_at', { ascending: false }).limit(50),
+          db.from('behavioral_signatures').select('*').eq('user_id', userId)
+            .order('computed_at', { ascending: false }).limit(20),
+        ]);
+
+        setSemanticData({
+          activities: activities.data || [],
+          entities: entities.data || [],
+          threads: threads.data || [],
+          intents: intents.data || [],
+          signatures: signatures.data || [],
+        });
+      } catch (err) {
+        console.error('Failed to fetch semantic data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchSemanticData();
+  }, [userId]);
+
+  // ── Derived data ──
+
+  const activityTypeDist = useMemo(() => {
+    const counts = {};
+    for (const a of semanticData.activities) {
+      const t = a.activity_type || 'UNKNOWN';
+      counts[t] = (counts[t] || 0) + 1;
+    }
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name: ACTIVITY_TYPE_LABELS[name] || name, value, key: name }))
+      .sort((a, b) => b.value - a.value);
+  }, [semanticData.activities]);
+
+  const hourlyTimeline = useMemo(() => {
+    const buckets = {};
+    for (const a of semanticData.activities) {
+      const hour = new Date(a.created_at).getHours();
+      if (!buckets[hour]) buckets[hour] = {};
+      const t = a.activity_type || 'UNKNOWN';
+      buckets[hour][t] = (buckets[hour][t] || 0) + 1;
+    }
+    const allTypes = [...new Set(semanticData.activities.map(a => a.activity_type))].filter(Boolean);
+    return Array.from({ length: 24 }, (_, h) => {
+      const entry = { hour: `${h}:00` };
+      for (const t of allTypes) {
+        entry[t] = buckets[h]?.[t] || 0;
+      }
+      return entry;
+    }).filter((_, h) => h >= 6 && h <= 23);
+  }, [semanticData.activities]);
+
+  const activeTypes = useMemo(() =>
+    [...new Set(semanticData.activities.map(a => a.activity_type))].filter(Boolean),
+    [semanticData.activities]
+  );
+
+  const entityGroups = useMemo(() => ({
+    projects: semanticData.entities.filter(e => e.type === 'project'),
+    technologies: semanticData.entities.filter(e => e.type === 'topic'),
+    tools: semanticData.entities.filter(e => e.type === 'tool'),
+    people: semanticData.entities.filter(e => e.type === 'person'),
+  }), [semanticData.entities]);
+
+  const intentsByThread = useMemo(() => {
+    const map = {};
+    for (const i of semanticData.intents) {
+      if (i.thread_id) map[i.thread_id] = i;
+    }
+    return map;
+  }, [semanticData.intents]);
+
+  const activeThreadCount = semanticData.threads.filter(t => t.status === 'active').length;
+
+  const signatureMetrics = useMemo(() => {
+    const map = {};
+    for (const s of semanticData.signatures) {
+      if (!map[s.metric_name]) map[s.metric_name] = s;
+    }
+    return map;
+  }, [semanticData.signatures]);
+
+  const toggleSection = (key) => {
+    setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // ── Loading ──
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-40 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  const hasData = semanticData.activities.length > 0 || semanticData.entities.length > 0;
+
+  if (!hasData) {
+    return (
+      <motion.div {...SLIDE_UP}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-8 text-center">
+          <Layers className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+          <p className="text-zinc-400 text-sm font-medium">No semantic intelligence data yet</p>
+          <p className="text-xs text-zinc-600 mt-2 max-w-md mx-auto">
+            The semantic pipeline classifies your work into activities, entities, threads, and behavioral patterns.
+            Make sure the desktop app is running, authenticated, and syncing.
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── Render ──
+
+  return (
+    <div className="space-y-4">
+
+      {/* Stat Cards */}
+      <motion.div {...SLIDE_UP} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard icon={Activity} label="Activities" value={semanticData.activities.length.toLocaleString()} color="cyan" delay={0} />
+        <StatCard icon={GitBranch} label="Active Threads" value={activeThreadCount} color="blue" delay={0.05} />
+        <StatCard icon={Database} label="Entities" value={semanticData.entities.length} color="indigo" delay={0.1} />
+        <StatCard icon={Target} label="Intents" value={semanticData.intents.length} color="amber" delay={0.15} />
+      </motion.div>
+
+      {/* Activity Distribution + Timeline */}
+      <div className="grid lg:grid-cols-2 gap-4">
+
+        {/* Pie Chart */}
+        <motion.div {...stagger(0.1)}>
+          <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5 h-full">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+              <PieChartIcon className="w-4 h-4 text-cyan-400" />
+              Activity Distribution
+            </h3>
+            {activityTypeDist.length > 0 ? (
+              <div className="flex items-center gap-4">
+                <ResponsiveContainer width="50%" height={180}>
+                  <PieChart>
+                    <Pie data={activityTypeDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={2}>
+                      {activityTypeDist.map((entry) => (
+                        <Cell key={entry.key} fill={ACTIVITY_TYPE_COLORS[entry.key] || '#71717a'} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '12px', fontSize: '12px', color: '#fff' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex-1 space-y-1.5">
+                  {activityTypeDist.map((entry) => {
+                    const pct = semanticData.activities.length > 0
+                      ? Math.round((entry.value / semanticData.activities.length) * 100)
+                      : 0;
+                    return (
+                      <div key={entry.key} className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: ACTIVITY_TYPE_COLORS[entry.key] || '#71717a' }} />
+                        <span className="text-xs text-zinc-300 truncate">{entry.name}</span>
+                        <span className="text-[10px] text-zinc-500 ml-auto">{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-500 text-center py-8">No activity data</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Area Chart */}
+        <motion.div {...stagger(0.15)}>
+          <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5 h-full">
+            <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+              <BarChart3 className="w-4 h-4 text-cyan-400" />
+              Activity Over Time
+            </h3>
+            {hourlyTimeline.length > 0 && activeTypes.length > 0 ? (
+              <ResponsiveContainer width="100%" height={180}>
+                <AreaChart data={hourlyTimeline}>
+                  <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#71717a' }} interval={2} />
+                  <YAxis tick={{ fontSize: 10, fill: '#71717a' }} width={30} />
+                  <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '12px', fontSize: '12px', color: '#fff' }} />
+                  {activeTypes.map((t) => (
+                    <Area key={t} type="monotone" dataKey={t} stackId="1" fill={ACTIVITY_TYPE_COLORS[t] || '#71717a'} stroke="none" fillOpacity={0.7} name={ACTIVITY_TYPE_LABELS[t] || t} />
+                  ))}
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-xs text-zinc-500 text-center py-8">No timeline data</p>
+            )}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Entity Browser */}
+      <motion.div {...stagger(0.2)}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+            <Database className="w-4 h-4 text-cyan-400" />
+            Entities
+            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{semanticData.entities.length} total</span>
+          </h3>
+
+          {[
+            { key: 'projects', label: 'Projects', items: entityGroups.projects, colorBg: 'bg-cyan-500/10', colorText: 'text-cyan-400', colorBorder: 'border-cyan-500/20' },
+            { key: 'technologies', label: 'Technologies', items: entityGroups.technologies, colorBg: 'bg-blue-500/10', colorText: 'text-blue-400', colorBorder: 'border-blue-500/20' },
+            { key: 'tools', label: 'Tools', items: entityGroups.tools, colorBg: 'bg-emerald-500/10', colorText: 'text-emerald-400', colorBorder: 'border-emerald-500/20' },
+            { key: 'people', label: 'People', items: entityGroups.people, colorBg: 'bg-purple-500/10', colorText: 'text-purple-400', colorBorder: 'border-purple-500/20' },
+          ].filter(g => g.items.length > 0).map(({ key, label, items, colorBg, colorText, colorBorder }) => (
+            <div key={key} className="mb-3 last:mb-0">
+              <button onClick={() => toggleSection(key)} className="flex items-center gap-2 w-full text-left mb-2 group">
+                {expandedSections[key] ? <ChevronDown className="w-3.5 h-3.5 text-zinc-500" /> : <ChevronUp className="w-3.5 h-3.5 text-zinc-500" />}
+                <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">{label}</span>
+                <span className="text-[10px] text-zinc-600">{items.length}</span>
+              </button>
+              {expandedSections[key] && (
+                <div className="flex flex-wrap gap-1.5 pl-5">
+                  {items.map((entity) => (
+                    <span key={entity.entity_id || entity.id} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${colorBg} ${colorText} ${colorBorder}`}>
+                      {entity.name}
+                      {entity.occurrence_count > 1 && (
+                        <span className="text-[9px] opacity-60">{entity.occurrence_count}</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {semanticData.entities.length === 0 && (
+            <p className="text-xs text-zinc-500 text-center py-4">No entities extracted yet</p>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Thread Explorer */}
+      <motion.div {...stagger(0.25)}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+            <GitBranch className="w-4 h-4 text-cyan-400" />
+            Work Threads
+            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{semanticData.threads.length} threads</span>
+          </h3>
+
+          {semanticData.threads.length > 0 ? (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+              {semanticData.threads.slice(0, 20).map((thread, i) => {
+                const statusStyle = THREAD_STATUS_COLORS[thread.status] || THREAD_STATUS_COLORS.abandoned;
+                const intent = intentsByThread[thread.thread_id];
+                const intentStyle = intent ? (INTENT_COLORS[intent.intent_type] || INTENT_COLORS.MAINTAIN) : null;
+                const durationMs = thread.last_activity_at && thread.started_at
+                  ? new Date(thread.last_activity_at) - new Date(thread.started_at)
+                  : 0;
+                const durationMin = Math.round(durationMs / 60000);
+                const durationStr = durationMin >= 60
+                  ? `${Math.floor(durationMin / 60)}h ${durationMin % 60}m`
+                  : `${durationMin}m`;
+
+                let primaryEntities = [];
+                try {
+                  primaryEntities = typeof thread.primary_entities === 'string'
+                    ? JSON.parse(thread.primary_entities)
+                    : (thread.primary_entities || []);
+                } catch { /* ignore */ }
+
+                return (
+                  <motion.div
+                    key={thread.thread_id || thread.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.02 }}
+                    className="p-3 rounded-[14px] border border-zinc-800/40 bg-zinc-800/20"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <p className="text-sm text-white font-medium truncate">{thread.title || 'Untitled thread'}</p>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border flex-shrink-0 ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
+                        {thread.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] text-zinc-500">{thread.event_count || 0} events</span>
+                      <span className="text-[10px] text-zinc-600">&middot;</span>
+                      <span className="text-[10px] text-zinc-500">{durationStr}</span>
+                      {thread.primary_activity_type && (
+                        <>
+                          <span className="text-[10px] text-zinc-600">&middot;</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: (ACTIVITY_TYPE_COLORS[thread.primary_activity_type] || '#71717a') + '1a', color: ACTIVITY_TYPE_COLORS[thread.primary_activity_type] || '#71717a' }}>
+                            {ACTIVITY_TYPE_LABELS[thread.primary_activity_type] || thread.primary_activity_type}
+                          </span>
+                        </>
+                      )}
+                      {intent && (
+                        <>
+                          <span className="text-[10px] text-zinc-600">&middot;</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${intentStyle.bg} ${intentStyle.text} ${intentStyle.border}`}>
+                            {intent.intent_type}{intent.intent_subtype ? `/${intent.intent_subtype}` : ''}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {primaryEntities.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {primaryEntities.slice(0, 5).map((e, ei) => {
+                          const name = typeof e === 'string' ? e : (e.name || e);
+                          return (
+                            <span key={ei} className="text-[9px] px-1.5 py-0.5 rounded-full bg-zinc-700/40 text-zinc-400 border border-zinc-700/30">
+                              {name}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-zinc-500 text-center py-4">No threads detected yet</p>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Behavioral Patterns */}
+      <motion.div {...stagger(0.3)}>
+        <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+            <TrendingUp className="w-4 h-4 text-cyan-400" />
+            Behavioral Patterns
+            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{semanticData.signatures.length} metrics</span>
+          </h3>
+
+          {semanticData.signatures.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { key: 'deep_work_ratio', label: 'Deep Work', format: (v) => `${Math.round((v || 0) * 100)}%`, icon: Brain },
+                { key: 'context_switch_rate', label: 'Context Switches', format: (v) => `${Math.round(v || 0)}/h`, icon: Layers },
+                { key: 'peak_hours', label: 'Peak Hours', format: (v) => typeof v === 'number' ? `${v}:00` : (v || 'N/A'), icon: Clock },
+                { key: 'meeting_load', label: 'Meeting Load', format: (v) => `${Math.round((v || 0) * 100)}%`, icon: Video },
+              ].map(({ key, label, format, icon: MetricIcon }) => {
+                const sig = signatureMetrics[key];
+                const value = sig?.current_value;
+                const trend = sig?.trend;
+                const TrendIcon = trend === 'increasing' ? ArrowUpRight : trend === 'decreasing' ? ArrowDownRight : Minus;
+                const trendColor = trend === 'increasing' ? 'text-emerald-400' : trend === 'decreasing' ? 'text-red-400' : 'text-zinc-500';
+
+                return (
+                  <div key={key} className="p-3 rounded-[14px] border border-zinc-800/40 bg-zinc-800/20">
+                    <div className="flex items-center justify-between mb-2">
+                      <MetricIcon className="w-4 h-4 text-cyan-400" />
+                      {sig && <TrendIcon className={`w-3 h-3 ${trendColor}`} />}
+                    </div>
+                    <p className="text-lg font-semibold text-white">{sig ? format(value) : '—'}</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">{label}</p>
+                    {sig?.confidence && (
+                      <div className="mt-1.5 h-1 rounded-full bg-zinc-800/60 overflow-hidden">
+                        <div className="h-full rounded-full bg-cyan-500/40" style={{ width: `${Math.round(sig.confidence * 100)}%` }} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-zinc-500 text-center py-4">No behavioral signatures computed yet</p>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -1015,6 +1455,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
           {[
             { key: 'overview', label: 'Overview', icon: BarChart3 },
             { key: 'deep-context', label: 'Deep Context', icon: Brain },
+            { key: 'intelligence', label: 'Intelligence', icon: Layers },
           ].map(({ key, label, icon: TabIcon }) => (
             <button
               key={key}
@@ -1034,6 +1475,11 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
         {/* Deep Context View */}
         {activeView === 'deep-context' && user && (
           <DeepContextTab userId={user.id} />
+        )}
+
+        {/* Intelligence View */}
+        {activeView === 'intelligence' && user && (
+          <IntelligenceTab userId={user.id} />
         )}
 
         {/* Overview Content */}
@@ -1092,7 +1538,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
             <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5 h-full">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <PieChart className="w-4 h-4 text-cyan-400" />
+                  <PieChartIcon className="w-4 h-4 text-cyan-400" />
                   Top Apps
                 </h3>
                 <span className="text-[10px] text-zinc-500 font-medium">By usage</span>
