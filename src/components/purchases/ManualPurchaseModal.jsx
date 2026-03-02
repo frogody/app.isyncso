@@ -990,16 +990,33 @@ export default function ManualPurchaseModal({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-zinc-500">Subtotal (excl. VAT)</p>
-                <p className="text-lg font-bold text-white">
-                  €{grandTotalExcl.toFixed(2)}
-                </p>
-                <p className="text-xs text-zinc-500">
-                  VAT: €{grandTaxAmount.toFixed(2)}
-                </p>
-                <p className="text-sm font-medium text-zinc-300">
-                  Total incl. VAT: €{grandTotalIncl.toFixed(2)}
-                </p>
+                {priceEntryMode === "excl" ? (
+                  <>
+                    <p className="text-xs text-zinc-500">Subtotal (excl. VAT)</p>
+                    <p className="text-lg font-bold text-white">
+                      €{grandTotalExcl.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      VAT: €{grandTaxAmount.toFixed(2)}
+                    </p>
+                    <p className="text-sm font-medium text-zinc-300">
+                      Total incl. VAT: €{grandTotalIncl.toFixed(2)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-zinc-500">Subtotal (incl. VAT)</p>
+                    <p className="text-lg font-bold text-white">
+                      €{grandTotalIncl.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      VAT: €{grandTaxAmount.toFixed(2)}
+                    </p>
+                    <p className="text-sm font-medium text-zinc-300">
+                      Total excl. VAT: €{grandTotalExcl.toFixed(2)}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
