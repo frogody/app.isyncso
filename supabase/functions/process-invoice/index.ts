@@ -57,36 +57,9 @@ CRITICAL RULES:
 8. EAN/barcode is typically 13 digits, look for it near line items
 
 SHIPPING vs TAX — CRITICAL:
-- These words mean SHIPPING COST, NOT tax:
-  EN: "Shipping", "Delivery", "Freight", "Postage"
-  ES: "Envío", "Gastos de envío"
-  DE: "Versandkosten", "Versand"
-  NL: "Verzendkosten", "Verzending"
-  FR: "Frais de port", "Frais de livraison", "Livraison"
-  IT: "Spese di spedizione", "Spedizione"
-  PT: "Portes", "Envio", "Frete"
-  PL: "Wysyłka", "Dostawa", "Koszty wysyłki"
-  CZ/SK: "Doprava", "Poštovné"
-  SE: "Frakt", "Fraktkostnad"
-  DK: "Fragt", "Forsendelse"
-  NO: "Frakt", "Forsendelse"
-  FI: "Toimitus", "Toimituskulut"
-  HU: "Szállítás", "Szállítási költség"
-  RO: "Livrare", "Transport"
-  EL: "Αποστολή", "Μεταφορικά"
-  TR: "Kargo", "Teslimat", "Nakliye"
-  HR/SI: "Dostava", "Poštarina", "Poštnina"
-  BG: "Доставка"
-  LT: "Pristatymas"
-  LV: "Piegāde"
-  EE: "Tarne"
+- These words mean SHIPPING COST, NOT tax: "Shipping", "Delivery", "Freight", "Postage", "Envío", "Gastos de envío", "Versandkosten", "Versand", "Verzendkosten", "Verzending", "Frais de port", "Frais de livraison", "Livraison", "Spese di spedizione", "Spedizione", "Portes", "Envio", "Frete", "Wysyłka", "Dostawa", "Koszty wysyłki", "Doprava", "Poštovné", "Frakt", "Fraktkostnad", "Fragt", "Forsendelse", "Toimitus", "Toimituskulut", "Szállítás", "Szállítási költség", "Livrare", "Transport", "Αποστολή", "Μεταφορικά", "Kargo", "Teslimat", "Nakliye", "Dostava", "Poštarina", "Poštnina", "Доставка", "Pristatymas", "Piegāde", "Tarne"
 - Put shipping amounts in "shipping_cost", NEVER in "tax_amount"
-- These words mean TAX:
-  "VAT", "Tax" (EN), "IVA" (ES/IT/PT), "TVA" (FR/RO), "BTW", "Belasting" (NL),
-  "MwSt", "USt", "Steuer" (DE/AT), "Impuesto" (ES), "Moms" (SE/DK),
-  "MVA" (NO), "ALV" (FI), "ÁFA", "Adó" (HU), "DPH" (CZ/SK),
-  "ΦΠΑ" (EL), "KDV", "Vergi" (TR), "PDV" (HR), "DDV" (SI),
-  "ДДС" (BG), "PVM" (LT), "PVN" (LV), "Käibemaks", "KM" (EE), "PTU" (PL)
+- These words mean TAX: "IVA", "TVA", "BTW", "VAT", "MwSt", "USt", "Impuesto", "Tax", "Belasting", "Steuer", "Moms", "MVA", "ALV", "ÁFA", "Adó", "DPH", "ΦΠΑ", "KDV", "Vergi", "PDV", "DDV", "ДДС", "PVM", "PVN", "Käibemaks", "KM", "PTU"
 - If a percentage is shown next to the tax label (e.g., "IVA 21%", "BTW 21%"), that confirms it is tax
 - If NO percentage and NO tax label next to an amount, it is likely NOT tax
 
@@ -317,7 +290,7 @@ async function extractFromImage(googleApiKey: string, imageUrl: string, retryCou
       : 'image/jpeg';
     console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mimeType}`);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${googleApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
