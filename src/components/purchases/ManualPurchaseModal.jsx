@@ -91,24 +91,24 @@ export default function ManualPurchaseModal({
   useEffect(() => {
     if (!companyId || !isOpen) return;
     (async () => {
-      const [{ data: supplierData }, { data: crmData }, { data: crmCustomers }, { data: portalClients }] = await Promise.all([
+      const [{ data: supplierData }, { data: crmSuppliers }, { data: crmCustomers }, { data: portalClients }] = await Promise.all([
         supabase
           .from("suppliers")
           .select("id, name, crm_company_id")
           .eq("company_id", companyId)
           .order("name"),
         supabase
-          .from("crm_companies")
-          .select("id, name")
+          .from("prospects")
+          .select("id, company, first_name, last_name, contact_type")
           .eq("organization_id", companyId)
-          .eq("company_type", "vendor")
-          .order("name"),
+          .eq("contact_type", "supplier")
+          .order("company"),
         supabase
-          .from("crm_companies")
-          .select("id, name, company_type")
+          .from("prospects")
+          .select("id, company, first_name, last_name, contact_type")
           .eq("organization_id", companyId)
-          .in("company_type", ["customer", "prospect"])
-          .order("name"),
+          .eq("contact_type", "customer")
+          .order("company"),
         supabase
           .from("portal_clients")
           .select("id, company_name, contact_name")
@@ -116,20 +116,31 @@ export default function ManualPurchaseModal({
           .eq("status", "active")
           .order("company_name"),
       ]);
-      const linkedCrmIds = new Set(
-        (supplierData || []).filter((s) => s.crm_company_id).map((s) => s.crm_company_id)
+      // Deduplicate: if a supplier table entry name matches a CRM prospect, skip the prospect
+      const existingSupplierNames = new Set(
+        (supplierData || []).map((s) => (s.name || "").toLowerCase())
       );
+      const crmSuppliersMapped = (crmSuppliers || [])
+        .filter((c) => !existingSupplierNames.has((c.company || "").toLowerCase()))
+        .map((c) => ({
+          id: c.id,
+          name: c.company || `${c.first_name || ""} ${c.last_name || ""}`.trim(),
+          source: "crm",
+        }));
       const merged = [
         ...(supplierData || []).map((s) => ({ ...s, source: "supplier" })),
-        ...(crmData || [])
-          .filter((c) => !linkedCrmIds.has(c.id))
-          .map((c) => ({ id: c.id, name: c.name, source: "crm" })),
+        ...crmSuppliersMapped,
       ];
       setSuppliers(merged);
 
-      // Build customer list for reservation
+      // Build customer list for reservation from CRM contacts + B2B portal
       const customerList = [
-        ...(crmCustomers || []).map((c) => ({ id: c.id, name: c.name, source: "crm", type: c.company_type })),
+        ...(crmCustomers || []).map((c) => ({
+          id: c.id,
+          name: c.company || `${c.first_name || ""} ${c.last_name || ""}`.trim(),
+          source: "crm",
+          type: c.contact_type,
+        })),
         ...(portalClients || []).map((c) => ({ id: c.id, name: c.company_name || c.contact_name, source: "portal" })),
       ];
       setCustomers(customerList);
@@ -310,13 +321,12 @@ export default function ManualPurchaseModal({
         if (supplierErr) throw supplierErr;
         finalSupplierId = newSupplier.id;
       } else if (selectedSupplier?.source === "crm") {
-        // Auto-create a supplier row linked to the CRM company
+        // Auto-create a supplier row from the CRM contact
         const { data: newSupplier, error: supplierErr } = await supabase
           .from("suppliers")
           .insert({
             company_id: companyId,
             name: selectedSupplier.name,
-            crm_company_id: selectedSupplier.id,
           })
           .select("id")
           .single();

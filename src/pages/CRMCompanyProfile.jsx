@@ -266,6 +266,18 @@ export default function CRMCompanyProfile() {
 
   const fetchReservedPurchases = async () => {
     try {
+      // Find prospect IDs linked to this CRM company, then find reserved purchases
+      const { data: linkedProspects } = await supabase
+        .from('prospects')
+        .select('id')
+        .eq('crm_company_id', companyId);
+
+      const prospectIds = (linkedProspects || []).map(p => p.id);
+      if (prospectIds.length === 0) {
+        setReservedPurchases([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('stock_purchases')
         .select(`
@@ -273,7 +285,7 @@ export default function CRMCompanyProfile() {
           suppliers (id, name),
           stock_purchase_line_items (id, description, quantity, unit_price, line_total)
         `)
-        .eq('reserved_for_customer_id', companyId)
+        .in('reserved_for_customer_id', prospectIds)
         .in('status', ['pending', 'approved', 'processing', 'pending_review'])
         .order('created_at', { ascending: false });
 
