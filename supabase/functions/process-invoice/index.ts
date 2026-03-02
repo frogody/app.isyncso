@@ -57,9 +57,36 @@ CRITICAL RULES:
 8. EAN/barcode is typically 13 digits, look for it near line items
 
 SHIPPING vs TAX — CRITICAL:
-- These words mean SHIPPING COST, NOT tax: "Envío", "Gastos de envío" (Spanish), "Versandkosten" (German), "Verzendkosten" (Dutch), "Frais de port", "Frais de livraison" (French), "Spese di spedizione" (Italian), "Portes" (Portuguese), "Shipping", "Delivery", "Freight", "Postage"
+- These words mean SHIPPING COST, NOT tax:
+  EN: "Shipping", "Delivery", "Freight", "Postage"
+  ES: "Envío", "Gastos de envío"
+  DE: "Versandkosten", "Versand"
+  NL: "Verzendkosten", "Verzending"
+  FR: "Frais de port", "Frais de livraison", "Livraison"
+  IT: "Spese di spedizione", "Spedizione"
+  PT: "Portes", "Envio", "Frete"
+  PL: "Wysyłka", "Dostawa", "Koszty wysyłki"
+  CZ/SK: "Doprava", "Poštovné"
+  SE: "Frakt", "Fraktkostnad"
+  DK: "Fragt", "Forsendelse"
+  NO: "Frakt", "Forsendelse"
+  FI: "Toimitus", "Toimituskulut"
+  HU: "Szállítás", "Szállítási költség"
+  RO: "Livrare", "Transport"
+  EL: "Αποστολή", "Μεταφορικά"
+  TR: "Kargo", "Teslimat", "Nakliye"
+  HR/SI: "Dostava", "Poštarina", "Poštnina"
+  BG: "Доставка"
+  LT: "Pristatymas"
+  LV: "Piegāde"
+  EE: "Tarne"
 - Put shipping amounts in "shipping_cost", NEVER in "tax_amount"
-- These words mean TAX: "IVA", "TVA", "BTW", "VAT", "MwSt", "USt", "Impuesto", "Tax", "Belasting"
+- These words mean TAX:
+  "VAT", "Tax" (EN), "IVA" (ES/IT/PT), "TVA" (FR/RO), "BTW", "Belasting" (NL),
+  "MwSt", "USt", "Steuer" (DE/AT), "Impuesto" (ES), "Moms" (SE/DK),
+  "MVA" (NO), "ALV" (FI), "ÁFA", "Adó" (HU), "DPH" (CZ/SK),
+  "ΦΠΑ" (EL), "KDV", "Vergi" (TR), "PDV" (HR), "DDV" (SI),
+  "ДДС" (BG), "PVM" (LT), "PVN" (LV), "Käibemaks", "KM" (EE), "PTU" (PL)
 - If a percentage is shown next to the tax label (e.g., "IVA 21%", "BTW 21%"), that confirms it is tax
 - If NO percentage and NO tax label next to an amount, it is likely NOT tax
 
@@ -323,8 +350,14 @@ async function extractFromImage(googleApiKey: string, imageUrl: string, retryCou
 
     const apiResponse = await response.json();
     console.log("Google Gemini response received");
-    const content = apiResponse.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    console.log("AI content length:", content?.length || 0);
+    // Gemini 2.5 Flash is a thinking model — parts[0] may be thinking/reasoning.
+    // Concatenate all non-thinking text parts to find the actual JSON answer.
+    const allParts = apiResponse.candidates?.[0]?.content?.parts || [];
+    const content = allParts
+      .filter((p: any) => p.text && !p.thought)
+      .map((p: any) => p.text)
+      .join('\n') || allParts.map((p: any) => p.text || '').join('\n');
+    console.log("AI content length:", content?.length || 0, "parts:", allParts.length);
 
     if (!content) {
       console.log("No content in AI response");
