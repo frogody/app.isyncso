@@ -6,7 +6,7 @@ import {
   Eye, FileText, Upload, Sparkles, ChevronRight, ChevronDown, Edit2,
   CheckCircle2, XCircle, RefreshCw, Euro, Calendar,
   Building, Percent, ExternalLink, Image, FileUp, Loader2,
-  Send, Package, ShoppingCart, Layers
+  Send, Package, ShoppingCart, Layers, Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreditCostBadge } from '@/components/credits/CreditCostBadge';
@@ -521,6 +521,12 @@ function ExpenseCard({ expense, onReview, onRetry }) {
                 <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
                   <AlertTriangle className="w-3 h-3 mr-1" />
                   Review Required
+                </Badge>
+              )}
+              {expense.reserved_for_customer_name && (
+                <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/30">
+                  <Users className="w-3 h-3 mr-1" />
+                  Reserved: {expense.reserved_for_customer_name}
                 </Badge>
               )}
             </div>

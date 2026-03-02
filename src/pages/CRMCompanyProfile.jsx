@@ -38,6 +38,7 @@ import {
   Award,
   Sun,
   Moon,
+  Package,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/contexts/GlobalThemeContext';
@@ -200,6 +201,7 @@ export default function CRMCompanyProfile() {
   const [company, setCompany] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [businessDetails, setBusinessDetails] = useState(null);
+  const [reservedPurchases, setReservedPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [contactSearch, setContactSearch] = useState('');
@@ -208,6 +210,7 @@ export default function CRMCompanyProfile() {
     if (companyId && user?.organization_id) {
       fetchCompany();
       fetchContacts();
+      fetchReservedPurchases();
     }
   }, [companyId, user?.organization_id]);
 
@@ -258,6 +261,26 @@ export default function CRMCompanyProfile() {
       }
     } catch (err) {
       console.error('Error fetching contacts:', err);
+    }
+  };
+
+  const fetchReservedPurchases = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('stock_purchases')
+        .select(`
+          id, invoice_number, total, status, created_at,
+          suppliers (id, name),
+          stock_purchase_line_items (id, description, quantity, unit_price, line_total)
+        `)
+        .eq('reserved_for_customer_id', companyId)
+        .in('status', ['pending', 'approved', 'processing', 'pending_review'])
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReservedPurchases(data || []);
+    } catch (err) {
+      console.error('Error fetching reserved purchases:', err);
     }
   };
 
@@ -647,6 +670,45 @@ export default function CRMCompanyProfile() {
                       <InfoRow icon={Clock} label="Enriched At" value={formatDate(company.enriched_at)} crt={crt} />
                       <InfoRow icon={Target} label="Source" value={company.enrichment_source} crt={crt} />
                       <InfoRow icon={Building} label="Explorium ID" value={company.explorium_business_id} crt={crt} />
+                    </div>
+                  </SectionCard>
+                )}
+
+                {/* Incoming Reserved Stock */}
+                {reservedPurchases.length > 0 && (
+                  <SectionCard icon={Package} title="Incoming Reserved Stock" crt={crt}>
+                    <div className="space-y-2">
+                      {reservedPurchases.map((purchase) => (
+                        <Link
+                          key={purchase.id}
+                          to={createPageUrl('StockPurchases') + `?highlight=${purchase.id}`}
+                          className={`block p-2.5 rounded-lg ${crt('bg-purple-50 border border-purple-200 hover:bg-purple-100', 'bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20')} transition-colors`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-sm font-medium ${crt('text-purple-700', 'text-purple-300')}`}>
+                              {purchase.invoice_number || 'Purchase'}
+                            </span>
+                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
+                              {purchase.status}
+                            </Badge>
+                          </div>
+                          {purchase.suppliers?.name && (
+                            <p className={`text-xs ${crt('text-purple-600/70', 'text-purple-400/70')}`}>
+                              From: {purchase.suppliers.name}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between mt-1">
+                            <span className={`text-xs ${crt('text-purple-600/60', 'text-purple-400/50')}`}>
+                              {purchase.stock_purchase_line_items?.length || 0} items
+                            </span>
+                            {purchase.total > 0 && (
+                              <span className={`text-xs font-medium ${crt('text-purple-700', 'text-purple-300')}`}>
+                                {'\u20AC'}{purchase.total.toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
                     </div>
                   </SectionCard>
                 )}

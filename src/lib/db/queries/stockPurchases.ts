@@ -52,6 +52,11 @@ export interface StockPurchase {
   // Status
   status?: string;
 
+  // Customer reservation
+  reserved_for_customer_id?: string;
+  reserved_for_customer_name?: string;
+  reserved_for_portal_client_id?: string;
+
   // Finance-compatible fields
   description?: string;
   amount?: number;

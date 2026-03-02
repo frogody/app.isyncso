@@ -1214,6 +1214,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
   // Inventory table data (for incoming/reserved/on_hand from the inventory table)
   const [inventoryRecord, setInventoryRecord] = useState(null);
   const [loadingInventory, setLoadingInventory] = useState(false);
+  const [customerReserved, setCustomerReserved] = useState([]);
 
   // Supplier management state
   const [productSuppliers, setProductSuppliers] = useState([]);
@@ -1253,12 +1254,36 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
     }
   };
 
+  // Load customer-reserved quantities for this product
+  const loadCustomerReserved = async () => {
+    if (!product?.id || !user?.company_id) return;
+    try {
+      const { data, error } = await supabase
+        .from('stock_purchase_line_items')
+        .select(`
+          quantity,
+          stock_purchases!inner (
+            id, reserved_for_customer_name, reserved_for_customer_id, reserved_for_portal_client_id, status
+          )
+        `)
+        .eq('product_id', product.id)
+        .not('stock_purchases.reserved_for_customer_id', 'is', null)
+        .in('stock_purchases.status', ['pending', 'approved', 'processing', 'pending_review']);
+
+      if (error) throw error;
+      setCustomerReserved(data || []);
+    } catch (err) {
+      console.error('Failed to load customer reserved data:', err);
+    }
+  };
+
   // Load suppliers when product changes
   useEffect(() => {
     if (product?.id) {
       loadProductSuppliers();
       loadPurchaseHistory();
       loadInventoryRecord();
+      loadCustomerReserved();
     }
   }, [product?.id]);
 
@@ -1453,6 +1478,30 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
           color="cyan"
         />
       </div>
+
+      {/* Customer-Reserved Incoming Stock */}
+      {customerReserved.length > 0 && (
+        <div className={cn("border rounded-xl p-4", t('bg-purple-50 border-purple-200', 'bg-purple-500/10 border-purple-500/30'))}>
+          <div className="flex items-center gap-2 mb-3">
+            <Users className={cn("w-4 h-4", t('text-purple-600', 'text-purple-400'))} />
+            <span className={cn("text-sm font-medium", t('text-purple-700', 'text-purple-300'))}>
+              Customer-Reserved Stock ({customerReserved.reduce((sum, r) => sum + (r.quantity || 0), 0)} units)
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {customerReserved.map((item, i) => (
+              <div key={i} className={cn("flex items-center justify-between text-sm px-2 py-1.5 rounded-lg", t('bg-white/60', 'bg-white/[0.03]'))}>
+                <span className={t('text-purple-700', 'text-purple-300')}>
+                  {item.stock_purchases?.reserved_for_customer_name || 'Customer'}
+                </span>
+                <span className={cn("font-medium", t('text-purple-800', 'text-purple-200'))}>
+                  {item.quantity || 0} units
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Stock Management */}

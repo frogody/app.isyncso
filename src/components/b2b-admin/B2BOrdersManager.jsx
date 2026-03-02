@@ -73,6 +73,9 @@ export default function B2BOrdersManager() {
   const [rejectConfirm, setRejectConfirm] = useState(null);
   const [confirmOrderId, setConfirmOrderId] = useState(null);
 
+  // Reserved stock per portal client
+  const [reservedClientIds, setReservedClientIds] = useState(new Set());
+
   const fetchOrders = useCallback(async () => {
     if (!organizationId) return;
     setLoading(true);
@@ -151,6 +154,26 @@ export default function B2BOrdersManager() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Fetch portal clients with reserved incoming stock
+  useEffect(() => {
+    if (!organizationId) return;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('stock_purchases')
+          .select('reserved_for_portal_client_id')
+          .not('reserved_for_portal_client_id', 'is', null)
+          .in('status', ['pending', 'approved', 'processing', 'pending_review']);
+
+        if (data) {
+          setReservedClientIds(new Set(data.map(p => p.reserved_for_portal_client_id)));
+        }
+      } catch (err) {
+        console.error('Error fetching reserved stock clients:', err);
+      }
+    })();
+  }, [organizationId]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -384,11 +407,19 @@ export default function B2BOrdersManager() {
                       </p>
                     </div>
                     <div className="col-span-3 min-w-0">
-                      <p className="text-sm text-white truncate">
-                        {order.portal_clients?.full_name ||
-                          order.portal_clients?.company_name ||
-                          'Unknown'}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm text-white truncate">
+                          {order.portal_clients?.full_name ||
+                            order.portal_clients?.company_name ||
+                            'Unknown'}
+                        </p>
+                        {order.client_id && reservedClientIds.has(order.client_id) && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/30 flex-shrink-0" title="Incoming reserved stock">
+                            <Package className="w-2.5 h-2.5" />
+                            Stock
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-zinc-500 truncate">
                         {order.portal_clients?.email || ''}
                       </p>

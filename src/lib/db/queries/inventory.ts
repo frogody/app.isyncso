@@ -102,7 +102,8 @@ export async function listExpectedDeliveries(companyId: string, status?: string 
     .select(`
       *,
       products (id, name, sku, ean),
-      suppliers (id, name)
+      suppliers (id, name),
+      stock_purchases (id, reserved_for_customer_id, reserved_for_customer_name, reserved_for_portal_client_id)
     `)
     .eq('company_id', companyId);
 
@@ -168,7 +169,8 @@ export async function matchDeliveryByEAN(companyId: string, ean: string): Promis
     .select(`
       *,
       products!inner (id, name, sku, ean),
-      suppliers (id, name)
+      suppliers (id, name),
+      stock_purchases (id, reserved_for_customer_id, reserved_for_customer_name, reserved_for_portal_client_id)
     `)
     .eq('company_id', companyId)
     .eq('products.ean', ean)

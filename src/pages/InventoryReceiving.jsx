@@ -4,7 +4,7 @@ import {
   Camera, Barcode, Boxes, ArrowRight, X, RefreshCw,
   Warehouse, MapPin, CheckCircle2, AlertCircle, Keyboard,
   CameraOff, SwitchCamera, Sun, Moon, PlayCircle, StopCircle,
-  Clock, History, Download, FileText, ChevronDown, ChevronUp
+  Clock, History, Download, FileText, ChevronDown, ChevronUp, Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -436,6 +436,17 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
           <p className={`mt-1 text-xs ${t('text-gray-500', 'text-zinc-400')}`}>
             This product is not on the expected deliveries list.
           </p>
+        </div>
+      )}
+
+      {/* Reservation notice */}
+      {scanResult.expectedDelivery?.stock_purchases?.reserved_for_customer_name && (
+        <div className="mb-3 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30">
+          <div className="flex items-center gap-2 text-purple-400">
+            <Users className="w-4 h-4" />
+            <span className="font-medium text-sm">Reserved for: {scanResult.expectedDelivery.stock_purchases.reserved_for_customer_name}</span>
+          </div>
+          <p className="mt-1 text-xs text-purple-400/70">Handle with priority — do not stock as free inventory.</p>
         </div>
       )}
 
@@ -1165,15 +1176,23 @@ export default function InventoryReceiving({ embedded = false }) {
                           {delivery.quantity_received} / {delivery.quantity_expected}
                         </td>
                         <td className="py-3">
-                          <Badge
-                            className={
-                              delivery.status === 'partial'
-                                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
-                                : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                            }
-                          >
-                            {delivery.status}
-                          </Badge>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge
+                              className={
+                                delivery.status === 'partial'
+                                  ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                                  : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                              }
+                            >
+                              {delivery.status}
+                            </Badge>
+                            {delivery.stock_purchases?.reserved_for_customer_name && (
+                              <Badge className="bg-purple-500/10 text-purple-400 border-purple-500/30">
+                                <Users className="w-3 h-3 mr-1" />
+                                {delivery.stock_purchases.reserved_for_customer_name}
+                              </Badge>
+                            )}
+                          </div>
                         </td>
                         <td className={`py-3 ${t('text-gray-600', 'text-zinc-400')}`}>
                           {delivery.expected_date
