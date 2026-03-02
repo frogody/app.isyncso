@@ -44,7 +44,7 @@ interface ExtractionResult {
   };
 }
 
-const EXTRACTION_PROMPT = `You are an expert multilingual invoice data extraction system. Extract structured data from the invoice text.
+const EXTRACTION_PROMPT = `You are an expert multilingual invoice data extraction system. Extract structured data from the invoice.
 
 CRITICAL RULES:
 1. Extract ONLY what you can clearly see - never guess or infer
@@ -280,11 +280,17 @@ async function extractFromImage(googleApiKey: string, imageUrl: string, retryCou
     }
     const base64Image = btoa(binary);
 
-    // Determine media type from URL
-    const mimeType = imageUrl.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    // Determine media type from URL or response headers
+    const contentType = imageResponse.headers.get('content-type');
+    const urlLower = imageUrl.toLowerCase();
+    const mimeType = contentType?.startsWith('image/')
+      ? contentType.split(';')[0]
+      : urlLower.includes('.png') ? 'image/png'
+      : urlLower.includes('.webp') ? 'image/webp'
+      : 'image/jpeg';
     console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mimeType}`);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${googleApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${googleApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
