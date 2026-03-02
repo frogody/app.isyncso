@@ -361,6 +361,17 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, onCheckDup
                         € {expense.subtotal?.toFixed(2)}
                       </td>
                     </tr>
+                    {expense.shipping_cost > 0 && (
+                      <tr>
+                        <td colSpan={3} className="px-3 py-2 text-right text-zinc-400">
+                          Shipping
+                        </td>
+                        <td className="px-3 py-2 text-right text-white">
+                          € {expense.shipping_cost?.toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
+                    {(expense.tax_amount > 0 || expense.tax_percent > 0) && (
                     <tr>
                       <td colSpan={3} className="px-3 py-2 text-right text-zinc-400">
                         VAT ({expense.tax_percent || 21}%)
@@ -369,6 +380,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, onCheckDup
                         € {expense.tax_amount?.toFixed(2)}
                       </td>
                     </tr>
+                    )}
                     <tr className="font-medium">
                       <td colSpan={3} className="px-3 py-2 text-right text-white">
                         Total
@@ -1313,6 +1325,7 @@ export default function StockPurchases() {
             subtotal: purchase.subtotal,
             tax_percent: purchase.tax_percent,
             tax_amount: purchase.tax_amount,
+            shipping_cost: purchase.shipping_cost || 0,
             total: purchase.total,
             currency: purchase.currency || 'EUR',
             payment_status: 'pending',

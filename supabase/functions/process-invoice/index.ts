@@ -15,10 +15,12 @@ interface InvoiceData {
   invoice_date?: string;
   due_date?: string;
   subtotal?: number;
-  tax_amount?: number;
-  tax_percent?: number;
+  tax_amount?: number | null;
+  tax_percent?: number | null;
   total?: number;
   currency?: string;
+  shipping_cost?: number;
+  prices_include_vat?: boolean;
   line_items?: Array<{
     description: string;
     quantity: number;
@@ -42,7 +44,7 @@ interface ExtractionResult {
   };
 }
 
-const EXTRACTION_PROMPT = `You are an expert invoice data extraction system. Extract structured data from the invoice image.
+const EXTRACTION_PROMPT = `You are an expert multilingual invoice data extraction system. Extract structured data from the invoice text.
 
 CRITICAL RULES:
 1. Extract ONLY what you can clearly see - never guess or infer
@@ -53,6 +55,22 @@ CRITICAL RULES:
 6. For line items, extract model_number if present (often at end like "- 3681N" or "Model: ABC123")
 7. Extract brand name if visible (usually the first word of product name)
 8. EAN/barcode is typically 13 digits, look for it near line items
+
+SHIPPING vs TAX — CRITICAL:
+- These words mean SHIPPING COST, NOT tax: "Envío", "Gastos de envío" (Spanish), "Versandkosten" (German), "Verzendkosten" (Dutch), "Frais de port", "Frais de livraison" (French), "Spese di spedizione" (Italian), "Portes" (Portuguese), "Shipping", "Delivery", "Freight", "Postage"
+- Put shipping amounts in "shipping_cost", NEVER in "tax_amount"
+- These words mean TAX: "IVA", "TVA", "BTW", "VAT", "MwSt", "USt", "Impuesto", "Tax", "Belasting"
+- If a percentage is shown next to the tax label (e.g., "IVA 21%", "BTW 21%"), that confirms it is tax
+- If NO percentage and NO tax label next to an amount, it is likely NOT tax
+
+PRICE MODE DETECTION:
+- If line item prices already include VAT and the invoice shows a VAT breakdown, set prices_include_vat: true
+- If line item prices are net/excl. VAT, set prices_include_vat: false
+- Amazon order confirmations typically show prices EXCLUDING tax
+
+MATH SANITY:
+- tax_amount should approximately equal subtotal × (tax_percent / 100)
+- If the math does not add up, reconsider whether the amount is really tax or shipping
 
 Respond with ONLY a JSON object (no markdown, no explanation) in this exact format:
 {
@@ -67,6 +85,8 @@ Respond with ONLY a JSON object (no markdown, no explanation) in this exact form
   "tax_percent": number or null,
   "total": number or null,
   "currency": "EUR" or "USD" etc,
+  "shipping_cost": number or null,
+  "prices_include_vat": true or false or null,
   "line_items": [
     {
       "description": "Full product description as shown",
@@ -80,6 +100,37 @@ Respond with ONLY a JSON object (no markdown, no explanation) in this exact form
   ],
   "confidence": 0.0 to 1.0
 }`;
+
+function validateAndFixExtraction(data: InvoiceData): InvoiceData {
+  // Check: does tax_amount match tax_percent × subtotal?
+  if (data.tax_amount && data.tax_percent && data.subtotal) {
+    const expectedTax = data.subtotal * (data.tax_percent / 100);
+    const tolerance = Math.max(data.subtotal * 0.02, 1); // 2% or €1
+
+    if (Math.abs(data.tax_amount - expectedTax) > tolerance) {
+      console.log(`[VALIDATION] Tax mismatch: expected ~${expectedTax.toFixed(2)} (${data.tax_percent}% of ${data.subtotal}), got ${data.tax_amount}. Moving to shipping_cost.`);
+      if (!data.shipping_cost) {
+        data.shipping_cost = data.tax_amount;
+      }
+      data.tax_amount = null;
+      data.tax_percent = null;
+    }
+  }
+
+  // Check: does subtotal + tax_amount + shipping_cost ≈ total?
+  if (data.total && data.subtotal) {
+    const components = (data.subtotal || 0) + (data.tax_amount || 0) + (data.shipping_cost || 0);
+    if (Math.abs(components - data.total) > 1 && !data.shipping_cost) {
+      const diff = data.total - data.subtotal - (data.tax_amount || 0);
+      if (diff > 0) {
+        console.log(`[VALIDATION] Total mismatch: ${data.subtotal} + ${data.tax_amount || 0} + ${data.shipping_cost || 0} ≠ ${data.total}. Assigning diff ${diff.toFixed(2)} as shipping.`);
+        data.shipping_cost = Math.round(diff * 100) / 100;
+      }
+    }
+  }
+
+  return data;
+}
 
 async function extractFromText(groqApiKey: string, pdfText: string, retryCount = 0): Promise<ExtractionResult> {
   const MAX_RETRIES = 2;
@@ -95,7 +146,7 @@ async function extractFromText(groqApiKey: string, pdfText: string, retryCount =
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           {
             role: 'user',
@@ -177,7 +228,10 @@ async function extractFromText(groqApiKey: string, pdfText: string, retryCount =
     const confidence = data.confidence ?? 0.9; // Higher confidence for text extraction
     delete (data as any).confidence;
 
-    return { success: true, data, confidence, usage: apiResponse.usage };
+    // Post-extraction math validation
+    const validatedData = validateAndFixExtraction(data);
+
+    return { success: true, data: validatedData, confidence, usage: apiResponse.usage };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error(`Extraction error (attempt ${retryCount + 1}):`, errorMessage);
@@ -326,7 +380,10 @@ async function extractFromImage(googleApiKey: string, imageUrl: string, retryCou
     const confidence = data.confidence ?? 0.8;
     delete (data as any).confidence;
 
-    return { success: true, data, confidence };
+    // Post-extraction math validation
+    const validatedData = validateAndFixExtraction(data);
+
+    return { success: true, data: validatedData, confidence };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error(`Extraction error (attempt ${retryCount + 1}):`, errorMessage);
@@ -398,8 +455,8 @@ async function processExpenseAsync(
       try {
         const promptTokens = extraction.usage.prompt_tokens || 0;
         const completionTokens = extraction.usage.completion_tokens || 0;
-        // Groq pricing: llama-3.1-8b-instant - $0.05/$0.08 per 1M tokens
-        const cost = (promptTokens / 1000000 * 0.05) + (completionTokens / 1000000 * 0.08);
+        // Groq pricing: llama-3.3-70b-versatile - $0.59/$0.79 per 1M tokens
+        const cost = (promptTokens / 1000000 * 0.59) + (completionTokens / 1000000 * 0.79);
 
         await supabase.from('ai_usage_logs').insert({
           organization_id: companyId,
@@ -412,7 +469,7 @@ async function processExpenseAsync(
           request_type: 'invoice_processing',
           endpoint: '/openai/v1/chat/completions',
           metadata: {
-            model_name: 'llama-3.1-8b-instant',
+            model_name: 'llama-3.3-70b-versatile',
             provider: 'groq',
             expense_id: expenseId,
             extraction_success: extraction.success,
@@ -498,7 +555,9 @@ async function processExpenseAsync(
         tax_amount: extraction.data.tax_amount,
         tax_percent: extraction.data.tax_percent,
         total: extraction.data.total,
+        shipping_cost: extraction.data.shipping_cost || 0,
         currency: extraction.data.currency || "EUR",
+        price_entry_mode: extraction.data.prices_include_vat === true ? 'incl' : 'excl',
 
         // AI processing metadata
         ai_extracted_data: extraction.data,
