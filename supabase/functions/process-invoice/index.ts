@@ -148,6 +148,7 @@ async function extractFromText(groqApiKey: string, pdfText: string, retryCount =
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [
+          { role: 'system', content: 'You are a data extraction tool. Output ONLY valid JSON, no explanation.' },
           {
             role: 'user',
             content: EXTRACTION_PROMPT + `\n\nHere is the invoice text:\n\n${pdfText}`,
@@ -173,63 +174,15 @@ async function extractFromText(groqApiKey: string, pdfText: string, retryCount =
       return { success: false, confidence: 0, errors: ["No response from AI"] };
     }
 
-    // Clean up response - remove markdown code blocks if present
-    let cleanedContent = content
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-
-    // Find JSON object
-    let jsonString: string | null = null;
-    const firstBrace = cleanedContent.indexOf('{');
-    const lastBrace = cleanedContent.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
-    }
-
-    if (!jsonString) {
-      const originalMatch = content.match(/\{[\s\S]*?"supplier_name"[\s\S]*?\}/);
-      if (originalMatch) {
-        const startIdx = content.indexOf(originalMatch[0]);
-        let braceCount = 0;
-        let endIdx = startIdx;
-        for (let i = startIdx; i < content.length; i++) {
-          if (content[i] === '{') braceCount++;
-          if (content[i] === '}') braceCount--;
-          if (braceCount === 0) {
-            endIdx = i + 1;
-            break;
-          }
-        }
-        jsonString = content.substring(startIdx, endIdx);
-      }
-    }
-
-    if (!jsonString) {
-      console.log("No JSON found in response");
+    const parsed = parseInvoiceJSON(content);
+    if (!parsed) {
+      console.log("No JSON found in Groq text response");
       return { success: false, confidence: 0, errors: ["Could not parse AI response - no JSON found"] };
     }
 
-    // Clean up JSON
-    jsonString = jsonString
-      .replace(/,\s*}/g, '}')
-      .replace(/,\s*]/g, ']')
-      .replace(/[\x00-\x1F\x7F]/g, ' ')
-      .replace(/\n\s*\n/g, '\n');
-
-    let data: InvoiceData & { confidence?: number };
-    try {
-      data = JSON.parse(jsonString) as InvoiceData & { confidence?: number };
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      return { success: false, confidence: 0, errors: ["Could not parse AI response - invalid JSON"] };
-    }
-
-    const confidence = data.confidence ?? 0.9; // Higher confidence for text extraction
-    delete (data as any).confidence;
-
-    // Post-extraction math validation
-    const validatedData = validateAndFixExtraction(data);
+    // Text extraction gets higher default confidence
+    const confidence = parsed.confidence || 0.9;
+    const validatedData = validateAndFixExtraction(parsed.data);
 
     return { success: true, data: validatedData, confidence, usage: apiResponse.usage };
   } catch (error) {
@@ -258,167 +211,184 @@ async function extractFromText(groqApiKey: string, pdfText: string, retryCount =
   }
 }
 
-async function extractFromImage(googleApiKey: string, imageUrl: string, retryCount = 0): Promise<ExtractionResult> {
-  const MAX_RETRIES = 2;
+/** Shared helper: parse LLM content string into InvoiceData */
+function parseInvoiceJSON(content: string): { data: InvoiceData; confidence: number } | null {
+  // Clean up response - remove markdown code blocks if present
+  let cleanedContent = content
+    .replace(/```json\s*/gi, '')
+    .replace(/```\s*/g, '')
+    .trim();
+
+  // Find JSON object
+  let jsonString: string | null = null;
+  const firstBrace = cleanedContent.indexOf('{');
+  const lastBrace = cleanedContent.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
+  }
+
+  if (!jsonString) {
+    const originalMatch = content.match(/\{[\s\S]*?"supplier_name"[\s\S]*?\}/);
+    if (originalMatch) {
+      const startIdx = content.indexOf(originalMatch[0]);
+      let braceCount = 0;
+      let endIdx = startIdx;
+      for (let i = startIdx; i < content.length; i++) {
+        if (content[i] === '{') braceCount++;
+        if (content[i] === '}') braceCount--;
+        if (braceCount === 0) {
+          endIdx = i + 1;
+          break;
+        }
+      }
+      jsonString = content.substring(startIdx, endIdx);
+    }
+  }
+
+  if (!jsonString) return null;
+
+  // Clean up JSON
+  jsonString = jsonString
+    .replace(/,\s*}/g, '}')
+    .replace(/,\s*]/g, ']')
+    .replace(/[\x00-\x1F\x7F]/g, ' ')
+    .replace(/\n\s*\n/g, '\n');
 
   try {
-    console.log(`Calling Google Gemini model (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`);
+    const data = JSON.parse(jsonString) as InvoiceData & { confidence?: number };
+    const confidence = data.confidence ?? 0.8;
+    delete (data as any).confidence;
+    return { data, confidence };
+  } catch {
+    return null;
+  }
+}
 
-    // Fetch the image and convert to base64
-    console.log("Fetching image from URL:", imageUrl);
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+/** Fetch image from URL and return base64 + mimeType */
+async function fetchImageAsBase64(imageUrl: string): Promise<{ base64: string; mimeType: string; size: number }> {
+  console.log("Fetching image from URL:", imageUrl);
+  const imageResponse = await fetch(imageUrl);
+  if (!imageResponse.ok) {
+    throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+  }
+
+  const imageBuffer = await imageResponse.arrayBuffer();
+  const bytes = new Uint8Array(imageBuffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+
+  const contentType = imageResponse.headers.get('content-type');
+  const urlLower = imageUrl.toLowerCase();
+  const mimeType = contentType?.startsWith('image/')
+    ? contentType.split(';')[0]
+    : urlLower.includes('.png') ? 'image/png'
+    : urlLower.includes('.webp') ? 'image/webp'
+    : 'image/jpeg';
+
+  console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mimeType}`);
+  return { base64, mimeType, size: imageBuffer.byteLength };
+}
+
+async function extractFromImage(groqApiKey: string, googleApiKey: string | undefined, imageUrl: string): Promise<ExtractionResult> {
+  try {
+    const { base64, mimeType } = await fetchImageAsBase64(imageUrl);
+
+    // ── PRIMARY: Groq Vision (Llama 4 Scout) — same API key, no extra config ──
+    console.log("Trying Groq Vision (Llama 4 Scout)...");
+    try {
+      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          messages: [
+            { role: 'system', content: 'You are a data extraction tool. Output ONLY valid JSON, no explanation.' },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: EXTRACTION_PROMPT + "\n\nRespond with ONLY the JSON object." },
+                { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}` } },
+              ],
+            },
+          ],
+          max_tokens: 4096,
+          temperature: 0,
+        }),
+      });
+
+      if (!groqResponse.ok) {
+        const errorText = await groqResponse.text();
+        throw new Error(`Groq Vision API error: ${groqResponse.status} ${errorText}`);
+      }
+
+      const groqResult = await groqResponse.json();
+      const groqContent = groqResult.choices?.[0]?.message?.content || '';
+      console.log("Groq Vision response received, content length:", groqContent.length);
+
+      if (groqContent) {
+        const parsed = parseInvoiceJSON(groqContent);
+        if (parsed) {
+          const validatedData = validateAndFixExtraction(parsed.data);
+          return { success: true, data: validatedData, confidence: parsed.confidence, usage: groqResult.usage };
+        }
+        console.warn("Groq Vision returned content but JSON parsing failed");
+      }
+    } catch (groqError) {
+      console.error("Groq Vision failed:", groqError instanceof Error ? groqError.message : groqError);
     }
 
-    const imageBuffer = await imageResponse.arrayBuffer();
-    // Convert to base64 without spreading large arrays (prevents stack overflow)
-    const bytes = new Uint8Array(imageBuffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    // ── FALLBACK: Google Gemini ──
+    if (!googleApiKey) {
+      return { success: false, confidence: 0, errors: ["Groq Vision failed and no Google API key configured for fallback"] };
     }
-    const base64Image = btoa(binary);
 
-    // Determine media type from URL or response headers
-    const contentType = imageResponse.headers.get('content-type');
-    const urlLower = imageUrl.toLowerCase();
-    const mimeType = contentType?.startsWith('image/')
-      ? contentType.split(';')[0]
-      : urlLower.includes('.png') ? 'image/png'
-      : urlLower.includes('.webp') ? 'image/webp'
-      : 'image/jpeg';
-    console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mimeType}`);
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${googleApiKey}`, {
+    console.log("Falling back to Google Gemini 2.0 Flash...");
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${googleApiKey}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{
           parts: [
-            {
-              text: EXTRACTION_PROMPT + "\n\nIMPORTANT: Respond with ONLY the JSON object, nothing else. No markdown, no explanation.",
-            },
-            {
-              inline_data: {
-                mime_type: mimeType,
-                data: base64Image,
-              },
-            },
+            { text: EXTRACTION_PROMPT + "\n\nIMPORTANT: Respond with ONLY the JSON object, nothing else. No markdown, no explanation." },
+            { inline_data: { mime_type: mimeType, data: base64 } },
           ],
         }],
-        generationConfig: {
-          temperature: 0,
-          maxOutputTokens: 4096,
-        },
+        generationConfig: { temperature: 0, maxOutputTokens: 4096 },
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Google Gemini API error: ${response.status} ${errorText}`);
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      throw new Error(`Google Gemini API error: ${geminiResponse.status} ${errorText}`);
     }
 
-    const apiResponse = await response.json();
-    console.log("Google Gemini response received");
-    // Gemini 2.5 Flash is a thinking model — parts[0] may be thinking/reasoning.
-    // Concatenate all non-thinking text parts to find the actual JSON answer.
-    const allParts = apiResponse.candidates?.[0]?.content?.parts || [];
-    const content = allParts
+    const geminiResult = await geminiResponse.json();
+    const allParts = geminiResult.candidates?.[0]?.content?.parts || [];
+    const geminiContent = allParts
       .filter((p: any) => p.text && !p.thought)
       .map((p: any) => p.text)
       .join('\n') || allParts.map((p: any) => p.text || '').join('\n');
-    console.log("AI content length:", content?.length || 0, "parts:", allParts.length);
+    console.log("Gemini response received, content length:", geminiContent?.length || 0);
 
-    if (!content) {
-      console.log("No content in AI response");
-      return { success: false, confidence: 0, errors: ["No response from AI"] };
-    }
-
-    // Clean up response - remove markdown code blocks if present
-    let cleanedContent = content
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-
-    // Find JSON object
-    let jsonString: string | null = null;
-    const firstBrace = cleanedContent.indexOf('{');
-    const lastBrace = cleanedContent.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-      jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
-    }
-
-    if (!jsonString) {
-      const originalMatch = content.match(/\{[\s\S]*?"supplier_name"[\s\S]*?\}/);
-      if (originalMatch) {
-        const startIdx = content.indexOf(originalMatch[0]);
-        let braceCount = 0;
-        let endIdx = startIdx;
-        for (let i = startIdx; i < content.length; i++) {
-          if (content[i] === '{') braceCount++;
-          if (content[i] === '}') braceCount--;
-          if (braceCount === 0) {
-            endIdx = i + 1;
-            break;
-          }
-        }
-        jsonString = content.substring(startIdx, endIdx);
+    if (geminiContent) {
+      const parsed = parseInvoiceJSON(geminiContent);
+      if (parsed) {
+        const validatedData = validateAndFixExtraction(parsed.data);
+        return { success: true, data: validatedData, confidence: parsed.confidence };
       }
     }
 
-    if (!jsonString) {
-      console.log("No JSON found in response");
-      return { success: false, confidence: 0, errors: ["Could not parse AI response - no JSON found"] };
-    }
-
-    // Clean up JSON
-    jsonString = jsonString
-      .replace(/,\s*}/g, '}')
-      .replace(/,\s*]/g, ']')
-      .replace(/[\x00-\x1F\x7F]/g, ' ')
-      .replace(/\n\s*\n/g, '\n');
-
-    let data: InvoiceData & { confidence?: number };
-    try {
-      data = JSON.parse(jsonString) as InvoiceData & { confidence?: number };
-    } catch (parseError) {
-      console.error("JSON parse error:", parseError);
-      return { success: false, confidence: 0, errors: ["Could not parse AI response - invalid JSON"] };
-    }
-
-    const confidence = data.confidence ?? 0.8;
-    delete (data as any).confidence;
-
-    // Post-extraction math validation
-    const validatedData = validateAndFixExtraction(data);
-
-    return { success: true, data: validatedData, confidence };
+    return { success: false, confidence: 0, errors: ["Could not parse AI response from either Groq Vision or Gemini"] };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error(`Extraction error (attempt ${retryCount + 1}):`, errorMessage);
-
-    // Retry on timeout or server errors
-    const isRetryable = errorMessage.includes('timeout') ||
-                        errorMessage.includes('timed out') ||
-                        errorMessage.includes('ETIMEDOUT') ||
-                        errorMessage.includes('502') ||
-                        errorMessage.includes('503') ||
-                        errorMessage.includes('504');
-
-    if (isRetryable && retryCount < MAX_RETRIES) {
-      console.log(`Retrying extraction in 2 seconds...`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      return extractFromImage(googleApiKey, imageUrl, retryCount + 1);
-    }
-
-    return {
-      success: false,
-      confidence: 0,
-      errors: [errorMessage],
-    };
+    console.error("Image extraction error:", errorMessage);
+    return { success: false, confidence: 0, errors: [errorMessage] };
   }
 }
 
@@ -453,12 +423,8 @@ async function processExpenseAsync(
         length: pdfText?.length,
         value: pdfText ? `"${pdfText.substring(0, 50)}..."` : 'null/undefined'
       });
-      // Fallback to image extraction using Google Gemini
-      if (!googleApiKey) {
-        extraction = { success: false, confidence: 0, errors: ["No Google API key configured for image extraction fallback"] };
-      } else {
-        extraction = await extractFromImage(googleApiKey, imageUrl);
-      }
+      // Fallback to image extraction (Groq Vision primary, Gemini secondary)
+      extraction = await extractFromImage(groqApiKey, googleApiKey, imageUrl);
     }
     console.log(`[ASYNC] Extraction complete:`, { success: extraction.success, confidence: extraction.confidence });
 

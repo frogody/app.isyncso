@@ -629,6 +629,10 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
           // Extract text first (faster)
           pdfText = await extractPdfText(selectedFile);
           console.log("PDF text extracted, length:", pdfText.length);
+          if (!pdfText || pdfText.trim().length === 0) {
+            console.warn("PDF has no extractable text (likely scanned/image-based). Will use image extraction.");
+            pdfText = null;
+          }
           setUploadProgress(20);
 
           // Then convert to image for preview
