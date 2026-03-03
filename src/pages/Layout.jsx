@@ -166,6 +166,10 @@ import GlobalShortcuts from "@/components/GlobalShortcuts";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 
+// Import Semantic Context
+import { SemanticContextProvider } from "@/contexts/SemanticContextProvider";
+import UniversalContextBar from "@/components/semantic/UniversalContextBar";
+
 // SYNC Avatar sidebar button — single-click = chat, double-click = voice mode, knock = click to answer
 function SyncAvatarSidebarButton({ onSingleClick, voiceHook, knockHook }) {
   const clickTimer = React.useRef(null);
@@ -1694,6 +1698,7 @@ export default function Layout({ children, currentPageName }) {
           <PermissionProvider>
           <KeyboardShortcutsProvider>
           <NotificationsProvider>
+          <SemanticContextProvider>
             <AchievementProvider>
             <ActivityLoggerProvider>
               <Toaster />
@@ -3552,6 +3557,7 @@ export default function Layout({ children, currentPageName }) {
           >
             {/* SYNC environment top tabs removed — each Sync page renders its own SyncViewSelector on the right */}
             {/* TALENT quick action buttons moved to TalentDashboard PageHeader */}
+            <UniversalContextBar />
             <div className="min-h-full">
               <AppLicenseGate>
                 {children}
@@ -3590,6 +3596,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
           </ActivityLoggerProvider>
           </AchievementProvider>
+          </SemanticContextProvider>
           </NotificationsProvider>
           </KeyboardShortcutsProvider>
           </PermissionProvider>

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { fullEnrichFromLinkedIn, fullEnrichFromEmail } from '@/lib/explorium-api';
 import ClientHealthBadge, { ClientHealthDetail } from '@/components/crm/ClientHealthBadge';
+import PersonSemanticIntelligence from '@/components/crm/PersonSemanticIntelligence';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CRMPageTransition } from '@/components/crm/ui';
 import {
@@ -70,6 +71,7 @@ import {
   Sun,
   Moon,
   Heart,
+  Brain,
 } from 'lucide-react';
 
 // Animation variants
@@ -474,6 +476,7 @@ export default function CRMContactProfile() {
     { id: 'techstack', label: 'Tech Stack', mobileLabel: 'Tech', icon: Cpu },
     { id: 'funding', label: 'Funding', mobileLabel: 'Funding', icon: Euro },
     { id: 'social', label: 'Social', mobileLabel: 'Social', icon: Share2 },
+    { id: 'intelligence', label: 'Intelligence', mobileLabel: 'Intel', icon: Brain },
   ];
 
   const formatDate = (date) => {
@@ -1679,6 +1682,18 @@ export default function CRMContactProfile() {
                     </div>
                   )}
                 </SectionCard>
+              </motion.div>
+            )}
+
+            {/* Intelligence Tab */}
+            {activeTab === 'intelligence' && (
+              <motion.div
+                key="intelligence"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <PersonSemanticIntelligence prospect={contact} />
               </motion.div>
             )}
           </AnimatePresence>

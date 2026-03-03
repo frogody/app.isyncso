@@ -32,6 +32,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import ContactSelector from '@/components/shared/ContactSelector';
+import { usePredictiveInvoice } from '@/hooks/usePredictiveInvoice';
 import CountrySelector from '@/components/finance/CountrySelector';
 import { determineTaxRulesForSale } from '@/lib/btwRules';
 
@@ -67,6 +68,7 @@ export default function FinanceInvoices({ embedded }) {
   const [brandConfig, setBrandConfig] = useState(null);
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const companyId = user?.company_id;
+  const { generateDraft, lineItems: draftLineItems, totalHours: draftTotalHours, isLoading: draftLoading, error: draftError, reset: resetDraft } = usePredictiveInvoice();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -254,6 +256,38 @@ export default function FinanceInvoices({ embedded }) {
       }));
     } else {
       setFormData(prev => ({ ...prev, contact_id: null }));
+    }
+  };
+
+  // Smart Draft: generate line items from semantic activities
+  const handleSmartDraft = async () => {
+    if (!formData.contact_id) {
+      toast.error('Select a CRM contact first to generate a smart draft');
+      return;
+    }
+    const dateTo = new Date().toISOString().slice(0, 10);
+    const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const result = await generateDraft(formData.contact_id, companyId, dateFrom, dateTo);
+    if (result?.success && result.line_items?.length > 0) {
+      const newItems = result.line_items.map(item => ({
+        description: item.description,
+        quantity: item.hours,
+        unit_price: '',
+        smart_draft: true,
+        category: item.category,
+        thread_name: item.thread_name,
+        activity_count: item.activity_count,
+      }));
+      setFormData(prev => ({
+        ...prev,
+        items: [...prev.items.filter(i => i.description || i.unit_price), ...newItems],
+      }));
+      toast.success(`Added ${result.line_items.length} line items from tracked activities (${result.total_hours}h total)`);
+    } else if (result?.success && result.line_items?.length === 0) {
+      toast.info(result.message || 'No tracked activities found for this client in the last 30 days');
+    } else if (draftError) {
+      toast.error(`Smart draft failed: ${draftError}`);
     }
   };
 
@@ -965,7 +999,24 @@ export default function FinanceInvoices({ embedded }) {
                     <Package className="w-4 h-4" />
                     Line Items
                   </Label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    {!editMode && formData.contact_id && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSmartDraft}
+                        disabled={draftLoading}
+                        className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                      >
+                        {draftLoading ? (
+                          <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                        ) : (
+                          <Zap className="w-4 h-4 mr-1" />
+                        )}
+                        Smart Draft
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="outline"

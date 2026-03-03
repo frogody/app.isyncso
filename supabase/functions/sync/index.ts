@@ -1142,14 +1142,32 @@ async function getSemanticContextBridge(
       return ''; // No semantic data yet — desktop pipeline hasn't synced
     }
 
-    const lines: string[] = [];
-    lines.push('## Semantic Intelligence Context');
-    lines.push('(Auto-generated from desktop activity pipeline — use to personalize responses)');
-    lines.push('');
+    // Determine active intent for section ordering and guidance
+    const activeIntent = intents.length > 0 ? intents[0] : null;
+    const intentType = activeIntent?.intent_type || 'UNKNOWN';
+
+    // ── Build section blocks (keyed for reordering) ──────────────────
+
+    // Resolve entity business links (needed by entities section)
+    let linkMap: Record<string, any[]> = {};
+    if (entities.length > 0) {
+      const entityIds = entities.map((e: any) => e.entity_id);
+      const { data: links } = await supabaseClient
+        .from('entity_business_links')
+        .select('semantic_entity_id, business_type, business_record_id, match_confidence')
+        .in('semantic_entity_id', entityIds);
+      for (const link of links || []) {
+        if (!linkMap[link.semantic_entity_id]) linkMap[link.semantic_entity_id] = [];
+        linkMap[link.semantic_entity_id].push(link);
+      }
+    }
+
+    const sections: Record<string, string[]> = {};
 
     // ── Active Work Threads ──────────────────────────────────────────
     if (threads.length > 0) {
-      lines.push('### Current Work Threads');
+      const s: string[] = [];
+      s.push('### Current Work Threads');
       for (const t of threads) {
         const duration = Math.round(
           (new Date(t.last_activity_at).getTime() - new Date(t.started_at).getTime()) / 60000
@@ -1159,72 +1177,62 @@ async function getSemanticContextBridge(
           .slice(0, 4)
           .join(', ');
         const status = t.status === 'active' ? 'ACTIVE' : 'paused';
-        lines.push(
+        s.push(
           `- [${status}] ${t.title || 'Untitled thread'} (${t.primary_activity_type || 'mixed'}, ${duration}min, ${t.event_count} events${entitiesStr ? `, entities: ${entitiesStr}` : ''})`
         );
       }
-      lines.push('');
+      s.push('');
+      sections['threads'] = s;
     }
 
     // ── People & Organizations (with business links) ─────────────────
     if (entities.length > 0) {
-      // Resolve business links for these entities
-      const entityIds = entities.map((e: any) => e.entity_id);
-      const { data: links } = await supabaseClient
-        .from('entity_business_links')
-        .select('semantic_entity_id, business_type, business_record_id, match_confidence')
-        .in('semantic_entity_id', entityIds);
-
-      const linkMap: Record<string, any[]> = {};
-      for (const link of links || []) {
-        if (!linkMap[link.semantic_entity_id]) linkMap[link.semantic_entity_id] = [];
-        linkMap[link.semantic_entity_id].push(link);
-      }
-
-      // Group entities by type
+      const s: string[] = [];
       const people = entities.filter((e: any) => e.type === 'person');
       const orgs = entities.filter((e: any) => e.type === 'organization');
       const projects = entities.filter((e: any) => e.type === 'project');
       const tools = entities.filter((e: any) => e.type === 'tool');
 
-      lines.push('### Recently Active Entities');
+      s.push('### Recently Active Entities');
 
       if (people.length > 0) {
-        lines.push('**People:**');
+        s.push('**People:**');
         for (const p of people.slice(0, 5)) {
           const blinks = linkMap[p.entity_id] || [];
           const crmLink = blinks.find((l: any) => l.business_type === 'prospect');
           const suffix = crmLink ? ' → CRM Contact' : '';
-          lines.push(`- ${p.name} (seen ${p.occurrence_count}x)${suffix}`);
+          s.push(`- ${p.name} (seen ${p.occurrence_count}x)${suffix}`);
         }
       }
 
       if (orgs.length > 0) {
-        lines.push('**Organizations:**');
+        s.push('**Organizations:**');
         for (const o of orgs.slice(0, 5)) {
           const blinks = linkMap[o.entity_id] || [];
           const crmLink = blinks.find((l: any) => l.business_type === 'prospect');
           const suffix = crmLink ? ' → CRM Client' : '';
-          lines.push(`- ${o.name} (seen ${o.occurrence_count}x)${suffix}`);
+          s.push(`- ${o.name} (seen ${o.occurrence_count}x)${suffix}`);
         }
       }
 
       if (projects.length > 0) {
-        lines.push('**Projects:**');
+        s.push('**Projects:**');
         for (const pr of projects.slice(0, 5)) {
-          lines.push(`- ${pr.name} (seen ${pr.occurrence_count}x)`);
+          s.push(`- ${pr.name} (seen ${pr.occurrence_count}x)`);
         }
       }
 
       if (tools.length > 0) {
-        lines.push(`**Tools in use:** ${tools.slice(0, 5).map((t: any) => t.name).join(', ')}`);
+        s.push(`**Tools in use:** ${tools.slice(0, 5).map((t: any) => t.name).join(', ')}`);
       }
 
-      lines.push('');
+      s.push('');
+      sections['entities'] = s;
     }
 
     // ── Activity Distribution ────────────────────────────────────────
     if (activities.length > 0) {
+      const s: string[] = [];
       const dist: Record<string, number> = {};
       for (const a of activities) {
         dist[a.activity_type] = (dist[a.activity_type] || 0) + 1;
@@ -1236,17 +1244,19 @@ async function getSemanticContextBridge(
         .map(([type, count]) => `${type} ${Math.round((count / total) * 100)}%`)
         .join(', ');
 
-      lines.push(`### Activity (last 2h): ${summary}`);
-      lines.push('');
+      s.push(`### Activity (last 2h): ${summary}`);
+      s.push('');
+      sections['activity'] = s;
     }
 
     // ── Current Intent ───────────────────────────────────────────────
-    if (intents.length > 0) {
-      const intent = intents[0];
-      lines.push(
-        `### Detected Intent: ${intent.intent_type}${intent.intent_subtype ? '/' + intent.intent_subtype : ''} (${Math.round(intent.confidence * 100)}% confidence)`
+    if (activeIntent) {
+      const s: string[] = [];
+      s.push(
+        `### Detected Intent: ${activeIntent.intent_type}${activeIntent.intent_subtype ? '/' + activeIntent.intent_subtype : ''} (${Math.round(activeIntent.confidence * 100)}% confidence)`
       );
-      lines.push('');
+      s.push('');
+      sections['intent'] = s;
     }
 
     // ── Behavioral Baseline ──────────────────────────────────────────
@@ -1266,20 +1276,23 @@ async function getSemanticContextBridge(
           parts.push(`trend: ${focusSig.trend}`);
         }
         if (parts.length > 0) {
-          lines.push(`### Behavioral Baseline (7d): ${parts.join(', ')}`);
-          lines.push('');
+          sections['behavioral'] = [
+            `### Behavioral Baseline (7d): ${parts.join(', ')}`,
+            '',
+          ];
         }
       }
     }
 
     // ── Trust Levels ─────────────────────────────────────────────────
     if (trustScores.length > 0) {
+      const s: string[] = [];
       const CATEGORY_CAPS: Record<string, number> = {
         informational: 2, administrative: 4, communication: 3,
         financial: 3, financial_exec: 3, pricing: 2, compliance: 3,
       };
 
-      lines.push('### Your Autonomy Levels');
+      s.push('### Your Autonomy Levels');
       for (const t of trustScores.slice(0, 8)) {
         const cap = CATEGORY_CAPS[t.category] || 4;
         const userCap = t.user_cap_level || 4;
@@ -1292,9 +1305,118 @@ async function getSemanticContextBridge(
         const accuracy = t.total_actions > 0
           ? ` (${Math.round((t.accuracy_count / t.total_actions) * 100)}% accuracy over ${t.total_actions} actions)`
           : '';
-        lines.push(`- ${t.action_type}: ${levelName}${accuracy}`);
+        s.push(`- ${t.action_type}: ${levelName}${accuracy}`);
       }
-      lines.push('');
+      s.push('');
+      sections['trust'] = s;
+    }
+
+    // ── Intent-Aware Guidance ────────────────────────────────────────
+    const intentGuidanceMap: Record<string, string[]> = {
+      SHIP: [
+        '### Intent Guidance: SHIP Mode',
+        'User is coding or deploying. Prioritize:',
+        '- Reference relevant code files, repos, and deployment commands',
+        '- Offer technical solutions, debugging help, and architecture advice',
+        '- Surface deployment steps and CI/CD status when relevant',
+        '- Keep responses concise and actionable — they are in flow state',
+        '',
+      ],
+      MANAGE: [
+        '### Intent Guidance: MANAGE Mode',
+        'User is doing client/business work. Prioritize:',
+        '- Surface CRM data: prospect details, deal stages, recent interactions',
+        '- Offer to draft client communications or follow-ups',
+        '- Reference pipeline stats and revenue context',
+        '- Be relationship-aware — mention people and org connections',
+        '',
+      ],
+      PLAN: [
+        '### Intent Guidance: PLAN Mode',
+        'User is planning or researching. Prioritize:',
+        '- Offer strategic analysis and task prioritization',
+        '- Help break large goals into actionable steps',
+        '- Surface relevant data for decision-making (metrics, trends, baselines)',
+        '- Encourage structured thinking — timelines, dependencies, trade-offs',
+        '',
+      ],
+      MAINTAIN: [
+        '### Intent Guidance: MAINTAIN Mode',
+        'User is doing maintenance or operational work. Prioritize:',
+        '- Suggest efficiency improvements and automation opportunities',
+        '- Help with routine tasks: updates, cleanup, organizing',
+        '- Flag anything that looks repetitive and could be automated',
+        '- Keep overhead low — quick answers, minimal ceremony',
+        '',
+      ],
+      RESPOND: [
+        '### Intent Guidance: RESPOND Mode',
+        'User is handling communications. Prioritize:',
+        '- Provide context on who they are communicating with (check entities)',
+        '- Offer to draft or refine messages, emails, or replies',
+        '- Surface relevant conversation history and relationship context',
+        '- Be concise — they likely need a quick turnaround',
+        '',
+      ],
+    };
+
+    if (intentType in intentGuidanceMap) {
+      sections['intent_guidance'] = intentGuidanceMap[intentType];
+    }
+
+    // ── Proactive Greeting ───────────────────────────────────────────
+    const activeThread = threads.find((t: any) => t.status === 'active');
+    if (activeThread || activeIntent) {
+      const s: string[] = [];
+      s.push('### Proactive Greeting');
+
+      const threadTitle = activeThread?.title || 'your current work';
+      const greetingByIntent: Record<string, string> = {
+        SHIP: `I see you're working on ${threadTitle} — need help with code, a deployment step, or debugging something?`,
+        MANAGE: `I see you're working on ${threadTitle} — want me to pull up client details or draft a message?`,
+        PLAN: `I see you're working on ${threadTitle} — shall I help prioritize tasks or analyze options?`,
+        MAINTAIN: `I see you're working on ${threadTitle} — anything I can help streamline or automate?`,
+        RESPOND: `I see you're working on ${threadTitle} — need help drafting a reply or pulling up context on someone?`,
+      };
+
+      const greeting = greetingByIntent[intentType]
+        || `I see you're working on ${threadTitle} — how can I help?`;
+      s.push(`Suggested greeting: "${greeting}"`);
+      s.push('');
+      sections['greeting'] = s;
+    }
+
+    // ── Assemble sections in intent-weighted order ────────────────────
+    // Default order
+    const defaultOrder = ['threads', 'entities', 'activity', 'intent', 'intent_guidance', 'greeting', 'behavioral', 'trust'];
+
+    // Intent-specific reorderings: put the most relevant sections first
+    const orderByIntent: Record<string, string[]> = {
+      SHIP: ['threads', 'activity', 'intent', 'intent_guidance', 'greeting', 'entities', 'behavioral', 'trust'],
+      MANAGE: ['entities', 'intent', 'intent_guidance', 'greeting', 'threads', 'activity', 'trust', 'behavioral'],
+      PLAN: ['threads', 'activity', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust'],
+      MAINTAIN: ['activity', 'threads', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust'],
+      RESPOND: ['entities', 'threads', 'intent', 'intent_guidance', 'greeting', 'activity', 'trust', 'behavioral'],
+    };
+
+    const sectionOrder = orderByIntent[intentType] || defaultOrder;
+
+    const lines: string[] = [];
+    lines.push('## Semantic Intelligence Context');
+    lines.push('(Auto-generated from desktop activity pipeline — use to personalize responses)');
+    lines.push('');
+
+    for (const key of sectionOrder) {
+      if (sections[key]) {
+        lines.push(...sections[key]);
+      }
+    }
+
+    // Include any sections not in the order list (future-proof)
+    for (const key of Object.keys(sections)) {
+      if (!sectionOrder.includes(key)) {
+        lines.push(...sections[key]);
+      }
     }
 
     if (lines.length <= 3) return ''; // Only header, no meaningful data
