@@ -4,9 +4,13 @@
  * Phase 4 - A-6: Predictive UI
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { useUser } from '@/components/context/UserContext';
+
+// Import UserContext directly to avoid the throwing useUser() hook.
+// useFeatureUsage is called in Layout.jsx BEFORE UserProvider mounts,
+// so we need a safe fallback when context is null.
+import UserContext from '@/components/context/UserContext';
 
 // Debounce buffer: collect feature keys and flush every 5 seconds
 const pendingTracks = new Map(); // featureKey -> timestamp
@@ -84,7 +88,8 @@ export function trackFeature(featureKey, userId, companyId) {
  * Hook to get top features for the current user
  */
 export function useTopFeatures(limit = 10) {
-  const { user } = useUser();
+  const ctx = useContext(UserContext);
+  const user = ctx?.user;
   const [topFeatures, setTopFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -125,7 +130,8 @@ export function useTopFeatures(limit = 10) {
  * Hook that provides trackFeature bound to the current user
  */
 export function useFeatureUsage() {
-  const { user } = useUser();
+  const ctx = useContext(UserContext);
+  const user = ctx?.user;
 
   const track = useCallback(
     (featureKey) => {
