@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSemanticContext } from '@/contexts/SemanticContextProvider';
 import {
   Brain,
@@ -15,6 +15,7 @@ import {
   Wrench,
   RefreshCw,
   Zap,
+  Laptop,
 } from 'lucide-react';
 
 /**
@@ -42,6 +43,49 @@ const ACTIVITY_ICONS = {
   design: Activity,
 };
 
+// Entity types that are just app/OS noise, not business-relevant
+const NOISE_ENTITY_TYPES = new Set(['tool']);
+
+// Patterns that indicate a filename, not a meaningful entity
+const FILE_NAME_PATTERNS = [
+  /\.(png|jpg|jpeg|gif|svg|pdf|csv|json|md|tsx?|jsx?|sql|txt|xml|zip|mp4|mov)$/i,
+  /^screenshot\s/i,
+  /^screencapture-/i,
+  /^untitled\s/i,
+];
+
+// Known noise entity names (exact, lowercased)
+const NOISE_NAMES = new Set([
+  'latest', 'chrome', 'safari', 'firefox', 'finder', 'terminal',
+  'textedit', 'messages', 'google chrome', 'open open', 'untitled untitled',
+  'complete product plan', 'claude code',
+]);
+
+function isBusinessEntity(entity) {
+  if (!entity?.name) return false;
+  if (NOISE_ENTITY_TYPES.has(entity.type)) return false;
+  const nameLower = entity.name.toLowerCase().trim();
+  if (nameLower.length < 2) return false;
+  if (NOISE_NAMES.has(nameLower)) return false;
+  if (FILE_NAME_PATTERNS.some(p => p.test(entity.name))) return false;
+  return true;
+}
+
+// Clean up raw window titles to be more meaningful
+function cleanThreadTitle(title) {
+  if (!title) return 'Active thread';
+  // Strip browser suffixes
+  let clean = title
+    .replace(/\s*[—–-]\s*(Google Chrome|Chrome|Safari|Firefox|Edge|Arc|Brave)\s*$/i, '')
+    .replace(/^\s*(Google Chrome|Chrome|Safari|Firefox)\s*[—–-]\s*/i, '')
+    .trim();
+  // If still generic or empty, return original
+  if (!clean || clean.length < 3) return title;
+  // Truncate very long titles
+  if (clean.length > 60) clean = clean.slice(0, 57) + '...';
+  return clean;
+}
+
 export default function UniversalContextBar() {
   const {
     activeThreads,
@@ -50,15 +94,42 @@ export default function UniversalContextBar() {
     activitySummary,
     hasData,
     isLoading,
+    lastFetched,
     refresh,
   } = useSemanticContext();
 
   const [expanded, setExpanded] = useState(false);
 
-  if (!hasData && !isLoading) return null;
+  // Filter to only business-relevant entities
+  const filteredEntities = useMemo(
+    () => recentEntities.filter(isBusinessEntity),
+    [recentEntities]
+  );
+
+  // Check if desktop data is stale (>1 hour old)
+  const isStale = lastFetched && (Date.now() - new Date(lastFetched).getTime() > 3600000);
+
+  // Show a "not connected" state instead of silently hiding
+  if (!hasData && !isLoading) {
+    return (
+      <div className="mx-3 mt-2 mb-1 md:mx-4">
+        <div className="rounded-xl border border-zinc-800/40 bg-zinc-900/20 px-3 py-2 flex items-center gap-2">
+          <Laptop className="w-3.5 h-3.5 text-zinc-600" />
+          <span className="text-[11px] text-zinc-600">Desktop activity not connected</span>
+          <button
+            onClick={refresh}
+            className="ml-auto text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1"
+          >
+            <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+            Check
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const primaryThread = activeThreads[0];
-  const topEntities = recentEntities.slice(0, 3);
+  const topEntities = filteredEntities.slice(0, 3);
   const intentConfig = currentIntent ? INTENT_LABELS[currentIntent.intent_type] || null : null;
   const IntentIcon = intentConfig?.icon || Brain;
   const ActivityIcon = activitySummary?.dominant_type
@@ -73,13 +144,13 @@ export default function UniversalContextBar() {
           onClick={() => setExpanded(!expanded)}
           className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-white/[0.02] transition-colors"
         >
-          {/* Activity pulse */}
-          <div className="flex-shrink-0 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          {/* Activity pulse — dim when stale */}
+          <div className={`flex-shrink-0 w-2 h-2 rounded-full ${isStale ? 'bg-zinc-500' : 'bg-cyan-400 animate-pulse'}`} />
 
           {/* Primary thread */}
           {primaryThread && (
             <span className="text-xs text-zinc-300 truncate max-w-[200px]">
-              {primaryThread.title || 'Active thread'}
+              {cleanThreadTitle(primaryThread.title)}
             </span>
           )}
 
@@ -130,7 +201,7 @@ export default function UniversalContextBar() {
                     return (
                       <div key={thread.thread_id} className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${thread.status === 'active' ? 'bg-cyan-400' : 'bg-zinc-600'}`} />
-                        <span className="text-xs text-zinc-300 truncate">{thread.title || 'Untitled'}</span>
+                        <span className="text-xs text-zinc-300 truncate">{cleanThreadTitle(thread.title)}</span>
                         <span className="text-[10px] text-zinc-600">{thread.primary_activity_type || 'mixed'}</span>
                         <span className="text-[10px] text-zinc-600">{duration}m</span>
                       </div>
@@ -140,12 +211,12 @@ export default function UniversalContextBar() {
               </div>
             )}
 
-            {/* Recent Entities */}
-            {recentEntities.length > 0 && (
+            {/* Recent Entities (filtered to business-relevant) */}
+            {filteredEntities.length > 0 && (
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1.5">Recent Entities</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {recentEntities.slice(0, 8).map((entity, i) => (
+                  {filteredEntities.slice(0, 8).map((entity, i) => (
                     <span
                       key={entity.entity_id || i}
                       className={`px-2 py-0.5 rounded-full text-[10px] border ${

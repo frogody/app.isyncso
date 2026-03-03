@@ -33,6 +33,7 @@ import {
   RaiseInvestorsWidget, RaiseMeetingsWidget
 } from "@/components/dashboard/widgets/RaiseWidgets";
 import { RecentActionsWidget, QuickActionsWidget } from "@/components/dashboard/widgets/CoreWidgets";
+import SchedulingWidget from "@/components/dashboard/widgets/SchedulingWidget";
 import {
   CommerceBToBOverviewWidget, CommerceOrdersWidget, CommerceRevenueWidget,
   CommerceProductsWidget, CommerceOutstandingWidget
@@ -732,6 +733,11 @@ export default function Dashboard() {
         {/* Business Pulse — Cross-module intelligence brief */}
         {viewMode === 'personal' && (
           <BusinessPulse compact />
+        )}
+
+        {/* Scheduling Insights — compact widget from behavioral data */}
+        {viewMode === 'personal' && (
+          <SchedulingWidget />
         )}
 
         {/* Team Dashboard View */}

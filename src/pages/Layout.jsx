@@ -1005,35 +1005,37 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       })
       .filter(Boolean);
 
-    // Adaptive sorting: if user has enough usage data, sort by frequency
-    if (topFeatures && topFeatures.length >= 5) {
-      // Map engine IDs to feature keys
-      const engineToFeature = {
-        finance: 'finance.overview',
-        growth: 'growth.overview',
-        sentinel: 'sentinel',
-        learn: 'learn',
-        talent: 'talent',
-        sync: 'sync.agent',
-        create: 'create',
-        reach: 'reach',
-        raise: 'raise',
-      };
-
-      const usageMap = {};
-      for (const f of topFeatures) {
-        usageMap[f.feature_key] = f.usage_count;
-      }
-
-      items.sort((a, b) => {
-        const aUsage = usageMap[engineToFeature[a.id]] || 0;
-        const bUsage = usageMap[engineToFeature[b.id]] || 0;
-        return bUsage - aUsage; // Higher usage first
-      });
-    }
-
+    // Keep engine items in their original config order (no adaptive reordering)
+    // Usage data drives the Quick Access section instead
     return items;
   }, [effectiveApps, enabledApps, teamLoading, isPlatformOwner, topFeatures]);
+
+  // Quick Access: top 3 most-used engine apps shown as icon shortcuts above the divider
+  const quickAccessItems = useMemo(() => {
+    if (!topFeatures || topFeatures.length < 3 || engineItems.length === 0) return [];
+
+    const featureToEngine = {
+      'finance.overview': 'finance',
+      'growth.overview': 'growth',
+      'sentinel': 'sentinel',
+      'learn': 'learn',
+      'talent': 'talent',
+      'sync.agent': 'sync',
+      'create': 'create',
+      'reach': 'reach',
+      'raise': 'raise',
+    };
+
+    const ranked = [];
+    for (const f of topFeatures) {
+      const engineId = featureToEngine[f.feature_key];
+      if (!engineId) continue;
+      const engine = engineItems.find(e => e.id === engineId);
+      if (engine) ranked.push(engine);
+      if (ranked.length >= 3) break;
+    }
+    return ranked;
+  }, [topFeatures, engineItems]);
 
   const handleLogin = async () => {
     db.auth.redirectToLogin(window.location.href);
@@ -1183,6 +1185,35 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             );
           })}
         </div>
+
+        {/* Quick Access — top 3 most-used engine apps as icon shortcuts */}
+        {quickAccessItems.length > 0 && !isMobile && (
+          <div className="mx-2 my-2">
+            <p className="text-[9px] uppercase tracking-widest text-zinc-600 font-medium px-1 mb-1.5">Frequent</p>
+            <div className="flex items-center justify-center gap-1">
+              {quickAccessItems.map((item) => {
+                const isActive = isNavItemActive(item, location.pathname);
+                return (
+                  <button
+                    key={`qa-${item.id}`}
+                    onClick={() => {
+                      triggerActivity();
+                      navigate(item.url);
+                    }}
+                    className={`p-2 rounded-lg transition-all duration-150 ${
+                      isActive
+                        ? 'bg-cyan-950/30 text-cyan-400'
+                        : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                    }`}
+                    title={item.title}
+                  >
+                    <item.icon className="w-4 h-4" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="h-px bg-white/5 mx-2 my-2" />
 
