@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { prospect_id, company_id, date_from, date_to } = await req.json();
+    const { prospect_id, company_id, user_id, date_from, date_to } = await req.json();
 
     if (!prospect_id || !company_id) {
       return new Response(
@@ -44,22 +44,23 @@ Deno.serve(async (req) => {
     // 1. Find semantic entities linked to this prospect
     const { data: entityLinks, error: linksError } = await supabase
       .from("entity_business_links")
-      .select("entity_id, link_type, confidence")
-      .eq("prospect_id", prospect_id);
+      .select("semantic_entity_id, link_type, match_confidence")
+      .eq("business_record_id", prospect_id)
+      .eq("business_type", "prospect");
 
     if (linksError) {
       console.error("Error fetching entity links:", linksError);
     }
 
-    const linkedEntityIds = (entityLinks || []).map((l: any) => l.entity_id);
+    const linkedEntityIds = (entityLinks || []).map((l: any) => l.semantic_entity_id);
 
     // 2. Get entity names for matching against threads/activities
     let entityNames: string[] = [];
     if (linkedEntityIds.length > 0) {
       const { data: entities } = await supabase
         .from("semantic_entities")
-        .select("id, name, entity_type")
-        .in("id", linkedEntityIds);
+        .select("entity_id, name, type")
+        .in("entity_id", linkedEntityIds);
 
       entityNames = (entities || []).map((e: any) => e.name?.toLowerCase()).filter(Boolean);
     }
@@ -67,13 +68,14 @@ Deno.serve(async (req) => {
     // Also use the prospect's company name as a fallback entity name
     const { data: prospect } = await supabase
       .from("prospects")
-      .select("full_name, company_name, email")
+      .select("first_name, last_name, company, email")
       .eq("id", prospect_id)
       .single();
 
     if (prospect) {
-      if (prospect.company_name) entityNames.push(prospect.company_name.toLowerCase());
-      if (prospect.full_name) entityNames.push(prospect.full_name.toLowerCase());
+      if (prospect.company) entityNames.push(prospect.company.toLowerCase());
+      const fullName = [prospect.first_name, prospect.last_name].filter(Boolean).join(" ");
+      if (fullName) entityNames.push(fullName.toLowerCase());
     }
 
     // Deduplicate
@@ -92,75 +94,120 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Resolve user_id: from body, or from auth token
+    const resolvedUserId = user_id || await getUserId(req, supabase);
+
     // 3. Query semantic_threads that overlap the date range and involve related entities
-    // Threads have primary_entities (text[]) — check if any entity name appears
+    // Threads have primary_entities (uuid[]) — we'll match entity names against thread titles and entity names
     const { data: threads, error: threadsError } = await supabase
       .from("semantic_threads")
-      .select("id, title, primary_entities, event_count, first_seen, last_seen")
-      .gte("last_seen", startDate)
-      .lte("first_seen", endDate + "T23:59:59Z")
-      .eq("user_id", (await getUserId(req, supabase)));
+      .select("thread_id, title, primary_entities, event_count, started_at, last_activity_at")
+      .gte("last_activity_at", startDate)
+      .lte("started_at", endDate + "T23:59:59Z")
+      .eq("user_id", resolvedUserId);
 
     if (threadsError) {
       console.error("Error fetching threads:", threadsError);
     }
 
-    // Filter threads that match entity names
+    // primary_entities stores UUIDs — resolve them to names for matching
+    const allPrimaryEntityIds = new Set<string>();
+    for (const t of threads || []) {
+      for (const eid of t.primary_entities || []) {
+        allPrimaryEntityIds.add(eid);
+      }
+    }
+
+    // Batch-fetch entity names for all primary entities
+    const entityNameMap = new Map<string, string>();
+    if (allPrimaryEntityIds.size > 0) {
+      const batchIds = [...allPrimaryEntityIds].slice(0, 200);
+      const { data: batchEntities } = await supabase
+        .from("semantic_entities")
+        .select("entity_id, name")
+        .in("entity_id", batchIds);
+      for (const e of batchEntities || []) {
+        entityNameMap.set(e.entity_id, (e.name || "").toLowerCase());
+      }
+    }
+
+    // Filter threads that match entity names (via primary_entities names or thread title)
     const matchingThreads = (threads || []).filter((t: any) => {
-      const pe = (t.primary_entities || []).map((e: string) => e.toLowerCase());
+      // Check if thread title contains any entity name
+      const titleLower = (t.title || "").toLowerCase();
+      const titleMatch = entityNames.some((name) => titleLower.includes(name));
+      if (titleMatch) return true;
+
+      // Check if any primary entity resolves to a matching name
+      const pe = (t.primary_entities || []).map((eid: string) => entityNameMap.get(eid) || "");
       return entityNames.some((name) =>
         pe.some((p: string) => p.includes(name) || name.includes(p))
       );
     });
 
-    const threadIds = matchingThreads.map((t: any) => t.id);
-
-    // 4. Query semantic_activities in the date range related to those threads
+    // 4. Query activities within time ranges of matched threads
+    // semantic_activities has NO thread_id column — we match by time overlap
     let activities: any[] = [];
-    const userId = await getUserId(req, supabase);
 
-    if (threadIds.length > 0) {
-      const { data: threadActivities, error: actError } = await supabase
-        .from("semantic_activities")
-        .select("id, activity_type, duration_ms, thread_id, metadata, created_at")
-        .in("thread_id", threadIds)
-        .eq("user_id", userId)
-        .gte("created_at", startDate)
-        .lte("created_at", endDate + "T23:59:59Z");
+    if (matchingThreads.length > 0) {
+      // Build time windows from matched threads
+      for (const thread of matchingThreads) {
+        const threadStart = thread.started_at;
+        const threadEnd = thread.last_activity_at;
+        if (!threadStart || !threadEnd) continue;
 
-      if (actError) {
-        console.error("Error fetching activities:", actError);
+        const { data: threadActivities, error: actError } = await supabase
+          .from("semantic_activities")
+          .select("id, activity_type, duration_ms, metadata, created_at")
+          .eq("user_id", resolvedUserId)
+          .gte("created_at", threadStart)
+          .lte("created_at", threadEnd)
+          .limit(100);
+
+        if (actError) {
+          console.error("Error fetching activities for thread:", actError);
+          continue;
+        }
+        // Tag activities with the thread info
+        for (const act of threadActivities || []) {
+          activities.push({ ...act, _thread_id: thread.thread_id, _thread_title: thread.title });
+        }
       }
-      activities = threadActivities || [];
     }
 
-    // Also look for activities without thread_id but with entity names in metadata
+    // Also check activities that mention entity names in metadata
     const { data: looseActivities } = await supabase
       .from("semantic_activities")
-      .select("id, activity_type, duration_ms, thread_id, metadata, created_at")
-      .eq("user_id", userId)
-      .is("thread_id", null)
+      .select("id, activity_type, duration_ms, metadata, created_at")
+      .eq("user_id", resolvedUserId)
       .gte("created_at", startDate)
       .lte("created_at", endDate + "T23:59:59Z")
       .limit(500);
 
-    // Filter loose activities that mention entity names in metadata
+    // Filter activities that mention entity names in metadata
     const matchingLoose = (looseActivities || []).filter((a: any) => {
       const metaStr = JSON.stringify(a.metadata || {}).toLowerCase();
       return entityNames.some((name) => metaStr.includes(name));
-    });
+    }).map((a: any) => ({ ...a, _thread_id: "__unthreaded__", _thread_title: null }));
 
-    activities = [...activities, ...matchingLoose];
+    // Deduplicate by activity id
+    const seenIds = new Set(activities.map((a: any) => a.id));
+    for (const a of matchingLoose) {
+      if (!seenIds.has(a.id)) {
+        activities.push(a);
+        seenIds.add(a.id);
+      }
+    }
 
     // 5. Group activities by thread, compute total hours
     const threadMap = new Map<string, { activities: any[]; thread: any }>();
 
     // Add a "general" bucket for activities without thread
     for (const act of activities) {
-      const key = act.thread_id || "__unthreaded__";
+      const key = act._thread_id || "__unthreaded__";
       if (!threadMap.has(key)) {
-        const thread = matchingThreads.find((t: any) => t.id === key);
-        threadMap.set(key, { activities: [], thread: thread || null });
+        const thread = matchingThreads.find((t: any) => t.thread_id === key);
+        threadMap.set(key, { activities: [], thread: thread || { title: act._thread_title } });
       }
       threadMap.get(key)!.activities.push(act);
     }

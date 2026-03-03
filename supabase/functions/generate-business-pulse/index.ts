@@ -30,7 +30,7 @@ Deno.serve(async (req: Request) => {
       .from("invoices")
       .select("id, invoice_number, client_name, total, due_date, status")
       .eq("company_id", company_id)
-      .eq("status", "sent")
+      .in("status", ["sent", "pending", "draft"])
       .lt("due_date", today)
       .order("total", { ascending: false })
       .limit(5);
@@ -90,23 +90,39 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // --- MODULE 3: PRODUCTS (low stock alerts) ---
-    const { data: lowStock } = await supabase
-      .from("products")
-      .select("id, name, status")
+    // --- MODULE 3: PRODUCTS (low stock alerts from inventory) ---
+    const { data: inventoryItems } = await supabase
+      .from("inventory")
+      .select("product_id, quantity_on_hand, reorder_point, products!inner(name)")
       .eq("company_id", company_id)
-      .eq("status", "published")
-      .limit(5);
+      .limit(50);
 
-    // Note: stock data may be in inventory_items or product variants
-    // We check products that are published but might have stock issues
+    for (const inv of inventoryItems || []) {
+      const qty = inv.quantity_on_hand ?? 0;
+      const reorder = inv.reorder_point ?? 10;
+      if (qty <= reorder) {
+        const productName = (inv as any).products?.name || "Unknown Product";
+        items.push({
+          user_id, company_id, pulse_date: today,
+          item_type: "low_stock",
+          title: `${productName} is running low (${qty} left)`,
+          description: `Stock is at or below the reorder point of ${reorder}. Consider placing a new purchase order.`,
+          urgency: qty === 0 ? 10 : qty <= reorder / 2 ? 8 : 6,
+          impact: 7,
+          source_modules: ["products", "finance"],
+          action_label: "Reorder",
+          action_url: `/products?id=${inv.product_id}`,
+          related_entity_ids: [inv.product_id],
+        });
+      }
+    }
 
     // --- MODULE 4: TASKS (overdue tasks) ---
     const { data: overdueTasks } = await supabase
       .from("tasks")
       .select("id, title, due_date, priority, assignee_id")
       .eq("company_id", company_id)
-      .eq("status", "active")
+      .in("status", ["active", "pending", "todo", "in_progress"])
       .lt("due_date", today)
       .order("priority", { ascending: false })
       .limit(5);
