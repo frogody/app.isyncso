@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Clock, AlertTriangle, Sun, Moon, ArrowUpRight, RefreshCw, Brain } from 'lucide-react';
+import { Clock, AlertTriangle, Sun, Moon, ArrowUpRight, RefreshCw, Brain, Laptop } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useSchedulingRecommendations } from '@/hooks/useSchedulingRecommendations';
 import { cn } from '@/lib/utils';
@@ -15,8 +15,31 @@ export default function SchedulingWidget() {
   const { t } = useTheme();
   const { recommendations, loading, refresh } = useSchedulingRecommendations();
 
-  // Don't render if no data and not loading
-  if (!loading && !recommendations) return null;
+  // Show desktop CTA if no data
+  if (!loading && !recommendations) {
+    return (
+      <GlassCard glow="cyan" className="p-4" hover={false}>
+        <div className="flex items-center gap-2 mb-2">
+          <Brain className="w-4 h-4 text-cyan-400" />
+          <span className={cn('text-sm font-semibold', t('text-zinc-900', 'text-white'))}>Schedule Insights</span>
+        </div>
+        <div className={cn('flex items-center gap-3 p-2 rounded-lg', t('bg-zinc-100/60', 'bg-zinc-800/30'))}>
+          <Laptop className="w-4 h-4 text-zinc-500 flex-shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className={cn('text-xs', t('text-zinc-500', 'text-zinc-400'))}>
+              Connect your desktop app to get personalized schedule recommendations.
+            </p>
+            <Link
+              to={createPageUrl("DesktopActivity")}
+              className="text-cyan-400 text-[11px] hover:text-cyan-300 transition-colors"
+            >
+              Set up Desktop Tracking →
+            </Link>
+          </div>
+        </div>
+      </GlassCard>
+    );
+  }
 
   if (loading && !recommendations) {
     return (

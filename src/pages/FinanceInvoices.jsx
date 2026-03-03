@@ -270,20 +270,20 @@ export default function FinanceInvoices({ embedded }) {
 
     const result = await generateDraft(formData.contact_id, companyId, dateFrom, dateTo);
     if (result?.success && result.line_items?.length > 0) {
+      const rate = result.default_rate || '';
       const newItems = result.line_items.map(item => ({
         description: item.description,
         quantity: item.hours,
-        unit_price: '',
+        unit_price: rate ? String(rate) : '',
         smart_draft: true,
         category: item.category,
-        thread_name: item.thread_name,
-        activity_count: item.activity_count,
       }));
       setFormData(prev => ({
         ...prev,
         items: [...prev.items.filter(i => i.description || i.unit_price), ...newItems],
       }));
-      toast.success(`Added ${result.line_items.length} line items from tracked activities (${result.total_hours}h total)`);
+      const rateMsg = rate ? ` at €${rate}/h` : ' — set your hourly rate';
+      toast.success(`Added ${result.line_items.length} line items (${result.total_hours}h total)${rateMsg}`);
     } else if (result?.success && result.line_items?.length === 0) {
       toast.info(result.message || 'No tracked activities found for this client in the last 30 days');
     } else if (draftError) {

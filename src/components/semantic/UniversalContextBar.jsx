@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSemanticContext } from '@/contexts/SemanticContextProvider';
 import {
   Brain,
@@ -59,6 +60,9 @@ const NOISE_NAMES = new Set([
   'latest', 'chrome', 'safari', 'firefox', 'finder', 'terminal',
   'textedit', 'messages', 'google chrome', 'open open', 'untitled untitled',
   'complete product plan', 'claude code',
+  'ha job', 'new tab', 'loading', 'search', 'home', 'settings',
+  'dashboard', 'undefined', 'null', 'error', 'page', 'view',
+  'edit', 'open', 'close', 'tab', 'window',
 ]);
 
 function isBusinessEntity(entity) {
@@ -98,6 +102,7 @@ export default function UniversalContextBar() {
     refresh,
   } = useSemanticContext();
 
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
 
   // Filter to only business-relevant entities
@@ -108,6 +113,18 @@ export default function UniversalContextBar() {
 
   // Check if desktop data is stale (>1 hour old)
   const isStale = lastFetched && (Date.now() - new Date(lastFetched).getTime() > 3600000);
+
+  // Calculate "Xm ago" label from lastFetched
+  const timeAgoLabel = useMemo(() => {
+    if (!lastFetched) return null;
+    const diffMs = Date.now() - new Date(lastFetched).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return '<1m ago';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }, [lastFetched]);
 
   // Show a "not connected" state instead of silently hiding
   if (!hasData && !isLoading) {
@@ -144,8 +161,14 @@ export default function UniversalContextBar() {
           onClick={() => setExpanded(!expanded)}
           className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-white/[0.02] transition-colors"
         >
-          {/* Activity pulse — dim when stale */}
-          <div className={`flex-shrink-0 w-2 h-2 rounded-full ${isStale ? 'bg-zinc-500' : 'bg-cyan-400 animate-pulse'}`} />
+          {/* Last updated timestamp — dim when stale */}
+          {timeAgoLabel ? (
+            <span className={`flex-shrink-0 text-[10px] font-medium ${isStale ? 'text-zinc-500' : 'text-cyan-400'}`}>
+              {timeAgoLabel}
+            </span>
+          ) : (
+            <div className="flex-shrink-0 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          )}
 
           {/* Primary thread */}
           {primaryThread && (
@@ -211,25 +234,43 @@ export default function UniversalContextBar() {
               </div>
             )}
 
+            {/* Current Intent + Evidence */}
+            {intentConfig && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1.5">Current Intent</div>
+                <div className="flex items-center gap-1.5">
+                  <IntentIcon className="w-3 h-3 text-zinc-400" />
+                  <span className="text-xs text-zinc-300">{intentConfig.label}</span>
+                </div>
+                {currentIntent?.evidence && (
+                  <p className="text-[10px] text-zinc-500 mt-1">{currentIntent.evidence}</p>
+                )}
+              </div>
+            )}
+
             {/* Recent Entities (filtered to business-relevant) */}
             {filteredEntities.length > 0 && (
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1.5">Recent Entities</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {filteredEntities.slice(0, 8).map((entity, i) => (
-                    <span
-                      key={entity.entity_id || i}
-                      className={`px-2 py-0.5 rounded-full text-[10px] border ${
-                        entity.type === 'person'
-                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                          : entity.type === 'organization'
-                          ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                          : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
-                      }`}
-                    >
-                      {entity.name}
-                    </span>
-                  ))}
+                  {filteredEntities.slice(0, 8).map((entity, i) => {
+                    const isClickable = entity.type === 'person' || entity.type === 'organization';
+                    return (
+                      <span
+                        key={entity.entity_id || i}
+                        onClick={isClickable ? (e) => { e.stopPropagation(); navigate('/crmdashboard?q=' + encodeURIComponent(entity.name)); } : undefined}
+                        className={`px-2 py-0.5 rounded-full text-[10px] border ${
+                          entity.type === 'person'
+                            ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                            : entity.type === 'organization'
+                            ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                            : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
+                        }${isClickable ? ' cursor-pointer hover:underline' : ''}`}
+                      >
+                        {entity.name}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}

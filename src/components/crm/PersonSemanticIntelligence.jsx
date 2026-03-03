@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { useSemanticContext } from '@/contexts/SemanticContextProvider';
+import { useTheme } from '@/contexts/GlobalThemeContext';
+import { Link } from 'react-router-dom';
 import {
   Activity,
   Clock,
@@ -18,6 +20,8 @@ import {
   Loader2,
   Search,
   Zap,
+  ArrowRight,
+  Monitor,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -67,7 +71,7 @@ function formatDate(dateStr) {
 
 // --- Sub-sections ---
 
-function OverviewSection({ activities, entityMatch }) {
+function OverviewSection({ activities, entityMatch, personName }) {
   const stats = useMemo(() => {
     if (!activities?.length) return null;
     const sorted = [...activities].sort(
@@ -92,9 +96,10 @@ function OverviewSection({ activities, entityMatch }) {
   if (!stats) {
     return (
       <EmptyState
-        icon={Search}
-        message="No desktop activity found for this person"
-        sub="Activity data is collected from the desktop sync pipeline"
+        icon={Monitor}
+        message={`No activity data found for ${personName || 'this contact'}`}
+        sub="Connect your desktop app to automatically track work related to this contact."
+        showTrackingLink
       />
     );
   }
@@ -148,15 +153,16 @@ function OverviewSection({ activities, entityMatch }) {
   );
 }
 
-function TimelineSection({ activities }) {
+function TimelineSection({ activities, personName }) {
   const [showAll, setShowAll] = useState(false);
 
   if (!activities?.length) {
     return (
       <EmptyState
         icon={Clock}
-        message="No activity timeline available"
-        sub="Activities will appear as desktop sync data is collected"
+        message="No timeline events yet"
+        sub={`Activity builds automatically as you work with ${personName || 'this contact'} through email, meetings, and other interactions.`}
+        showTrackingLink
       />
     );
   }
@@ -209,7 +215,7 @@ function TimelineSection({ activities }) {
   );
 }
 
-function PatternsSection({ activities }) {
+function PatternsSection({ activities, personName }) {
   const patterns = useMemo(() => {
     if (!activities?.length) return null;
 
@@ -266,8 +272,9 @@ function PatternsSection({ activities }) {
     return (
       <EmptyState
         icon={BarChart3}
-        message="Not enough data for pattern analysis"
-        sub="Patterns emerge after multiple interactions are recorded"
+        message="Not enough data to detect patterns yet"
+        sub={`Keep working with ${personName || 'this contact'} and communication patterns will emerge automatically.`}
+        showTrackingLink
       />
     );
   }
@@ -352,12 +359,22 @@ function MiniStat({ label, value, icon: Icon }) {
   );
 }
 
-function EmptyState({ icon: Icon, message, sub }) {
+function EmptyState({ icon: Icon, message, sub, showTrackingLink }) {
+  const { t } = useTheme();
   return (
     <div className="text-center py-8">
-      <Icon className="w-10 h-10 text-white/10 mx-auto mb-3" />
-      <p className="text-sm text-zinc-500">{message}</p>
-      {sub && <p className="text-[10px] text-zinc-600 mt-1">{sub}</p>}
+      <Icon className={`w-10 h-10 mx-auto mb-3 ${t('text-zinc-300', 'text-white/10')}`} />
+      <p className={`text-sm ${t('text-zinc-600', 'text-zinc-400')}`}>{message}</p>
+      {sub && <p className={`text-xs mt-2 max-w-[280px] mx-auto leading-relaxed ${t('text-zinc-500', 'text-zinc-500')}`}>{sub}</p>}
+      {showTrackingLink && (
+        <Link
+          to="/sync?view=activity"
+          className={`inline-flex items-center gap-1 text-xs mt-3 ${t('text-cyan-600 hover:text-cyan-700', 'text-cyan-400 hover:text-cyan-300')} transition-colors`}
+        >
+          Set up Desktop Tracking
+          <ArrowRight className="w-3 h-3" />
+        </Link>
+      )}
     </div>
   );
 }
@@ -393,11 +410,22 @@ export default function PersonSemanticIntelligence({ prospect }) {
     fetchPersonData();
   }, [prospect?.id]);
 
+  // Extract email domain for broader matching (e.g. john@acme.com -> "acme")
+  const emailDomain = useMemo(() => {
+    const email = prospect?.email || prospect?.verified_email || '';
+    if (!email.includes('@')) return '';
+    const domain = email.split('@')[1]?.split('.')[0] || '';
+    // Skip generic email providers
+    const generic = ['gmail', 'yahoo', 'hotmail', 'outlook', 'live', 'icloud', 'aol', 'mail', 'protonmail', 'zoho'];
+    return generic.includes(domain.toLowerCase()) ? '' : domain;
+  }, [prospect?.email, prospect?.verified_email]);
+
   async function fetchPersonData() {
     setLoading(true);
     try {
       // 1. Try to find matching semantic entity
-      const searchTerms = [personName, companyName].filter(Boolean);
+      // Build search terms: person name, company name, and email domain
+      const searchTerms = [personName, companyName, emailDomain].filter(Boolean);
       let matchedEntity = null;
 
       // Check cached entities from context first
@@ -411,7 +439,7 @@ export default function PersonSemanticIntelligence({ prospect }) {
       }
 
       // If not in cache, query DB
-      if (!matchedEntity && personName) {
+      if (!matchedEntity && searchTerms.length > 0) {
         const { data: entities } = await supabase
           .from('semantic_entities')
           .select('*')
@@ -513,19 +541,19 @@ export default function PersonSemanticIntelligence({ prospect }) {
       {/* Section content */}
       {activeSection === 'overview' && (
         <SectionPanel title="Interaction Overview" icon={Activity}>
-          <OverviewSection activities={activities} entityMatch={entityMatch} />
+          <OverviewSection activities={activities} entityMatch={entityMatch} personName={personName} />
         </SectionPanel>
       )}
 
       {activeSection === 'timeline' && (
         <SectionPanel title="Activity Timeline" icon={Clock}>
-          <TimelineSection activities={activities} />
+          <TimelineSection activities={activities} personName={personName} />
         </SectionPanel>
       )}
 
       {activeSection === 'patterns' && (
         <SectionPanel title="Communication Patterns" icon={BarChart3}>
-          <PatternsSection activities={activities} />
+          <PatternsSection activities={activities} personName={personName} />
         </SectionPanel>
       )}
     </motion.div>

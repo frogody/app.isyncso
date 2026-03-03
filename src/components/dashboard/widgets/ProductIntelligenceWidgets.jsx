@@ -123,6 +123,16 @@ export function ProductHealthOverviewWidget() {
               );
             })}
           </div>
+
+          {/* Actionable hint when many products need attention */}
+          {(atRisk.length + critical.length) > 0 && (
+            <div className={cn('mt-3 p-2 rounded-lg border flex items-start gap-2', 'bg-red-500/5 border-red-500/20')}>
+              <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+              <p className={cn('text-[11px]', t('text-zinc-500', 'text-zinc-400'))}>
+                {atRisk.length + critical.length} product{(atRisk.length + critical.length) > 1 ? 's' : ''} need attention — review pricing or stock levels.
+              </p>
+            </div>
+          )}
         </>
       )}
     </GlassCard>

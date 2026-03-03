@@ -117,7 +117,7 @@ export function QuickActionsWidget({ enabledApps = [] }) {
 
   const quickActions = useMemo(() => {
     // If we have usage data, derive actions from top features
-    if (topFeatures && topFeatures.length >= 3) {
+    if (topFeatures && topFeatures.length >= 1) {
       const actions = [];
       for (const feature of topFeatures) {
         const match = ALL_QUICK_ACTIONS.find(a => a.id === feature.feature_key);
@@ -130,8 +130,16 @@ export function QuickActionsWidget({ enabledApps = [] }) {
         if (actions.length >= 4) break;
       }
 
-      // If we got some from usage, return those
-      if (actions.length >= 2) return actions;
+      // Fill remaining slots with defaults if we have at least 1 personalized action
+      if (actions.length >= 1) {
+        const defaults = DEFAULT_ACTIONS.filter(a =>
+          (!a.app || enabledApps.includes(a.app)) && !actions.find(x => x.id === a.id)
+        );
+        while (actions.length < 4 && defaults.length > 0) {
+          actions.push(defaults.shift());
+        }
+        return actions;
+      }
     }
 
     // Fallback to defaults
@@ -146,7 +154,7 @@ export function QuickActionsWidget({ enabledApps = [] }) {
       )}>
         <Zap className="w-5 h-5 text-cyan-400" />
         Quick Actions
-        {topFeatures && topFeatures.length >= 3 && (
+        {topFeatures && topFeatures.length >= 1 && (
           <span className="text-[10px] font-normal text-zinc-500 ml-1">personalized</span>
         )}
       </h2>

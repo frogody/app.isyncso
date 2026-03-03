@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
         impact: inv.total > 1000 ? 8 : inv.total > 500 ? 6 : 4,
         source_modules: ["finance", "crm"],
         action_label: "Send Reminder",
-        action_url: `/finance?invoice=${inv.id}`,
+        action_url: `/financeinvoices?id=${inv.id}`,
         related_entity_ids: [inv.id],
       });
     }
@@ -85,7 +85,7 @@ Deno.serve(async (req: Request) => {
         impact: (deal.deal_value || 0) > 5000 ? 9 : (deal.deal_value || 0) > 1000 ? 7 : 5,
         source_modules: ["crm", "finance"],
         action_label: "Follow Up",
-        action_url: `/crm?prospect=${deal.id}`,
+        action_url: `/crmcontactprofile?id=${deal.id}`,
         related_entity_ids: [deal.id],
       });
     }
@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
           impact: 7,
           source_modules: ["products", "finance"],
           action_label: "Reorder",
-          action_url: `/products?id=${inv.product_id}`,
+          action_url: `/productdetail?id=${inv.product_id}`,
           related_entity_ids: [inv.product_id],
         });
       }
@@ -160,7 +160,7 @@ Deno.serve(async (req: Request) => {
             impact: 9,
             source_modules: ["finance", "crm"],
             action_label: "Review Client",
-            action_url: `/crm?prospect=${deal.id}`,
+            action_url: `/crmcontactprofile?id=${deal.id}`,
             related_entity_ids: [deal.id],
           });
         }

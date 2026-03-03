@@ -98,10 +98,10 @@ export function ClientHealthDetail({ prospectId }) {
 
   const components = health.components || {};
   const bars = [
-    { label: 'Payment', value: components.payment_timeliness || 0, weight: '30%', color: 'bg-emerald-400' },
-    { label: 'Engagement', value: components.engagement_frequency || 0, weight: '25%', color: 'bg-cyan-400' },
-    { label: 'Volume', value: components.order_volume_trend || 0, weight: '25%', color: 'bg-blue-400' },
-    { label: 'Communication', value: components.communication_recency || 0, weight: '20%', color: 'bg-purple-400' },
+    { label: 'Payment', value: components.payment_timeliness || 0, weight: '30%', color: 'bg-emerald-400', hint: 'Invoice payment speed' },
+    { label: 'Engagement', value: components.engagement_frequency || 0, weight: '25%', color: 'bg-cyan-400', hint: 'Interaction frequency' },
+    { label: 'Volume', value: components.order_volume_trend || 0, weight: '25%', color: 'bg-blue-400', hint: 'Order volume trend' },
+    { label: 'Communication', value: components.communication_recency || 0, weight: '20%', color: 'bg-purple-400', hint: 'Last contact recency' },
   ];
 
   return (
@@ -109,7 +109,9 @@ export function ClientHealthDetail({ prospectId }) {
       {bars.map(bar => (
         <div key={bar.label}>
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-zinc-400">{bar.label} <span className="text-zinc-600">({bar.weight})</span></span>
+            <span className="text-zinc-400">
+              {bar.label} <span className="text-zinc-600">({bar.weight})</span>
+            </span>
             <span className="text-white font-medium">{bar.value}</span>
           </div>
           <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -118,11 +120,12 @@ export function ClientHealthDetail({ prospectId }) {
               style={{ width: `${bar.value}%` }}
             />
           </div>
+          <p className="text-[10px] text-zinc-600 mt-0.5">{bar.hint}</p>
         </div>
       ))}
       {health.computed_at && (
         <p className="text-[10px] text-zinc-600 text-right">
-          Updated {new Date(health.computed_at).toLocaleDateString()}
+          Last computed {new Date(health.computed_at).toLocaleDateString()}
         </p>
       )}
     </div>

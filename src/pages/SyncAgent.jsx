@@ -1767,6 +1767,17 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
   const scrollerRef = useRef(null);
   const pageRef = useRef(null);
 
+  // Track feedback count to show learning indicator
+  const [feedbackCount, setFeedbackCount] = useState(0);
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('sync_response_feedback')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .then(({ count }) => { if (count) setFeedbackCount(count); });
+  }, [user?.id]);
+
   // Listen for highlight borders event (when avatar clicked on this page)
   useEffect(() => {
     const handleHighlight = () => {
@@ -2051,6 +2062,12 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
                   {activeAgent ? `${activeAgent}` : 'SYNC'}
                 </span>
+                {feedbackCount >= 5 && (
+                  <span className="text-[10px] text-zinc-500 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-cyan-500/60" />
+                    Learning from {feedbackCount} ratings
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <button

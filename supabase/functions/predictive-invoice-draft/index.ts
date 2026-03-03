@@ -16,6 +16,14 @@ interface LineItem {
   activity_count: number;
 }
 
+interface ConsolidatedLineItem {
+  description: string;
+  hours: number;
+  category: string;
+}
+
+const TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -250,11 +258,24 @@ Deno.serve(async (req) => {
 
     const totalHours = Math.round(lineItems.reduce((s, l) => s + l.hours, 0) * 100) / 100;
 
+    // 6. Consolidate raw items into professional descriptions via LLM
+    const clientName = prospect
+      ? [prospect.first_name, prospect.last_name].filter(Boolean).join(" ") || prospect.company || "Client"
+      : "Client";
+    const consolidated = await consolidateWithLLM(lineItems, clientName, { from: startDate, to: endDate });
+
+    // 7. Look up default hourly rate
+    const defaultRate = await getDefaultHourlyRate(supabase, company_id);
+
+    const consolidatedTotal = Math.round(consolidated.reduce((s, l) => s + l.hours, 0) * 100) / 100;
+
     return new Response(
       JSON.stringify({
         success: true,
-        line_items: lineItems,
-        total_hours: totalHours,
+        line_items: consolidated,
+        raw_activities: lineItems,
+        total_hours: consolidatedTotal || totalHours,
+        default_rate: defaultRate,
         date_range: { from: startDate, to: endDate },
         entity_names_used: entityNames,
         threads_matched: matchingThreads.length,
@@ -270,6 +291,125 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+async function consolidateWithLLM(
+  rawItems: LineItem[],
+  clientName: string,
+  dateRange: { from: string; to: string }
+): Promise<ConsolidatedLineItem[]> {
+  const togetherKey = Deno.env.get("TOGETHER_API_KEY");
+  if (!togetherKey || rawItems.length <= 3) {
+    // No API key or few enough items — just clean up descriptions
+    return rawItems.map((item) => ({
+      description: cleanDescription(item.description, item.thread_name),
+      hours: item.hours,
+      category: item.category,
+    }));
+  }
+
+  const rawSummary = rawItems
+    .map((item) => `- ${item.description} (${item.hours}h, ${item.activity_count} activities)`)
+    .join("\n");
+
+  try {
+    const response = await fetch(TOGETHER_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${togetherKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "moonshotai/Kimi-K2-Instruct",
+        messages: [
+          {
+            role: "system",
+            content: `You consolidate raw desktop activity logs into professional invoice line items. Return ONLY a JSON array of objects with {description, hours, category}. Group related activities together. Write clear, client-facing descriptions (e.g. "Project management & coordination", "Software development & testing", "Research & analysis"). Never mention specific app names like Terminal, Chrome, VS Code. Round hours to 2 decimal places. Aim for 3-8 consolidated line items.`,
+          },
+          {
+            role: "user",
+            content: `Consolidate these ${rawItems.length} tracked work activities for client "${clientName}" (${dateRange.from} to ${dateRange.to}) into professional invoice line items:\n\n${rawSummary}`,
+          },
+        ],
+        max_tokens: 1000,
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("LLM consolidation failed:", response.status);
+      return rawItems.map((item) => ({
+        description: cleanDescription(item.description, item.thread_name),
+        hours: item.hours,
+        category: item.category,
+      }));
+    }
+
+    const result = await response.json();
+    const content = result.choices?.[0]?.message?.content || "";
+
+    // Extract JSON array from response
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error("LLM returned no JSON array");
+      return rawItems.map((item) => ({
+        description: cleanDescription(item.description, item.thread_name),
+        hours: item.hours,
+        category: item.category,
+      }));
+    }
+
+    const consolidated: ConsolidatedLineItem[] = JSON.parse(jsonMatch[0]);
+
+    // Validate and sanitize
+    return consolidated
+      .filter((item) => item.description && item.hours > 0)
+      .map((item) => ({
+        description: String(item.description).slice(0, 200),
+        hours: Math.round((Number(item.hours) || 0) * 100) / 100,
+        category: String(item.category || "general"),
+      }));
+  } catch (err) {
+    console.error("LLM consolidation error:", err);
+    return rawItems.map((item) => ({
+      description: cleanDescription(item.description, item.thread_name),
+      hours: item.hours,
+      category: item.category,
+    }));
+  }
+}
+
+function cleanDescription(description: string, threadName: string): string {
+  // Remove app names from descriptions like "Building — Terminal — Terminal"
+  const appNames = [
+    "terminal", "google chrome", "chrome", "safari", "firefox", "vs code",
+    "visual studio code", "finder", "slack", "discord", "notion", "figma",
+    "arc", "brave", "edge", "iterm", "warp", "cursor",
+  ];
+  let clean = description;
+  for (const app of appNames) {
+    clean = clean.replace(new RegExp(`\\s*[—–-]\\s*${app}`, "gi"), "");
+    clean = clean.replace(new RegExp(`${app}\\s*[—–-]\\s*`, "gi"), "");
+  }
+  // Capitalize first letter
+  clean = clean.trim();
+  if (clean.length > 0) {
+    clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+  }
+  return clean || threadName || "General work";
+}
+
+async function getDefaultHourlyRate(supabase: any, companyId: string): Promise<number> {
+  try {
+    const { data } = await supabase
+      .from("companies")
+      .select("settings")
+      .eq("id", companyId)
+      .single();
+    return data?.settings?.default_hourly_rate || 0;
+  } catch {
+    return 0;
+  }
+}
 
 async function getUserId(req: Request, supabase: any): Promise<string> {
   const authHeader = req.headers.get("authorization") || "";

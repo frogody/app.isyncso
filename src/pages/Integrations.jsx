@@ -14,6 +14,7 @@ import {
   searchIntegrations,
 } from '@/lib/composio';
 import { IntegrationCard as ComposioIntegrationCard } from '@/components/integrations/IntegrationCard';
+import { TriggerManager } from '@/components/integrations/TriggerManager';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -1073,6 +1074,11 @@ export default function Integrations({ embedded = false }) {
                   )}
                 </div>
               )}
+
+              {/* Auto-Enrichment Triggers & Event Log */}
+              <div className="max-w-2xl">
+                <TriggerManager />
+              </div>
             </TabsContent>
 
             {/* SYNC Desktop Tab */}
