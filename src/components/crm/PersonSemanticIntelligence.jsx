@@ -426,19 +426,39 @@ export default function PersonSemanticIntelligence({ prospect }) {
 
       setEntityMatch(matchedEntity);
 
-      // 2. Query activities mentioning this person or company
-      const orFilters = [];
-      if (personName) orFilters.push(`description.ilike.%${personName}%`);
-      if (companyName) orFilters.push(`description.ilike.%${companyName}%`);
-      if (prospect?.email) orFilters.push(`description.ilike.%${prospect.email}%`);
+      // 2. Query activities related to this person via semantic threads
+      // semantic_activities doesn't have a description column — activity context
+      // lives in metadata (JSONB) and linked threads. Query threads that mention
+      // this entity, then get activities from those threads.
+      if (matchedEntity) {
+        // Get threads where this entity appears in primary_entities
+        const { data: threads } = await supabase
+          .from('semantic_threads')
+          .select('thread_id, title, primary_activity_type, primary_entities, last_activity_at')
+          .contains('primary_entities', [{ name: matchedEntity.name }])
+          .order('last_activity_at', { ascending: false })
+          .limit(20);
 
-      if (orFilters.length > 0) {
+        // Convert threads to activity-like entries for display
+        if (threads?.length) {
+          const threadActivities = threads.map((t) => ({
+            id: t.thread_id,
+            activity_type: t.primary_activity_type || 'mixed',
+            description: t.title || 'Work thread',
+            created_at: t.last_activity_at,
+            source: 'thread',
+          }));
+          setActivities(threadActivities);
+        }
+      } else if (personName || companyName) {
+        // Fallback: search metadata JSONB for name mentions
+        const searchTerm = personName || companyName;
         const { data: acts } = await supabase
           .from('semantic_activities')
           .select('*')
-          .or(orFilters.join(','))
-          .order('occurred_at', { ascending: false })
-          .limit(100);
+          .ilike('metadata->>app_name', `%${searchTerm}%`)
+          .order('created_at', { ascending: false })
+          .limit(50);
         setActivities(acts || []);
       }
     } catch (err) {
