@@ -50,6 +50,12 @@ export const RAISE_WIDGETS = [
   { id: 'raise_meetings', name: 'Meetings', description: 'Scheduled investor meetings', size: 'small' }
 ];
 
+export const PRODUCT_INTELLIGENCE_WIDGETS = [
+  { id: 'product_health_overview', name: 'Product Health', description: 'Health score distribution', size: 'medium' },
+  { id: 'margin_overview', name: 'Margin Overview', description: 'Top/bottom products by margin', size: 'medium' },
+  { id: 'margin_alerts', name: 'Margin Alerts', description: 'Active margin alerts', size: 'medium' },
+];
+
 export const COMMERCE_WIDGETS = [
   { id: 'commerce_b2b_overview', name: 'B2B Sales Overview', description: 'B2B order revenue and status', size: 'large' },
   { id: 'commerce_orders', name: 'B2B Orders', description: 'Active order count', size: 'small' },

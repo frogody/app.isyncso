@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ListTodo, Zap, Clock, CheckCircle, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import {
+  ListTodo, Zap, Clock, CheckCircle, AlertTriangle, ArrowUpRight,
+  Contact, Package, Receipt, Shield, GraduationCap, Target, Users, Megaphone,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { cn } from '@/lib/utils';
+import { useTopFeatures } from '@/hooks/useFeatureUsage';
 
 // Widget metadata - these are always available
 export const CORE_WIDGETS = [
@@ -87,31 +91,69 @@ export function RecentActionsWidget({ actions = [] }) {
   );
 }
 
+// All possible quick actions mapped to feature keys
+const ALL_QUICK_ACTIONS = [
+  { id: 'growth.crm', label: "Open CRM", icon: Contact, href: "CRMDashboard", color: 'text-cyan-400 bg-cyan-500/10', app: null },
+  { id: 'growth.overview', label: "View Pipeline", icon: Target, href: "GrowthPipeline", color: 'text-indigo-400 bg-indigo-500/10', app: 'growth' },
+  { id: 'finance.overview', label: "Finance Overview", icon: Receipt, href: "FinanceDashboard", color: 'text-blue-400 bg-blue-500/10', app: 'finance' },
+  { id: 'products', label: "Browse Products", icon: Package, href: "Products", color: 'text-cyan-400 bg-cyan-500/10', app: null },
+  { id: 'sentinel', label: "Check Compliance", icon: Shield, href: "SentinelDashboard", color: 'text-[#86EFAC] bg-[#86EFAC]/10', app: 'sentinel' },
+  { id: 'learn', label: "Continue Learning", icon: GraduationCap, href: "Learn", color: 'text-teal-400 bg-teal-500/10', app: 'learn' },
+  { id: 'talent', label: "Talent Dashboard", icon: Users, href: "TalentDashboard", color: 'text-red-400 bg-red-500/10', app: 'talent' },
+  { id: 'tasks', label: "View Tasks", icon: ListTodo, href: "Tasks", color: 'text-cyan-400 bg-cyan-500/10', app: null },
+];
+
+// Default fallback actions
+const DEFAULT_ACTIONS = [
+  { id: 'growth', label: "View Pipeline", icon: Zap, href: "GrowthPipeline", color: 'text-indigo-400 bg-indigo-500/10', app: 'growth' },
+  { id: 'learn', label: "Continue Learning", icon: Zap, href: "Learn", color: 'text-cyan-400 bg-cyan-500/10', app: 'learn' },
+  { id: 'sentinel', label: "Check Compliance", icon: Zap, href: "SentinelDashboard", color: 'text-[#86EFAC] bg-[#86EFAC]/10', app: 'sentinel' },
+  { id: 'actions', label: "View Actions", icon: ListTodo, href: "Actions", color: 'text-cyan-400 bg-cyan-500/10', app: null },
+];
+
 export function QuickActionsWidget({ enabledApps = [] }) {
   const { t } = useTheme();
+  const { topFeatures, loading: usageLoading } = useTopFeatures(5);
 
-  const allActions = [
-    { id: 'growth', label: "View Pipeline", icon: Zap, href: "GrowthPipeline", color: 'text-indigo-400 bg-indigo-500/10', app: 'growth' },
-    { id: 'learn', label: "Continue Learning", icon: Zap, href: "Learn", color: 'text-cyan-400 bg-cyan-500/10', app: 'learn' },
-    { id: 'sentinel', label: "Check Compliance", icon: Zap, href: "SentinelDashboard", color: 'text-[#86EFAC] bg-[#86EFAC]/10', app: 'sentinel' },
-    { id: 'actions', label: "View Actions", icon: ListTodo, href: "Actions", color: 'text-amber-400 bg-amber-500/10', app: null },
-  ];
+  const quickActions = useMemo(() => {
+    // If we have usage data, derive actions from top features
+    if (topFeatures && topFeatures.length >= 3) {
+      const actions = [];
+      for (const feature of topFeatures) {
+        const match = ALL_QUICK_ACTIONS.find(a => a.id === feature.feature_key);
+        if (match) {
+          // Check if app is enabled (or no app required)
+          if (!match.app || enabledApps.includes(match.app)) {
+            actions.push(match);
+          }
+        }
+        if (actions.length >= 4) break;
+      }
 
-  const quickActions = allActions.filter(a => !a.app || enabledApps.includes(a.app));
+      // If we got some from usage, return those
+      if (actions.length >= 2) return actions;
+    }
+
+    // Fallback to defaults
+    return DEFAULT_ACTIONS.filter(a => !a.app || enabledApps.includes(a.app));
+  }, [topFeatures, enabledApps]);
 
   return (
-    <GlassCard glow="amber" className="p-5 h-full" hover={false}>
+    <GlassCard glow="cyan" className="p-5 h-full" hover={false}>
       <h2 className={cn(
         'text-base font-semibold mb-4 flex items-center gap-2',
         t('text-zinc-900', 'text-white')
       )}>
-        <Zap className="w-5 h-5 text-amber-400" />
+        <Zap className="w-5 h-5 text-cyan-400" />
         Quick Actions
+        {topFeatures && topFeatures.length >= 3 && (
+          <span className="text-[10px] font-normal text-zinc-500 ml-1">personalized</span>
+        )}
       </h2>
       <div className="space-y-2">
         {quickActions.map((action, i) => (
           <motion.div
-            key={action.label}
+            key={action.id || action.label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08, duration: 0.3, ease: 'easeOut' }}

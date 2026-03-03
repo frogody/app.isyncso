@@ -9,7 +9,7 @@ import {
   Heart, ShoppingCart, Info, Layers, Ruler, Weight, MapPin, Save,
   LayoutGrid, Settings, History, FolderOpen, TrendingUp, Boxes,
   ChevronDown, MoreHorizontal, Eye, Percent, Calculator, Briefcase, ClipboardList, Plus,
-  Megaphone, Store
+  Megaphone, Store, Activity, TrendingDown, Minus as MinusIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +56,7 @@ import {
 import { supabase } from '@/api/supabaseClient';
 import { calculateDiffs, logProductActivity } from '@/lib/audit';
 import { ProductListingBuilder } from '@/components/products/listing';
+import { useProductHealth, useProductMargins, useComputeProductIntelligence } from '@/hooks/useProductIntelligence';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -88,6 +89,7 @@ const STATUS_COLORS = {
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid },
+  { id: 'health', label: 'Health & Margin', icon: Activity },
   { id: 'pricing', label: 'Pricing', icon: Euro },
   { id: 'inventory', label: 'Inventory', icon: Package, physicalOnly: true },
   { id: 'specs', label: 'Specifications', icon: Settings, physicalOnly: true },
@@ -2210,6 +2212,226 @@ function ActivitySectionWrapper({ product, details }) {
   );
 }
 
+// ============= PRODUCT HEALTH SECTION =============
+
+const HEALTH_LEVEL_CONFIG = {
+  thriving: { color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', label: 'Thriving' },
+  healthy: { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', label: 'Healthy' },
+  watch: { color: 'text-zinc-400', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20', label: 'Watch' },
+  at_risk: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'At Risk' },
+  critical: { color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20', label: 'Critical' },
+};
+
+const COMPONENT_BARS = [
+  { key: 'sales_velocity', label: 'Sales Velocity', weight: '25%', color: 'bg-cyan-400' },
+  { key: 'stock_health', label: 'Stock Health', weight: '25%', color: 'bg-blue-400' },
+  { key: 'margin_health', label: 'Margin Health', weight: '20%', color: 'bg-cyan-300' },
+  { key: 'listing_quality', label: 'Listing Quality', weight: '15%', color: 'bg-blue-300' },
+  { key: 'return_rate', label: 'Return Rate', weight: '15%', color: 'bg-cyan-200' },
+];
+
+function ProductHealthSection({ productId, companyId, productName, t }) {
+  const { health, loading: healthLoading, refresh: refreshHealth } = useProductHealth(productId, companyId);
+  const { margins, loading: marginLoading } = useProductMargins(productId, companyId);
+  const { compute, computing } = useComputeProductIntelligence(companyId);
+
+  const handleCompute = async () => {
+    await compute('compute_margins');
+    await compute('compute_health');
+    refreshHealth();
+  };
+
+  const cfg = health ? (HEALTH_LEVEL_CONFIG[health.health_level] || HEALTH_LEVEL_CONFIG.watch) : null;
+  const components = health?.components || {};
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className={cn('text-lg font-semibold flex items-center gap-2', t('text-zinc-900', 'text-white'))}>
+          <Activity className="w-5 h-5 text-cyan-400" />
+          Health & Margin Intelligence
+        </h3>
+        <button
+          onClick={handleCompute}
+          disabled={computing}
+          className={cn(
+            'flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors',
+            t('text-zinc-600 hover:text-zinc-900 bg-zinc-100 hover:bg-zinc-200', 'text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700'),
+            computing && 'opacity-50 cursor-not-allowed'
+          )}
+        >
+          {computing ? 'Computing...' : 'Refresh'}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Health Score Card */}
+        <div className={cn('rounded-2xl p-6 border', t('bg-white border-zinc-200', 'bg-zinc-900/60 border-zinc-800/60'))}>
+          <h4 className={cn('text-sm font-medium mb-4', t('text-zinc-600', 'text-zinc-400'))}>Health Score</h4>
+
+          {healthLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className={cn('h-6 rounded animate-pulse', t('bg-zinc-100', 'bg-zinc-800/50'))} />
+              ))}
+            </div>
+          ) : health ? (
+            <div className="space-y-4">
+              {/* Score ring */}
+              <div className="flex items-center gap-4">
+                <div className="relative w-20 h-20">
+                  <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="6" className="text-zinc-800" />
+                    <circle
+                      cx="40" cy="40" r="34" fill="none"
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                      className={cfg.color.replace('text-', 'stroke-')}
+                      strokeDasharray={`${(health.overall_score / 100) * 213.6} 213.6`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className={cn('text-lg font-bold', cfg.color)}>{health.overall_score}</span>
+                  </div>
+                </div>
+                <div>
+                  <span className={cn('text-sm font-semibold px-2 py-0.5 rounded-full border', cfg.bg, cfg.border, cfg.color)}>
+                    {cfg.label}
+                  </span>
+                  <div className="flex items-center gap-1 mt-1.5">
+                    {health.trend === 'improving' && <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />}
+                    {health.trend === 'declining' && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
+                    {health.trend === 'stable' && <MinusIcon className="w-3.5 h-3.5 text-zinc-500" />}
+                    <span className={cn('text-xs capitalize', t('text-zinc-500', 'text-zinc-400'))}>{health.trend}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Component bars */}
+              <div className="space-y-2">
+                {COMPONENT_BARS.map(bar => (
+                  <div key={bar.key}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className={t('text-zinc-500', 'text-zinc-400')}>
+                        {bar.label} <span className={t('text-zinc-400', 'text-zinc-600')}>({bar.weight})</span>
+                      </span>
+                      <span className={cn('font-medium', t('text-zinc-700', 'text-white'))}>{components[bar.key] || 0}</span>
+                    </div>
+                    <div className={cn('h-1.5 rounded-full overflow-hidden', t('bg-zinc-200', 'bg-zinc-800'))}>
+                      <div className={cn('h-full rounded-full transition-all', bar.color)} style={{ width: `${components[bar.key] || 0}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {health.computed_at && (
+                <p className={cn('text-[10px] text-right', t('text-zinc-400', 'text-zinc-600'))}>
+                  Updated {new Date(health.computed_at).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className={cn('text-center py-8', t('text-zinc-400', 'text-zinc-500'))}>
+              <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No health data yet</p>
+              <p className="text-xs opacity-70 mt-1">Click Refresh to compute</p>
+            </div>
+          )}
+        </div>
+
+        {/* Margin Card */}
+        <div className={cn('rounded-2xl p-6 border', t('bg-white border-zinc-200', 'bg-zinc-900/60 border-zinc-800/60'))}>
+          <h4 className={cn('text-sm font-medium mb-4', t('text-zinc-600', 'text-zinc-400'))}>Margin Analysis</h4>
+
+          {marginLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className={cn('h-6 rounded animate-pulse', t('bg-zinc-100', 'bg-zinc-800/50'))} />
+              ))}
+            </div>
+          ) : margins ? (
+            <div className="space-y-4">
+              {/* Key metrics */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className={cn('p-3 rounded-xl', t('bg-zinc-50', 'bg-zinc-800/40'))}>
+                  <p className={cn('text-[10px] uppercase tracking-wider', t('text-zinc-400', 'text-zinc-500'))}>Gross Margin</p>
+                  <p className={cn('text-xl font-bold', Number(margins.gross_margin_pct) >= 0 ? 'text-cyan-400' : 'text-red-400')}>
+                    {Number(margins.gross_margin_pct).toFixed(1)}%
+                  </p>
+                </div>
+                <div className={cn('p-3 rounded-xl', t('bg-zinc-50', 'bg-zinc-800/40'))}>
+                  <p className={cn('text-[10px] uppercase tracking-wider', t('text-zinc-400', 'text-zinc-500'))}>Gross Profit</p>
+                  <p className={cn('text-xl font-bold', t('text-zinc-900', 'text-white'))}>
+                    {'\u20AC'}{Number(margins.total_gross_profit || 0).toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Cost vs Price */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className={t('text-zinc-500', 'text-zinc-400')}>Average Cost</span>
+                  <span className={cn('font-medium', t('text-zinc-700', 'text-white'))}>
+                    {'\u20AC'}{Number(margins.average_cost || 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={t('text-zinc-500', 'text-zinc-400')}>Avg Selling Price</span>
+                  <span className={cn('font-medium', t('text-zinc-700', 'text-white'))}>
+                    {'\u20AC'}{Number(margins.avg_selling_price || 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={t('text-zinc-500', 'text-zinc-400')}>Total Revenue</span>
+                  <span className={cn('font-medium', t('text-zinc-700', 'text-white'))}>
+                    {'\u20AC'}{Number(margins.total_revenue || 0).toLocaleString('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={t('text-zinc-500', 'text-zinc-400')}>Units Sold</span>
+                  <span className={cn('font-medium', t('text-zinc-700', 'text-white'))}>{margins.total_units_sold || 0}</span>
+                </div>
+              </div>
+
+              {/* Trend */}
+              <div className={cn('flex items-center gap-2 p-2 rounded-lg', t('bg-zinc-50', 'bg-zinc-800/40'))}>
+                {margins.margin_trend === 'improving' && <TrendingUp className="w-4 h-4 text-cyan-400" />}
+                {margins.margin_trend === 'declining' && <TrendingDown className="w-4 h-4 text-red-400" />}
+                {margins.margin_trend === 'stable' && <MinusIcon className="w-4 h-4 text-zinc-500" />}
+                <span className={cn('text-xs capitalize', t('text-zinc-600', 'text-zinc-400'))}>
+                  Margin trend: {margins.margin_trend || 'stable'}
+                </span>
+              </div>
+
+              {margins.is_anomaly && (
+                <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <p className="text-xs text-red-400 font-medium flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {margins.anomaly_reason}
+                  </p>
+                </div>
+              )}
+
+              {margins.computed_at && (
+                <p className={cn('text-[10px] text-right', t('text-zinc-400', 'text-zinc-600'))}>
+                  Period: {new Date(margins.period_start).toLocaleDateString()} - {new Date(margins.period_end).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className={cn('text-center py-8', t('text-zinc-400', 'text-zinc-500'))}>
+              <Percent className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No margin data yet</p>
+              <p className="text-xs opacity-70 mt-1">Click Refresh to compute</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ============= MAIN COMPONENT =============
 
 export default function ProductDetail() {
@@ -2637,6 +2859,15 @@ export default function ProductDetail() {
                 onDetailsUpdate={handleDetailsUpdate}
                 saving={saving}
                 statsGridRef={statsGridRef}
+              />
+            )}
+
+            {activeSection === 'health' && product && (
+              <ProductHealthSection
+                productId={product.id}
+                companyId={user?.company_id}
+                productName={product.name}
+                t={t}
               />
             )}
 

@@ -497,6 +497,127 @@ export async function getLowStock(
 }
 
 // ============================================================================
+// Get Product Health
+// ============================================================================
+
+export async function getProductHealth(
+  ctx: ActionContext,
+  data: { product_name?: string; product_id?: string } = {}
+): Promise<ActionResult> {
+  try {
+    if (data.product_name || data.product_id) {
+      // Single product health
+      let productId = data.product_id;
+      let productName = data.product_name;
+
+      if (!productId && data.product_name) {
+        const { data: products } = await ctx.supabase
+          .from('products')
+          .select('id, name')
+          .eq('company_id', ctx.companyId)
+          .ilike('name', `%${data.product_name}%`)
+          .limit(1);
+
+        if (products && products.length > 0) {
+          productId = products[0].id;
+          productName = products[0].name;
+        }
+      }
+
+      if (!productId) {
+        return errorResult('Product not found.', 'Not found');
+      }
+
+      const { data: health, error } = await ctx.supabase
+        .from('product_health_scores')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('company_id', ctx.companyId)
+        .single();
+
+      if (error || !health) {
+        return successResult(`No health score found for "${productName}". Run product intelligence to compute scores.`, null);
+      }
+
+      const components = health.components || {};
+      return successResult(
+        `**${productName}** — Health: ${health.overall_score}/100 (${health.health_level})\n` +
+        `Trend: ${health.trend}\n` +
+        `Sales Velocity: ${components.sales_velocity || 0} | Stock: ${components.stock_health || 0} | Margin: ${components.margin_health || 0} | Listing: ${components.listing_quality || 0}`,
+        health,
+        '/products'
+      );
+    }
+
+    // All products health overview
+    const { data: scores, error } = await ctx.supabase
+      .from('product_health_scores')
+      .select('overall_score, health_level, trend, products:product_id (name)')
+      .eq('company_id', ctx.companyId)
+      .order('overall_score', { ascending: true });
+
+    if (error) return errorResult(`Failed to fetch health scores: ${error.message}`, error.message);
+    if (!scores || scores.length === 0) {
+      return successResult('No product health scores computed yet. Run product intelligence first.', []);
+    }
+
+    const byLevel: Record<string, number> = {};
+    scores.forEach((s: any) => { byLevel[s.health_level] = (byLevel[s.health_level] || 0) + 1; });
+    const avg = Math.round(scores.reduce((sum: number, s: any) => sum + s.overall_score, 0) / scores.length);
+
+    const summary = Object.entries(byLevel).map(([k, v]) => `${k}: ${v}`).join(', ');
+
+    return successResult(
+      `${scores.length} products scored. Average: ${avg}/100.\n${summary}`,
+      scores,
+      '/products'
+    );
+  } catch (err) {
+    return errorResult(`Exception fetching product health: ${String(err)}`, String(err));
+  }
+}
+
+// ============================================================================
+// Get Margin Alerts
+// ============================================================================
+
+export async function getMarginAlerts(
+  ctx: ActionContext,
+  data: { acknowledged?: boolean } = {}
+): Promise<ActionResult> {
+  try {
+    let query = ctx.supabase
+      .from('margin_alerts')
+      .select('*, products:product_id (name)')
+      .eq('company_id', ctx.companyId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (data.acknowledged === undefined || data.acknowledged === false) {
+      query = query.eq('acknowledged', false);
+    }
+
+    const { data: alerts, error } = await query;
+
+    if (error) return errorResult(`Failed to fetch alerts: ${error.message}`, error.message);
+    if (!alerts || alerts.length === 0) {
+      return successResult('No active margin alerts. All products have healthy margins.', []);
+    }
+
+    const critical = alerts.filter((a: any) => a.severity === 'critical').length;
+    const high = alerts.filter((a: any) => a.severity === 'high').length;
+
+    return successResult(
+      `${alerts.length} margin alert${alerts.length > 1 ? 's' : ''}.${critical > 0 ? ` ${critical} critical.` : ''}${high > 0 ? ` ${high} high.` : ''}`,
+      alerts,
+      '/products'
+    );
+  } catch (err) {
+    return errorResult(`Exception fetching margin alerts: ${String(err)}`, String(err));
+  }
+}
+
+// ============================================================================
 // Products Action Router
 // ============================================================================
 
@@ -518,6 +639,10 @@ export async function executeProductsAction(
       return listProducts(ctx, data);
     case 'get_low_stock':
       return getLowStock(ctx, data);
+    case 'get_product_health':
+      return getProductHealth(ctx, data);
+    case 'get_margin_alerts':
+      return getMarginAlerts(ctx, data);
     default:
       return errorResult(`Unknown products action: ${action}`, 'Unknown action');
   }

@@ -490,6 +490,165 @@ async function processLinkedInEvent(
 }
 
 /**
+ * Auto-enrich semantic entities from email data (Phase 4 - A-5)
+ * Extracts people + organizations from email headers using regex (no LLM)
+ * Upserts into semantic_entities and tries to link against prospects
+ */
+async function processEmailAutoEnrich(
+  payload: WebhookPayload,
+  supabase: ReturnType<typeof createClient>
+): Promise<void> {
+  const { data, user_id } = payload;
+  if (!user_id) return;
+
+  const emailData = data as {
+    from?: string; sender?: string;
+    to?: string; cc?: string;
+    subject?: string;
+  };
+
+  // Parse email addresses from From, To, CC headers
+  // Format: "John Doe <john@example.com>" or just "john@example.com"
+  const emailRegex = /(?:"?([^"<]*)"?\s*)?<?([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})>?/g;
+
+  const extractedPeople: Array<{ name: string; email: string; domain: string }> = [];
+
+  const headers = [
+    emailData.from || emailData.sender || '',
+    emailData.to || '',
+    emailData.cc || '',
+  ].join(', ');
+
+  let match;
+  while ((match = emailRegex.exec(headers)) !== null) {
+    const rawName = (match[1] || '').trim();
+    const email = match[2].toLowerCase().trim();
+    const domain = email.split('@')[1] || '';
+
+    // Skip noreply, system, and the user's own emails
+    if (/noreply|no-reply|mailer-daemon|postmaster|notifications?@/i.test(email)) continue;
+
+    const name = rawName || email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    extractedPeople.push({ name, email, domain });
+  }
+
+  if (extractedPeople.length === 0) return;
+
+  // Get user's company_id
+  const { data: userData } = await supabase
+    .from('users')
+    .select('company_id')
+    .eq('id', user_id)
+    .maybeSingle();
+  const companyId = userData?.company_id || null;
+
+  for (const person of extractedPeople) {
+    const entityId = `composio_email:${person.email}`;
+
+    // Upsert person entity
+    try {
+      await supabase
+        .from('semantic_entities')
+        .upsert({
+          user_id,
+          company_id: companyId,
+          entity_id: entityId,
+          name: person.name,
+          type: 'person',
+          confidence: 0.7,
+          first_seen: new Date().toISOString(),
+          last_seen: new Date().toISOString(),
+          occurrence_count: 1,
+          metadata: {
+            source: 'composio_email',
+            email: person.email,
+            domain: person.domain,
+          },
+        }, {
+          onConflict: 'user_id,entity_id',
+        });
+
+      // Update occurrence_count and last_seen for existing entities
+      await supabase
+        .from('semantic_entities')
+        .update({
+          last_seen: new Date().toISOString(),
+          occurrence_count: supabase.rpc ? 1 : 1, // Will be handled by trigger or manual
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user_id)
+        .eq('entity_id', entityId);
+    } catch (e) {
+      console.error(`[composio-webhooks] Auto-enrich entity upsert failed for ${person.email}:`, e);
+    }
+
+    // Upsert organization entity from domain
+    if (person.domain && !/gmail|yahoo|hotmail|outlook|live|icloud|protonmail/i.test(person.domain)) {
+      const orgName = person.domain.split('.')[0].replace(/\b\w/g, c => c.toUpperCase());
+      const orgEntityId = `composio_email_org:${person.domain}`;
+
+      try {
+        await supabase
+          .from('semantic_entities')
+          .upsert({
+            user_id,
+            company_id: companyId,
+            entity_id: orgEntityId,
+            name: orgName,
+            type: 'organization',
+            confidence: 0.5,
+            first_seen: new Date().toISOString(),
+            last_seen: new Date().toISOString(),
+            occurrence_count: 1,
+            metadata: {
+              source: 'composio_email',
+              domain: person.domain,
+            },
+          }, {
+            onConflict: 'user_id,entity_id',
+          });
+      } catch (e) {
+        console.error(`[composio-webhooks] Auto-enrich org upsert failed for ${person.domain}:`, e);
+      }
+    }
+
+    // Try to match against prospects by email
+    if (companyId) {
+      try {
+        const { data: matchedProspects } = await supabase
+          .from('prospects')
+          .select('id')
+          .eq('company_id', companyId)
+          .ilike('email', person.email)
+          .limit(1);
+
+        if (matchedProspects && matchedProspects.length > 0) {
+          await supabase
+            .from('entity_business_links')
+            .upsert({
+              semantic_entity_id: entityId,
+              business_type: 'prospect',
+              business_record_id: matchedProspects[0].id,
+              match_confidence: 0.9,
+              match_method: 'exact',
+              user_id,
+              company_id: companyId,
+            }, {
+              onConflict: 'semantic_entity_id,business_type,business_record_id',
+            });
+          console.log(`[composio-webhooks] Linked email entity ${person.email} to prospect ${matchedProspects[0].id}`);
+        }
+      } catch (e) {
+        console.error(`[composio-webhooks] Prospect matching failed for ${person.email}:`, e);
+      }
+    }
+  }
+
+  console.log(`[composio-webhooks] Auto-enriched ${extractedPeople.length} entities from email`);
+}
+
+/**
  * Route webhook to appropriate processor
  */
 async function processWebhook(
@@ -502,6 +661,15 @@ async function processWebhook(
   if (triggerSlug.startsWith("GMAIL_")) {
     // Check for talent outreach reply detection FIRST
     const gmailResult = await processGmailEvent(payload, supabase);
+
+    // Auto-enrich semantic entities from email (Phase 4 - A-5)
+    if (triggerSlug === "GMAIL_NEW_MESSAGE_RECEIVED" || triggerSlug === "GMAIL_NEW_GMAIL_MESSAGE" || triggerSlug === "OUTLOOK_MESSAGE_TRIGGER") {
+      try {
+        await processEmailAutoEnrich(payload, supabase);
+      } catch (e) {
+        console.error("[composio-webhooks] Email auto-enrich failed (non-blocking):", e);
+      }
+    }
 
     // After processing Gmail event, also check for talent outreach replies
     if (triggerSlug === "GMAIL_NEW_MESSAGE_RECEIVED" || triggerSlug === "GMAIL_NEW_GMAIL_MESSAGE") {
@@ -555,6 +723,14 @@ async function processWebhook(
     return processGitHubEvent(payload, supabase);
   } else if (triggerSlug.startsWith("HUBSPOT_")) {
     return processHubSpotEvent(payload, supabase);
+  } else if (triggerSlug.startsWith("OUTLOOK_")) {
+    // Outlook triggers — auto-enrich entities
+    try {
+      await processEmailAutoEnrich(payload, supabase);
+    } catch (e) {
+      console.error("[composio-webhooks] Outlook auto-enrich failed:", e);
+    }
+    return { action: "outlook_auto_enrich", success: true, data: { trigger: triggerSlug } };
   } else {
     return processGenericEvent(payload, supabase);
   }

@@ -209,6 +209,8 @@ const PRODUCT_ACTIONS = [
   'update_inventory',
   'list_products',
   'get_low_stock',
+  'get_product_health',
+  'get_margin_alerts',
 ];
 
 const GROWTH_ACTIONS = [
@@ -1386,17 +1388,42 @@ async function getSemanticContextBridge(
       sections['greeting'] = s;
     }
 
+    // ── Learned Communication Preferences (from feedback) ─────────────
+    try {
+      const { data: prefs } = await supabaseClient
+        .from('sync_learned_preferences')
+        .select('preference_type, preference_value, confidence')
+        .eq('user_id', userId)
+        .gte('confidence', 0.6);
+
+      if (prefs && prefs.length > 0) {
+        const s: string[] = [];
+        s.push('### Communication Preferences (learned from your feedback)');
+        for (const p of prefs) {
+          const val = typeof p.preference_value === 'object'
+            ? JSON.stringify(p.preference_value)
+            : String(p.preference_value);
+          s.push(`- ${p.preference_type}: ${val} (${Math.round(p.confidence * 100)}% confidence)`);
+        }
+        s.push('');
+        sections['preferences'] = s;
+      }
+    } catch (prefErr) {
+      // Non-critical — skip if table doesn't exist yet
+      console.warn('[sync] Learned preferences fetch skipped:', prefErr.message);
+    }
+
     // ── Assemble sections in intent-weighted order ────────────────────
     // Default order
-    const defaultOrder = ['threads', 'entities', 'activity', 'intent', 'intent_guidance', 'greeting', 'behavioral', 'trust'];
+    const defaultOrder = ['threads', 'entities', 'activity', 'intent', 'intent_guidance', 'greeting', 'behavioral', 'trust', 'preferences'];
 
     // Intent-specific reorderings: put the most relevant sections first
     const orderByIntent: Record<string, string[]> = {
-      SHIP: ['threads', 'activity', 'intent', 'intent_guidance', 'greeting', 'entities', 'behavioral', 'trust'],
-      MANAGE: ['entities', 'intent', 'intent_guidance', 'greeting', 'threads', 'activity', 'trust', 'behavioral'],
-      PLAN: ['threads', 'activity', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust'],
-      MAINTAIN: ['activity', 'threads', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust'],
-      RESPOND: ['entities', 'threads', 'intent', 'intent_guidance', 'greeting', 'activity', 'trust', 'behavioral'],
+      SHIP: ['threads', 'activity', 'intent', 'intent_guidance', 'greeting', 'entities', 'behavioral', 'trust', 'preferences'],
+      MANAGE: ['entities', 'intent', 'intent_guidance', 'greeting', 'threads', 'activity', 'trust', 'behavioral', 'preferences'],
+      PLAN: ['threads', 'activity', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust', 'preferences'],
+      MAINTAIN: ['activity', 'threads', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust', 'preferences'],
+      RESPOND: ['entities', 'threads', 'intent', 'intent_guidance', 'greeting', 'activity', 'trust', 'behavioral', 'preferences'],
     };
 
     const sectionOrder = orderByIntent[intentType] || defaultOrder;
@@ -1805,13 +1832,15 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - **get_trial_balance**: View trial balance report (all account debits & credits)
 - **get_balance_sheet**: View balance sheet (Assets = Liabilities + Equity)
 
-### PRODUCTS (6 actions)
+### PRODUCTS (8 actions)
 - **search_products**: Search products by name
 - **create_product**: Add new product (physical/digital)
 - **update_product**: Update product details/pricing
 - **update_inventory**: Update stock (set/add/subtract quantity)
 - **list_products**: List all products with filters
 - **get_low_stock**: Get products below stock threshold
+- **get_product_health**: Get product health scores (overall or specific product). Data: {"product_name": "optional"}
+- **get_margin_alerts**: Get active margin alerts. Data: {"acknowledged": false}
 
 ### GROWTH/CRM (9 actions)
 - **create_prospect**: Add new prospect/lead
@@ -1962,6 +1991,9 @@ You: Let me check!
 [ACTION]{"action": "search_products", "data": {"query": "OneBlade"}}[/ACTION]
 [ACTION]{"action": "update_inventory", "data": {"name": "OneBlade", "quantity": 100, "adjustment_type": "set"}}[/ACTION]
 [ACTION]{"action": "get_low_stock", "data": {"threshold": 10}}[/ACTION]
+[ACTION]{"action": "get_product_health", "data": {}}[/ACTION]
+[ACTION]{"action": "get_product_health", "data": {"product_name": "OneBlade"}}[/ACTION]
+[ACTION]{"action": "get_margin_alerts", "data": {}}[/ACTION]
 
 ### Growth/CRM
 [ACTION]{"action": "create_prospect", "data": {"first_name": "Jane", "last_name": "Smith", "email": "jane@company.com", "company": "Acme Inc", "deal_value": 5000}}[/ACTION]

@@ -8,6 +8,7 @@ import {
   Music, Video, Mail, Terminal, Folder, Settings, Plus, Sparkles, BookOpen, ArrowRight,
   GitBranch, Database, Layers, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownRight, Minus
 } from 'lucide-react';
+import SchedulingRecommendationsWidget from '@/components/semantic/SchedulingRecommendationsWidget';
 import {
   PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
@@ -1476,6 +1477,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
             { key: 'overview', label: 'Overview', icon: BarChart3 },
             { key: 'deep-context', label: 'Deep Context', icon: Brain },
             { key: 'intelligence', label: 'Intelligence', icon: Layers },
+            { key: 'scheduling', label: 'Scheduling', icon: Calendar },
           ].map(({ key, label, icon: TabIcon }) => (
             <button
               key={key}
@@ -1500,6 +1502,11 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
         {/* Intelligence View */}
         {activeView === 'intelligence' && user && (
           <IntelligenceTab userId={user.id} />
+        )}
+
+        {/* Scheduling View */}
+        {activeView === 'scheduling' && (
+          <SchedulingRecommendationsWidget />
         )}
 
         {/* Overview Content */}

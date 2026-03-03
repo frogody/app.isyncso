@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { ConnectionManager } from '@/components/integrations/ConnectionManager';
+import { TriggerManager } from '@/components/integrations/TriggerManager';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { PermissionGuard } from '@/components/guards';
 import { Plug } from 'lucide-react';
@@ -12,7 +13,7 @@ import { Plug } from 'lucide-react';
 export default function ComposioIntegrations() {
   return (
     <PermissionGuard permission="integrations.view" showMessage>
-      <div className="container mx-auto px-4 lg:px-6 py-4 max-w-7xl space-y-4">
+      <div className="container mx-auto px-4 lg:px-6 py-4 max-w-7xl space-y-6">
         <PageHeader
           title="Third-Party Integrations"
           subtitle="Connect your favorite tools to SYNC for seamless automation"
@@ -22,6 +23,11 @@ export default function ComposioIntegrations() {
 
         <div>
           <ConnectionManager />
+        </div>
+
+        {/* Auto-Enrichment Triggers & Event Log */}
+        <div className="max-w-2xl">
+          <TriggerManager />
         </div>
       </div>
     </PermissionGuard>

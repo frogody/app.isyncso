@@ -170,6 +170,9 @@ import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { SemanticContextProvider } from "@/contexts/SemanticContextProvider";
 import UniversalContextBar from "@/components/semantic/UniversalContextBar";
 
+// Import Feature Usage tracking (Phase 4 - A-6)
+import { useFeatureUsage, useTopFeatures } from "@/hooks/useFeatureUsage";
+
 // SYNC Avatar sidebar button — single-click = chat, double-click = voice mode, knock = click to answer
 function SyncAvatarSidebarButton({ onSingleClick, voiceHook, knockHook }) {
   const clickTimer = React.useRef(null);
@@ -975,6 +978,9 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     });
   }, [hasPermission, permLoading, isAdmin]);
 
+  // Feature usage for adaptive sidebar ordering (Phase 4 - A-6)
+  const { topFeatures } = useTopFeatures(20);
+
   // Memoize engine items based on company licenses + workspace settings
   // If licensing is active (effectiveApps non-empty), respect license restrictions
   // If no licensing (effectiveApps empty), fall back to workspace-enabled apps
@@ -990,16 +996,44 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       appsToShow = appsToShow.filter(appId => !PLATFORM_OWNER_ONLY_APPS.includes(appId));
     }
 
-    return appsToShow
+    const items = appsToShow
       .map(appId => {
         const config = ENGINE_ITEMS_CONFIG[appId];
         if (!config) return null;
-        // effectiveApps = [] → isLicensed = false (no licenses = locked)
         const isLicensed = effectiveApps.includes(appId);
         return { ...config, isLicensed };
       })
       .filter(Boolean);
-  }, [effectiveApps, enabledApps, teamLoading, isPlatformOwner]);
+
+    // Adaptive sorting: if user has enough usage data, sort by frequency
+    if (topFeatures && topFeatures.length >= 5) {
+      // Map engine IDs to feature keys
+      const engineToFeature = {
+        finance: 'finance.overview',
+        growth: 'growth.overview',
+        sentinel: 'sentinel',
+        learn: 'learn',
+        talent: 'talent',
+        sync: 'sync.agent',
+        create: 'create',
+        reach: 'reach',
+        raise: 'raise',
+      };
+
+      const usageMap = {};
+      for (const f of topFeatures) {
+        usageMap[f.feature_key] = f.usage_count;
+      }
+
+      items.sort((a, b) => {
+        const aUsage = usageMap[engineToFeature[a.id]] || 0;
+        const bUsage = usageMap[engineToFeature[b.id]] || 0;
+        return bUsage - aUsage; // Higher usage first
+      });
+    }
+
+    return items;
+  }, [effectiveApps, enabledApps, teamLoading, isPlatformOwner, topFeatures]);
 
   const handleLogin = async () => {
     db.auth.redirectToLogin(window.location.href);
@@ -1459,6 +1493,32 @@ export default function Layout({ children, currentPageName }) {
     loadInboxUnread();
     return () => { if (channelSub) supabase.removeChannel(channelSub); };
   }, []);
+
+  // Feature usage tracking (Phase 4 - A-6)
+  const { trackFeature } = useFeatureUsage();
+  useEffect(() => {
+    const pathname = location.pathname.toLowerCase();
+    // Map pathname to feature key
+    const featureMap = {
+      '/dashboard': 'dashboard',
+      '/crm': 'growth.crm',
+      '/tasks': 'tasks',
+      '/products': 'products',
+      '/inbox': 'inbox',
+      '/finance': 'finance.overview',
+      '/growth': 'growth.overview',
+      '/sentinel': 'sentinel',
+      '/learn': 'learn',
+      '/talent': 'talent',
+      '/sync': 'sync.agent',
+      '/settings': 'settings',
+      '/storedashboard': 'b2b.store',
+    };
+    const match = Object.entries(featureMap).find(([prefix]) => pathname.startsWith(prefix));
+    if (match) {
+      trackFeature(match[1]);
+    }
+  }, [location.pathname, trackFeature]);
 
   // SYNC floating chat and voice mode state
   const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false);

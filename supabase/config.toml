@@ -1,3 +1,9 @@
+[functions.scheduling-recommendations]
+verify_jwt = false
+
+[functions.sync-learn-preferences]
+verify_jwt = false
+
 [functions.generate-business-pulse]
 verify_jwt = false
 
@@ -332,6 +338,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.tracking-checkpoint-manual]
+verify_jwt = false
+
+[functions.product-intelligence]
 verify_jwt = false
 
 [functions.product-feed-sync]

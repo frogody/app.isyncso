@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon, Mic, MessageSquare, Zap } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon, Mic, MessageSquare, Zap, ThumbsUp, ThumbsDown, Copy, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SyncVoiceMode from '@/components/sync/SyncVoiceMode';
 import { useTheme } from '@/contexts/GlobalThemeContext';
@@ -1535,10 +1535,11 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
 // CHAT BUBBLE COMPONENT
 // ============================================================================
 
-function Bubble({ role, text, ts, index, document, highlightBorders }) {
+function Bubble({ role, text, ts, index, document, highlightBorders, onFeedback, userMessage }) {
   const { syt } = useTheme();
   const bubbleRef = useRef(null);
   const isUser = role === 'user';
+  const [feedbackGiven, setFeedbackGiven] = useState(null); // 'thumbs_up' | 'thumbs_down' | 'copied'
 
   // Parse text for images (only for assistant messages)
   const contentParts = useMemo(() => {
@@ -1623,6 +1624,60 @@ function Bubble({ role, text, ts, index, document, highlightBorders }) {
               ))}
             </div>
             {document && <DocumentCard url={document.url} title={document.title} />}
+            {/* Feedback buttons */}
+            {onFeedback && (
+              <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-white/[0.04]">
+                <button
+                  onClick={() => {
+                    if (feedbackGiven === 'thumbs_up') return;
+                    setFeedbackGiven('thumbs_up');
+                    onFeedback('thumbs_up', text, userMessage);
+                  }}
+                  className={cn(
+                    'p-1 rounded-md transition-all',
+                    feedbackGiven === 'thumbs_up'
+                      ? 'text-cyan-400 bg-cyan-500/10'
+                      : syt('text-slate-400 hover:text-slate-600 hover:bg-slate-100', 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.04]')
+                  )}
+                  title="Helpful"
+                >
+                  <ThumbsUp className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (feedbackGiven === 'thumbs_down') return;
+                    setFeedbackGiven('thumbs_down');
+                    onFeedback('thumbs_down', text, userMessage);
+                  }}
+                  className={cn(
+                    'p-1 rounded-md transition-all',
+                    feedbackGiven === 'thumbs_down'
+                      ? 'text-red-400 bg-red-500/10'
+                      : syt('text-slate-400 hover:text-slate-600 hover:bg-slate-100', 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.04]')
+                  )}
+                  title="Not helpful"
+                >
+                  <ThumbsDown className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(text);
+                    setFeedbackGiven('copied');
+                    onFeedback('copied', text, userMessage);
+                    setTimeout(() => setFeedbackGiven(null), 2000);
+                  }}
+                  className={cn(
+                    'p-1 rounded-md transition-all ml-auto',
+                    feedbackGiven === 'copied'
+                      ? 'text-cyan-400'
+                      : syt('text-slate-400 hover:text-slate-600 hover:bg-slate-100', 'text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.04]')
+                  )}
+                  title="Copy response"
+                >
+                  {feedbackGiven === 'copied' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -1958,6 +2013,25 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
 
   const moodLabel = mood === 'speaking' ? 'Active' : mood === 'thinking' ? 'Thinking' : 'Idle';
 
+  // Feedback handler for SYNC response messages
+  const handleFeedback = useCallback(async (feedbackType, responseContent, userMessageContent) => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      await supabase.from('sync_response_feedback').insert({
+        user_id: authUser.id,
+        company_id: user?.company_id || null,
+        session_id: sessionId,
+        message_content: userMessageContent || null,
+        response_content: responseContent?.slice(0, 2000) || null,
+        feedback_type: feedbackType,
+      });
+    } catch (err) {
+      console.warn('[SyncAgent] Feedback recording failed:', err.message);
+    }
+  }, [user?.company_id, sessionId]);
+
   // ── Main content grid (shared between embedded + standalone) ──
   const mainContent = (
         <div className="flex-1 min-h-0 grid lg:grid-cols-3 gap-4">
@@ -2063,9 +2137,25 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {messages.map((m, idx) => (
-                    <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} highlightBorders={highlightBorders} />
-                  ))}
+                  {messages.map((m, idx) => {
+                    // Find preceding user message for context
+                    const prevUserMsg = m.role === 'assistant'
+                      ? messages.slice(0, idx).reverse().find(pm => pm.role === 'user')?.text
+                      : null;
+                    return (
+                      <Bubble
+                        key={idx}
+                        role={m.role}
+                        text={m.text}
+                        ts={m.ts}
+                        index={idx}
+                        document={m.document}
+                        highlightBorders={highlightBorders}
+                        onFeedback={m.role === 'assistant' ? handleFeedback : undefined}
+                        userMessage={prevUserMsg}
+                      />
+                    );
+                  })}
 
                   {isSending && (
                     <div className="flex items-end gap-2.5">
