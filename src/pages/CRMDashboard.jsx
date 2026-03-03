@@ -13,6 +13,7 @@ import {
   MapPin, Truck, Handshake, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ClientHealthBadge from "@/components/crm/ClientHealthBadge";
 
 const PIPELINE_TYPES = ['lead', 'prospect', 'target', 'contact'];
 const ALWAYS_COMPANY_TYPES = ['company', 'supplier'];
@@ -78,6 +79,7 @@ export default function CRMDashboard() {
   const { crt } = useTheme();
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState([]);
+  const [atRiskClients, setAtRiskClients] = useState([]);
 
   useEffect(() => {
     document.title = "CRM Dashboard | iSyncSO";
@@ -106,6 +108,28 @@ export default function CRMDashboard() {
             company_name: p.company,
           }));
           setContacts(mapped);
+        }
+        // Fetch at-risk clients from health scores
+        const { data: healthData } = await supabase
+          .from("client_health_scores")
+          .select("prospect_id, overall_score, risk_level, trend, components")
+          .eq("company_id", user.company_id)
+          .in("risk_level", ["at_risk", "critical"])
+          .order("overall_score", { ascending: true })
+          .limit(5);
+
+        if (healthData?.length) {
+          const prospectIds = healthData.map(h => h.prospect_id);
+          const { data: prospects } = await supabase
+            .from("prospects")
+            .select("id, first_name, last_name, company, stage")
+            .in("id", prospectIds);
+
+          const merged = healthData.map(h => {
+            const p = (prospects || []).find(pr => pr.id === h.prospect_id);
+            return { ...h, ...(p || {}), name: p ? `${p.first_name || ''} ${p.last_name || ''}`.trim() : 'Unknown' };
+          });
+          setAtRiskClients(merged);
         }
       } catch (err) {
         console.error("CRM Dashboard fetch error:", err);
@@ -391,6 +415,39 @@ export default function CRMDashboard() {
             </div>
           </div>
         </div>
+
+        {/* At-Risk Clients */}
+        {atRiskClients.length > 0 && (
+          <div className={`rounded-xl p-5 ${crt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-sm font-semibold ${crt("text-slate-900", "text-white")} flex items-center gap-2`}>
+                <Activity className="w-4 h-4 text-red-400" />
+                At-Risk Clients
+              </h2>
+              <span className="text-xs text-red-400 font-medium">{atRiskClients.length} need attention</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {atRiskClients.map(client => (
+                <button
+                  key={client.prospect_id}
+                  onClick={() => navigate(createPageUrl("CRMContactProfile") + `?id=${client.prospect_id}`)}
+                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors text-left ${crt("hover:bg-slate-50", "hover:bg-zinc-800/50")}`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${
+                    client.risk_level === 'critical' ? 'bg-red-600/20 text-red-400' : 'bg-orange-600/20 text-orange-400'
+                  }`}>
+                    {(client.name || "?")[0]?.toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate ${crt("text-slate-900", "text-white")}`}>{client.name}</p>
+                    <p className={`text-xs truncate ${crt("text-slate-500", "text-zinc-500")}`}>{client.company || client.stage}</p>
+                  </div>
+                  <ClientHealthBadge prospectId={client.prospect_id} compact />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Follow-ups */}
         {upcomingFollowUps.length > 0 && (

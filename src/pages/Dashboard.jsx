@@ -6,6 +6,7 @@ import { useUser, useTeamAccess } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
 import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart, ShoppingCart, ClipboardList } from "lucide-react";
 import TaskLog from "@/components/tasks/TaskLog";
+import BusinessPulse from "@/components/pulse/BusinessPulse";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -726,6 +727,11 @@ export default function Dashboard() {
               Team Dashboard
             </button>
           </div>
+        )}
+
+        {/* Business Pulse — Cross-module intelligence brief */}
+        {viewMode === 'personal' && (
+          <BusinessPulse compact />
         )}
 
         {/* Team Dashboard View */}

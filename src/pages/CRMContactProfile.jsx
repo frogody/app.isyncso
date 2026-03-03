@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { fullEnrichFromLinkedIn, fullEnrichFromEmail } from '@/lib/explorium-api';
+import ClientHealthBadge, { ClientHealthDetail } from '@/components/crm/ClientHealthBadge';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { CRMPageTransition } from '@/components/crm/ui';
 import {
@@ -68,6 +69,7 @@ import {
   Share2,
   Sun,
   Moon,
+  Heart,
 } from 'lucide-react';
 
 // Animation variants
@@ -684,6 +686,7 @@ export default function CRMContactProfile() {
                         Public
                       </Badge>
                     )}
+                    <ClientHealthBadge prospectId={contact.id} compact />
                   </div>
                 </div>
               </div>
@@ -920,6 +923,13 @@ export default function CRMContactProfile() {
 
                 {/* Sidebar */}
                 <div className="space-y-4">
+                  {/* Client Health Score */}
+                  {contact.id && (
+                    <SectionCard icon={Heart} title="Client Health" crt={crt}>
+                      <ClientHealthDetail prospectId={contact.id} />
+                    </SectionCard>
+                  )}
+
                   {/* Enrichment Status with Quality Score */}
                   <SectionCard icon={Sparkles} title="Enrichment Data" crt={crt}>
                     {/* Quality Score */}

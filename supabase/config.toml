@@ -1,3 +1,15 @@
+[functions.generate-business-pulse]
+verify_jwt = false
+
+[functions.semantic-context-api]
+verify_jwt = false
+
+[functions.semantic-entity-resolver]
+verify_jwt = false
+
+[functions.semantic-crm-logger]
+verify_jwt = false
+
 [functions.analyze-action]
 verify_jwt = false
 
@@ -383,4 +395,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-user-profile]
+verify_jwt = false
+
+[functions.compute-client-health]
 verify_jwt = false

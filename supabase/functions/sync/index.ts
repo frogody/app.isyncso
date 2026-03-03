@@ -1046,6 +1046,267 @@ async function getDesktopDeepContext(
 }
 
 // ============================================================================
+// Semantic Context Bridge (Phase 1.2 / I-2)
+// Aggregates semantic pipeline data into an intelligence context block
+// that transforms SYNC from command executor to intelligence partner.
+// ============================================================================
+
+interface SemanticBridgeContext {
+  threads: string;
+  entities: string;
+  activity: string;
+  intent: string;
+  behavioral: string;
+  trust: string;
+}
+
+/**
+ * Fetch and format the user's current semantic state for injection into
+ * the system prompt. Queries semantic pipeline tables directly (no extra
+ * HTTP hop). Returns a formatted prompt section or empty string.
+ */
+async function getSemanticContextBridge(
+  supabaseClient: any,
+  userId: string,
+  companyId: string | null
+): Promise<string> {
+  try {
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+
+    // Run all queries in parallel
+    const [threadsRes, entitiesRes, activitiesRes, intentsRes, signaturesRes, trustRes] =
+      await Promise.all([
+        // Active/paused threads in last 2h
+        supabaseClient
+          .from('semantic_threads')
+          .select('thread_id, title, status, primary_activity_type, primary_entities, event_count, started_at, last_activity_at')
+          .eq('user_id', userId)
+          .in('status', ['active', 'paused'])
+          .gte('last_activity_at', twoHoursAgo)
+          .order('last_activity_at', { ascending: false })
+          .limit(5),
+
+        // Recent entities with high occurrence
+        supabaseClient
+          .from('semantic_entities')
+          .select('entity_id, name, type, occurrence_count, last_seen')
+          .eq('user_id', userId)
+          .gte('last_seen', twoHoursAgo)
+          .order('occurrence_count', { ascending: false })
+          .limit(15),
+
+        // Activity distribution in window
+        supabaseClient
+          .from('semantic_activities')
+          .select('activity_type, duration_ms')
+          .eq('user_id', userId)
+          .gte('created_at', twoHoursAgo),
+
+        // Most recent unresolved intent
+        supabaseClient
+          .from('semantic_intents')
+          .select('intent_type, intent_subtype, confidence, thread_id, evidence')
+          .eq('user_id', userId)
+          .is('resolved_at', null)
+          .order('created_at', { ascending: false })
+          .limit(1),
+
+        // Behavioral signatures (7-day)
+        supabaseClient
+          .from('behavioral_signatures')
+          .select('category, metric_name, current_value, trend')
+          .eq('user_id', userId)
+          .eq('window_days', 7)
+          .order('computed_at', { ascending: false })
+          .limit(10),
+
+        // Trust scores
+        companyId
+          ? supabaseClient
+              .from('trust_scores')
+              .select('action_type, category, current_level, accuracy_count, total_actions, user_cap_level')
+              .eq('user_id', userId)
+              .eq('company_id', companyId)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+    // Check if we have any meaningful data
+    const threads = threadsRes.data || [];
+    const entities = entitiesRes.data || [];
+    const activities = activitiesRes.data || [];
+    const intents = intentsRes.data || [];
+    const signatures = signaturesRes.data || [];
+    const trustScores = trustRes.data || [];
+
+    if (threads.length === 0 && entities.length === 0 && activities.length === 0) {
+      return ''; // No semantic data yet — desktop pipeline hasn't synced
+    }
+
+    const lines: string[] = [];
+    lines.push('## Semantic Intelligence Context');
+    lines.push('(Auto-generated from desktop activity pipeline — use to personalize responses)');
+    lines.push('');
+
+    // ── Active Work Threads ──────────────────────────────────────────
+    if (threads.length > 0) {
+      lines.push('### Current Work Threads');
+      for (const t of threads) {
+        const duration = Math.round(
+          (new Date(t.last_activity_at).getTime() - new Date(t.started_at).getTime()) / 60000
+        );
+        const entitiesStr = (t.primary_entities || [])
+          .map((e: any) => typeof e === 'string' ? e : e.name || e.entity_id)
+          .slice(0, 4)
+          .join(', ');
+        const status = t.status === 'active' ? 'ACTIVE' : 'paused';
+        lines.push(
+          `- [${status}] ${t.title || 'Untitled thread'} (${t.primary_activity_type || 'mixed'}, ${duration}min, ${t.event_count} events${entitiesStr ? `, entities: ${entitiesStr}` : ''})`
+        );
+      }
+      lines.push('');
+    }
+
+    // ── People & Organizations (with business links) ─────────────────
+    if (entities.length > 0) {
+      // Resolve business links for these entities
+      const entityIds = entities.map((e: any) => e.entity_id);
+      const { data: links } = await supabaseClient
+        .from('entity_business_links')
+        .select('semantic_entity_id, business_type, business_record_id, match_confidence')
+        .in('semantic_entity_id', entityIds);
+
+      const linkMap: Record<string, any[]> = {};
+      for (const link of links || []) {
+        if (!linkMap[link.semantic_entity_id]) linkMap[link.semantic_entity_id] = [];
+        linkMap[link.semantic_entity_id].push(link);
+      }
+
+      // Group entities by type
+      const people = entities.filter((e: any) => e.type === 'person');
+      const orgs = entities.filter((e: any) => e.type === 'organization');
+      const projects = entities.filter((e: any) => e.type === 'project');
+      const tools = entities.filter((e: any) => e.type === 'tool');
+
+      lines.push('### Recently Active Entities');
+
+      if (people.length > 0) {
+        lines.push('**People:**');
+        for (const p of people.slice(0, 5)) {
+          const blinks = linkMap[p.entity_id] || [];
+          const crmLink = blinks.find((l: any) => l.business_type === 'prospect');
+          const suffix = crmLink ? ' → CRM Contact' : '';
+          lines.push(`- ${p.name} (seen ${p.occurrence_count}x)${suffix}`);
+        }
+      }
+
+      if (orgs.length > 0) {
+        lines.push('**Organizations:**');
+        for (const o of orgs.slice(0, 5)) {
+          const blinks = linkMap[o.entity_id] || [];
+          const crmLink = blinks.find((l: any) => l.business_type === 'prospect');
+          const suffix = crmLink ? ' → CRM Client' : '';
+          lines.push(`- ${o.name} (seen ${o.occurrence_count}x)${suffix}`);
+        }
+      }
+
+      if (projects.length > 0) {
+        lines.push('**Projects:**');
+        for (const pr of projects.slice(0, 5)) {
+          lines.push(`- ${pr.name} (seen ${pr.occurrence_count}x)`);
+        }
+      }
+
+      if (tools.length > 0) {
+        lines.push(`**Tools in use:** ${tools.slice(0, 5).map((t: any) => t.name).join(', ')}`);
+      }
+
+      lines.push('');
+    }
+
+    // ── Activity Distribution ────────────────────────────────────────
+    if (activities.length > 0) {
+      const dist: Record<string, number> = {};
+      for (const a of activities) {
+        dist[a.activity_type] = (dist[a.activity_type] || 0) + 1;
+      }
+      const sorted = Object.entries(dist).sort((a, b) => b[1] - a[1]);
+      const total = activities.length;
+      const summary = sorted
+        .slice(0, 4)
+        .map(([type, count]) => `${type} ${Math.round((count / total) * 100)}%`)
+        .join(', ');
+
+      lines.push(`### Activity (last 2h): ${summary}`);
+      lines.push('');
+    }
+
+    // ── Current Intent ───────────────────────────────────────────────
+    if (intents.length > 0) {
+      const intent = intents[0];
+      lines.push(
+        `### Detected Intent: ${intent.intent_type}${intent.intent_subtype ? '/' + intent.intent_subtype : ''} (${Math.round(intent.confidence * 100)}% confidence)`
+      );
+      lines.push('');
+    }
+
+    // ── Behavioral Baseline ──────────────────────────────────────────
+    if (signatures.length > 0) {
+      const focusSig = signatures.find((s: any) => s.category === 'focus' && s.metric_name === 'average_duration');
+      const switchSig = signatures.find((s: any) => s.category === 'context_switching' && s.metric_name === 'hourly_rate');
+
+      if (focusSig || switchSig) {
+        const parts: string[] = [];
+        if (focusSig?.current_value?.minutes) {
+          parts.push(`avg focus: ${focusSig.current_value.minutes}min`);
+        }
+        if (switchSig?.current_value?.rate) {
+          parts.push(`context switches: ${switchSig.current_value.rate}/hr`);
+        }
+        if (focusSig?.trend && focusSig.trend !== 'stable') {
+          parts.push(`trend: ${focusSig.trend}`);
+        }
+        if (parts.length > 0) {
+          lines.push(`### Behavioral Baseline (7d): ${parts.join(', ')}`);
+          lines.push('');
+        }
+      }
+    }
+
+    // ── Trust Levels ─────────────────────────────────────────────────
+    if (trustScores.length > 0) {
+      const CATEGORY_CAPS: Record<string, number> = {
+        informational: 2, administrative: 4, communication: 3,
+        financial: 3, financial_exec: 3, pricing: 2, compliance: 3,
+      };
+
+      lines.push('### Your Autonomy Levels');
+      for (const t of trustScores.slice(0, 8)) {
+        const cap = CATEGORY_CAPS[t.category] || 4;
+        const userCap = t.user_cap_level || 4;
+        const effective = Math.min(t.current_level, cap, userCap);
+        const LEVEL_NAMES: Record<number, string> = {
+          1: 'Surfaces Insight', 2: 'Recommends Action',
+          3: 'Prepares for Approval', 4: 'Acts Autonomously',
+        };
+        const levelName = LEVEL_NAMES[effective] || `Level ${effective}`;
+        const accuracy = t.total_actions > 0
+          ? ` (${Math.round((t.accuracy_count / t.total_actions) * 100)}% accuracy over ${t.total_actions} actions)`
+          : '';
+        lines.push(`- ${t.action_type}: ${levelName}${accuracy}`);
+      }
+      lines.push('');
+    }
+
+    if (lines.length <= 3) return ''; // Only header, no meaningful data
+
+    return '\n\n' + lines.join('\n');
+  } catch (err) {
+    console.error('[sync] Error building semantic context bridge:', err);
+    return '';
+  }
+}
+
+// ============================================================================
 // Routing Logic
 // ============================================================================
 
@@ -3011,6 +3272,14 @@ serve(async (req) => {
       if (desktopContext) {
         enhancedSystemPrompt += `\n\n${desktopContext}`;
         console.log('[SYNC] Injected desktop deep context into system prompt');
+      }
+
+      // Semantic Context Bridge (Phase 1.2) — aggregates entity graph,
+      // active threads, behavioral signatures, and trust levels
+      const semanticContext = await getSemanticContextBridge(supabase, userId, companyId);
+      if (semanticContext) {
+        enhancedSystemPrompt += semanticContext;
+        console.log('[SYNC] Injected semantic context bridge into system prompt');
       }
     }
 
