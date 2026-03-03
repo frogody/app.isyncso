@@ -46,7 +46,7 @@ export function SemanticContextProvider({ children }) {
         body: JSON.stringify({
           user_id: userId,
           company_id: companyId,
-          window_minutes: 120,
+          window_minutes: 480,
         }),
       });
 
