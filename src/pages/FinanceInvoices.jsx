@@ -32,7 +32,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import ContactSelector from '@/components/shared/ContactSelector';
-import { usePredictiveInvoice } from '@/hooks/usePredictiveInvoice';
+import { useInvoiceSignals } from '@/hooks/useInvoiceSignals';
 import CountrySelector from '@/components/finance/CountrySelector';
 import { determineTaxRulesForSale } from '@/lib/btwRules';
 
@@ -68,7 +68,7 @@ export default function FinanceInvoices({ embedded }) {
   const [brandConfig, setBrandConfig] = useState(null);
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const companyId = user?.company_id;
-  const { generateDraft, lineItems: draftLineItems, totalHours: draftTotalHours, isLoading: draftLoading, error: draftError, reset: resetDraft } = usePredictiveInvoice();
+  const { signals: invoiceSignals, loading: signalsLoading, refresh: refreshSignals, markProposalConverted, markOrderInvoiced, dismissSignal } = useInvoiceSignals(companyId);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -259,36 +259,29 @@ export default function FinanceInvoices({ embedded }) {
     }
   };
 
-  // Smart Draft: generate line items from semantic activities
-  const handleSmartDraft = async () => {
-    if (!formData.contact_id) {
-      toast.error('Select a CRM contact first to generate a smart draft');
-      return;
+  // Create invoice from a signal (proposal, order, recurring, won deal)
+  const handleCreateFromSignal = (signal) => {
+    resetForm();
+    const items = signal.line_items.map(li => ({
+      description: li.description || 'Item',
+      quantity: li.quantity || 1,
+      unit_price: String(li.unit_price || ''),
+      product_id: li.product_id || null,
+    }));
+    // If no line items (won deal), add an empty row
+    if (items.length === 0) {
+      items.push({ description: '', quantity: 1, unit_price: '' });
     }
-    const dateTo = new Date().toISOString().slice(0, 10);
-    const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
-    const result = await generateDraft(formData.contact_id, companyId, dateFrom, dateTo);
-    if (result?.success && result.line_items?.length > 0) {
-      const rate = result.default_rate || '';
-      const newItems = result.line_items.map(item => ({
-        description: item.description,
-        quantity: item.hours,
-        unit_price: rate ? String(rate) : '',
-        smart_draft: true,
-        category: item.category,
-      }));
-      setFormData(prev => ({
-        ...prev,
-        items: [...prev.items.filter(i => i.description || i.unit_price), ...newItems],
-      }));
-      const rateMsg = rate ? ` at €${rate}/h` : ' — set your hourly rate';
-      toast.success(`Added ${result.line_items.length} line items (${result.total_hours}h total)${rateMsg}`);
-    } else if (result?.success && result.line_items?.length === 0) {
-      toast.info(result.message || 'No tracked activities found for this client in the last 30 days');
-    } else if (draftError) {
-      toast.error(`Smart draft failed: ${draftError}`);
-    }
+    setFormData(prev => ({
+      ...prev,
+      contact_id: signal.contact_id || null,
+      client_name: signal.contact_name || '',
+      client_email: signal.contact_email || '',
+      items,
+      description: signal.title,
+      _signal: signal, // Track which signal this came from
+    }));
+    setShowCreateModal(true);
   };
 
   // Calculate total from line items
@@ -394,6 +387,16 @@ export default function FinanceInvoices({ embedded }) {
             });
           } catch (subErr) {
             console.warn('Could not create subscription:', subErr);
+          }
+        }
+
+        // If created from a signal, mark the source as converted
+        if (formData._signal && newInvoice) {
+          const sig = formData._signal;
+          if (sig.type === 'accepted_proposal') {
+            markProposalConverted(sig.source_id, newInvoice.id);
+          } else if (sig.type === 'delivered_order') {
+            markOrderInvoiced(sig.source_id, newInvoice.id);
           }
         }
 
@@ -758,6 +761,54 @@ export default function FinanceInvoices({ embedded }) {
           </CardContent>
         </Card>
 
+        {/* Invoice Signals Banner */}
+        {invoiceSignals.length > 0 && (
+          <Card className={ft('bg-blue-50 border-blue-200', 'bg-cyan-950/20 border-cyan-800/40')}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Zap className="w-4 h-4 text-cyan-400" />
+                <span className={`text-sm font-medium ${ft('text-blue-900', 'text-cyan-300')}`}>
+                  {invoiceSignals.length} invoice {invoiceSignals.length === 1 ? 'opportunity' : 'opportunities'} detected
+                </span>
+              </div>
+              <div className="space-y-2">
+                {invoiceSignals.map((signal) => (
+                  <div
+                    key={`${signal.type}-${signal.source_id}`}
+                    className={`flex items-center justify-between gap-3 p-3 rounded-lg ${ft('bg-white border border-blue-100', 'bg-zinc-900/60 border border-zinc-800')}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${ft('text-slate-900', 'text-white')}`}>
+                        {signal.title}
+                      </p>
+                      <p className={`text-xs mt-0.5 ${ft('text-slate-500', 'text-zinc-400')}`}>
+                        {signal.description}
+                        {signal.total > 0 && ` — €${signal.total.toLocaleString('nl-NL', { minimumFractionDigits: 2 })}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => handleCreateFromSignal(signal)}
+                        className="bg-cyan-500 hover:bg-cyan-600 text-white text-xs"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Create Invoice
+                      </Button>
+                      <button
+                        onClick={() => dismissSignal(signal.source_id)}
+                        className={`p-1 rounded transition-colors ${ft('text-slate-400 hover:text-slate-600', 'text-zinc-500 hover:text-zinc-300')}`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Invoice List */}
         <Card className={ft('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
           <CardContent className="p-0">
@@ -1000,23 +1051,6 @@ export default function FinanceInvoices({ embedded }) {
                     Line Items
                   </Label>
                   <div className="flex gap-2 flex-wrap">
-                    {!editMode && formData.contact_id && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSmartDraft}
-                        disabled={draftLoading}
-                        className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
-                      >
-                        {draftLoading ? (
-                          <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
-                        ) : (
-                          <Zap className="w-4 h-4 mr-1" />
-                        )}
-                        Smart Draft
-                      </Button>
-                    )}
                     <Button
                       type="button"
                       variant="outline"

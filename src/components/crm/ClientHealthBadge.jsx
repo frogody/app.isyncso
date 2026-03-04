@@ -56,19 +56,32 @@ export default function ClientHealthBadge({ prospectId, compact = false }) {
     );
   }
 
+  const actionHint = health.risk_level === 'critical'
+    ? 'Urgent: schedule a check-in call'
+    : health.risk_level === 'at_risk'
+    ? 'Consider reaching out — engagement is declining'
+    : null;
+
   return (
-    <div className={cn(
-      'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border',
-      config.bg, config.border
-    )}>
-      <Heart className={cn('w-4 h-4', config.color)} />
-      <span className={cn('text-sm font-semibold', config.color)}>
-        {health.overall_score}
-      </span>
-      <span className={cn('text-xs', config.color)}>
-        {config.label}
-      </span>
-      <TrendIcon className={cn('w-3.5 h-3.5', config.color)} />
+    <div>
+      <div className={cn(
+        'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border',
+        config.bg, config.border
+      )}>
+        <Heart className={cn('w-4 h-4', config.color)} />
+        <span className={cn('text-sm font-semibold', config.color)}>
+          {health.overall_score}
+        </span>
+        <span className={cn('text-xs', config.color)}>
+          {config.label}
+        </span>
+        <TrendIcon className={cn('w-3.5 h-3.5', config.color)} />
+      </div>
+      {actionHint && (
+        <p className={cn('text-[11px] mt-1.5', config.color)}>
+          {actionHint}
+        </p>
+      )}
     </div>
   );
 }

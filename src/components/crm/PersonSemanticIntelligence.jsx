@@ -368,7 +368,7 @@ function EmptyState({ icon: Icon, message, sub, showTrackingLink }) {
       {sub && <p className={`text-xs mt-2 max-w-[280px] mx-auto leading-relaxed ${t('text-zinc-500', 'text-zinc-500')}`}>{sub}</p>}
       {showTrackingLink && (
         <Link
-          to="/sync?view=activity"
+          to="/desktopactivity"
           className={`inline-flex items-center gap-1 text-xs mt-3 ${t('text-cyan-600 hover:text-cyan-700', 'text-cyan-400 hover:text-cyan-300')} transition-colors`}
         >
           Set up Desktop Tracking

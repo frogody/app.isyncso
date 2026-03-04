@@ -408,3 +408,6 @@ verify_jwt = false
 
 [functions.compute-client-health]
 verify_jwt = false
+
+[functions.invoice-signals]
+verify_jwt = false

@@ -299,6 +299,31 @@ export default function UniversalContextBar() {
               </div>
             )}
 
+            {/* Suggested Next — single contextual suggestion */}
+            {intentConfig && (() => {
+              let suggestion = null;
+              if (currentIntent?.intent_type === 'RESPOND') {
+                suggestion = { text: 'Check your inbox for pending messages', action: () => navigate('/inbox') };
+              } else if (currentIntent?.intent_type === 'SHIP' && activitySummary?.dominant_type === 'coding') {
+                suggestion = { text: 'Review your task board for next priorities', action: () => navigate('/tasks') };
+              } else if (currentIntent?.intent_type === 'MANAGE') {
+                suggestion = { text: 'Check your team dashboard', action: () => navigate('/dashboard') };
+              }
+              if (!suggestion) return null;
+              return (
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-zinc-600 mb-1.5">Suggested Next</div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); suggestion.action(); }}
+                    className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
+                  >
+                    <Zap className="w-3 h-3" />
+                    {suggestion.text}
+                  </button>
+                </div>
+              );
+            })()}
+
             {/* Refresh button */}
             <div className="flex justify-end">
               <button

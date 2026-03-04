@@ -1767,8 +1767,9 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
   const scrollerRef = useRef(null);
   const pageRef = useRef(null);
 
-  // Track feedback count to show learning indicator
+  // Track feedback + learned preferences to show learning indicator
   const [feedbackCount, setFeedbackCount] = useState(0);
+  const [learnedCount, setLearnedCount] = useState(0);
   useEffect(() => {
     if (!user?.id) return;
     supabase
@@ -1776,6 +1777,11 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .then(({ count }) => { if (count) setFeedbackCount(count); });
+    supabase
+      .from('sync_learned_preferences')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .then(({ count }) => { if (count) setLearnedCount(count); });
   }, [user?.id]);
 
   // Listen for highlight borders event (when avatar clicked on this page)
@@ -2065,7 +2071,9 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
                 {feedbackCount >= 5 && (
                   <span className="text-[10px] text-zinc-500 flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-cyan-500/60" />
-                    Learning from {feedbackCount} ratings
+                    {learnedCount > 0
+                      ? `${learnedCount} learned preference${learnedCount !== 1 ? 's' : ''}`
+                      : `Learning from ${feedbackCount} ratings`}
                   </span>
                 )}
               </div>

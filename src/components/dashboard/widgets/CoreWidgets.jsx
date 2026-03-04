@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   ListTodo, Zap, Clock, CheckCircle, AlertTriangle, ArrowUpRight,
-  Contact, Package, Receipt, Shield, GraduationCap, Target, Users, Megaphone,
+  Contact, Package, Receipt, Shield, GraduationCap, Target, Users,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -111,18 +111,30 @@ const DEFAULT_ACTIONS = [
   { id: 'actions', label: "View Actions", icon: ListTodo, href: "Actions", color: 'text-cyan-400 bg-cyan-500/10', app: null },
 ];
 
-export function QuickActionsWidget({ enabledApps = [] }) {
+export function QuickActionsWidget({ enabledApps = [], invoiceSignalCount = 0 }) {
   const { t } = useTheme();
   const { topFeatures, loading: usageLoading } = useTopFeatures(5);
 
   const quickActions = useMemo(() => {
+    const actions = [];
+
+    // Inject signal-based actions at the top when real events exist
+    if (invoiceSignalCount > 0) {
+      actions.push({
+        id: '_signal_invoices',
+        label: `${invoiceSignalCount} invoice${invoiceSignalCount > 1 ? 's' : ''} to create`,
+        icon: Receipt,
+        href: 'FinanceInvoices',
+        color: 'text-cyan-400 bg-cyan-500/10',
+        app: null,
+      });
+    }
+
     // If we have usage data, derive actions from top features
     if (topFeatures && topFeatures.length >= 1) {
-      const actions = [];
       for (const feature of topFeatures) {
         const match = ALL_QUICK_ACTIONS.find(a => a.id === feature.feature_key);
         if (match) {
-          // Check if app is enabled (or no app required)
           if (!match.app || enabledApps.includes(match.app)) {
             actions.push(match);
           }
@@ -130,7 +142,6 @@ export function QuickActionsWidget({ enabledApps = [] }) {
         if (actions.length >= 4) break;
       }
 
-      // Fill remaining slots with defaults if we have at least 1 personalized action
       if (actions.length >= 1) {
         const defaults = DEFAULT_ACTIONS.filter(a =>
           (!a.app || enabledApps.includes(a.app)) && !actions.find(x => x.id === a.id)
@@ -143,8 +154,13 @@ export function QuickActionsWidget({ enabledApps = [] }) {
     }
 
     // Fallback to defaults
-    return DEFAULT_ACTIONS.filter(a => !a.app || enabledApps.includes(a.app));
-  }, [topFeatures, enabledApps]);
+    const defaults = DEFAULT_ACTIONS.filter(a => !a.app || enabledApps.includes(a.app));
+    while (actions.length < 4 && defaults.length > 0) {
+      const d = defaults.shift();
+      if (!actions.find(x => x.id === d.id)) actions.push(d);
+    }
+    return actions;
+  }, [topFeatures, enabledApps, invoiceSignalCount]);
 
   return (
     <GlassCard glow="cyan" className="p-5 h-full" hover={false}>

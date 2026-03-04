@@ -34,6 +34,7 @@ import {
 } from "@/components/dashboard/widgets/RaiseWidgets";
 import { RecentActionsWidget, QuickActionsWidget } from "@/components/dashboard/widgets/CoreWidgets";
 import SchedulingWidget from "@/components/dashboard/widgets/SchedulingWidget";
+import { useInvoiceSignals } from "@/hooks/useInvoiceSignals";
 import {
   CommerceBToBOverviewWidget, CommerceOrdersWidget, CommerceRevenueWidget,
   CommerceProductsWidget, CommerceOutstandingWidget
@@ -94,6 +95,9 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState('personal'); // 'personal' or 'team'
   const [teamData, setTeamData] = useState(null);
   const [teamLoading, setTeamLoading] = useState(false);
+
+  // Invoice signals for contextual quick actions
+  const { signals: invoiceSignals } = useInvoiceSignals(user?.company_id);
 
   // Check if user can see team dashboard (manager, admin, or super_admin)
   const canViewTeamDashboard = isManager || isAdmin || hierarchyLevel >= 60;
@@ -623,7 +627,7 @@ export default function Dashboard() {
       case 'commerce_outstanding': return <CommerceOutstandingWidget outstandingAmount={d.b2bOutstanding} unpaidCount={d.b2bUnpaidCount} />;
       // Core
       case 'actions_recent': return <RecentActionsWidget actions={d.recentActions} />;
-      case 'quick_actions': return <QuickActionsWidget enabledApps={enabledApps.filter(a => effectiveApps.includes(a))} />;
+      case 'quick_actions': return <QuickActionsWidget enabledApps={enabledApps.filter(a => effectiveApps.includes(a))} invoiceSignalCount={invoiceSignals?.length || 0} />;
       default: return null;
     }
   };

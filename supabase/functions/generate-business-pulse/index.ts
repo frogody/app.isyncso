@@ -167,6 +167,92 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // --- MODULE 6: INVOICE OPPORTUNITIES (ready-to-invoice signals) ---
+
+    // 6a: Accepted proposals not yet converted
+    const { data: acceptedProposals } = await supabase
+      .from("proposals")
+      .select("id, title, client_name, prospect_id, total, currency, signed_at")
+      .eq("company_id", company_id)
+      .eq("status", "accepted")
+      .is("converted_to_invoice_id", null)
+      .order("signed_at", { ascending: false, nullsFirst: false })
+      .limit(5);
+
+    for (const p of acceptedProposals || []) {
+      const daysSinceAccepted = p.signed_at
+        ? Math.floor((Date.now() - new Date(p.signed_at).getTime()) / 86400000)
+        : 0;
+      items.push({
+        user_id, company_id, pulse_date: today,
+        item_type: "ready_to_invoice",
+        title: `Proposal "${p.title || 'Untitled'}" accepted — ready to invoice`,
+        description: `${p.client_name || 'Client'} accepted this proposal${daysSinceAccepted > 0 ? ` ${daysSinceAccepted} days ago` : ''}. Total: €${p.total || 0}. Create an invoice to finalize.`,
+        urgency: daysSinceAccepted > 14 ? 8 : daysSinceAccepted > 7 ? 6 : 5,
+        impact: (p.total || 0) > 1000 ? 8 : (p.total || 0) > 500 ? 6 : 4,
+        source_modules: ["finance", "crm"],
+        action_label: "Create Invoice",
+        action_url: `/financeinvoices`,
+        related_entity_ids: [p.id, p.prospect_id].filter(Boolean),
+      });
+    }
+
+    // 6b: Delivered orders not yet invoiced
+    const { data: deliveredOrders } = await supabase
+      .from("sales_orders")
+      .select("id, order_number, shipping_name, total, currency, delivered_at, payment_status")
+      .eq("company_id", company_id)
+      .eq("status", "delivered")
+      .is("invoice_id", null)
+      .in("payment_status", ["pending", "partial"])
+      .order("delivered_at", { ascending: false, nullsFirst: false })
+      .limit(5);
+
+    for (const o of deliveredOrders || []) {
+      const daysSinceDelivery = o.delivered_at
+        ? Math.floor((Date.now() - new Date(o.delivered_at).getTime()) / 86400000)
+        : 0;
+      items.push({
+        user_id, company_id, pulse_date: today,
+        item_type: "ready_to_invoice",
+        title: `Order #${o.order_number || '?'} delivered — awaiting invoice`,
+        description: `Delivered to ${o.shipping_name || 'customer'}${daysSinceDelivery > 0 ? ` ${daysSinceDelivery} days ago` : ''}. Total: €${o.total || 0}. Payment: ${o.payment_status}.`,
+        urgency: daysSinceDelivery > 14 ? 8 : daysSinceDelivery > 7 ? 6 : 5,
+        impact: (o.total || 0) > 1000 ? 8 : (o.total || 0) > 500 ? 6 : 4,
+        source_modules: ["finance", "products"],
+        action_label: "Create Invoice",
+        action_url: `/financeinvoices`,
+        related_entity_ids: [o.id],
+      });
+    }
+
+    // 6c: Recurring invoices due within 7 days
+    const sevenDaysFromNow = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+    const { data: recurringDue } = await supabase
+      .from("recurring_invoices")
+      .select("id, client_name, description, frequency, next_generate_date")
+      .eq("company_id", company_id)
+      .eq("is_active", true)
+      .lte("next_generate_date", sevenDaysFromNow)
+      .order("next_generate_date", { ascending: true })
+      .limit(5);
+
+    for (const r of recurringDue || []) {
+      const daysUntilDue = Math.floor((new Date(r.next_generate_date).getTime() - Date.now()) / 86400000);
+      items.push({
+        user_id, company_id, pulse_date: today,
+        item_type: "ready_to_invoice",
+        title: `${r.frequency} invoice for ${r.client_name || 'client'} due ${daysUntilDue <= 0 ? 'today' : `in ${daysUntilDue} days`}`,
+        description: r.description || `Recurring ${r.frequency} invoice is coming due.`,
+        urgency: daysUntilDue <= 0 ? 9 : daysUntilDue <= 3 ? 7 : 5,
+        impact: 5,
+        source_modules: ["finance"],
+        action_label: "Create Invoice",
+        action_url: `/financeinvoices`,
+        related_entity_ids: [r.id],
+      });
+    }
+
     // Sort by priority and take top 7
     items.sort((a, b) => (b.urgency * b.impact) - (a.urgency * a.impact));
     const topItems = items.slice(0, 7);

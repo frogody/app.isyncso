@@ -124,15 +124,27 @@ export function ProductHealthOverviewWidget() {
             })}
           </div>
 
-          {/* Actionable hint when many products need attention */}
-          {(atRisk.length + critical.length) > 0 && (
-            <div className={cn('mt-3 p-2 rounded-lg border flex items-start gap-2', 'bg-red-500/5 border-red-500/20')}>
-              <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
-              <p className={cn('text-[11px]', t('text-zinc-500', 'text-zinc-400'))}>
-                {atRisk.length + critical.length} product{(atRisk.length + critical.length) > 1 ? 's' : ''} need attention — review pricing or stock levels.
-              </p>
-            </div>
-          )}
+          {/* Actionable insight based on weakest health component */}
+          {(atRisk.length + critical.length) > 0 && (() => {
+            const needsAttention = [...critical, ...atRisk];
+            const worst = needsAttention[0];
+            const components = worst?.components || {};
+            const componentScores = [
+              { key: 'stock_level', score: components.stock_level ?? 100, action: 'Consider restocking low-inventory products' },
+              { key: 'margin_health', score: components.margin_health ?? 100, action: 'Review pricing — margins are under pressure' },
+              { key: 'sales_velocity', score: components.sales_velocity ?? 100, action: 'Products may need promotion — sales are slowing' },
+              { key: 'return_rate', score: components.return_rate ?? 100, action: 'High return rates detected — check product quality' },
+            ];
+            const weakest = componentScores.reduce((a, b) => a.score < b.score ? a : b);
+            return (
+              <div className={cn('mt-3 p-2 rounded-lg border flex items-start gap-2', 'bg-red-500/5 border-red-500/20')}>
+                <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                <p className={cn('text-[11px]', t('text-zinc-500', 'text-zinc-400'))}>
+                  {needsAttention.length} product{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length === 1 ? 's' : ''} attention — {weakest.action}
+                </p>
+              </div>
+            );
+          })()}
         </>
       )}
     </GlassCard>
