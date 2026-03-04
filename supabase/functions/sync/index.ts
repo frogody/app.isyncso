@@ -1075,8 +1075,10 @@ async function getSemanticContextBridge(
   try {
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
+    const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+
     // Run all queries in parallel
-    const [threadsRes, entitiesRes, activitiesRes, intentsRes, signaturesRes, trustRes] =
+    const [threadsRes, entitiesRes, activitiesRes, intentsRes, signaturesRes, trustRes, activityLogsRes] =
       await Promise.all([
         // Active/paused threads in last 2h
         supabaseClient
@@ -1130,6 +1132,15 @@ async function getSemanticContextBridge(
               .eq('user_id', userId)
               .eq('company_id', companyId)
           : Promise.resolve({ data: [], error: null }),
+
+        // Desktop activity logs — actual app usage (last 4h)
+        supabaseClient
+          .from('desktop_activity_logs')
+          .select('hour_start, app_breakdown, total_minutes, focus_score')
+          .eq('user_id', userId)
+          .gte('hour_start', fourHoursAgo)
+          .order('hour_start', { ascending: false })
+          .limit(4),
       ]);
 
     // Check if we have any meaningful data
@@ -1139,10 +1150,22 @@ async function getSemanticContextBridge(
     const intents = intentsRes.data || [];
     const signatures = signaturesRes.data || [];
     const trustScores = trustRes.data || [];
+    const activityLogs = activityLogsRes.data || [];
 
-    if (threads.length === 0 && entities.length === 0 && activities.length === 0) {
+    if (threads.length === 0 && entities.length === 0 && activities.length === 0 && activityLogs.length === 0) {
       return ''; // No semantic data yet — desktop pipeline hasn't synced
     }
+
+    // Activity type descriptions for human-readable output
+    const ACTIVITY_DESCRIPTIONS: Record<string, string> = {
+      'CONTEXT_SWITCH': 'switching between tasks',
+      'FOCUS': 'deep focused work',
+      'MANAGE': 'business/admin work',
+      'SHIP': 'coding or deploying',
+      'RESPOND': 'handling communications',
+      'PLAN': 'planning or researching',
+      'MAINTAIN': 'maintenance/operational work',
+    };
 
     // Determine active intent for section ordering and guidance
     const activeIntent = intents.length > 0 ? intents[0] : null;
@@ -1169,7 +1192,7 @@ async function getSemanticContextBridge(
     // ── Active Work Threads ──────────────────────────────────────────
     if (threads.length > 0) {
       const s: string[] = [];
-      s.push('### Current Work Threads');
+      s.push('### What The User Is Working On');
       for (const t of threads) {
         const duration = Math.round(
           (new Date(t.last_activity_at).getTime() - new Date(t.started_at).getTime()) / 60000
@@ -1179,48 +1202,81 @@ async function getSemanticContextBridge(
           .slice(0, 4)
           .join(', ');
         const status = t.status === 'active' ? 'ACTIVE' : 'paused';
+        const actDesc = ACTIVITY_DESCRIPTIONS[t.primary_activity_type] || t.primary_activity_type || 'mixed work';
         s.push(
-          `- [${status}] ${t.title || 'Untitled thread'} (${t.primary_activity_type || 'mixed'}, ${duration}min, ${t.event_count} events${entitiesStr ? `, entities: ${entitiesStr}` : ''})`
+          `- [${status}] ${t.title || 'Untitled thread'} — ${actDesc} for ${duration}min (${t.event_count} events${entitiesStr ? `, involving: ${entitiesStr}` : ''})`
         );
       }
       s.push('');
       sections['threads'] = s;
     }
 
-    // ── People & Organizations (with business links) ─────────────────
+    // ── People & Organizations (with CRM enrichment) ─────────────────
     if (entities.length > 0) {
+      // Fetch actual CRM details for linked entities
+      const prospectIds: string[] = [];
+      for (const links of Object.values(linkMap)) {
+        for (const link of links as any[]) {
+          if (link.business_type === 'prospect' && link.business_record_id) {
+            prospectIds.push(link.business_record_id);
+          }
+        }
+      }
+      let prospectMap: Record<string, any> = {};
+      if (prospectIds.length > 0) {
+        const { data: prospects } = await supabaseClient
+          .from('prospects')
+          .select('id, first_name, last_name, company, deal_value, stage, next_follow_up, email')
+          .in('id', prospectIds.slice(0, 10));
+        for (const p of prospects || []) {
+          prospectMap[p.id] = p;
+        }
+      }
+
       const s: string[] = [];
       const people = entities.filter((e: any) => e.type === 'person');
       const orgs = entities.filter((e: any) => e.type === 'organization');
       const projects = entities.filter((e: any) => e.type === 'project');
       const tools = entities.filter((e: any) => e.type === 'tool');
 
-      s.push('### Recently Active Entities');
+      s.push('### People & Organizations In Current Context');
 
       if (people.length > 0) {
-        s.push('**People:**');
+        s.push('**People the user is engaging with:**');
         for (const p of people.slice(0, 5)) {
           const blinks = linkMap[p.entity_id] || [];
           const crmLink = blinks.find((l: any) => l.business_type === 'prospect');
-          const suffix = crmLink ? ' → CRM Contact' : '';
-          s.push(`- ${p.name} (seen ${p.occurrence_count}x)${suffix}`);
+          if (crmLink && prospectMap[crmLink.business_record_id]) {
+            const prospect = prospectMap[crmLink.business_record_id];
+            const dealInfo = prospect.deal_value ? `, deal: EUR ${prospect.deal_value}` : '';
+            const stageInfo = prospect.stage ? `, stage: ${prospect.stage}` : '';
+            const followUp = prospect.next_follow_up ? `, follow-up: ${new Date(prospect.next_follow_up).toLocaleDateString()}` : '';
+            s.push(`- ${p.name} — CRM contact at ${prospect.company || 'unknown company'}${dealInfo}${stageInfo}${followUp}`);
+          } else {
+            s.push(`- ${p.name} (mentioned ${p.occurrence_count}x recently)`);
+          }
         }
       }
 
       if (orgs.length > 0) {
-        s.push('**Organizations:**');
+        s.push('**Organizations in context:**');
         for (const o of orgs.slice(0, 5)) {
           const blinks = linkMap[o.entity_id] || [];
           const crmLink = blinks.find((l: any) => l.business_type === 'prospect');
-          const suffix = crmLink ? ' → CRM Client' : '';
-          s.push(`- ${o.name} (seen ${o.occurrence_count}x)${suffix}`);
+          if (crmLink && prospectMap[crmLink.business_record_id]) {
+            const prospect = prospectMap[crmLink.business_record_id];
+            const dealInfo = prospect.deal_value ? ` (deal: EUR ${prospect.deal_value}, stage: ${prospect.stage || 'unknown'})` : ' (CRM client)';
+            s.push(`- ${o.name}${dealInfo}`);
+          } else {
+            s.push(`- ${o.name} (mentioned ${o.occurrence_count}x recently)`);
+          }
         }
       }
 
       if (projects.length > 0) {
-        s.push('**Projects:**');
+        s.push('**Active projects:**');
         for (const pr of projects.slice(0, 5)) {
-          s.push(`- ${pr.name} (seen ${pr.occurrence_count}x)`);
+          s.push(`- ${pr.name}`);
         }
       }
 
@@ -1232,23 +1288,67 @@ async function getSemanticContextBridge(
       sections['entities'] = s;
     }
 
-    // ── Activity Distribution ────────────────────────────────────────
-    if (activities.length > 0) {
+    // ── Activity & App Usage ──────────────────────────────────────────
+    {
       const s: string[] = [];
-      const dist: Record<string, number> = {};
-      for (const a of activities) {
-        dist[a.activity_type] = (dist[a.activity_type] || 0) + 1;
-      }
-      const sorted = Object.entries(dist).sort((a, b) => b[1] - a[1]);
-      const total = activities.length;
-      const summary = sorted
-        .slice(0, 4)
-        .map(([type, count]) => `${type} ${Math.round((count / total) * 100)}%`)
-        .join(', ');
 
-      s.push(`### Activity (last 2h): ${summary}`);
-      s.push('');
-      sections['activity'] = s;
+      // Desktop app usage from activity logs (actual apps and time)
+      if (activityLogs.length > 0) {
+        const appTotals: Record<string, number> = {};
+        let totalMinutes = 0;
+        let avgFocusScore = 0;
+        for (const log of activityLogs) {
+          totalMinutes += log.total_minutes || 0;
+          avgFocusScore += log.focus_score || 0;
+          const breakdown = log.app_breakdown || [];
+          const apps = Array.isArray(breakdown) ? breakdown : Object.entries(breakdown).map(([k, v]) => ({ appName: k, minutes: v }));
+          for (const app of apps) {
+            const name = app.appName || app.app_name || 'Unknown';
+            const mins = app.minutes || 0;
+            appTotals[name] = (appTotals[name] || 0) + mins;
+          }
+        }
+        avgFocusScore = activityLogs.length > 0 ? avgFocusScore / activityLogs.length : 0;
+
+        const topApps = Object.entries(appTotals)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6)
+          .map(([name, mins]) => `${name} (${Math.round(mins)}min)`)
+          .join(', ');
+
+        s.push(`### Desktop Activity (last ${activityLogs.length}h)`);
+        s.push(`**Apps used:** ${topApps}`);
+        s.push(`**Total active time:** ${Math.round(totalMinutes)}min | **Focus score:** ${Math.round(avgFocusScore * 100)}%`);
+      }
+
+      // Semantic activity distribution (work patterns)
+      if (activities.length > 0) {
+        const dist: Record<string, number> = {};
+        for (const a of activities) {
+          dist[a.activity_type] = (dist[a.activity_type] || 0) + 1;
+        }
+        const sorted = Object.entries(dist).sort((a, b) => b[1] - a[1]);
+        const total = activities.length;
+        const summary = sorted
+          .slice(0, 4)
+          .map(([type, count]) => {
+            const desc = ACTIVITY_DESCRIPTIONS[type] || type.toLowerCase();
+            return `${desc} (${Math.round((count / total) * 100)}%)`;
+          })
+          .join(', ');
+
+        if (activityLogs.length === 0) {
+          s.push('### Work Pattern (last 2h)');
+        } else {
+          s.push('**Work pattern:**');
+        }
+        s.push(`Mostly ${summary}`);
+      }
+
+      if (s.length > 0) {
+        s.push('');
+        sections['activity'] = s;
+      }
     }
 
     // ── Current Intent ───────────────────────────────────────────────
@@ -1311,6 +1411,61 @@ async function getSemanticContextBridge(
       }
       s.push('');
       sections['trust'] = s;
+    }
+
+    // ── Business Snapshot (overdue tasks, deadlines, invoices) ──────
+    if (companyId) {
+      try {
+        const { data: temporalCtx } = await supabaseClient
+          .rpc('assemble_temporal_context', { p_user_id: userId, p_company_id: companyId });
+
+        if (temporalCtx) {
+          const ctx = typeof temporalCtx === 'string' ? JSON.parse(temporalCtx) : temporalCtx;
+          const s: string[] = [];
+          s.push('### Business Snapshot');
+
+          const present = ctx.present || {};
+          const parts: string[] = [];
+          if (present.open_tasks > 0) parts.push(`${present.open_tasks} open tasks`);
+          if (present.overdue_tasks > 0) parts.push(`${present.overdue_tasks} overdue`);
+          if (present.overdue_invoices_total > 0) parts.push(`EUR ${present.overdue_invoices_total} in overdue invoices`);
+          if (present.pending_actions > 0) parts.push(`${present.pending_actions} pending suggestions`);
+          if (parts.length > 0) {
+            s.push(`**Now:** ${parts.join(' | ')}`);
+          }
+
+          const deadlines = ctx.future?.deadlines_14d || [];
+          if (deadlines.length > 0) {
+            const urgent = deadlines.filter((d: any) => d.days_until <= 3);
+            if (urgent.length > 0) {
+              s.push(`**Urgent deadlines (next 3 days):**`);
+              for (const d of urgent.slice(0, 5)) {
+                const when = d.days_until < 0 ? `${Math.abs(d.days_until)}d OVERDUE` :
+                             d.days_until === 0 ? 'TODAY' :
+                             d.days_until === 1 ? 'TOMORROW' : `in ${d.days_until} days`;
+                s.push(`- ${d.title} — ${when} [${d.entity_type}]`);
+              }
+            }
+          }
+
+          const temporal = ctx.temporal_position || {};
+          const timeParts: string[] = [];
+          if (temporal.is_month_end) timeParts.push('month-end');
+          if (temporal.is_quarter_end) timeParts.push('quarter-end');
+          if (temporal.is_friday) timeParts.push('Friday (end of week)');
+          if (temporal.is_monday) timeParts.push('Monday (start of week)');
+          if (timeParts.length > 0) {
+            s.push(`**Calendar note:** ${timeParts.join(', ')}`);
+          }
+
+          if (s.length > 1) {
+            s.push('');
+            sections['business'] = s;
+          }
+        }
+      } catch (bizErr) {
+        console.warn('[sync] Business snapshot skipped:', (bizErr as any)?.message);
+      }
     }
 
     // ── Intent-Aware Guidance ────────────────────────────────────────
@@ -1415,15 +1570,15 @@ async function getSemanticContextBridge(
 
     // ── Assemble sections in intent-weighted order ────────────────────
     // Default order
-    const defaultOrder = ['threads', 'entities', 'activity', 'intent', 'intent_guidance', 'greeting', 'behavioral', 'trust', 'preferences'];
+    const defaultOrder = ['threads', 'entities', 'activity', 'business', 'intent', 'intent_guidance', 'greeting', 'behavioral', 'trust', 'preferences'];
 
     // Intent-specific reorderings: put the most relevant sections first
     const orderByIntent: Record<string, string[]> = {
-      SHIP: ['threads', 'activity', 'intent', 'intent_guidance', 'greeting', 'entities', 'behavioral', 'trust', 'preferences'],
-      MANAGE: ['entities', 'intent', 'intent_guidance', 'greeting', 'threads', 'activity', 'trust', 'behavioral', 'preferences'],
-      PLAN: ['threads', 'activity', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust', 'preferences'],
-      MAINTAIN: ['activity', 'threads', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust', 'preferences'],
-      RESPOND: ['entities', 'threads', 'intent', 'intent_guidance', 'greeting', 'activity', 'trust', 'behavioral', 'preferences'],
+      SHIP: ['threads', 'activity', 'intent', 'intent_guidance', 'greeting', 'entities', 'business', 'behavioral', 'trust', 'preferences'],
+      MANAGE: ['entities', 'business', 'intent', 'intent_guidance', 'greeting', 'threads', 'activity', 'trust', 'behavioral', 'preferences'],
+      PLAN: ['business', 'threads', 'activity', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust', 'preferences'],
+      MAINTAIN: ['activity', 'threads', 'business', 'behavioral', 'intent', 'intent_guidance', 'greeting', 'entities', 'trust', 'preferences'],
+      RESPOND: ['entities', 'threads', 'business', 'intent', 'intent_guidance', 'greeting', 'activity', 'trust', 'behavioral', 'preferences'],
     };
 
     const sectionOrder = orderByIntent[intentType] || defaultOrder;
