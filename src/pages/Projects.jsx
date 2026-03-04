@@ -3206,17 +3206,14 @@ export default function Projects() {
   };
 
   // Map UI project type to valid DB values
-  // DB allows: retained_search, contingency, exclusive, contract, rpo
+  // DB allows: retained_search, contingency, exclusive, contract, rpo,
+  //            development, design, marketing, sales, operations, research, other
   const mapProjectTypeToDB = (uiType) => {
-    const typeMap = {
-      "retained_search": "retained_search",
-      "contingency": "contingency",
-      "exclusive": "exclusive",
-      "contract": "contract",
-      "rpo": "rpo",
-      "development": "retained_search",  // fallback for legacy/invalid values
-    };
-    return typeMap[uiType] || "retained_search";
+    const validTypes = [
+      'retained_search', 'contingency', 'exclusive', 'contract', 'rpo',
+      'development', 'design', 'marketing', 'sales', 'operations', 'research', 'other'
+    ];
+    return validTypes.includes(uiType) ? uiType : 'development';
   };
 
   const filteredProjects = useMemo(() => {
@@ -3277,7 +3274,7 @@ export default function Projects() {
         description: formData.description,
         status: mapStatusToDB(formData.status),
         priority: formData.priority,
-        project_type: formData.category,
+        project_type: mapProjectTypeToDB(formData.category),
         start_date: formData.start_date || null,
         deadline: formData.due_date || null,
         budget: formData.budget ? parseFloat(formData.budget) : null,
