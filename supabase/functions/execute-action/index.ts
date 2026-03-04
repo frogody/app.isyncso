@@ -39,6 +39,9 @@ interface PendingAction {
   subtitle: string | null;
   action_type: string;
   action_payload: Record<string, unknown>;
+  trigger_context: Record<string, unknown>;
+  importance_score: number | null;
+  urgency_score: number | null;
   status: string;
 }
 
@@ -159,16 +162,47 @@ async function executeTaskCreate(
 ): Promise<{ success: boolean; message: string }> {
   const params = (action.action_payload.params || {}) as Record<string, unknown>;
 
+  // Build rich description from trigger context
+  const triggerCtx = action.trigger_context || {};
+  const contextSummary = triggerCtx.summary as string || triggerCtx.eventType as string || "";
+  const sourceApp = (triggerCtx.source as string) || "";
+  const baseDescription = (params.description as string) || null;
+  const description = baseDescription
+    ? `${baseDescription}\n\n---\nTriggered from: ${sourceApp || "desktop"}\nContext: ${contextSummary}`
+    : contextSummary
+      ? `Triggered from: ${sourceApp || "desktop"}\nContext: ${contextSummary}`
+      : null;
+
+  // Derive priority from importance_score
+  const importance = action.importance_score ?? 5;
+  let priority = (params.priority as string) || "medium";
+  if (!params.priority && importance >= 8) {
+    priority = "high";
+  } else if (!params.priority && importance < 5) {
+    priority = "low";
+  }
+
+  // Build metadata JSONB
+  const metadata: Record<string, unknown> = {
+    trigger_type: triggerCtx.eventType || action.action_type,
+    trigger_context: contextSummary,
+    importance_score: action.importance_score,
+    urgency_score: action.urgency_score,
+    source_application: sourceApp,
+    detected_at: triggerCtx.timestamp || new Date().toISOString(),
+  };
+
   const { error } = await supabase.from("tasks").insert({
     title: (params.title as string) || action.title,
-    description: (params.description as string) || null,
-    priority: (params.priority as string) || "medium",
+    description,
+    priority,
     due_date: (params.due_date as string) || null,
     status: "pending",
     created_by: action.user_id,
     company_id: action.company_id,
-    source: "notch_action",
+    source: "notch_suggestion",
     source_ref_id: action.id,
+    metadata,
   });
 
   if (error) {

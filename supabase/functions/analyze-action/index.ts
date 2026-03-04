@@ -43,6 +43,9 @@ interface EnrichedAction {
   action_payload: Record<string, unknown>;
   is_actionable: boolean;
   invalidation_reason?: string;
+  importance_score: number;
+  urgency_score: number;
+  should_notify: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +66,9 @@ async function enrichWithLLM(
       cloud_confidence: 0.5,
       action_payload: {},
       is_actionable: true,
+      importance_score: 5,
+      urgency_score: 5,
+      should_notify: true,
     };
   }
 
@@ -72,6 +78,7 @@ You receive a context event detected by a local MLX model and must:
 1. Determine if the event is truly actionable (not a false positive).
 2. Enrich the notification title with specific details (dates, times, names) from the context.
 3. Generate the full execution payload for the action type.
+4. Score the importance and urgency to decide if the user should be notified.
 
 The user has these integrations connected: ${userIntegrations.length > 0 ? userIntegrations.join(", ") : "none"}.
 
@@ -80,6 +87,11 @@ Action types and their expected payloads:
 - task_create: { integration: "internal", operation: "create_task", params: { title, description?, priority?: "high"|"medium"|"low", due_date? (ISO) } }
 - email_reply: { integration: "gmail"|"outlook", operation: "send_email", params: { to, subject, body_draft } }
 - reminder: { integration: "internal", operation: "create_notification", params: { title, message, remind_at (ISO) } }
+
+Scoring guidelines:
+- importance_score (1-10): 10=missed deadline/client emergency, 7=meeting prep needed/direct request, 4=nice-to-know update, 1=trivial/informational
+- urgency_score (1-10): 10=happening in <30 min, 7=needs attention today, 4=this week, 1=no deadline
+- should_notify: true only if importance>=6 OR (importance>=4 AND urgency>=7). False for low-value noise.
 
 Today is ${new Date().toISOString().split("T")[0]}.
 
@@ -90,7 +102,10 @@ Respond ONLY in valid JSON (no markdown, no backticks):
   "subtitle": "optional detail line or null",
   "cloud_confidence": 0.0-1.0,
   "action_payload": { ... full execution payload ... },
-  "invalidation_reason": "reason if not actionable, else null"
+  "invalidation_reason": "reason if not actionable, else null",
+  "importance_score": 1-10,
+  "urgency_score": 1-10,
+  "should_notify": boolean
 }`;
 
   const userMessage = `Action type: ${actionType}
@@ -131,6 +146,9 @@ ${JSON.stringify(triggerContext, null, 2)}`;
         cloud_confidence: 0.5,
         action_payload: {},
         is_actionable: true,
+        importance_score: 5,
+        urgency_score: 5,
+        should_notify: true,
       };
     }
 
@@ -141,6 +159,11 @@ ${JSON.stringify(triggerContext, null, 2)}`;
     }
 
     const parsed = JSON.parse(content) as EnrichedAction;
+    const importance = typeof parsed.importance_score === "number" ? parsed.importance_score : 5;
+    const urgency = typeof parsed.urgency_score === "number" ? parsed.urgency_score : 5;
+    const shouldNotify = typeof parsed.should_notify === "boolean"
+      ? parsed.should_notify
+      : (importance >= 6 || (importance >= 4 && urgency >= 7));
     return {
       title: parsed.title || localTitle,
       subtitle: parsed.subtitle || null,
@@ -151,6 +174,9 @@ ${JSON.stringify(triggerContext, null, 2)}`;
       action_payload: parsed.action_payload || {},
       is_actionable: parsed.is_actionable !== false,
       invalidation_reason: parsed.invalidation_reason || undefined,
+      importance_score: importance,
+      urgency_score: urgency,
+      should_notify: shouldNotify,
     };
   } catch (err) {
     console.error("[analyze-action] LLM enrichment failed:", err);
@@ -160,6 +186,9 @@ ${JSON.stringify(triggerContext, null, 2)}`;
       cloud_confidence: 0.5,
       action_payload: {},
       is_actionable: true,
+      importance_score: 5,
+      urgency_score: 5,
+      should_notify: true,
     };
   }
 }
@@ -277,6 +306,9 @@ serve(async (req: Request) => {
       trigger_context: body.trigger_context || {},
       local_confidence: body.local_confidence || null,
       cloud_confidence: enriched.cloud_confidence,
+      importance_score: enriched.importance_score,
+      urgency_score: enriched.urgency_score,
+      should_notify: enriched.should_notify,
       status,
       status_message: statusMessage,
     };
@@ -310,6 +342,9 @@ serve(async (req: Request) => {
         action_type: body.action_type,
         action_payload: enriched.action_payload,
         cloud_confidence: enriched.cloud_confidence,
+        importance_score: enriched.importance_score,
+        urgency_score: enriched.urgency_score,
+        should_notify: enriched.should_notify,
         status_message: statusMessage,
         deduplicated: false,
       }),
