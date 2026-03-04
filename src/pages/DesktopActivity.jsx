@@ -500,13 +500,37 @@ const NOISE_DIR_NAMES = new Set([
   'functions', 'supabase', 'migrations', 'tests', '__tests__',
 ]);
 
+// Noise that should be filtered from ALL entity types
 const NOISE_ENTITY_NAMES = new Set([
-  'latest', 'chrome', 'safari', 'firefox', 'finder', 'terminal',
-  'textedit', 'messages', 'google chrome', 'open open', 'untitled untitled',
-  'claude code', 'new tab', 'loading', 'search', 'home', 'settings',
+  'latest', 'open open', 'untitled untitled',
+  'new tab', 'loading', 'search', 'home', 'settings',
   'dashboard', 'undefined', 'null', 'error', 'page', 'view',
-  'edit', 'open', 'close', 'tab', 'window', 'arc', 'cursor',
-  'vs code', 'visual studio code', 'slack', 'discord', 'notion',
+  'edit', 'open', 'close', 'tab', 'window',
+]);
+
+// Garbage topics — window title fragments, non-tech terms that sneak in as "topics"
+const GARBAGE_TOPIC_NAMES = new Set([
+  'is', 'main', 'test', 'build', 'index', 'app', 'config', 'data',
+  'true', 'false', 'null', 'undefined', 'none', 'default', 'error',
+  'taxi eindhoven airport', 'taxi utrecht', 'taxi amsterdam',
+  'mental health care', 'mental health', 'health care',
+  'ha job', 'job board', 'word processing', 'text editing',
+  'web browsing', 'file management', 'system monitor',
+  'claude max', 'claude pro', 'new tab', 'loading',
+  'home page', 'welcome page', 'sign in', 'sign up',
+  'cookie policy', 'privacy policy', 'terms of service',
+  'not found', 'access denied', 'page not found',
+]);
+
+// Fake people — app names and window title fragments misclassified as people
+const FAKE_PEOPLE = new Set([
+  'google chrome', 'claude code', 'using terminal', 'using google chrome',
+  'using chrome', 'using safari', 'using firefox', 'using slack',
+  'using cursor', 'using finder', 'using arc',
+  'visual studio', 'visual studio code', 'vs code',
+  'microsoft teams', 'sublime text', 'intellij idea',
+  'docker desktop', 'activity monitor', 'system preferences',
+  'system settings', 'app store',
 ]);
 
 function isCleanEntity(entity) {
@@ -518,6 +542,17 @@ function isCleanEntity(entity) {
   if (NOISE_DIR_NAMES.has(lower)) return false;
   if (NOISE_FILE_PATTERNS.some(p => p.test(name))) return false;
   if ((entity.occurrence_count || 0) < 3) return false;
+
+  // Type-specific filtering
+  if (entity.type === 'topic') {
+    if (GARBAGE_TOPIC_NAMES.has(lower)) return false;
+    // Only show topics with confidence >= 0.6 (file-extension-derived = 0.7, deep_context garbage = 0.5)
+    if ((entity.confidence || 0) < 0.6) return false;
+  }
+  if (entity.type === 'person') {
+    if (FAKE_PEOPLE.has(lower)) return false;
+  }
+
   return true;
 }
 
