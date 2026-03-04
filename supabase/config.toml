@@ -16,6 +16,9 @@ verify_jwt = false
 [functions.semantic-crm-logger]
 verify_jwt = false
 
+[functions.suggest-action]
+verify_jwt = false
+
 [functions.analyze-action]
 verify_jwt = false
 

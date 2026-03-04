@@ -195,6 +195,41 @@ async function processGmailEvent(
         }
       }
 
+      // Check for action-worthy emails — suggest task via desktop notch
+      const ACTION_WORDS = /\b(please review|can you send|by friday|deadline|reminder|asap|action required|follow up|urgent|overdue|waiting on|respond|approval needed)\b/i;
+      const combinedText = `${emailSubject} ${emailSnippet}`;
+      if (ACTION_WORDS.test(combinedText)) {
+        const senderName = emailFrom.split('<')[0].trim() || emailFrom || 'Someone';
+        try {
+          // Look up user's company_id
+          const { data: userRow } = await supabase.from("users").select("company_id").eq("id", user_id).maybeSingle();
+          if (userRow?.company_id) {
+            await fetch(`${SUPABASE_URL}/functions/v1/suggest-action`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              },
+              body: JSON.stringify({
+                user_id,
+                company_id: userRow.company_id,
+                source: "composio_trigger",
+                event_type: "email_action_needed",
+                event_data: {
+                  title: `${senderName}: ${emailSubject}`.slice(0, 60),
+                  details: emailSnippet?.slice(0, 200) || "Email requires action",
+                  entity_id: emailId,
+                  entity_type: "email",
+                },
+              }),
+            });
+            console.log(`[composio-webhooks] Suggested action for email: "${emailSubject}"`);
+          }
+        } catch (err) {
+          console.warn("[composio-webhooks] suggest-action call failed:", err);
+        }
+      }
+
       // Also store in inbox_messages (non-critical — don't fail if table issues)
       try {
         const { error } = await supabase.from("inbox_messages").insert({

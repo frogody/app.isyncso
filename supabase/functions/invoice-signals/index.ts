@@ -271,6 +271,58 @@ Deno.serve(async (req) => {
       }
     }
 
+    // --- SUGGEST ACTIONS: Push high-confidence signals to desktop notch ---
+    // Extract user_id from auth header for suggest-action calls
+    const authHeader = req.headers.get("authorization") || "";
+    // Resolve user_id from the JWT if available
+    let signalUserId: string | null = null;
+    if (authHeader) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+        signalUserId = user?.id || null;
+      } catch { /* non-fatal */ }
+    }
+
+    if (signalUserId && signals.length > 0) {
+      const suggestUrl = `${supabaseUrl}/functions/v1/suggest-action`;
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+      const SIGNAL_EVENT_MAP: Record<string, string> = {
+        accepted_proposal: "proposal_accepted",
+        delivered_order: "delivered_order",
+        recurring_due: "recurring_invoice_due",
+        won_deal: "deal_won",
+      };
+
+      // Only suggest top 3 highest-value signals
+      const topSignals = [...signals]
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 3);
+
+      for (const sig of topSignals) {
+        try {
+          await fetch(suggestUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${anonKey}` },
+            body: JSON.stringify({
+              user_id: signalUserId,
+              company_id,
+              source: "invoice_signal",
+              event_type: SIGNAL_EVENT_MAP[sig.type] || sig.type,
+              event_data: {
+                title: sig.title,
+                details: sig.description,
+                entity_id: sig.source_id,
+                entity_type: sig.type.includes("invoice") || sig.type.includes("proposal") ? "invoice" : "deal",
+              },
+            }),
+          });
+        } catch (err) {
+          console.warn("[invoice-signals] suggest-action call failed:", err);
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         signals,

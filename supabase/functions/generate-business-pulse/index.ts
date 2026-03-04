@@ -266,8 +266,51 @@ Deno.serve(async (req: Request) => {
       if (!error) inserted++;
     }
 
+    // --- SUGGEST ACTIONS: Send high-priority items to desktop notch ---
+    const EVENT_TYPE_MAP: Record<string, string> = {
+      overdue_invoice: "invoice_overdue",
+      stale_deal: "stale_deal",
+      low_stock: "low_stock",
+      overdue_task: "deadline_tomorrow",
+      payment_risk_deal: "stale_deal",
+      ready_to_invoice: "proposal_accepted",
+    };
+
+    const suggestUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/suggest-action`;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    let suggestCount = 0;
+
+    for (const item of topItems) {
+      // Only suggest items with urgency*impact score >= 42 (e.g. 6*7)
+      if ((item.urgency * item.impact) < 42) continue;
+
+      const eventType = EVENT_TYPE_MAP[item.item_type] || item.item_type;
+      try {
+        await fetch(suggestUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${anonKey}` },
+          body: JSON.stringify({
+            user_id,
+            company_id,
+            source: "business_pulse",
+            event_type: eventType,
+            event_data: {
+              title: item.title,
+              details: item.description,
+              entity_id: item.related_entity_ids?.[0] || null,
+              entity_type: item.item_type.includes("invoice") ? "invoice" : item.item_type.includes("deal") ? "deal" : item.item_type.includes("task") ? "task" : "other",
+              priority_hint: item.urgency >= 8 ? "high" : "medium",
+            },
+          }),
+        });
+        suggestCount++;
+      } catch (err) {
+        console.warn("[business-pulse] suggest-action call failed:", err);
+      }
+    }
+
     return new Response(
-      JSON.stringify({ success: true, items_generated: inserted, total_candidates: items.length, items: topItems }),
+      JSON.stringify({ success: true, items_generated: inserted, total_candidates: items.length, suggested_actions: suggestCount, items: topItems }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
