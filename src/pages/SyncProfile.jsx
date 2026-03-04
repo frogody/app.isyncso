@@ -415,56 +415,107 @@ function DailyRhythmsChapter({ biography }) {
 }
 
 // ─── Chapter: Assumptions ──────────────────────────────────────────
+function AssumptionCard({ a, isObserved, onConfirm, onReject }) {
+  return (
+    <motion.div
+      key={a.id}
+      layout
+      initial={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, x: -60, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className={`pb-4 mb-4 last:border-0 last:mb-0 last:pb-0 ${
+        isObserved
+          ? 'border-b border-cyan-500/20'
+          : 'border-b border-dashed border-zinc-700/40'
+      }`}
+    >
+      <div className="flex items-start gap-2 mb-1">
+        <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium uppercase tracking-wider flex-shrink-0 ${
+          isObserved
+            ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+            : 'bg-zinc-800/60 text-zinc-500 border border-dashed border-zinc-600/40'
+        }`}>
+          {isObserved ? 'Observed' : 'Inferred'}
+        </span>
+        <p className={`text-sm ${isObserved ? 'text-white' : 'text-zinc-400'}`}>"{a.assumption}"</p>
+      </div>
+      {a.evidence && (
+        <p className="text-[11px] text-zinc-500 ml-[52px] mb-1 italic">
+          Source: {a.evidence}
+        </p>
+      )}
+      <div className="flex items-center justify-between ml-[52px]">
+        <span className="text-xs text-zinc-500">
+          {(a.category || 'general').replace('_', ' ')} &middot; {Math.round((a.confidence || 0) * 100)}% confidence
+          {a.source && <> &middot; via {a.source.replace('_', ' ')}</>}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" className="h-7 text-xs text-green-400 hover:bg-green-500/10" onClick={() => onConfirm(a)}>
+            <CheckCircle2 className="w-3 h-3 mr-1" /> Yes
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400 hover:bg-red-500/10" onClick={() => onReject(a)}>
+            <XCircle className="w-3 h-3 mr-1" /> No
+          </Button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 function AssumptionsChapter({ assumptions, onConfirm, onReject }) {
   const active = assumptions.filter(a => a.status === 'active' || !a.status);
+  const observed = active.filter(a => (a.confidence || 0) > 0.7 && a.evidence);
+  const inferred = active.filter(a => !((a.confidence || 0) > 0.7 && a.evidence));
+
   return (
     <div className="space-y-6">
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             SYNC forms assumptions about you based on your behavior patterns, conversations, and activity.
-            These are educated guesses — confirm the ones that resonate, and correct the ones that miss the mark.
+            Confirm the ones that resonate, and correct the ones that miss the mark.
             {active.length > 0 ? (
-              <> You have <span className="text-cyan-400 font-medium">{active.length} assumptions</span> waiting for your review.</>
+              <> You have <span className="text-cyan-400 font-medium">{observed.length} observed</span> and <span className="text-zinc-400 font-medium">{inferred.length} inferred</span> assumptions waiting for your review.</>
             ) : (
               <> You've reviewed all current assumptions. New ones will appear as SYNC learns more about you.</>
             )}
           </p>
         </div>
       </div>
+
+      {/* Observed assumptions — high confidence with evidence */}
+      {observed.length > 0 && (
+        <div className="bg-zinc-900/60 border border-cyan-500/20 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-medium text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5" />
+              Observed
+            </h3>
+            <span className="text-xs text-zinc-500">{observed.length} items</span>
+          </div>
+          <AnimatePresence mode="popLayout">
+            {observed.map(a => (
+              <AssumptionCard key={a.id} a={a} isObserved onConfirm={onConfirm} onReject={onReject} />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {/* Inferred assumptions — lower confidence or missing evidence */}
       <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Pending Review</h3>
-          <span className="text-xs text-zinc-500">{active.length} remaining</span>
+          <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
+            <Search className="w-3.5 h-3.5" />
+            {observed.length > 0 ? 'Inferred' : 'Pending Review'}
+          </h3>
+          <span className="text-xs text-zinc-500">{inferred.length} remaining</span>
         </div>
         <AnimatePresence mode="popLayout">
-          {active.map(a => (
-            <motion.div
-              key={a.id}
-              layout
-              initial={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, x: -60, height: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="border-b border-zinc-800/30 pb-4 mb-4 last:border-0"
-            >
-              <p className="text-sm text-white mb-1">"{a.assumption}"</p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">
-                  {(a.category || 'general').replace('_', ' ')} &middot; {Math.round((a.confidence || 0) * 100)}% confidence
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost" className="h-7 text-xs text-green-400 hover:bg-green-500/10" onClick={() => onConfirm(a)}>
-                    <CheckCircle2 className="w-3 h-3 mr-1" /> Yes
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400 hover:bg-red-500/10" onClick={() => onReject(a)}>
-                    <XCircle className="w-3 h-3 mr-1" /> No
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
+          {inferred.map(a => (
+            <AssumptionCard key={a.id} a={a} isObserved={false} onConfirm={onConfirm} onReject={onReject} />
           ))}
         </AnimatePresence>
-        {active.length === 0 && (
+        {inferred.length === 0 && observed.length === 0 && (
           <EmptyState icon={Brain} title="All caught up!" description="You've reviewed all of SYNC's assumptions" />
         )}
       </div>

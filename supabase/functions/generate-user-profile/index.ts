@@ -468,12 +468,43 @@ serve(async (req) => {
       userDataStr = userDataStr.slice(0, 40000) + '\n...(truncated)';
     }
 
-    // Build corrections string from rejected assumptions
+    // Build data sufficiency notes for the LLM
+    const sufficiencyParts: string[] = [];
+    if (activityLogs.length < 10) {
+      sufficiencyParts.push('- INSUFFICIENT DESKTOP DATA: Only ' + activityLogs.length + ' desktop activity rows. Do NOT generate desktop-based assumptions.');
+    }
+    if (journals.length < 3) {
+      sufficiencyParts.push('- LIMITED JOURNAL DATA: Only ' + journals.length + ' journals. Treat journal-based inferences as low confidence (< 0.3).');
+    }
+    if (deepContextEvents.length < 5) {
+      sufficiencyParts.push('- LIMITED DEEP CONTEXT: Only ' + deepContextEvents.length + ' screen capture events. Do NOT infer work patterns from deep context.');
+    }
+    if (sessions.length < 3) {
+      sufficiencyParts.push('- LIMITED CONVERSATION DATA: Only ' + sessions.length + ' sessions. Do NOT infer communication style from conversations.');
+    }
+    const dataSufficiencyNotes = sufficiencyParts.length > 0
+      ? sufficiencyParts.join('\n')
+      : '- All data sources have sufficient records for reliable profiling.';
+
+    // Extract themes from rejected assumptions for broader correction patterns
     let correctionsStr = 'None';
     if (rejections.length > 0) {
       correctionsStr = rejections.map(r =>
         `- [${r.category}] "${r.assumption}" — User feedback: ${r.user_feedback || 'rejected'}`
       ).join('\n');
+
+      // Extract correction themes
+      const themes = new Set<string>();
+      for (const r of rejections) {
+        if (r.category) themes.add(r.category);
+        const text = (r.assumption || '').toLowerCase();
+        if (text.includes('night owl') || text.includes('early bird') || text.includes('morning person')) themes.add('sleep_schedule');
+        if (text.includes('introvert') || text.includes('extrovert')) themes.add('personality_type');
+        if (text.includes('perfectionist') || text.includes('ambitious')) themes.add('personality_traits');
+      }
+      if (themes.size > 0) {
+        correctionsStr += '\n\nCORRECTION THEMES TO AVOID: ' + [...themes].join(', ');
+      }
     }
 
     // Build LLM prompt
@@ -524,14 +555,18 @@ GUIDELINES:
 - The biography should be 800-1200 words. Make it rich and detailed.
 - EVERY chapter summary (superpowers_summary, work_dna_summary, social_circle_summary, digital_life_summary, client_world_summary, interests_summary, daily_rhythms_summary) MUST be 150-300 words of rich narrative. These are the MOST IMPORTANT outputs after the biography. Each one should read like a mini-essay about that aspect of the person.
 - The daily_rhythms array should have entries for each active hour of the day (typically 8-23), with activity_count and primary_activity.
-- Generate 20-30 assumptions. Be bold and specific, not safe and generic.
+- Generate 20-30 assumptions. Only state what the data directly supports.
+- For each assumption, you MUST cite the exact data source and record count in the "evidence" field. If based on fewer than 3 data points, set confidence below 0.3.
+- Never infer personality traits, future goals, or emotional states. Stick to observable behavior patterns.
 - Reference SPECIFIC projects, tools, files, and patterns from the data.
 - Use the daily journals heavily — they contain the richest narrative about their actual days.
 - Use deep context events to understand what they actually work on hour-by-hour.
-- Infer personality from behavior patterns (e.g., late-night coding = night owl, frequent context-switching = multitasker).
-- Don't be afraid to make educated guesses — that's what assumptions are for.
+- Describe observable patterns (e.g., "commits code between 22:00-01:00 on 8 of 14 days") rather than personality labels.
 
-IMPORTANT: If the user has corrected previous assumptions (listed below as CORRECTIONS), respect those corrections and do NOT repeat the same wrong assumptions.
+DATA SUFFICIENCY NOTES (auto-generated):
+${dataSufficiencyNotes}
+
+IMPORTANT: If the user has corrected previous assumptions (listed below as CORRECTIONS), respect those corrections and do NOT repeat the same wrong assumptions. Also avoid assumptions with similar THEMES to rejected ones — not just exact text matches.
 
 Respond ONLY with valid JSON, no additional text.`;
 
@@ -562,7 +597,7 @@ ${userDataStr}`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        temperature: 0.5,
+        temperature: 0.2,
         max_tokens: 16000,
       }),
     });

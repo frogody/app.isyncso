@@ -480,6 +480,48 @@ const THREAD_STATUS_COLORS = {
 };
 
 // ---------------------------------------------------------------------------
+// Entity noise filter (mirrors UniversalContextBar logic)
+// ---------------------------------------------------------------------------
+
+const NOISE_FILE_PATTERNS = [
+  /\.(png|jpg|jpeg|gif|svg|pdf|csv|json|md|tsx?|jsx?|sql|txt|xml|zip|mp4|mov|webp|ico|woff2?)$/i,
+  /^screenshot[\s-]/i,
+  /^screencapture-/i,
+  /^untitled[\s-]/i,
+  /^IMG_\d/i,
+  /^DSC_?\d/i,
+  /^Screen\s?Shot/i,
+];
+
+const NOISE_DIR_NAMES = new Set([
+  'pages', 'hooks', 'components', 'src', 'utils', 'lib', 'api', 'public',
+  'node_modules', 'dist', 'build', '.next', '.git', 'assets', 'styles',
+  'types', 'services', 'config', 'layouts', 'middleware', 'helpers',
+  'functions', 'supabase', 'migrations', 'tests', '__tests__',
+]);
+
+const NOISE_ENTITY_NAMES = new Set([
+  'latest', 'chrome', 'safari', 'firefox', 'finder', 'terminal',
+  'textedit', 'messages', 'google chrome', 'open open', 'untitled untitled',
+  'claude code', 'new tab', 'loading', 'search', 'home', 'settings',
+  'dashboard', 'undefined', 'null', 'error', 'page', 'view',
+  'edit', 'open', 'close', 'tab', 'window', 'arc', 'cursor',
+  'vs code', 'visual studio code', 'slack', 'discord', 'notion',
+]);
+
+function isCleanEntity(entity) {
+  if (!entity?.name) return false;
+  const name = entity.name.trim();
+  if (name.length < 2) return false;
+  const lower = name.toLowerCase();
+  if (NOISE_ENTITY_NAMES.has(lower)) return false;
+  if (NOISE_DIR_NAMES.has(lower)) return false;
+  if (NOISE_FILE_PATTERNS.some(p => p.test(name))) return false;
+  if ((entity.occurrence_count || 0) < 3) return false;
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // Intelligence Tab — semantic pipeline data visualization
 // ---------------------------------------------------------------------------
 
@@ -581,12 +623,17 @@ function IntelligenceTab({ userId }) {
     [semanticData.activityDist]
   );
 
+  const filteredEntities = useMemo(() =>
+    semanticData.entities.filter(isCleanEntity),
+    [semanticData.entities]
+  );
+
   const entityGroups = useMemo(() => ({
-    projects: semanticData.entities.filter(e => e.type === 'project'),
-    technologies: semanticData.entities.filter(e => e.type === 'topic'),
-    tools: semanticData.entities.filter(e => e.type === 'tool'),
-    people: semanticData.entities.filter(e => e.type === 'person'),
-  }), [semanticData.entities]);
+    projects: filteredEntities.filter(e => e.type === 'project'),
+    technologies: filteredEntities.filter(e => e.type === 'topic'),
+    tools: filteredEntities.filter(e => e.type === 'tool'),
+    people: filteredEntities.filter(e => e.type === 'person'),
+  }), [filteredEntities]);
 
   const intentsByThread = useMemo(() => {
     const map = {};
@@ -648,7 +695,7 @@ function IntelligenceTab({ userId }) {
       <motion.div {...SLIDE_UP} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard icon={Activity} label="Activities" value={semanticData.counts.activities.toLocaleString()} color="cyan" delay={0} />
         <StatCard icon={GitBranch} label="Active Threads" value={activeThreadCount} color="blue" delay={0.05} />
-        <StatCard icon={Database} label="Entities" value={semanticData.counts.entities.toLocaleString()} color="indigo" delay={0.1} />
+        <StatCard icon={Database} label="Entities" value={filteredEntities.length.toLocaleString()} color="indigo" delay={0.1} />
         <StatCard icon={Target} label="Intents" value={semanticData.counts.intents.toLocaleString()} color="amber" delay={0.15} />
       </motion.div>
 
@@ -676,7 +723,7 @@ function IntelligenceTab({ userId }) {
                 </ResponsiveContainer>
                 <div className="flex-1 space-y-1.5">
                   {activityTypeDist.map((entry) => {
-                    const totalActs = semanticData.counts.activities || semanticData.activities.length;
+                    const totalActs = semanticData.counts.activities || activityTypeDist.reduce((s, e) => s + e.value, 0);
                     const pct = totalActs > 0
                       ? Math.round((entry.value / totalActs) * 100)
                       : 0;
@@ -727,7 +774,7 @@ function IntelligenceTab({ userId }) {
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <Database className="w-4 h-4 text-cyan-400" />
             Entities
-            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{semanticData.counts.entities} total</span>
+            <span className="text-[10px] text-zinc-500 font-normal ml-auto">{filteredEntities.length} total</span>
           </h3>
 
           {[
