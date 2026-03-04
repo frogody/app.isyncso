@@ -81,6 +81,25 @@ function OverviewChapter({ biography, user, company }) {
                 <> &middot; Generated {formatDistanceToNow(new Date(biography.updated_at || biography.created_at), { addSuffix: true })}</>
               )}
             </p>
+            {(biography?.generation_number > 1 || biography?.knowledge_count > 0) && (
+              <div className="flex items-center gap-2 mt-1.5">
+                {biography.generation_number > 1 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    Gen #{biography.generation_number}
+                  </span>
+                )}
+                {biography.knowledge_count > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    {biography.knowledge_count} confirmed insights
+                  </span>
+                )}
+                {biography.profile_depth_score > 0 && (
+                  <span className="text-[10px] text-zinc-500">
+                    Depth: {Math.round(biography.profile_depth_score)}%
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
         {biography?.biography && (
@@ -804,14 +823,36 @@ export default function SyncProfile({ embedded = false, onRegisterControls } = {
   }
 
   const handleConfirmAssumption = useCallback(async (assumption) => {
+    // 1. Confirm + lock the assumption so it persists across regenerations
     const { error } = await db
       .from('user_profile_assumptions')
-      .update({ status: 'confirmed', reviewed_at: new Date().toISOString() })
+      .update({
+        status: 'confirmed',
+        is_locked: true,
+        times_confirmed: (assumption.times_confirmed || 0) + 1,
+        reviewed_at: new Date().toISOString(),
+      })
       .eq('id', assumption.id);
     if (error) { toast.error('Failed to confirm'); return; }
+
+    // 2. Promote to persistent knowledge (survives profile regeneration)
+    const category = assumption.category || assumption.assumption_type || 'fact';
+    const knowledgeText = assumption.assumption_text || assumption.text || assumption.title;
+    if (knowledgeText && user?.id) {
+      await db.from('user_profile_knowledge').upsert({
+        user_id: user.id,
+        category,
+        knowledge: knowledgeText,
+        confidence: 0.85,
+        source: 'assumption_confirmed',
+        is_locked: true,
+        last_reinforced_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,category,knowledge' });
+    }
+
     setAssumptions(prev => prev.filter(a => a.id !== assumption.id));
-    toast.success('Assumption confirmed');
-  }, []);
+    toast.success('Confirmed & saved as permanent insight');
+  }, [user?.id]);
 
   const handleOpenReject = useCallback((assumption) => {
     setFeedbackModal({ open: true, assumption });

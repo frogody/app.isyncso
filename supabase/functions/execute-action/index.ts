@@ -192,14 +192,23 @@ async function executeTaskCreate(
     detected_at: triggerCtx.timestamp || new Date().toISOString(),
   };
 
+  // Look up user's organization_id — required by RLS for task visibility
+  const { data: userData } = await supabase
+    .from("users")
+    .select("organization_id")
+    .eq("id", action.user_id)
+    .maybeSingle();
+
   const { error } = await supabase.from("tasks").insert({
     title: (params.title as string) || action.title,
     description,
     priority,
     due_date: (params.due_date as string) || null,
     status: "pending",
+    assigned_to: action.user_id,
     created_by: action.user_id,
     company_id: action.company_id,
+    organization_id: userData?.organization_id || null,
     source: "notch_suggestion",
     source_ref_id: action.id,
     metadata,

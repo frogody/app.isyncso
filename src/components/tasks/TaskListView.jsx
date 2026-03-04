@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import {
   Calendar, Clock, CheckCircle2, Circle, MoreHorizontal,
   Edit2, Trash2, ChevronDown, ChevronRight, Sparkles, Flag,
-  XCircle
+  XCircle, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +78,7 @@ function TaskListRow({ task, onEdit, onDelete, onStatusChange, onSelect, isSelec
       <PriorityDot priority={task.priority} />
 
       {/* Title + description */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 flex items-center gap-2">
         <h4
           className={`text-sm font-medium truncate cursor-pointer transition-colors ${
             task.status === "completed"
@@ -89,6 +89,12 @@ function TaskListRow({ task, onEdit, onDelete, onStatusChange, onSelect, isSelec
         >
           {task.title}
         </h4>
+        {task.source === "notch_suggestion" && (
+          <span className="flex items-center gap-1 flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <Zap className="w-2.5 h-2.5" />
+            SYNC
+          </span>
+        )}
       </div>
 
       {/* Labels */}

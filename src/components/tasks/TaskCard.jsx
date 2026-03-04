@@ -2,7 +2,7 @@ import React from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import {
   Calendar, Clock, CheckCircle2, Circle, AlertCircle, XCircle,
-  MoreHorizontal, Trash2, Edit2, Flag, Sparkles, User, ListChecks
+  MoreHorizontal, Trash2, Edit2, Flag, Sparkles, User, ListChecks, Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,6 +88,12 @@ export default function TaskCard({
                 >
                   {task.title}
                 </h4>
+                {task.source === "notch_suggestion" && (
+                  <span className="flex items-center gap-1 flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <Zap className="w-2.5 h-2.5" />
+                    SYNC
+                  </span>
+                )}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

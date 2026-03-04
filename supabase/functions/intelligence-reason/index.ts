@@ -155,6 +155,7 @@ Analyze the data for:
 3. Timing opportunities based on calendar position
 4. Relationship insights from interaction patterns
 5. Workload awareness
+6. DESKTOP ACTIVITY PATTERNS — the snapshot includes the user's actual computer usage (apps, focus scores, work context, 7-day trends). Look for: focus degradation, context switching overload, work patterns that suggest fatigue or missed opportunities, apps the user is spending time in that relate to business actions, window titles revealing what they're actively working on
 
 ONLY reference entities and values that exist in the snapshot. Every client name, EUR amount, invoice number, and date you mention MUST come from the data below.
 
@@ -209,6 +210,17 @@ RULES:
 - NEVER suggest for these entity IDs (already dismissed): ${JSON.stringify(dismissedEntityIds)}
 ${profile.formality_preference === 'casual' ? '- Use casual, direct language' : '- Use professional language'}
 ${profile.preferred_detail_level === 'brief' ? '- Keep subtitles brief (1 sentence)' : '- Include full context in subtitles'}
+
+DESKTOP ACTIVITY-BASED SUGGESTIONS:
+The snapshot includes the user's ACTUAL computer usage — apps, focus scores, window titles, and 7-day patterns.
+You SHOULD generate suggestions based on desktop activity when relevant:
+- Focus degradation detected → suggest a break or time block
+- User working in a specific app (e.g. email) → suggest related follow-ups
+- Long hours without breaks → suggest taking a break
+- Window titles mentioning a client/project → connect to CRM/task data
+- App switching patterns → suggest focusing on one task
+- Working outside normal hours → note work-life balance
+These are just as valuable as financial or CRM suggestions. Mix desktop activity insights with system data insights.
 
 Output ONLY a JSON array:
 [{
@@ -356,13 +368,45 @@ function summarizeSnapshot(snapshot: any): string {
     }
   }
 
-  // Recent activity
+  // Desktop Activity & Work Patterns (from desktop app)
   const recent = snapshot.recent_activity;
   if (recent) {
+    parts.push('');
+    parts.push('═══ DESKTOP ACTIVITY (from user\'s computer) ═══');
+
+    // Current session
     if (recent.top_apps_4h?.length > 0) {
-      parts.push(`CURRENT APPS: ${recent.top_apps_4h.map((a: any) => `${a.app} ${a.minutes}min`).join(', ')}`);
+      parts.push(`CURRENT SESSION (last 4h):`);
+      for (const a of recent.top_apps_4h) {
+        parts.push(`  - ${a.app}: ${a.minutes}min`);
+      }
+      parts.push(`  Total active: ${recent.total_active_minutes || 0}min, Focus: ${recent.focus_score ? Math.round(recent.focus_score * 100) + '%' : 'unknown'}`);
     }
-    parts.push(`FOCUS: ${recent.focus_score ? Math.round(recent.focus_score * 100) + '%' : 'unknown'}`);
+
+    // What user is currently working on
+    if (recent.current_work_context?.length > 0) {
+      parts.push(`CURRENT WORK CONTEXT (window titles):`);
+      for (const ctx of recent.current_work_context) {
+        parts.push(`  - ${ctx}`);
+      }
+    }
+
+    // 7-day patterns
+    if (recent.top_apps_7d?.length > 0) {
+      parts.push(`7-DAY APP USAGE:`);
+      for (const a of recent.top_apps_7d.slice(0, 6)) {
+        parts.push(`  - ${a.app}: ${a.minutes}min total`);
+      }
+      parts.push(`  ${recent.active_days_7d || 0} active days, avg ${recent.avg_daily_minutes_7d || 0}min/day`);
+    }
+
+    if (recent.avg_focus_7d) {
+      parts.push(`FOCUS: current ${recent.focus_score ? Math.round(recent.focus_score * 100) + '%' : '?'} vs 7d avg ${Math.round(recent.avg_focus_7d * 100)}% → trend: ${recent.focus_trend || 'unknown'}`);
+    }
+
+    if (recent.peak_focus_hours?.length > 0) {
+      parts.push(`PEAK FOCUS HOURS: ${recent.peak_focus_hours.join(', ')}`);
+    }
   }
 
   return parts.join('\n');

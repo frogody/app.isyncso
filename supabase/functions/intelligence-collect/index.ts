@@ -437,8 +437,8 @@ async function collectUserProfile(supabase: any, userId: string) {
 }
 
 async function collectRecentActivity(supabase: any, userId: string, fourHoursAgo: string, sevenDaysAgo: string) {
-  const [activityLogs, recentQueries, dismissed, accepted] = await Promise.all([
-    // Desktop activity logs (last 4h)
+  const [activityLogs4h, activityLogs7d, contextEvents, recentQueries, dismissed, accepted] = await Promise.all([
+    // Desktop activity logs (last 4h) — what user is doing NOW
     supabase
       .from('desktop_activity_logs')
       .select('hour_start, app_breakdown, total_minutes, focus_score')
@@ -447,7 +447,25 @@ async function collectRecentActivity(supabase: any, userId: string, fourHoursAgo
       .order('hour_start', { ascending: false })
       .limit(4),
 
-    // Last 10 SYNC queries
+    // Desktop activity logs (last 7d) — behavioral patterns
+    supabase
+      .from('desktop_activity_logs')
+      .select('hour_start, app_breakdown, total_minutes, focus_score')
+      .eq('user_id', userId)
+      .gte('hour_start', sevenDaysAgo)
+      .order('hour_start', { ascending: false })
+      .limit(168),
+
+    // Desktop context events (last 24h) — semantic activity context
+    supabase
+      .from('desktop_context_events')
+      .select('event_type, context_data, app_name, window_title, created_at')
+      .eq('user_id', userId)
+      .gte('created_at', fourHoursAgo)
+      .order('created_at', { ascending: false })
+      .limit(30),
+
+    // Last SYNC queries
     supabase
       .from('sync_sessions')
       .select('messages, updated_at')
@@ -474,22 +492,93 @@ async function collectRecentActivity(supabase: any, userId: string, fourHoursAgo
       .limit(10),
   ]);
 
-  // Extract app usage from activity logs
-  const appTotals: Record<string, number> = {};
-  let totalMinutes = 0;
-  let avgFocus = 0;
-  for (const log of activityLogs.data || []) {
-    totalMinutes += log.total_minutes || 0;
-    avgFocus += log.focus_score || 0;
+  // ── 4-hour current activity ──
+  const appTotals4h: Record<string, number> = {};
+  let totalMinutes4h = 0;
+  let avgFocus4h = 0;
+  for (const log of activityLogs4h.data || []) {
+    totalMinutes4h += log.total_minutes || 0;
+    avgFocus4h += log.focus_score || 0;
     const apps = Array.isArray(log.app_breakdown)
       ? log.app_breakdown
       : Object.entries(log.app_breakdown || {}).map(([k, v]) => ({ appName: k, minutes: v }));
     for (const app of apps) {
       const name = (app as any).appName || (app as any).app_name || 'Unknown';
-      appTotals[name] = (appTotals[name] || 0) + ((app as any).minutes || 0);
+      appTotals4h[name] = (appTotals4h[name] || 0) + ((app as any).minutes || 0);
     }
   }
-  avgFocus = (activityLogs.data || []).length > 0 ? avgFocus / (activityLogs.data || []).length : 0;
+  avgFocus4h = (activityLogs4h.data || []).length > 0 ? avgFocus4h / (activityLogs4h.data || []).length : 0;
+
+  // ── 7-day patterns ──
+  const appTotals7d: Record<string, number> = {};
+  let totalMinutes7d = 0;
+  let totalFocusSum = 0;
+  let focusCount = 0;
+  const dailyMinutes: Record<string, number> = {};
+  const hourlyFocus: Record<number, { total: number; count: number }> = {};
+
+  for (const log of activityLogs7d.data || []) {
+    totalMinutes7d += log.total_minutes || 0;
+    if (log.focus_score != null) {
+      totalFocusSum += log.focus_score;
+      focusCount++;
+    }
+
+    // Track daily totals
+    const day = log.hour_start?.split('T')[0];
+    if (day) dailyMinutes[day] = (dailyMinutes[day] || 0) + (log.total_minutes || 0);
+
+    // Track hourly focus patterns
+    const hour = new Date(log.hour_start).getHours();
+    if (!hourlyFocus[hour]) hourlyFocus[hour] = { total: 0, count: 0 };
+    hourlyFocus[hour].total += log.focus_score || 0;
+    hourlyFocus[hour].count++;
+
+    const apps = Array.isArray(log.app_breakdown)
+      ? log.app_breakdown
+      : Object.entries(log.app_breakdown || {}).map(([k, v]) => ({ appName: k, minutes: v }));
+    for (const app of apps) {
+      const name = (app as any).appName || (app as any).app_name || 'Unknown';
+      appTotals7d[name] = (appTotals7d[name] || 0) + ((app as any).minutes || 0);
+    }
+  }
+
+  const avgFocus7d = focusCount > 0 ? totalFocusSum / focusCount : 0;
+  const activeDays = Object.keys(dailyMinutes).length;
+  const avgDailyMinutes = activeDays > 0 ? totalMinutes7d / activeDays : 0;
+
+  // Peak focus hours
+  const peakHours = Object.entries(hourlyFocus)
+    .map(([h, v]) => ({ hour: Number(h), avgFocus: v.count > 0 ? v.total / v.count : 0 }))
+    .sort((a, b) => b.avgFocus - a.avgFocus)
+    .slice(0, 3)
+    .map(h => `${h.hour}:00 (${Math.round(h.avgFocus * 100)}%)`);
+
+  // Focus trend: compare last 2 days vs prior 5 days
+  const sortedDays = Object.keys(dailyMinutes).sort();
+  const recentDays = sortedDays.slice(-2);
+  const priorDays = sortedDays.slice(0, -2);
+  let focusTrend = 'stable';
+  if (recentDays.length >= 1 && priorDays.length >= 2) {
+    const recentAvg = avgFocus4h;
+    if (recentAvg < avgFocus7d * 0.8) focusTrend = 'declining';
+    else if (recentAvg > avgFocus7d * 1.15) focusTrend = 'improving';
+  }
+
+  // ── Context events — what the user is working on ──
+  const contextSummary: string[] = [];
+  const appContext: Record<string, string[]> = {};
+  for (const evt of contextEvents.data || []) {
+    const app = evt.app_name || 'Unknown';
+    const title = evt.window_title || '';
+    if (!appContext[app]) appContext[app] = [];
+    if (title && appContext[app].length < 3) {
+      appContext[app].push(title.substring(0, 80));
+    }
+  }
+  for (const [app, titles] of Object.entries(appContext)) {
+    contextSummary.push(`${app}: ${titles.join(' | ')}`);
+  }
 
   // Extract recent user queries from sync sessions
   const recentUserQueries: string[] = [];
@@ -505,13 +594,33 @@ async function collectRecentActivity(supabase: any, userId: string, fourHoursAgo
   }
 
   return {
-    top_apps_4h: Object.entries(appTotals)
+    // Current session (4h)
+    top_apps_4h: Object.entries(appTotals4h)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
       .map(([name, mins]) => ({ app: name, minutes: Math.round(mins) })),
-    total_active_minutes: Math.round(totalMinutes),
-    focus_score: Math.round(avgFocus * 100) / 100,
+    total_active_minutes: Math.round(totalMinutes4h),
+    focus_score: Math.round(avgFocus4h * 100) / 100,
+
+    // 7-day patterns
+    top_apps_7d: Object.entries(appTotals7d)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name, mins]) => ({ app: name, minutes: Math.round(mins) })),
+    total_active_minutes_7d: Math.round(totalMinutes7d),
+    avg_daily_minutes_7d: Math.round(avgDailyMinutes),
+    active_days_7d: activeDays,
+    avg_focus_7d: Math.round(avgFocus7d * 100) / 100,
+    focus_trend: focusTrend,
+    peak_focus_hours: peakHours,
+
+    // Desktop context — what user is currently working on
+    current_work_context: contextSummary.slice(0, 8),
+
+    // SYNC queries
     recent_sync_queries: recentUserQueries.slice(0, 5),
+
+    // Suggestion history
     dismissed_suggestions_7d: (dismissed.data || []).map((d: any) => ({
       title: d.title,
       type: d.action_type,
