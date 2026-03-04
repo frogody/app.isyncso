@@ -22,10 +22,10 @@ const VIEW_CONFIG = {
 };
 
 const VIEW_LAYOUT = {
-  agent:    'max-w-[1600px] mx-auto h-[calc(100dvh-7rem)] overflow-hidden flex flex-col',
-  journal:  'w-full space-y-4',
-  profile:  'w-full',
-  activity: 'w-full space-y-4',
+  agent:    'max-w-[1600px] mx-auto h-[calc(100dvh-7rem)] overflow-hidden flex flex-col pb-16 md:pb-0',
+  journal:  'w-full space-y-4 pb-16 md:pb-0',
+  profile:  'w-full pb-16 md:pb-0',
+  activity: 'w-full space-y-4 pb-16 md:pb-0',
 };
 
 function ViewFallback() {
@@ -52,7 +52,7 @@ export default function SyncHub() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="w-full px-4 lg:px-6 py-4">
+      <div className="w-full px-3 md:px-4 lg:px-6 py-4">
         {/* Shared header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
           <div className="flex items-center gap-3">

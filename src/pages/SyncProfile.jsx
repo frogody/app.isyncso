@@ -63,8 +63,8 @@ function OverviewChapter({ biography, user, company }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
-        <div className="flex items-start gap-5 mb-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5 mb-6">
           {user?.avatar_url ? (
             <img src={user.avatar_url} alt={displayName} className="w-16 h-16 rounded-full object-cover border-2 border-cyan-500/30" />
           ) : (
@@ -111,14 +111,14 @@ function OverviewChapter({ biography, user, company }) {
         )}
       </div>
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {[
           { icon: Monitor, label: 'Active Apps', value: biography?.top_apps?.length || 0 },
           { icon: Users, label: 'Top Clients', value: biography?.top_clients?.length || 0 },
           { icon: Zap, label: 'Skills', value: biography?.skills?.length || 0 },
           { icon: Heart, label: 'Interests', value: biography?.interests?.length || 0 },
         ].map((s, i) => (
-          <div key={i} className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 flex items-center gap-3">
+          <div key={i} className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-3 md:p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
               <s.icon className="w-5 h-5 text-cyan-400" />
             </div>
@@ -140,7 +140,7 @@ function SuperpowersChapter({ biography }) {
   const skillNames = skills.map(s => typeof s === 'string' ? s : s.name || s.label || '').filter(Boolean);
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             Based on observed activity patterns, SYNC has identified <span className="text-cyan-400 font-medium">{skills.length} core competencies</span> that
@@ -155,7 +155,7 @@ function SuperpowersChapter({ biography }) {
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Skill Map</h3>
         <div className="flex flex-wrap gap-2">
           {skills.map((skill, i) => {
@@ -180,7 +180,7 @@ function WorkDNAChapter({ biography }) {
   const traits = workStyle.map(w => typeof w === 'string' ? w : w.label || w.name || '').filter(Boolean);
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             Your work DNA reveals <span className="text-blue-400 font-medium">{workStyle.length} defining traits</span> that shape how you approach tasks and collaboration.
@@ -195,7 +195,7 @@ function WorkDNAChapter({ biography }) {
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Work Traits</h3>
         <div className="flex flex-wrap gap-2">
           {workStyle.map((item, i) => (
@@ -217,7 +217,7 @@ function SocialCircleChapter({ biography }) {
   const topName = coworkers[0]?.name || coworkers[0]?.full_name || 'your closest colleague';
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             SYNC has mapped <span className="text-purple-400 font-medium">{coworkers.length} key relationships</span> in your professional network,
@@ -230,7 +230,7 @@ function SocialCircleChapter({ biography }) {
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Network</h3>
         <div className="space-y-3">
           {coworkers.map((cw, i) => (
@@ -262,7 +262,7 @@ function DigitalLifeChapter({ biography }) {
   const topApp = apps[0]?.name || apps[0]?.app_name || 'your top tool';
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             Your digital footprint spans <span className="text-green-400 font-medium">{apps.length} applications</span> with
@@ -275,7 +275,7 @@ function DigitalLifeChapter({ biography }) {
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Daily Usage</h3>
         <div className="space-y-3">
           {apps.map((app, i) => {
@@ -307,7 +307,7 @@ function ClientWorldChapter({ biography }) {
   const totalTouches = clients.reduce((sum, c) => sum + (c.interaction_count || c.interactions || 0), 0);
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             SYNC tracks your engagement across <span className="text-amber-400 font-medium">{clients.length} client accounts</span> with
@@ -320,7 +320,7 @@ function ClientWorldChapter({ biography }) {
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Client Accounts</h3>
         <div className="space-y-3">
           {clients.map((client, i) => (
@@ -350,7 +350,7 @@ function InterestsChapter({ biography }) {
   const names = interests.map(i => typeof i === 'string' ? i : i.name || '').filter(Boolean);
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             Beyond your professional focus, SYNC has picked up on <span className="text-pink-400 font-medium">{interests.length} areas of interest</span> that
@@ -367,7 +367,7 @@ function InterestsChapter({ biography }) {
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Passion Tags</h3>
         <div className="flex flex-wrap gap-2">
           {interests.map((item, i) => (
@@ -401,7 +401,7 @@ function DailyRhythmsChapter({ biography }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             Your productivity peaks around <span className="text-cyan-400 font-medium">{peakLabel}</span>, when your activity
@@ -413,7 +413,7 @@ function DailyRhythmsChapter({ biography }) {
           ))}
         </div>
       </div>
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Activity by Hour</h3>
         <div className="flex items-end gap-1 h-40">
           {sorted.map((h, i) => {
@@ -488,7 +488,7 @@ function AssumptionsChapter({ assumptions, onConfirm, onReject }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             SYNC forms assumptions about you based on your behavior patterns, conversations, and activity.
@@ -504,7 +504,7 @@ function AssumptionsChapter({ assumptions, onConfirm, onReject }) {
 
       {/* Observed assumptions — high confidence with evidence */}
       {observed.length > 0 && (
-        <div className="bg-zinc-900/60 border border-cyan-500/20 rounded-2xl p-6">
+        <div className="bg-zinc-900/60 border border-cyan-500/20 rounded-2xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-medium text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
               <Eye className="w-3.5 h-3.5" />
@@ -521,7 +521,7 @@ function AssumptionsChapter({ assumptions, onConfirm, onReject }) {
       )}
 
       {/* Inferred assumptions — lower confidence or missing evidence */}
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
             <Search className="w-3.5 h-3.5" />
@@ -614,7 +614,7 @@ function MemoryImportChapter({ userId, companyId }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             Your AI conversations contain rich insights about your preferences, knowledge areas, and thinking style.
@@ -631,7 +631,7 @@ function MemoryImportChapter({ userId, companyId }) {
             key={p.id}
             onClick={() => { setSelectedProvider(p.id); fileRef.current?.click(); }}
             disabled={uploading}
-            className={`text-left p-4 rounded-xl border transition-all ${
+            className={`text-left p-4 rounded-xl border transition-all min-h-[44px] ${
               selectedProvider === p.id
                 ? 'border-cyan-500/40 bg-cyan-500/10'
                 : 'border-zinc-800/50 bg-zinc-900/40 hover:border-zinc-700'
@@ -726,7 +726,7 @@ function ActivityLogChapter({ userId }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
           <p>
             SYNC tracks your journey through the platform to build a richer understanding of your workflow.
@@ -735,7 +735,7 @@ function ActivityLogChapter({ userId }) {
           </p>
         </div>
       </div>
-      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-6">
+      <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-4 md:p-6">
         <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-4">Timeline</h3>
       {Object.entries(grouped).map(([dateLabel, evts]) => (
         <div key={dateLabel}>
@@ -1007,7 +1007,7 @@ export default function SyncProfile({ embedded = false, onRegisterControls } = {
                   <button
                     key={ch.id}
                     onClick={() => setActiveChapter(ch.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all border ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all border min-h-[36px] ${
                       isActive
                         ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
                         : 'text-zinc-500 border-zinc-800/50 hover:text-zinc-300'

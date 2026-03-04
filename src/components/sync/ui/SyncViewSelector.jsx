@@ -13,7 +13,7 @@ export function SyncViewSelector({ className = '' }) {
   const currentView = searchParams.get('view') || 'agent';
 
   return (
-    <div className={`flex items-center gap-0.5 bg-zinc-900/60 border border-zinc-800/50 rounded-lg p-1 ${className}`}>
+    <div className={`flex items-center gap-0.5 bg-zinc-900/60 border border-zinc-800/50 rounded-lg p-1 overflow-x-auto scrollbar-hide ${className}`}>
       {SYNC_TABS.map((item) => {
         const Icon = item.icon;
         const isActive = currentView === item.view;
@@ -29,7 +29,7 @@ export function SyncViewSelector({ className = '' }) {
             }`}
           >
             {Icon && <Icon className="w-3.5 h-3.5" />}
-            {item.label}
+            <span className="hidden md:inline">{item.label}</span>
           </Link>
         );
       })}

@@ -745,8 +745,9 @@ function IntelligenceTab({ userId }) {
               Activity Distribution
             </h3>
             {activityTypeDist.length > 0 ? (
-              <div className="flex items-center gap-4">
-                <ResponsiveContainer width="50%" height={180}>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="w-full sm:w-1/2">
+                <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
                     <Pie data={activityTypeDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={2}>
                       {activityTypeDist.map((entry) => (
@@ -756,6 +757,7 @@ function IntelligenceTab({ userId }) {
                     <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '12px', fontSize: '12px', color: '#fff' }} />
                   </PieChart>
                 </ResponsiveContainer>
+                </div>
                 <div className="flex-1 space-y-1.5">
                   {activityTypeDist.map((entry) => {
                     const totalActs = semanticData.counts.activities || activityTypeDist.reduce((s, e) => s + e.value, 0);
@@ -884,12 +886,12 @@ function IntelligenceTab({ userId }) {
                     className="p-3 rounded-[14px] border border-zinc-800/40 bg-zinc-800/20"
                   >
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <p className="text-sm text-white font-medium truncate">{thread.title || 'Untitled thread'}</p>
+                      <p className="text-xs md:text-sm text-white font-medium truncate">{thread.title || 'Untitled thread'}</p>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full border flex-shrink-0 ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}>
                         {thread.status}
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-1 sm:gap-1.5">
                       <span className="text-[10px] text-zinc-500">{thread.event_count || 0} events</span>
                       <span className="text-[10px] text-zinc-600">&middot;</span>
                       <span className="text-[10px] text-zinc-500">{durationStr}</span>
@@ -1331,7 +1333,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
 
   // ── Header controls for embedded mode (must be before early returns) ──
   const dateRangePills = (
-    <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40">
+    <div className="flex flex-wrap items-center gap-1 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40">
       {[
         { key: '1d', label: 'Today' },
         { key: '7d', label: '7d' },
@@ -1342,7 +1344,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
         <button
           key={p.key}
           onClick={() => setDateRange(p.key)}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+          className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs font-medium transition-all ${
             dateRange === p.key
               ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
               : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent'
@@ -1396,7 +1398,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
       <div className={embedded ? '' : 'min-h-screen bg-black px-4 lg:px-6 py-4'}>
         <div className="space-y-4">
           <div className="h-10 w-64 bg-zinc-800/50 rounded-[20px] animate-pulse" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="h-24 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
             ))}
@@ -1444,7 +1446,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
         {activityLogs.length === 0 && hasAnyData && lastActivityDate && (
           <motion.div {...stagger(0.1)}>
             <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm p-5">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
                   <Calendar className="w-6 h-6 text-cyan-400" />
                 </div>
@@ -1461,7 +1463,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
                 <Button
                   onClick={() => setDateRange('90d')}
                   variant="outline"
-                  className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 flex-shrink-0 rounded-full"
+                  className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 flex-shrink-0 rounded-full w-full sm:w-auto"
                 >
                   Show Last 90 Days
                 </Button>
@@ -1522,7 +1524,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
         )}
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <StatCard
             icon={Clock}
             label="Total Active Time"
@@ -1554,7 +1556,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
         </div>
 
         {/* View Tabs */}
-        <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40 w-fit">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-900/60 border border-zinc-800/40 w-fit max-w-full overflow-x-auto scrollbar-hide">
           {[
             { key: 'overview', label: 'Overview', icon: BarChart3 },
             { key: 'deep-context', label: 'Deep Context', icon: Brain },
@@ -1564,7 +1566,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
             <button
               key={key}
               onClick={() => setActiveView(key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                 activeView === key
                   ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border border-transparent'
@@ -1617,8 +1619,8 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
               ) : (
                 <div className="space-y-3">
                   {stats.dailyBreakdown.slice(-7).map((day, i) => (
-                    <div key={day.date} className="flex items-center gap-2 sm:gap-4">
-                      <div className="w-14 sm:w-20 text-[11px] sm:text-xs text-zinc-500 text-right">
+                    <div key={day.date} className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-12 sm:w-20 text-[10px] sm:text-xs text-zinc-500 text-right flex-shrink-0">
                         {formatDate(day.date)}
                       </div>
                       <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative">
@@ -1931,7 +1933,7 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
                         <Clock className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-1 sm:gap-1.5 mb-1">
                           <span className="text-xs font-medium text-white">
                             {new Date(log.hour_start).toLocaleString('en-US', {
                               weekday: 'short',
@@ -1941,20 +1943,22 @@ export default function DesktopActivity({ embedded = false, onRegisterControls }
                               minute: '2-digit',
                             })}
                           </span>
-                          <span className="text-[10px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5">
-                            {formatDuration(log.total_minutes)}
-                          </span>
-                          <span className="text-[10px] text-zinc-400 bg-zinc-800/60 border border-zinc-700/40 rounded-full px-1.5 py-0.5">
-                            {Math.round((log.focus_score || 0) * 100)}% focus
-                          </span>
-                          {topCategory && topCategory !== 'Other' && (
-                            <span className="text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5">
-                              {topCategory}
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+                            <span className="text-[10px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5">
+                              {formatDuration(log.total_minutes)}
                             </span>
-                          )}
+                            <span className="text-[10px] text-zinc-400 bg-zinc-800/60 border border-zinc-700/40 rounded-full px-1.5 py-0.5">
+                              {Math.round((log.focus_score || 0) * 100)}% focus
+                            </span>
+                            {topCategory && topCategory !== 'Other' && (
+                              <span className="text-[10px] text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-1.5 py-0.5">
+                                {topCategory}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         {summaryLine && (
-                          <p className="text-xs text-zinc-300 mt-1">{summaryLine}</p>
+                          <p className="text-xs text-zinc-300 mt-1 line-clamp-2 md:line-clamp-3">{summaryLine}</p>
                         )}
                         {commitments && commitments.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">

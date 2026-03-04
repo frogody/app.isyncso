@@ -305,12 +305,12 @@ export default function DailyJournal({ embedded = false, onRegisterControls } = 
       <div className={embedded ? '' : 'min-h-screen bg-black px-4 lg:px-6 py-4'}>
         <div className="space-y-4">
           <div className="h-10 w-64 bg-zinc-800/50 rounded-[20px] animate-pulse" />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
             {[1, 2, 3].map(i => (
               <div key={i} className="h-24 bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
             ))}
           </div>
-          <div className="grid lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="h-[500px] bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
             <div className="lg:col-span-2 h-[500px] bg-zinc-900/30 rounded-[20px] border border-zinc-800/40 animate-pulse" />
           </div>
@@ -338,7 +338,7 @@ export default function DailyJournal({ embedded = false, onRegisterControls } = 
         </motion.div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <StatCard
             icon={BookOpen}
             label="Total Journals"
@@ -366,7 +366,7 @@ export default function DailyJournal({ embedded = false, onRegisterControls } = 
 
   // ── Content Grid (shared between embedded + standalone) ──
   const contentGrid = (
-        <div className="grid lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
           {/* Journal List Card */}
           <motion.div {...stagger(0.25)}>
@@ -392,7 +392,7 @@ export default function DailyJournal({ embedded = false, onRegisterControls } = 
                       <button
                         key={journal.id}
                         onClick={() => setSelectedJournal(journal)}
-                        className={`w-full text-left px-4 py-3 border-b border-zinc-800/40 hover:bg-zinc-800/30 cursor-pointer transition-all ${
+                        className={`w-full text-left px-4 py-3 md:py-3 border-b border-zinc-800/40 hover:bg-zinc-800/30 cursor-pointer transition-all min-h-[44px] ${
                           selectedJournal?.id === journal.id
                             ? 'border-l-2 border-l-cyan-400 bg-cyan-500/5'
                             : 'border-l-2 border-l-transparent'
@@ -429,7 +429,7 @@ export default function DailyJournal({ embedded = false, onRegisterControls } = 
               </ScrollArea>
 
               {/* Generate Button */}
-              <div className="p-3 border-t border-zinc-800/40">
+              <div className="p-3 md:p-3 border-t border-zinc-800/40">
                 <Button
                   onClick={() => generateJournal(new Date())}
                   disabled={generatingJournal}
@@ -456,7 +456,7 @@ export default function DailyJournal({ embedded = false, onRegisterControls } = 
           <motion.div {...stagger(0.3)} className="lg:col-span-2">
             <div className="rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm overflow-y-auto" style={{ maxHeight: 'calc(100vh - 320px)' }}>
               {selectedJournal ? (
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                   {/* Journal Header */}
                   <div className="flex items-start justify-between mb-6">
                     <div>
@@ -731,7 +731,7 @@ export default function DailyJournal({ embedded = false, onRegisterControls } = 
                     <Button
                       onClick={() => generateJournal(new Date())}
                       disabled={generatingJournal}
-                      className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full"
+                      className="w-full sm:w-auto bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full"
                     >
                       {generatingJournal ? (
                         <>
@@ -775,7 +775,7 @@ export default function DailyJournal({ embedded = false, onRegisterControls } = 
           <Button
             onClick={() => generateJournal(new Date())}
             disabled={generatingJournal}
-            className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full text-xs px-4"
+            className="w-full sm:w-auto bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 rounded-full text-xs px-4"
           >
             {generatingJournal ? (
               <>

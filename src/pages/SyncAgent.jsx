@@ -460,7 +460,7 @@ function AgentChannelMessage({ message, isLatest, highlightBorders }) {
     <div
       ref={messageRef}
       className={cn(
-        "flex items-start gap-3 py-3 px-4 rounded-xl max-w-[85%] transition-all duration-300",
+        "flex items-start gap-2 md:gap-3 py-2 md:py-3 px-3 md:px-4 rounded-xl max-w-[90%] md:max-w-[85%] transition-all duration-300",
         isSyncMessage
           ? `mr-auto ${syt('bg-gradient-to-br from-slate-100 to-slate-50 border border-slate-200', 'bg-gradient-to-br from-zinc-800/70 to-zinc-800/40 border border-zinc-700/30')}`
           : `ml-auto flex-row-reverse ${syt('bg-gradient-to-bl from-slate-100 to-slate-50 border border-slate-200', 'bg-gradient-to-bl from-zinc-700/50 to-zinc-700/30 border border-zinc-600/30')}`,
@@ -1575,17 +1575,17 @@ function Bubble({ role, text, ts, index, document, highlightBorders, onFeedback,
 
       <div
         className={cn(
-          'max-w-[75%] text-sm leading-relaxed transition-all duration-300',
+          'max-w-[88%] md:max-w-[75%] text-sm leading-relaxed transition-all duration-300',
           isUser
             ? cn(
-                'rounded-2xl rounded-br-sm px-4 py-2.5',
+                'rounded-2xl rounded-br-sm px-3 py-2 md:px-4 md:py-2.5',
                 syt(
                   'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-md shadow-cyan-500/15',
                   'bg-gradient-to-br from-cyan-600 to-cyan-700 text-white shadow-lg shadow-cyan-600/15'
                 )
               )
             : cn(
-                'rounded-2xl rounded-bl-sm px-4 py-2.5',
+                'rounded-2xl rounded-bl-sm px-3 py-2 md:px-4 md:py-2.5',
                 syt(
                   'bg-white ring-1 ring-slate-200/80 text-slate-800 shadow-sm',
                   'bg-zinc-900/80 ring-1 ring-white/[0.06] text-zinc-100 backdrop-blur-sm'
@@ -2051,7 +2051,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
 
   // ── Main content grid (shared between embedded + standalone) ──
   const mainContent = (
-        <div className="flex-1 min-h-0 grid lg:grid-cols-3 gap-4">
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
 
           {/* Chat Card (2/3 width) */}
           <motion.div
@@ -2061,7 +2061,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
             className="lg:col-span-2 flex flex-col min-h-0 rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm"
           >
             {/* Chat card header */}
-            <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-zinc-800/40">
+            <div className="shrink-0 flex items-center justify-between px-3 md:px-5 py-2.5 md:py-3 border-b border-zinc-800/40">
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-semibold text-white">Conversation</h2>
                 <span className="flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
@@ -2069,7 +2069,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
                   {activeAgent ? `${activeAgent}` : 'SYNC'}
                 </span>
                 {feedbackCount >= 5 && (
-                  <span className="text-[10px] text-zinc-500 flex items-center gap-1">
+                  <span className="hidden md:flex text-[10px] text-zinc-500 items-center gap-1">
                     <Sparkles className="w-3 h-3 text-cyan-500/60" />
                     {learnedCount > 0
                       ? `${learnedCount} learned preference${learnedCount !== 1 ? 's' : ''}`
@@ -2132,25 +2132,25 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
             </div>
 
             {/* Messages area */}
-            <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-5 pb-3">
+            <div ref={scrollerRef} className="flex-1 min-h-0 overflow-y-auto px-3 md:px-4 pt-4 md:pt-5 pb-3">
               {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center px-6">
-                  <div className="relative mb-8">
+                <div className="h-full flex flex-col items-center justify-center text-center px-4 md:px-6">
+                  <div className="relative mb-5 md:mb-8">
                     <div className="absolute inset-0 rounded-full blur-3xl scale-[3] bg-purple-500/10" />
-                    <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-500/20 to-cyan-500/10 ring-1 ring-white/10 shadow-lg shadow-purple-500/10">
-                      <Sparkles className="w-8 h-8 text-purple-400" />
+                    <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-500/20 to-cyan-500/10 ring-1 ring-white/10 shadow-lg shadow-purple-500/10">
+                      <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
                     </div>
                   </div>
-                  <h4 className="text-xl font-semibold mb-2 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">What can I help with?</h4>
-                  <p className="text-sm mb-10 max-w-xs text-zinc-500">
+                  <h4 className="text-lg md:text-xl font-semibold mb-2 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">What can I help with?</h4>
+                  <p className="text-sm mb-6 md:mb-10 max-w-xs text-zinc-500">
                     Invoices, prospects, compliance, learning, and more.
                   </p>
-                  <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
                     {suggestions.map((suggestion, idx) => (
                       <button
                         key={idx}
                         onClick={() => { setInput(suggestion.action); setTimeout(() => send(), 100); }}
-                        className="group px-4 py-3 text-sm rounded-xl text-left transition-all duration-200 bg-white/[0.03] ring-1 ring-white/[0.06] text-zinc-400 hover:ring-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-400"
+                        className="group px-3 py-2.5 md:px-4 md:py-3 text-sm rounded-xl text-left transition-all duration-200 bg-white/[0.03] ring-1 ring-white/[0.06] text-zinc-400 hover:ring-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-400"
                       >
                         <span className="flex items-center gap-2">
                           {suggestion.isOrchestration && <Sparkles className="w-3.5 h-3.5 opacity-40" />}
@@ -2161,7 +2161,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   {messages.map((m, idx) => {
                     // Find preceding user message for context
                     const prevUserMsg = m.role === 'assistant'
@@ -2187,8 +2187,8 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
                       <div className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center bg-purple-500/15 ring-1 ring-purple-500/20">
                         <Bot className="h-3.5 w-3.5 text-purple-400" />
                       </div>
-                      <div className="rounded-2xl rounded-bl-sm px-4 py-3 bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm">
-                        <div className="flex items-center gap-3">
+                      <div className="rounded-2xl rounded-bl-sm px-3 py-2 md:px-4 md:py-3 bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm">
+                        <div className="flex items-center gap-2 md:gap-3">
                           <div className="flex items-center gap-1">
                             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }} />
                             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }} />
@@ -2243,7 +2243,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
             </div>
 
             {/* Input Area */}
-            <div className="shrink-0 px-3 pb-3 pt-1">
+            <div className="shrink-0 px-2 md:px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:pb-3 pt-1">
               <div className="flex items-end gap-2 rounded-2xl p-1.5 transition-all duration-300 bg-zinc-900/80 ring-1 ring-white/[0.06] backdrop-blur-sm focus-within:ring-cyan-500/30 focus-within:shadow-lg focus-within:shadow-cyan-500/5">
                 <textarea
                   value={input}
@@ -2273,7 +2273,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
                   <Send className="h-4 w-4" />
                 </button>
               </div>
-              <div className="px-3 pt-1.5 flex items-center justify-between text-[10px] text-zinc-600">
+              <div className="hidden md:flex px-3 pt-1.5 items-center justify-between text-[10px] text-zinc-600">
                 <span>Enter to send · Shift+Enter for newline</span>
                 <div className="flex items-center gap-3">
                   <span className="text-zinc-500">1 credit per message</span>
@@ -2288,7 +2288,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.30, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="lg:col-span-1 flex flex-col rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm overflow-hidden"
+            className="hidden lg:flex lg:col-span-1 flex-col rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm overflow-hidden"
           >
             {/* Avatar area */}
             <div className="shrink-0 grid place-items-center pt-6 pb-10 relative">
@@ -2393,7 +2393,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
   return (
     <SyncPageTransition>
     <div ref={pageRef} className="min-h-screen bg-black text-white overflow-hidden">
-      <div className="mx-auto max-w-[1600px] px-4 lg:px-6 py-4 flex flex-col gap-4 h-[calc(100dvh-3.5rem)]">
+      <div className="mx-auto max-w-[1600px] px-3 md:px-4 lg:px-6 py-3 md:py-4 flex flex-col gap-3 md:gap-4 h-[calc(100dvh-10rem)] md:h-[calc(100dvh-3.5rem)]">
 
         {/* ── Header ── */}
         <div className="shrink-0">
@@ -2401,7 +2401,7 @@ export default function SyncAgent({ embedded = false, onRegisterControls } = {})
         </div>
 
         {/* ── Stats Row ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+        <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
           <StatCard icon={Brain} label="Sessions Today" value={1} color="cyan" delay={0.05} />
           <StatCard icon={MessageSquare} label="Messages Sent" value={messages.length} color="blue" delay={0.10} />
           <StatCard icon={Zap} label="Actions Run" value={actionsCount} color="indigo" delay={0.15} />
