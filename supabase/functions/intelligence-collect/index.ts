@@ -168,12 +168,13 @@ async function collectIntelligence(
 async function collectFinancial(supabase: any, userId: string, companyId: string, thirtyDaysAgo: string) {
   const [overdueInvoices, pendingRevenue, acceptedProposals, recurringInvoices] = await Promise.all([
     // Overdue invoices — top 10 by amount × days overdue
+    // Only include invoices that were actually sent (not drafts)
     supabase
       .from('invoices')
       .select('id, invoice_number, client_name, total, status, due_date, created_at')
       .eq('company_id', companyId)
       .lt('due_date', new Date().toISOString().split('T')[0])
-      .not('status', 'in', '("paid","cancelled","void")')
+      .in('status', ['sent', 'overdue', 'pending', 'partial'])
       .order('total', { ascending: false })
       .limit(10),
 

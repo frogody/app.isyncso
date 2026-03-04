@@ -508,60 +508,58 @@ serve(async (req) => {
     }
 
     // Build LLM prompt
-    const systemPrompt = `You are building a rich, detailed personal profile for a user of iSyncSO, an AI-powered business platform. This profile should read like a fascinating character study — someone who knows this person deeply and can paint a vivid picture of who they are professionally and personally.
+    const systemPrompt = `You are building a factual profile for a user of iSyncSO, an AI-powered business platform.
 
-You have access to their actual screen activity, daily journals, conversations, work patterns, and more. Use ALL of this data to build the most comprehensive, specific, and accurate profile possible.
+ABSOLUTE RULE — ZERO FABRICATION:
+You MUST only write things that are DIRECTLY evidenced in the provided data. If the data does not contain information about something, DO NOT mention it at all. Do NOT invent hobbies, habits, routines, personality traits, interests, physical descriptions, transportation methods, food preferences, sports, social media usage, or ANY detail not explicitly present in the data. An empty section is infinitely better than a fabricated one.
+
+If you only have data for 2 paragraphs of biography, write 2 paragraphs. If you have no data for a chapter summary, return an empty string "". NEVER pad with invented details.
+
+Every single claim must trace back to a specific data point provided below. If you cannot point to the exact data row that supports a sentence, delete that sentence.
 
 Generate a profile in JSON format:
 
 {
-  "biography": "A rich, detailed biography (5-7 paragraphs) written in third person. This should read like a well-written profile piece:\n\n- Paragraph 1: Who they are — their role, what they build, what drives them\n- Paragraph 2: How they work — their daily rhythm, tools, workflow patterns\n- Paragraph 3: What they're building right now — current projects, features, technical focus\n- Paragraph 4: Their technical identity — languages, frameworks, architecture preferences\n- Paragraph 5: Their communication and collaboration style\n- Paragraph 6: Their interests, passions, and what makes them unique\n- Paragraph 7: The bigger picture — where they seem to be heading, their ambitions\n\nBe SPECIFIC. Reference actual apps they use, actual projects they work on, actual patterns from their journals. Never be generic.",
-  "tagline": "A memorable one-liner that captures their essence (be creative and specific, not generic)",
+  "biography": "A factual biography written in third person. Only include paragraphs where you have supporting data. Cover ONLY what the data shows: their actual role, actual tools used, actual work patterns observed, actual projects mentioned in journals/sessions. If data is sparse, write a short biography. A 2-paragraph biography based on real data is better than a 7-paragraph one with fiction.",
+  "tagline": "A short descriptor based on their actual work (e.g. their role + primary domain). No creative embellishment.",
 
-  "superpowers_summary": "2-3 paragraphs (150-300 words) about their key skills and superpowers. Go deep — explain HOW they use each skill, what makes their approach unique, and how these skills interconnect. Reference specific projects, tools, or patterns from the data. Don't just list skills — tell the story of their technical mastery.",
-
-  "work_dna_summary": "2-3 paragraphs (150-300 words) about their work style and DNA. Describe their working patterns in vivid detail: when they're most productive, how they handle context-switching, their approach to deep work vs collaboration, their decision-making style. Reference actual journal entries and activity data.",
-
-  "social_circle_summary": "2-3 paragraphs (150-300 words) about their professional relationships and collaboration patterns. Who do they work with most? What kind of dynamic do they have with their closest collaborators? How do they communicate — async vs sync, formal vs casual? What role do they play in team dynamics?",
-
-  "digital_life_summary": "2-3 paragraphs (150-300 words) about their digital ecosystem and tool usage. Paint a picture of their digital workspace: which tools dominate their day, how they flow between applications, what their tool choices reveal about their work philosophy. Reference actual apps and usage patterns.",
-
-  "client_world_summary": "2-3 paragraphs (150-300 words) about their client relationships and business focus. Who are their key clients? How do they manage client relationships? What industries or domains do they serve? What does their client portfolio reveal about their professional niche?",
-
-  "interests_summary": "2-3 paragraphs (150-300 words) about their personal interests, passions, and what drives them beyond work. What topics light them up? How do their personal interests influence their professional work? What communities or subjects do they engage with outside of work?",
-
-  "daily_rhythms_summary": "2-3 paragraphs (150-300 words) about their daily schedule and productivity patterns. When do they start and end their day? What does a typical day look like hour by hour? When are their creative peaks and low points? How do they structure breaks and transitions between tasks?",
+  "superpowers_summary": "Skills and strengths ONLY as evidenced by feature usage data, desktop activity, and journal entries. If no clear skill data exists, return empty string.",
+  "work_dna_summary": "Work patterns ONLY from desktop_activity_logs and journals. Actual hours, actual apps, actual focus scores. No invented routines.",
+  "social_circle_summary": "Collaboration patterns ONLY from entities, sessions, and communications data. If no coworker/collaboration data, return empty string.",
+  "digital_life_summary": "App usage ONLY from desktop_activity_logs. Actual app names and actual time spent. Nothing invented.",
+  "client_world_summary": "Client information ONLY from entities, sessions, and CRM data. Actual client names that appear in the data. If no client data, return empty string.",
+  "interests_summary": "ONLY if explicit interest data exists (browsing, conversations about non-work topics). If no interest data, return empty string. NEVER invent hobbies or interests.",
+  "daily_rhythms_summary": "ONLY from desktop_activity_logs hour data. Actual start/end times observed. No invented morning routines.",
 
   "daily_rhythms": [{"hour": 9, "activity_count": 15, "primary_activity": "coding"}],
 
-  "work_style": ["8-12 specific traits derived from actual behavior patterns"],
-  "interests": ["6-10 interests inferred from browsing, conversations, and activity"],
-  "skills": ["10-15 specific technical and professional skills observed in their work"],
-  "top_coworkers": [{"name": "...", "interaction_count": 0, "context": "how they interact"}],
+  "work_style": ["Traits derived ONLY from observed behavior data — e.g. 'Active in VS Code 4.2h/day avg' not 'passionate coder'"],
+  "interests": ["ONLY interests explicitly mentioned in conversations, journals, or browsing data. If none found, return empty array."],
+  "skills": ["Technical skills ONLY from observed tool usage, journal mentions, or feature usage data"],
+  "top_coworkers": [{"name": "...", "interaction_count": 0, "context": "..."}],
   "top_apps": [{"name": "...", "avg_daily_minutes": 0, "category": "..."}],
   "top_clients": [{"name": "...", "interaction_count": 0}],
   "assumptions": [
     {
-      "category": "work_style|preference|skill|interest|personality|habit|goal|strength|weakness",
-      "assumption": "A specific, insightful statement about the user",
+      "category": "work_style|preference|skill|interest|habit|goal|strength",
+      "assumption": "A factual statement directly supported by data",
       "confidence": 0.0-1.0,
-      "evidence": "What specific data supports this — quote actual journal entries, activity patterns, or conversations",
+      "evidence": "The EXACT data point(s) that support this. Quote the actual data rows.",
       "source": "conversation|activity|entity|journal|deep_context|memory_import"
     }
   ]
 }
 
 GUIDELINES:
-- The biography should be 800-1200 words. Make it rich and detailed.
-- EVERY chapter summary (superpowers_summary, work_dna_summary, social_circle_summary, digital_life_summary, client_world_summary, interests_summary, daily_rhythms_summary) MUST be 150-300 words of rich narrative. These are the MOST IMPORTANT outputs after the biography. Each one should read like a mini-essay about that aspect of the person.
-- The daily_rhythms array should have entries for each active hour of the day (typically 8-23), with activity_count and primary_activity.
-- Generate 20-30 assumptions. Only state what the data directly supports.
-- For each assumption, you MUST cite the exact data source and record count in the "evidence" field. If based on fewer than 3 data points, set confidence below 0.3.
-- Never infer personality traits, future goals, or emotional states. Stick to observable behavior patterns.
-- Reference SPECIFIC projects, tools, files, and patterns from the data.
-- Use the daily journals heavily — they contain the richest narrative about their actual days.
-- Use deep context events to understand what they actually work on hour-by-hour.
-- Describe observable patterns (e.g., "commits code between 22:00-01:00 on 8 of 14 days") rather than personality labels.
+- ZERO FABRICATION. This is the #1 rule. If in doubt, leave it out.
+- Write short and factual. A 200-word biography is fine if that's all the data supports.
+- Every name, app, project, client mentioned must appear in the USER DATA below.
+- For summaries with no supporting data, return "" (empty string).
+- Generate 5-15 assumptions max. Quality over quantity. Each must cite exact evidence.
+- For each assumption, confidence < 0.3 if based on fewer than 3 data points.
+- NEVER infer personality traits, emotions, motivations, or future goals.
+- NEVER invent physical descriptions, transportation, food habits, sports, or social activities.
+- Describe only observable, data-backed patterns.
 
 DATA SUFFICIENCY NOTES (auto-generated):
 ${dataSufficiencyNotes}

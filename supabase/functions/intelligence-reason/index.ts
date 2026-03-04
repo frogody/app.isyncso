@@ -144,17 +144,21 @@ serve(async (req: Request) => {
 async function runPass1Analysis(apiKey: string, snapshot: any): Promise<any> {
   const contextStr = JSON.stringify(snapshot, null, 1);
 
-  const systemPrompt = `You are a business intelligence analyst for a small/medium business. You have access to a comprehensive snapshot of the user's business across multiple domains.
+  const systemPrompt = `You are a business intelligence analyst. You have a snapshot of a user's business data.
 
-Your task: Analyze this data deeply and find insights that a human would miss. Look for:
+ABSOLUTE RULE — ZERO FABRICATION:
+You may ONLY reference names, amounts, dates, and entities that appear EXACTLY in the provided data. Do NOT invent client names, amounts, invoice numbers, deal names, or any other details. If a field is missing or null, do not guess a value. If the data is sparse, return fewer insights rather than fabricated ones.
 
-1. **Cross-domain correlations**: Connections between different areas (e.g., overdue invoice from a client whose deal is also going cold, or a product with declining margins that's tied to a pending delivery)
-2. **Hidden risks**: Things that could go wrong if not addressed soon (e.g., multiple deadlines clustering on the same day, neglected high-value contacts, cash flow gaps)
-3. **Timing opportunities**: Things that should be done NOW based on calendar position (month-end invoicing, end-of-week reviews, quarterly reporting)
-4. **Relationship insights**: Patterns in client interactions, neglected relationships, contacts that need attention
-5. **Workload awareness**: Is the user overloaded? Underloaded? Are there capacity issues?
+Analyze the data for:
+1. Cross-domain correlations between areas (e.g., overdue invoice from a client whose deal is also stale)
+2. Hidden risks (deadline clusters, neglected contacts, cash flow gaps)
+3. Timing opportunities based on calendar position
+4. Relationship insights from interaction patterns
+5. Workload awareness
 
-Output ONLY valid JSON with this structure:
+ONLY reference entities and values that exist in the snapshot. Every client name, EUR amount, invoice number, and date you mention MUST come from the data below.
+
+Output ONLY valid JSON:
 {
   "correlations": [{ "domains": ["finance", "crm"], "entities": ["Client X"], "insight": "...", "financial_impact": 12000 }],
   "risks": [{ "description": "...", "severity": "high|medium|low", "deadline": "2026-03-10" }],
@@ -189,41 +193,37 @@ async function runPass2Suggestions(apiKey: string, analysis: any, profile: any, 
   const dismissedKeys = dismissed.map((d: any) => d.dedup_key).filter(Boolean);
   const dismissedEntityIds = dismissed.map((d: any) => d.entity_id).filter(Boolean);
 
-  const systemPrompt = `You are a hyper-precise business action recommender. Based on the analysis and business data, generate 3-5 actionable suggestions.
+  const systemPrompt = `You are a business action recommender. Generate 1-5 actionable suggestions based on the analysis and data.
+
+ABSOLUTE RULE — ZERO FABRICATION:
+Every client name, EUR amount, invoice number, deal name, date, and entity you reference MUST come EXACTLY from the business data provided. Do NOT invent or hallucinate any names, amounts, or details. If the data contains "Corinne Purnot", use exactly "Corinne Purnot" — do not change, abbreviate, or embellish names. If no good suggestions exist based on real data, return an empty array [].
 
 RULES:
-- Each suggestion MUST cite specific data: client name, EUR amount, date, deadline
-- Each suggestion MUST connect at least 2 data domains (e.g., finance + CRM)
-- Title max 60 chars (for desktop notification pill)
-- Subtitle should provide full context in 1-2 sentences
-- Include WHO to contact, WHAT about, HOW MUCH is at stake, WHEN is the deadline
-- Rank by combined value: financial impact × urgency × user relevance
+- Each suggestion MUST reference ONLY data present in the snapshot below
+- Title max 60 chars
+- Subtitle: 1-2 sentences with real data points only
+- Include WHO, WHAT, HOW MUCH, WHEN — but ONLY if those values exist in the data
+- Rank by combined value: financial impact × urgency
+- If fewer than 3 good suggestions exist, return fewer. Quality > quantity.
 - NEVER suggest things from this dismissed list: ${JSON.stringify(dismissedKeys)}
 - NEVER suggest for these entity IDs (already dismissed): ${JSON.stringify(dismissedEntityIds)}
 ${profile.formality_preference === 'casual' ? '- Use casual, direct language' : '- Use professional language'}
 ${profile.preferred_detail_level === 'brief' ? '- Keep subtitles brief (1 sentence)' : '- Include full context in subtitles'}
 
-Output ONLY a JSON array of suggestions:
+Output ONLY a JSON array:
 [{
-  "title": "Call Jan — EUR 4,200 overdue",
-  "subtitle": "Invoice #1042 is 14 days overdue. His Q2 deal (EUR 12K) is also going cold — last contact 3 weeks ago.",
-  "reasoning": "Cross-domain: overdue_invoice + stale_deal. Financial exposure: EUR 16,200.",
+  "title": "Short action title with real name/amount",
+  "subtitle": "Context using only real data from the snapshot.",
+  "reasoning": "Which data points support this suggestion.",
   "action_type": "task_create",
-  "action_payload": {
-    "params": {
-      "title": "Call Jan van Bergen",
-      "description": "Address overdue invoice + Q2 deal",
-      "priority": "high",
-      "due_date": "2026-03-05"
-    }
-  },
-  "importance": 9,
-  "urgency": 8,
+  "action_payload": { "params": { "title": "...", "description": "...", "priority": "high", "due_date": "YYYY-MM-DD" } },
+  "importance": 1-10,
+  "urgency": 1-10,
   "domains": ["finance", "crm"],
-  "entity_id": "optional-uuid",
-  "entity_type": "invoice",
-  "dedup_key": "jan_overdue_deal_cold",
-  "financial_impact": 16200
+  "entity_id": "uuid-from-data-if-available",
+  "entity_type": "invoice|deal|task|product",
+  "dedup_key": "unique_key",
+  "financial_impact": 0
 }]`;
 
   const userMessage = `Analysis results:\n${JSON.stringify(analysis, null, 1)}\n\nBusiness snapshot summary:\n${summarizeSnapshot(snapshot)}`;
