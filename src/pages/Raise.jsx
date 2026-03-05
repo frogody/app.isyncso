@@ -7,7 +7,7 @@ import {
   Building2, Calendar, ArrowUpRight, Plus, Filter, Download,
   PieChart, BarChart3, Briefcase, HandshakeIcon, MessageSquare,
   CheckCircle2, Clock, AlertCircle, ExternalLink, Mail, Phone,
-  GripVertical, MoreHorizontal, Trash2, Sun, Moon
+  GripVertical, MoreHorizontal, Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -492,7 +492,7 @@ function RaiseContent({
   metrics, getStatusBadgeVariant, handleExport, handleDragEnd,
   handleDeleteInvestor,
 }) {
-  const { theme, toggleTheme, rt } = useTheme();
+  const { theme, rt } = useTheme();
 
   return (
     <div className={`min-h-screen ${rt('bg-slate-50', 'bg-black')}`}>
@@ -505,7 +505,6 @@ function RaiseContent({
           color="orange"
           actions={
             <div className="flex gap-2">
-              <RaiseButton variant="ghost" size="sm" onClick={toggleTheme} icon={theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />} />
               <RaiseButton variant="secondary" size="sm" onClick={handleExport} icon={<Download className="w-4 h-4" />}>
                 Export
               </RaiseButton>

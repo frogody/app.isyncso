@@ -48,7 +48,7 @@ const PRICING_MODELS = {
 
 export default function ProductsDigital() {
   const { user } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const [products, setProducts] = useState([]);
   const [digitalProducts, setDigitalProducts] = useState({});
   const [categories, setCategories] = useState([]);
@@ -313,14 +313,6 @@ export default function ProductsDigital() {
             <p className={`text-xs ${t('text-slate-500', 'text-zinc-400')}`}>Manage your digital product catalog</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className={`rounded-full ${t('text-slate-600 hover:bg-slate-200', 'text-zinc-400 hover:bg-zinc-800')}`}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
             <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> New Digital Product
             </Button>

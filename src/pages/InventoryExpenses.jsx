@@ -918,7 +918,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
 export default function InventoryExpenses() {
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
   const [expenses, setExpenses] = useState([]);
   const [reviewQueue, setReviewQueue] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1095,14 +1095,6 @@ export default function InventoryExpenses() {
               <p className={`text-xs ${ft('text-slate-500', 'text-zinc-400')}`}>Track and manage inventory expenses</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className={ft('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')}
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
               <Button
                 className="bg-cyan-600 hover:bg-cyan-700"
                 onClick={() => setShowUploadModal(true)}

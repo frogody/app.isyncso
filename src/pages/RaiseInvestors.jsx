@@ -42,7 +42,7 @@ import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function RaiseInvestors() {
-  const { theme, toggleTheme, rt } = useTheme();
+  const { theme, rt } = useTheme();
   const [loading, setLoading] = useState(true);
   const [investors, setInvestors] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,11 +143,6 @@ export default function RaiseInvestors() {
           color="orange"
           actions={
             <div className="flex gap-2">
-              <RaiseButton
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                icon={theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
               />
               <RaiseButton
                 variant="primary"

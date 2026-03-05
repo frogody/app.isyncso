@@ -57,7 +57,7 @@ const FILTER_CHIPS = [
 ];
 
 export default function CreateLibrary({ embedded = false }) {
-  const { theme, toggleTheme, ct } = useTheme();
+  const { theme, ct } = useTheme();
   const { user } = useUser();
   const navigate = useNavigate();
   const [content, setContent] = useState([]);
@@ -359,10 +359,6 @@ export default function CreateLibrary({ embedded = false }) {
 
             <div className="flex items-center gap-2">
               {/* Theme toggle */}
-              <button onClick={toggleTheme} className={ct('p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200', 'p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-zinc-700')}>
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </button>
-
               {/* View toggle */}
               <div className={`flex border ${ct('border-slate-200', 'border-zinc-800/60')} rounded-full overflow-hidden`}>
                 <button

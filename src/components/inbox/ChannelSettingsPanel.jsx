@@ -242,10 +242,10 @@ export default function ChannelSettingsPanel({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3 py-1.5 bg-zinc-800/50 border border-zinc-700/60 rounded-lg text-xs text-white focus:border-cyan-600/50 focus:outline-none transition-all appearance-none"
+              className="w-full px-3 py-1.5 bg-zinc-800 border border-zinc-700/60 rounded-lg text-xs text-white focus:border-cyan-600/50 focus:outline-none transition-all"
             >
               {editableCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
+                <option key={cat.id} value={cat.id} className="bg-zinc-800 text-white">
                   {cat.label}
                 </option>
               ))}
@@ -263,12 +263,12 @@ export default function ChannelSettingsPanel({
             <select
               value={linkedEntityType}
               onChange={(e) => setLinkedEntityType(e.target.value)}
-              className="w-full px-3 py-1.5 bg-zinc-800/50 border border-zinc-700/60 rounded-lg text-xs text-white focus:border-cyan-600/50 focus:outline-none transition-all appearance-none"
+              className="w-full px-3 py-1.5 bg-zinc-800 border border-zinc-700/60 rounded-lg text-xs text-white focus:border-cyan-600/50 focus:outline-none transition-all"
             >
-              <option value="">None</option>
-              <option value="project">Project</option>
-              <option value="client">Client</option>
-              <option value="task">Task</option>
+              <option value="" className="bg-zinc-800 text-white">None</option>
+              <option value="project" className="bg-zinc-800 text-white">Project</option>
+              <option value="client" className="bg-zinc-800 text-white">Client</option>
+              <option value="task" className="bg-zinc-800 text-white">Task</option>
             </select>
           </FieldLabel>
 

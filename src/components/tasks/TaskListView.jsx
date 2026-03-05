@@ -55,7 +55,10 @@ function TaskListRow({ task, onEdit, onDelete, onStatusChange, onSelect, isSelec
 
   return (
     <div
-      onClick={() => onSelect?.(task)}
+      onClick={(e) => {
+        if (e.target.closest('button') || e.target.closest('[role="menu"]')) return;
+        onEdit?.(task);
+      }}
       className={`flex items-center gap-2 px-3 py-2 transition-colors cursor-pointer group ${
         isSelected
           ? "bg-cyan-500/[0.03] border-l-2 border-l-cyan-400"
@@ -80,12 +83,11 @@ function TaskListRow({ task, onEdit, onDelete, onStatusChange, onSelect, isSelec
       {/* Title + description */}
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <h4
-          className={`text-sm font-medium truncate cursor-pointer transition-colors ${
+          className={`text-sm font-medium truncate transition-colors ${
             task.status === "completed"
               ? "text-zinc-500 line-through"
               : "text-white hover:text-cyan-400"
           }`}
-          onClick={(e) => { e.stopPropagation(); onEdit(task); }}
         >
           {task.title}
         </h4>

@@ -88,7 +88,7 @@ export default function FinanceDashboard() {
   const navigate = useNavigate();
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
 
   const canView = useMemo(() => !permLoading && hasPermission('finance.view'), [hasPermission, permLoading]);
 
@@ -322,9 +322,6 @@ export default function FinanceDashboard() {
                 </div>
                 <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing}>
                   <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </Button>
               </div>
             }

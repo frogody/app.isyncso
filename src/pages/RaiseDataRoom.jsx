@@ -31,7 +31,7 @@ import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function RaiseDataRoom() {
-  const { theme, toggleTheme, rt } = useTheme();
+  const { theme, rt } = useTheme();
   const [loading, setLoading] = useState(true);
   const [dataRooms, setDataRooms] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -98,13 +98,6 @@ export default function RaiseDataRoom() {
             color="orange"
             actions={
               <div className="flex gap-2">
-                <RaiseButton
-                  variant="secondary"
-                  size="icon"
-                  onClick={toggleTheme}
-                >
-                  {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                </RaiseButton>
                 <RaiseButton
                   variant="primary"
                   onClick={() => setIsAddDialogOpen(true)}

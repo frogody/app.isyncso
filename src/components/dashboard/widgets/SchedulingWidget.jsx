@@ -89,7 +89,7 @@ export default function SchedulingWidget() {
             {topBlock.start_hour < 12 ? (
               <Sun className="w-4 h-4 text-amber-400 flex-shrink-0" />
             ) : (
-              <Moon className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+              <Moon className="w-4 h-4 text-blue-400 flex-shrink-0" />
             )}
             <div className="min-w-0 flex-1">
               <p className={cn('text-xs font-medium', t('text-zinc-900', 'text-white'))}>

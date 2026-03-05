@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Sun, Moon, Mic, MessageSquare, Zap, ThumbsUp, ThumbsDown, Copy, Check } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText, Mic, MessageSquare, Zap, ThumbsUp, ThumbsDown, Copy, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import SyncVoiceMode from '@/components/sync/SyncVoiceMode';
 import { useTheme } from '@/contexts/GlobalThemeContext';
@@ -1706,7 +1706,7 @@ const DEFAULT_MESSAGES = [
 ];
 
 export default function SyncAgent({ embedded = false, onRegisterControls } = {}) {
-  const { theme, toggleTheme, syt } = useTheme();
+  const { theme, syt } = useTheme();
   const { user } = useUser();
   const syncStateContext = useSyncState();
   const [mood, setMoodLocal] = useState('listening');

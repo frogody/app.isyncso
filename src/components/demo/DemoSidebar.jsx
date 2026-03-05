@@ -4,7 +4,7 @@ import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
 import {
   LayoutDashboard, Contact, FolderKanban, Package, Inbox,
   Euro, Rocket, GraduationCap, UserPlus, Shield, TrendingUp, Palette,
-  Settings, Bell, Sun, Moon,
+  Settings, Bell,
   // Finance sub-nav
   Receipt, FileText, CreditCard, BookOpen, ScrollText, BarChart3,
   // Growth sub-nav
@@ -222,8 +222,7 @@ function calculateFlyoutOffset(moduleKey) {
 // Simplified SYNC avatar ring (no animation dependencies)
 
 export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
-  const { theme, toggleTheme } = useTheme();
-  const isLight = theme === 'light';
+  const { theme } = useTheme();
   const activeModule = getParentModule(currentPage);
   const moduleConfig = activeModule ? MODULE_SUB_PAGES[activeModule] : null;
 
@@ -310,19 +309,6 @@ export default function DemoSidebar({ currentPage = 'dashboard', onNavigate }) {
           </div>
 
           <div className="h-px bg-white/5 mx-2 my-1" />
-
-          {/* Theme Toggle — inline Sun/Moon matching production */}
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 w-full"
-            title={`Switch to ${isLight ? 'dark' : 'light'} mode`}
-          >
-            {!isLight ? (
-              <Sun size={20} className="flex-shrink-0 text-amber-400 group-hover:text-amber-300" />
-            ) : (
-              <Moon size={20} className="flex-shrink-0 text-blue-400 group-hover:text-blue-300" />
-            )}
-          </button>
 
           {/* Credits */}
           <div className="flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 cursor-default" title="Credits">

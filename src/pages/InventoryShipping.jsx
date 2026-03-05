@@ -430,7 +430,7 @@ function OverdueAlert({ count, onClick }) {
 
 export default function InventoryShipping({ embedded = false }) {
   const { user } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const [tasks, setTasks] = useState([]);
   const [overdueJobs, setOverdueJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -524,13 +524,6 @@ export default function InventoryShipping({ embedded = false }) {
             </div>
             )}
             <div className="flex items-center gap-2">
-              <button
-                onClick={toggleTheme}
-                className={`p-2 rounded-lg border transition-colors ${t('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-white/10 hover:bg-white/5 text-zinc-400')}`}
-                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
             </div>
           </div>
 

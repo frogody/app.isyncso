@@ -196,7 +196,7 @@ export default function CRMCompanyProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const companyId = searchParams.get('id');
-  const { theme, toggleTheme, crt } = useTheme();
+  const { theme, crt } = useTheme();
 
   const [company, setCompany] = useState(null);
   const [contacts, setContacts] = useState([]);
@@ -390,12 +390,6 @@ export default function CRMCompanyProfile() {
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm sm:text-base">Back to CRM</span>
             </Link>
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded-lg ${crt('bg-white border border-slate-200 hover:bg-slate-100 text-slate-600', 'bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] text-white/60')} transition-colors`}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
           </motion.div>
 
           {/* Hero Section */}

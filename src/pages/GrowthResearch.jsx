@@ -49,7 +49,7 @@ const COMPANY_SIZES = [
 ];
 
 export default function GrowthResearch() {
-  const { theme, toggleTheme, gt } = useTheme();
+  const { theme, gt } = useTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
@@ -185,9 +185,6 @@ export default function GrowthResearch() {
             subtitle="Find and qualify your ideal prospects"
             color="indigo"
           />
-          <Button variant="outline" size="icon" onClick={toggleTheme} className={`${gt('border-slate-200 hover:bg-slate-100', 'border-zinc-700 hover:bg-zinc-800')}`}>
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-          </Button>
         </div>
 
         {/* Progress Steps */}

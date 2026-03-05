@@ -32,7 +32,7 @@ const STATUS_FILTERS = [
 ];
 
 export default function ContentCalendar() {
-  const { theme, toggleTheme, ct } = useTheme();
+  const { theme, ct } = useTheme();
   const { user } = useUser();
   const navigate = useNavigate();
 
@@ -224,16 +224,10 @@ export default function ContentCalendar() {
               </button>
 
               {/* Theme toggle */}
-              <button
-                onClick={toggleTheme}
                 className={ct(
                   'p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200',
                   'p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 )}
-              >
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </button>
-
               {/* New Post button */}
               <button
                 onClick={() => {

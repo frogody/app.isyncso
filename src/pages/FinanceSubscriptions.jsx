@@ -62,7 +62,7 @@ export default function FinanceSubscriptions({ embedded = false }) {
 
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
   const companyId = user?.company_id || user?.organization_id;
 
   const [formData, setFormData] = useState({
@@ -308,14 +308,6 @@ export default function FinanceSubscriptions({ embedded = false }) {
                 color="blue"
                 actions={
                   <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={toggleTheme}
-                      className={`${ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}`}
-                    >
-                      {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    </Button>
                     <Button variant="outline" className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
                       <Download className="w-4 h-4 mr-2" />
                       Export

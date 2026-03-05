@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Cloud, Box, Briefcase, Package, Plus, Search, Grid3X3, List, Table2,
-  ChevronLeft, ChevronRight, Pencil, Save, X, AlertTriangle, CheckCircle, XCircle
+  ChevronLeft, ChevronRight, Pencil, Save, X, AlertTriangle, CheckCircle, XCircle, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -275,7 +275,7 @@ export default function ProductTypeContent({ productType = 'all' }) {
         }
       } else if (effectiveType === 'service') {
         if (detailsMap[product.id]) {
-          await ServiceProduct.delete(detailsMap[product.id].id);
+          await ServiceProduct.delete(product.id);
         }
       }
 
@@ -290,6 +290,61 @@ export default function ProductTypeContent({ productType = 'all' }) {
     } catch (e) {
       console.error('Failed to delete product:', e);
       toast.error('Failed to delete product: ' + (e.message || 'Unknown error'));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} product${selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`)) {
+      return;
+    }
+
+    const toDelete = products.filter(p => selectedIds.has(p.id));
+    let deleted = 0;
+
+    for (const product of toDelete) {
+      try {
+        const effectiveType = productType === 'all' ? product.type : productType;
+
+        if (effectiveType === 'physical') {
+          await supabase.from('receiving_log').delete().eq('product_id', product.id);
+          await supabase.from('inventory').delete().eq('product_id', product.id);
+          await supabase.from('product_suppliers').delete().eq('product_id', product.id);
+          await supabase.from('expected_deliveries').delete().eq('product_id', product.id);
+          await supabase.from('expense_line_items').update({ product_id: null }).eq('product_id', product.id);
+          await supabase.from('sales_order_items').update({ product_id: null }).eq('product_id', product.id);
+          await supabase.from('stock_purchase_line_items').update({ product_id: null }).eq('product_id', product.id);
+          await supabase.from('stock_inventory_entries').delete().eq('product_id', product.id);
+          await supabase.from('notifications').delete().eq('product_id', product.id);
+          await supabase.from('product_research_queue').update({ matched_product_id: null }).eq('matched_product_id', product.id);
+          await supabase.from('product_research_queue').update({ created_product_id: null }).eq('created_product_id', product.id);
+          if (detailsMap[product.id]) {
+            await PhysicalProduct.delete(product.id);
+          }
+        } else if (effectiveType === 'digital') {
+          if (detailsMap[product.id]) {
+            await DigitalProduct.delete(detailsMap[product.id].id);
+          }
+        } else if (effectiveType === 'service') {
+          if (detailsMap[product.id]) {
+            await ServiceProduct.delete(product.id);
+          }
+        }
+
+        await Product.delete(product.id);
+        deleted++;
+      } catch (e) {
+        console.error(`Failed to delete product ${product.name}:`, e);
+      }
+    }
+
+    setSelectedIds(new Set());
+    toast.success(`Deleted ${deleted} product${deleted !== 1 ? 's' : ''}`);
+
+    if (useServerSidePagination) {
+      loadServerProducts();
+    } else {
+      setProducts(prev => prev.filter(p => !selectedIds.has(p.id)));
     }
   };
 
@@ -1067,6 +1122,32 @@ export default function ProductTypeContent({ productType = 'all' }) {
           )}
         </div>
       </div>
+
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && viewMode === 'table' && (
+        <div className={`flex items-center gap-3 p-3 rounded-xl ${t('bg-white shadow-sm border border-slate-200', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+          <span className={`text-sm font-medium ${t('text-slate-700', 'text-zinc-300')}`}>
+            {selectedIds.size} selected
+          </span>
+          <div className={`w-px h-5 ${t('bg-slate-200', 'bg-zinc-700')}`} />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBulkDelete}
+            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+          >
+            <Trash2 className="w-4 h-4 mr-1.5" /> Delete Selected
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+            className={t('text-slate-500 hover:text-slate-700', 'text-zinc-500 hover:text-zinc-300')}
+          >
+            Clear Selection
+          </Button>
+        </div>
+      )}
 
       {/* Products Grid/List/Table */}
       {loading ? (

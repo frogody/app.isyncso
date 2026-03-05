@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
-import { BookOpen, Search, HelpCircle, Sparkles, ListChecks, Sun, Moon } from "lucide-react";
+import { BookOpen, Search, HelpCircle, Sparkles, ListChecks } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ChatInterface } from "@/components/ui/ChatInterface";
@@ -10,7 +10,7 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { LearnPageTransition } from '@/components/learn/ui';
 
 export default function LearnAssistant() {
-  const { theme, toggleTheme, lt } = useTheme();
+  const { theme, lt } = useTheme();
   const { user, isLoading: userLoading } = useUser();
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -122,11 +122,6 @@ export default function LearnAssistant() {
           title="Learning Assistant"
           subtitle="Your AI-powered learning companion"
           color="teal"
-          actions={
-            <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${lt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-          }
         />
 
         <div className="h-[calc(100vh-220px)] min-h-[500px]">

@@ -40,7 +40,6 @@ import {
   BundleManager,
   BundleEditor
 } from "@/components/products";
-import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { ProductsPageTransition } from '@/components/products/ui';
 import { toast } from "sonner";
@@ -2435,7 +2434,7 @@ function ProductHealthSection({ productId, companyId, productName, t }) {
 // ============= MAIN COMPONENT =============
 
 export default function ProductDetail() {
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type') || 'digital';
@@ -2818,16 +2817,10 @@ export default function ProductDetail() {
                 className="data-[state=checked]:bg-cyan-500"
               />
             </div>
-            <button
-              onClick={toggleTheme}
               className={cn(
                 "p-2 rounded-lg border transition-colors",
                 t('bg-white border-slate-200 hover:bg-slate-50 text-slate-600', 'bg-zinc-900 border-white/10 hover:bg-zinc-800 text-zinc-400')
               )}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
             <QuickActions
               product={product}
               details={details}

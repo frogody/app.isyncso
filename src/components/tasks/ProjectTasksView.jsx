@@ -95,6 +95,54 @@ export default function ProjectTasksView({
     setSelectedTaskId(task?.id === selectedTaskId ? null : task?.id);
   };
 
+  const handleAIAction = async (task, actionId) => {
+    try {
+      const { functions } = await import("@/api/supabaseClient");
+      const { data, error } = await functions.invoke("task-pixel", {
+        action: actionId,
+        context: {
+          taskId: task.id,
+          taskTitle: task.title,
+          taskDescription: task.description,
+          taskPriority: task.priority,
+          taskDueDate: task.due_date,
+          taskChecklist: task.checklist,
+        },
+      });
+
+      if (error) {
+        toast.error(error.message || "AI action failed");
+        return;
+      }
+
+      const result = data?.suggestions || data?.result;
+      if (!result) {
+        toast.info("No suggestions generated");
+        return;
+      }
+
+      if (actionId === "suggest_subtasks") {
+        const newChecklist = (Array.isArray(result) ? result : [result]).map((item) => ({
+          id: crypto.randomUUID(),
+          title: typeof item === "string" ? item : item.title || String(item),
+          done: false,
+          created_at: new Date().toISOString(),
+        }));
+        await updateTask(task.id, {
+          checklist: [...(task.checklist || []), ...newChecklist],
+        });
+        toast.success(`Added ${newChecklist.length} subtasks`);
+      } else if (actionId === "suggest_priority") {
+        const priority = typeof result === "string" ? result : result.priority || result;
+        await updateTask(task.id, { priority });
+        toast.success(`Priority updated to ${priority}`);
+      }
+    } catch (err) {
+      console.error("[ProjectTasksView] AI action error:", err);
+      toast.error("Failed to get AI suggestions");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12 text-zinc-500">
@@ -141,6 +189,7 @@ export default function ProjectTasksView({
           selectedTaskId={selectedTaskId}
           onCreateTask={handleCreateTask}
           onOpenFullModal={handleOpenFullModal}
+          onAIAction={handleAIAction}
         />
       )}
 
@@ -154,6 +203,7 @@ export default function ProjectTasksView({
           selectedTaskId={selectedTaskId}
           onCreateTask={handleCreateTask}
           onOpenFullModal={handleOpenFullModal}
+          onAIAction={handleAIAction}
         />
       )}
 

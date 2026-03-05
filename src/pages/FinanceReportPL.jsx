@@ -125,7 +125,7 @@ export default function FinanceReportPL({ embedded = false }) {
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
 
   const canView = useMemo(() => !permLoading && hasPermission('finance.view'), [hasPermission, permLoading]);
 
@@ -332,9 +332,6 @@ export default function FinanceReportPL({ embedded = false }) {
               color="green"
               actions={
                 <div className="flex gap-3">
-                  <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                  </Button>
                 </div>
               }
             />

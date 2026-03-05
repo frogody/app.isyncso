@@ -317,7 +317,7 @@ function ProductSelector({ selectedProduct, setSelectedProduct, products, produc
 
 export default function CreateVideos({ embedded = false, defaultMode = 'ai' }) {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useTheme();
+  const { theme, ct } = useTheme();
   const [mode, setMode] = useState(defaultMode);
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('cinematic');
@@ -735,12 +735,6 @@ export default function CreateVideos({ embedded = false, defaultMode = 'ai' }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={toggleTheme}
-                className={ct('p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200', 'p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-zinc-700')}
-              >
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </button>
               <button
                 onClick={() => setShowHistory(true)}
                 className={`p-2 rounded-full border ${ct('border-slate-200', 'border-zinc-800/60')} ${ct('bg-white', 'bg-zinc-900/50')} ${ct('text-slate-500', 'text-zinc-400')} ${ct('hover:text-slate-700', 'hover:text-zinc-200')} ${ct('hover:border-slate-300', 'hover:border-zinc-700')} transition-colors`}

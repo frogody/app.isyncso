@@ -480,7 +480,7 @@ const HISTORY_ACTION_COLORS = {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function GrowthEnrich() {
-  const { theme, toggleTheme, rt } = useTheme();
+  const { theme, rt } = useTheme();
   const { user } = useUser();
   const { hasPermission } = usePermissions();
   const { campaignId } = useParams();

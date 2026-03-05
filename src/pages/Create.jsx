@@ -51,6 +51,7 @@ const TOOLS = [
     description: 'AI podcasts with multiple speakers',
     icon: Mic,
     route: '/StudioPodcast',
+    hidden: true,
   },
   {
     key: 'voiceclone',
@@ -72,7 +73,7 @@ const TOOLS = [
     description: 'AI avatars for UGC & social',
     icon: UserCircle,
     route: '/StudioAvatar',
-    status: 'soon',
+    hidden: true,
   },
   {
     key: 'library',
@@ -85,7 +86,7 @@ const TOOLS = [
 
 export default function Create() {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useTheme();
+  const { theme, ct } = useTheme();
   const navigate = useNavigate();
   const [content, setContent] = useState([]);
   const [videoProjects, setVideoProjects] = useState([]);
@@ -152,15 +153,10 @@ export default function Create() {
           color="yellow"
           actions={
             <div className="flex gap-2">
-              <button
-                onClick={toggleTheme}
                 className={`p-2 rounded-lg border transition-colors ${ct(
                   'bg-white border-slate-200 text-slate-600 hover:bg-slate-50',
                   'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
                 )}`}
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
               <MotionButton
                 onClick={() => navigate('/StudioImage')}
                 className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold"

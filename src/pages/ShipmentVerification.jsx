@@ -117,7 +117,7 @@ function getSeverityIcon(severity) {
 // =============================================================================
 
 export default function ShipmentVerification({ embedded = false }) {
-  const { t, theme, toggleTheme } = useTheme();
+  const { t, theme } = useTheme();
   const { user } = useUser();
   const companyId = user?.company_id;
 
@@ -238,9 +238,6 @@ export default function ShipmentVerification({ embedded = false }) {
             <ClipboardCheck className={`w-7 h-7 ${t("text-cyan-600", "text-cyan-400")}`} />
             <h1 className="text-2xl font-bold">Shipment Verification</h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
         </div>
         )}
 

@@ -35,7 +35,6 @@ import {
   BookmarkPlus,
   Hand,
 } from 'lucide-react';
-import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -193,7 +192,7 @@ function getModeFromUseCase(useCaseId) {
 
 export default function CreateImages({ embedded = false }) {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useTheme();
+  const { theme, ct } = useTheme();
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('photorealistic');
   const [aspectRatio, setAspectRatio] = useState('1:1');
@@ -701,12 +700,6 @@ export default function CreateImages({ embedded = false }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={toggleTheme}
-                className={ct('p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200', 'p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-zinc-700')}
-              >
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </button>
               <button
                 onClick={() => setShowHistory(!showHistory)}
                 className={`p-2.5 rounded-full border transition-all ${

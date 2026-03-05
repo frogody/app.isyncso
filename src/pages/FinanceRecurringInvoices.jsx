@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { RefreshCw, Plus, Search, Edit2, Trash2, Play, Pause, Calendar, Clock, Send, X, Sun, Moon, MoreVertical, AlertCircle, ChevronDown, Mail } from 'lucide-react';
+import { RefreshCw, Plus, Search, Edit2, Trash2, Play, Pause, Calendar, Clock, Send, X, MoreVertical, AlertCircle, ChevronDown, Mail } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

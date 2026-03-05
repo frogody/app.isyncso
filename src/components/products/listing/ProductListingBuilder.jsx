@@ -5,7 +5,6 @@ import {
   BarChart3,
   PenTool,
   Image as ImageIcon,
-  Video,
   Send,
   Loader2,
   RefreshCw,
@@ -22,7 +21,6 @@ import { toast } from 'sonner';
 import ListingPreview from './ListingPreview';
 import ListingOverview from './ListingOverview';
 import ListingImageStudio from './ListingImageStudio';
-import ListingVideoStudio from './ListingVideoStudio';
 import ListingPublish from './ListingPublish';
 import ListingCopywriter from './ListingCopywriter';
 import { buildUSPPromptSet } from '@/lib/uspImageRenderer';
@@ -90,7 +88,6 @@ const SUB_TABS = [
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'copywriter', label: 'AI Copywriter', icon: PenTool },
   { id: 'images', label: 'Image Studio', icon: ImageIcon },
-  { id: 'video', label: 'Video Studio', icon: Video },
   { id: 'publish', label: 'Publish', icon: Send },
 ];
 
@@ -326,7 +323,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       updateProgress({
         phase: 'research', progress: 2, stepLabel: 'Researching product...',
         research: null, copy: null, heroImageUrl: null, galleryImages: [], galleryTotal: 4,
-        videoFrames: [], videoFramesTotal: 2, videoUrl: null,
+        videoUrl: null,
       });
       toast.loading('AI is researching your product...', { id: toastId });
 
@@ -615,141 +612,15 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       }
 
       // ═══════════════════════════════════════════════════════════════
-      // Phase 5: VIDEO FRAMES — 2 cinematic 16:9 reference frames
-      // ═══════════════════════════════════════════════════════════════
-      updateProgress({ phase: 'videoframes', progress: 58, stepLabel: 'Generating cinematic video frames...' });
-      toast.loading('Creating video reference frames...', { id: toastId });
-
-      const videoFrameScenes = [
-        {
-          prompt: [
-            `Generate a cinematic opening frame for a product video of the ${productIdentity}.`,
-            productDesc ? `Product: ${productDesc.substring(0, 150)}.` : '',
-            `The product must look EXACTLY like the reference image(s) — identical shape, color, material, branding, and every visual detail.`,
-            `Setting: Dark reflective surface — polished black acrylic or obsidian — in a controlled studio environment. Deep black background with no visible edges or seams.`,
-            `Lighting: Dramatic three-point cinematic lighting — cool-toned key light at 30 degrees creating defined highlights on the product surface, subtle blue rim light from behind for edge definition, warm accent light from below reflecting off the surface.`,
-            `Composition: Wide 16:9 cinematic frame. Product positioned at center-right using golden ratio, with leading space on the left suggesting the camera will move. Shot from slightly below eye level for a heroic, commanding perspective.`,
-            `Mood: Premium commercial film still. The kind of frame that opens a 30-second product reveal ad. High contrast, rich shadows, polished and luxurious.`,
-            `Technical: Anamorphic lens look, slight vignette on edges, 24fps motion-picture color science.`,
-          ].filter(Boolean).join('\n'),
-          label: 'Cinematic Hero Frame',
-        },
-        {
-          prompt: [
-            `Generate a cinematic lifestyle frame for a product video of the ${productIdentity}.`,
-            productDesc ? `Product: ${productDesc.substring(0, 150)}.` : '',
-            `The product must look EXACTLY like the reference image(s) — all visual details preserved precisely.`,
-            `Setting: Elegant ${productCategory?.includes('Kitchen') || productCategory?.includes('Home') ? 'modern kitchen or living space' : 'contemporary environment'} with warm, lived-in atmosphere. Clean background with subtle depth layers.`,
-            `Lighting: Cinematic warm ambient light (3200K-4500K), large soft source from a window or practical light, volumetric haze catching light beams. Natural shadows adding depth.`,
-            `Composition: Wide 16:9 frame. Product in its natural environment, positioned at the left third of frame with the environment breathing into the right side. Depth is important — foreground element softly out of focus, product sharp, background softly defocused.`,
-            `Mood: The aspirational mid-point of a product commercial where the viewer sees the product in context. Warm, inviting, makes you want to reach into the frame.`,
-            `Technical: 35mm anamorphic look, shallow depth of field, warm color grading with lifted shadows.`,
-          ].filter(Boolean).join('\n'),
-          label: 'Lifestyle Motion Frame',
-        },
-      ];
-
-      const videoFrames = [];
-      for (let i = 0; i < videoFrameScenes.length; i++) {
-        try {
-          updateProgress({
-            phase: 'videoframes',
-            progress: 58 + ((i + 1) / videoFrameScenes.length) * 12,
-            stepLabel: `Creating ${videoFrameScenes[i].label} (${i + 1}/${videoFrameScenes.length})...`,
-          });
-          const url = await generateImageWide(videoFrameScenes[i].prompt, 'product_scene');
-          videoFrames.push({ url, description: videoFrameScenes[i].label });
-          updateProgress({ videoFrames: [...videoFrames] });
-          // Save to library
-          saveToLibrary(url, { companyId: user.company_id, userId: user.id, productId: product.id, productName: product.name, label: videoFrameScenes[i].label, prompt: videoFrameScenes[i].prompt });
-        } catch (err) {
-          console.warn(`[ProductListingBuilder] Video frame ${i + 1} failed:`, err.message);
-        }
-      }
-
-      // Save video frames alongside gallery
-      if (videoFrames.length > 0) {
-        savedListing = await saveListingSilent({
-          video_reference_frames: videoFrames.map((f) => f.url),
-        });
-      }
-
-      // ═══════════════════════════════════════════════════════════════
-      // Phase 6: PRODUCT VIDEO — Veo 3.1 via generate-fashion-video
-      // Only proceeds if we have a successfully generated video frame
-      // or at minimum a hero image from this generation run.
-      // ═══════════════════════════════════════════════════════════════
-      updateProgress({ phase: 'video', progress: 72, stepLabel: 'Preparing product video...' });
-      toast.loading('Creating cinematic product video...', { id: toastId });
-
-      // Require a generated image — prefer video frame, then hero from THIS run, then existing hero
-      const videoReferenceUrl = videoFrames[0]?.url || savedListing?.hero_image_url || null;
-      const hasValidReference = !!videoReferenceUrl;
-
-      if (hasValidReference) {
-        try {
-          const researchSummary = researchContext?.findings
-            ? researchContext.findings.substring(0, 150)
-            : '';
-          const videoPrompt = [
-            `Cinematic product reveal video of the ${productIdentity}.`,
-            researchSummary ? `Context: ${researchSummary}.` : '',
-            `Camera movement: Begin with a slow dolly-in toward the product from a wide establishing shot, then transition into a smooth 180-degree orbit around the product at a slight low angle, revealing all sides and details. End with a slow push-in to a hero close-up of the product's most distinctive feature.`,
-            `Lighting: Professional studio lighting that evolves subtly during the shot — starting with dramatic rim lighting and deep shadows, gradually introducing fill light as the camera orbits to reveal surface details and material quality.`,
-            `Pace: Smooth and deliberate. No fast cuts or jerky movements. Each movement flows naturally into the next with cinematic easing. Real-time speed, no slow motion.`,
-            `Style: Premium commercial product film — the visual quality of an Apple or Dyson product video. Shallow depth of field keeping the product razor-sharp while the background falls away into soft bokeh.`,
-            `Keep the product exactly as shown in the reference image. Do not alter, modify, or reimagine the product in any way.`,
-          ].filter(Boolean).join(' ');
-
-          const { data: videoData, error: videoError } = await supabase.functions.invoke('generate-fashion-video', {
-            body: {
-              image_url: videoReferenceUrl,
-              prompt: videoPrompt,
-              model_key: 'veo-3.1-fast',
-              duration_seconds: 6,
-              aspect_ratio: '16:9',
-              generate_audio: false,
-              company_id: user?.company_id,
-              user_id: user?.id,
-            },
-          });
-
-          if (videoError) throw videoError;
-          if (videoData?.url) {
-            savedListing = await saveListingSilent({ video_url: videoData.url });
-            updateProgress({ phase: 'video', progress: 95, stepLabel: 'Video created!', videoUrl: videoData.url });
-            // Save video to library
-            saveToLibrary(videoData.url, { companyId: user.company_id, userId: user.id, productId: product.id, productName: product.name, label: 'Product Video', type: 'video', prompt: videoPrompt });
-          } else if (videoData?.status === 'processing') {
-            updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video processing in background...' });
-          } else {
-            updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video generation completed' });
-          }
-        } catch (vidErr) {
-          console.warn('[ProductListingBuilder] Video generation failed:', vidErr.message);
-          updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video skipped — check Video Studio later' });
-        }
-      } else {
-        console.warn('[ProductListingBuilder] No generated images available for video — skipping');
-        updateProgress({ phase: 'video', progress: 90, stepLabel: 'Video skipped — images must generate first' });
-      }
-
-      // ═══════════════════════════════════════════════════════════════
-      // Phase 7: DONE — Sync images to product + grand finale
+      // Phase 5: DONE — Sync images to product + grand finale
       // ═══════════════════════════════════════════════════════════════
 
       // Sync generated images back to the product record (featured_image + gallery)
-      // Include gallery images + video frames so ALL generated media appears in Product Detail
       const heroUrl = savedListing?.hero_image_url || null;
       const galleryImageObjects = [
         ...galleryUrls.map((g, i) => ({
           url: g.url,
           alt: g.description || `AI-generated gallery image ${i + 1}`,
-          type: 'image/png',
-        })),
-        ...videoFrames.map((f, i) => ({
-          url: f.url,
-          alt: f.description || `Video reference frame ${i + 1}`,
           type: 'image/png',
         })),
       ];
@@ -761,9 +632,9 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
 
       updateProgress({ phase: 'done', progress: 100, stepLabel: 'Your listing is ready!' });
 
-      const totalImages = (heroUrl ? 1 : 0) + galleryUrls.length + videoFrames.length;
+      const totalImages = (heroUrl ? 1 : 0) + galleryUrls.length;
       toast.success(
-        `Listing complete! Researched, ${totalImages} images + video generated`,
+        `Listing complete! Researched, ${totalImages} images generated`,
         { id: toastId, duration: 5000 }
       );
 
@@ -776,7 +647,7 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
     } finally {
       setGenerating(false);
     }
-  }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, generateImageWide, fetchListing, productReferenceImages]);
+  }, [product, details, user, listing, selectedChannel, saveListingSilent, generateImage, fetchListing, productReferenceImages]);
 
   // Generate a single image for a specific template slot
   const handleGenerateSlotImage = useCallback(async (slot) => {
@@ -1199,16 +1070,6 @@ export default function ProductListingBuilder({ product, details, onDetailsUpdat
       case 'images':
         return (
           <ListingImageStudio
-            product={product}
-            details={details}
-            listing={listing}
-            onUpdate={saveListing}
-            channel={selectedChannel}
-          />
-        );
-      case 'video':
-        return (
-          <ListingVideoStudio
             product={product}
             details={details}
             listing={listing}

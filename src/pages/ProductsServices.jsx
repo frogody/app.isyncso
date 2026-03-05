@@ -48,7 +48,7 @@ const PRICING_MODELS = {
 
 export default function ProductsServices() {
   const { user } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const [products, setProducts] = useState([]);
   const [serviceProducts, setServiceProducts] = useState({});
   const [categories, setCategories] = useState([]);
@@ -116,7 +116,7 @@ export default function ProductsServices() {
     try {
       // Delete service product details first if they exist
       if (serviceProducts[product.id]) {
-        await ServiceProduct.delete(serviceProducts[product.id].id);
+        await ServiceProduct.delete(product.id);
       }
       // Delete the main product
       await Product.delete(product.id);
@@ -238,14 +238,6 @@ export default function ProductsServices() {
             <p className={`text-xs ${t('text-slate-500', 'text-zinc-400')}`}>Manage your service product catalog</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className={`rounded-full ${t('text-slate-600 hover:bg-slate-200', 'text-zinc-400 hover:bg-zinc-800')}`}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
             <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Briefcase className="w-4 h-4 mr-2" /> New Service
             </Button>

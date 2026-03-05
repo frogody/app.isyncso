@@ -45,7 +45,7 @@ export default function FinanceProposals({ embedded }) {
   const navigate = useNavigate();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
 
   const STATUS_CONFIG = useMemo(() => getStatusConfig(ft), [ft]);
 
@@ -782,14 +782,6 @@ export default function FinanceProposals({ embedded }) {
             color="blue"
             actions={
               <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleTheme}
-                  className={ft('text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')}
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
                 <Button
                   onClick={handleCreateProposal}
                   className="bg-blue-500 hover:bg-blue-600"

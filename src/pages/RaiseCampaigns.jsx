@@ -42,7 +42,7 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { MOTION_VARIANTS } from '@/tokens/raise';
 
 export default function RaiseCampaigns() {
-  const { theme, toggleTheme, rt } = useTheme();
+  const { theme, rt } = useTheme();
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -145,13 +145,6 @@ export default function RaiseCampaigns() {
             color="orange"
             actions={
               <div className="flex gap-2">
-                <RaiseButton
-                  variant="secondary"
-                  size="icon"
-                  onClick={toggleTheme}
-                >
-                  {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                </RaiseButton>
                 <RaiseButton
                   onClick={() => setIsAddDialogOpen(true)}
                 >

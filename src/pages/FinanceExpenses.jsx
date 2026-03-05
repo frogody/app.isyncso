@@ -62,7 +62,7 @@ export default function FinanceExpenses({ embedded = false }) {
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
   const [taxRates, setTaxRates] = useState([]);
 
   // Form state
@@ -384,14 +384,6 @@ export default function FinanceExpenses({ embedded = false }) {
                 color="blue"
                 actions={
                   <div className="flex gap-3">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={toggleTheme}
-                      className={ft('text-slate-500 hover:bg-slate-200', 'text-zinc-400 hover:bg-zinc-800')}
-                    >
-                      {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    </Button>
                     <Button variant="outline" className={ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
                       <Download className="w-4 h-4 mr-2" />
                       Export

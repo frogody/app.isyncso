@@ -51,7 +51,7 @@ export default function Finance() {
   const { hasPermission, isLoading: permLoading } = usePermissions();
 
   // Theme
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
 
   // Modal states
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -285,9 +285,6 @@ export default function Finance() {
             color="blue"
             actions={
               <div className="flex gap-3">
-                <button onClick={toggleTheme} className={`p-2 rounded-lg ${ft('bg-slate-100 hover:bg-slate-200 text-slate-600', 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400')} transition-colors`}>
-                  {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                </button>
                 {canExport && (
                   <Button variant="outline" className={`${ft('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}`} onClick={() => alert('Export coming soon!')}>
                     <Download className="w-4 h-4 mr-2" />

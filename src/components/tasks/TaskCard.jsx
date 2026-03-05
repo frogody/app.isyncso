@@ -66,9 +66,9 @@ export default function TaskCard({
           {...provided.dragHandleProps}
           onClick={(e) => {
             if (e.target.closest('button') || e.target.closest('[role="menu"]')) return;
-            onSelect?.(task);
+            onEdit?.(task);
           }}
-          className={`group rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm hover:border-zinc-700/80 hover:bg-zinc-900/50 transition-all cursor-grab active:cursor-grabbing ${priorityBorder} ${
+          className={`group rounded-[20px] border border-zinc-800/60 bg-zinc-900/40 backdrop-blur-sm hover:border-zinc-700/80 hover:bg-zinc-900/50 transition-all cursor-pointer active:cursor-grabbing ${priorityBorder} ${
             snapshot.isDragging
               ? "shadow-xl shadow-cyan-500/10 border-cyan-500/40 scale-[1.02] bg-zinc-900/60 z-50"
               : isSelected
@@ -82,10 +82,7 @@ export default function TaskCard({
             <div className="flex items-start justify-between gap-2 mb-1.5">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <PriorityDot priority={task.priority} />
-                <h4
-                  className="text-sm font-medium text-white truncate cursor-pointer hover:text-cyan-400 transition-colors"
-                  onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-                >
+                <h4 className="text-sm font-medium text-white truncate hover:text-cyan-400 transition-colors">
                   {task.title}
                 </h4>
                 {task.source === "notch_suggestion" && (

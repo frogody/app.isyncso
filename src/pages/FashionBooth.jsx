@@ -215,7 +215,7 @@ const CAMERA_MOVEMENTS = [
 
 export default function FashionBooth({ embedded = false }) {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useTheme();
+  const { theme, ct } = useTheme();
 
   const [activeMode, setActiveMode] = useState('booth');
   const [shotTab, setShotTab] = useState('pose');
@@ -558,9 +558,6 @@ export default function FashionBooth({ embedded = false }) {
                 Extractor
               </button>
             </div>
-            <button onClick={toggleTheme} className="p-2 rounded-full bg-zinc-900/50 border border-zinc-800/60 text-zinc-400 hover:text-white transition-colors">
-              {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            </button>
           </div>
         </div>
 

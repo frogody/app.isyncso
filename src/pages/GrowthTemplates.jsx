@@ -17,11 +17,10 @@ import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
-import { Sun, Moon } from 'lucide-react';
 
 export default function GrowthTemplates() {
   const { user } = useUser();
-  const { theme, toggleTheme, gt } = useTheme();
+  const { theme, gt } = useTheme();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -166,9 +165,6 @@ export default function GrowthTemplates() {
           badge={`${templates.length} templates`}
           actions={
             <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className={gt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')}>
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
               <Button onClick={handleCreate} className="bg-indigo-500 hover:bg-indigo-400 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 New Template

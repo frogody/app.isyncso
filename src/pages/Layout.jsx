@@ -253,7 +253,7 @@ const navigationItems = [
   },
   {
     title: "CRM",
-    url: createPageUrl("CRMDashboard"),
+    url: createPageUrl("CRMContacts"),
     icon: Contact,
     permission: null,
     alwaysVisible: true,

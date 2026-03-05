@@ -30,7 +30,7 @@ import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 
 export default function RaisePitchDecks() {
-  const { theme, toggleTheme, rt } = useTheme();
+  const { theme, rt } = useTheme();
   const [loading, setLoading] = useState(true);
   const [pitchDecks, setPitchDecks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,9 +104,6 @@ export default function RaisePitchDecks() {
           color="orange"
           actions={
             <div className="flex gap-3">
-              <RaiseButton variant="secondary" size="icon" onClick={toggleTheme}>
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </RaiseButton>
               <RaiseButton variant="secondary">
                 <Upload className="w-4 h-4 mr-2" />
                 Upload

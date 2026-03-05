@@ -267,7 +267,7 @@ const getSocialIcon = (platform) => {
 export default function CRMContactProfile() {
   const { user } = useUser();
   const { hasPermission } = usePermissions();
-  const { theme, toggleTheme, crt } = useTheme();
+  const { theme, crt } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const contactId = searchParams.get('id');
@@ -535,9 +535,6 @@ export default function CRMContactProfile() {
               <ArrowLeft className="w-4 h-4" />
               <span className="text-sm sm:text-base">Back to Contacts</span>
             </Link>
-            <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${crt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
           </motion.div>
 
           {/* Stale Data Warning */}

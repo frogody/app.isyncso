@@ -301,7 +301,7 @@ function useGoogleFont(fontName) {
 // =====================
 export default function CreateBranding() {
   const { user } = useUser();
-  const { theme, toggleTheme, ct } = useTheme();
+  const { theme, ct } = useTheme();
   const [brandAsset, setBrandAsset] = useState(null);
   const [brandData, setBrandData] = useState(DEFAULT_BRAND_DATA);
   const [loading, setLoading] = useState(true);
@@ -479,9 +479,6 @@ export default function CreateBranding() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={toggleTheme} className={ct('p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200', 'p-2 rounded-full bg-zinc-800 text-zinc-400 hover:bg-zinc-700')}>
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </button>
               <AnimatePresence mode="wait">
                 {saving && (
                   <motion.span

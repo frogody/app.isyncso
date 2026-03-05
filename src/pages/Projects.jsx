@@ -1498,6 +1498,13 @@ function FolderDetailSheet({
             >
               <Eye className="w-4 h-4 mr-1" /> Preview
             </Button>
+            <Button
+              size="sm"
+              className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50"
+              onClick={() => onDelete(folder.id)}
+            >
+              <Trash2 className="w-4 h-4 mr-1" /> Delete
+            </Button>
           </div>
 
           <Tabs defaultValue="projects" className="w-full">
@@ -2933,7 +2940,7 @@ function ProjectAnalytics({ projects, tasks }) {
 // Main Projects Component
 export default function Projects() {
   const { user } = useUser();
-  const { theme, toggleTheme, pt } = useTheme();
+  const { theme, pt } = useTheme();
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3041,9 +3048,7 @@ export default function Projects() {
 
   // Save folders to localStorage whenever they change
   useEffect(() => {
-    if (folders.length > 0) {
-      localStorage.setItem('project_folders', JSON.stringify(folders));
-    }
+    localStorage.setItem('project_folders', JSON.stringify(folders));
   }, [folders]);
 
   useEffect(() => {
@@ -3589,7 +3594,17 @@ export default function Projects() {
   };
 
   const handleDeleteFolder = (folderId) => {
-    setFolders(prev => prev.filter(f => f.id !== folderId));
+    if (!confirm("Are you sure you want to delete this folder? Projects inside will not be deleted.")) return;
+    setFolders(prev => {
+      const updated = prev.filter(f => f.id !== folderId);
+      localStorage.setItem('project_folders', JSON.stringify(updated));
+      return updated;
+    });
+    // Close the detail sheet if the deleted folder was open
+    if (selectedFolder?.id === folderId) {
+      setShowFolderDetailSheet(false);
+      setSelectedFolder(null);
+    }
     toast.success("Folder deleted");
   };
 
@@ -3692,10 +3707,6 @@ export default function Projects() {
                 <CalendarRange className="w-4 h-4" />
               </button>
             </div>
-
-            <button onClick={toggleTheme} className={cn('p-2 rounded-xl transition-all', pt('bg-slate-100 hover:bg-slate-200 text-slate-600', 'bg-white/[0.06] hover:bg-white/10 text-zinc-400'))}>
-              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            </button>
 
             <Button
               variant="outline"

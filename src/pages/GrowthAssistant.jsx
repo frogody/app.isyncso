@@ -20,7 +20,6 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
-import { Sun, Moon } from 'lucide-react';
 
 // Integration icons mapping
 const INTEGRATION_ICONS = {
@@ -219,7 +218,7 @@ function TypingIndicator() {
 
 export default function GrowthAssistant() {
   const { user, isLoading: userLoading } = useUser();
-  const { theme, toggleTheme, gt } = useTheme();
+  const { theme, gt } = useTheme();
   const composio = useComposio();
 
   // Chat state
@@ -511,9 +510,6 @@ export default function GrowthAssistant() {
           color="indigo"
           actions={
             <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className={gt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')}>
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
               <Link to={createPageUrl("Integrations")}>
                 <Button variant="outline" className={`${gt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700')}`}>
                   <Link2 className="w-4 h-4 mr-2" />

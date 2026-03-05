@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/api/supabaseClient';
-import { FileText, Plus, Search, Edit2, Trash2, Check, X, Sun, Moon, MoreVertical, AlertCircle, Receipt, ArrowDownLeft, Filter, Download, ChevronDown } from 'lucide-react';
+import { FileText, Plus, Search, Edit2, Trash2, Check, X, MoreVertical, AlertCircle, Receipt, ArrowDownLeft, Filter, Download, ChevronDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

@@ -193,7 +193,7 @@ export default function FinanceBills({ embedded = false }) {
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
 
   const canView = useMemo(() => !permLoading && hasPermission('finance.view'), [hasPermission, permLoading]);
   const canCreate = useMemo(() => !permLoading && hasPermission('finance.create'), [hasPermission, permLoading]);
@@ -608,9 +608,6 @@ export default function FinanceBills({ embedded = false }) {
             color="blue"
             actions={
               <div className="flex gap-3">
-                <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
                 {canCreate && (
                   <Button className={ft('bg-blue-600 hover:bg-blue-700 text-white', 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30')}
                     onClick={() => { resetForm(); if (defaultAPAccount) setFormData(prev => ({ ...prev, ap_account_id: defaultAPAccount.id })); setShowCreateModal(true); }}>

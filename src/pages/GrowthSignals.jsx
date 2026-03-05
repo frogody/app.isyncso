@@ -254,7 +254,7 @@ function SignalCard({ signal, onAction, onDismiss, index, gt }) {
 }
 
 export default function GrowthSignals() {
-  const { theme, toggleTheme, gt } = useTheme();
+  const { theme, gt } = useTheme();
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('all');
@@ -392,9 +392,6 @@ export default function GrowthSignals() {
               </Badge>
             ) : null}
           />
-          <Button variant="outline" size="icon" onClick={toggleTheme} className={`${gt('border-slate-200 hover:bg-slate-100', 'border-zinc-700 hover:bg-zinc-800')}`}>
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-          </Button>
         </div>
 
         {/* Stats Row */}

@@ -15,7 +15,6 @@ export default function WorkspaceSettingsModal({ isOpen, onClose, user }) {
     desktopNotifications: false,
     showOnlineStatus: true,
     compactMode: false,
-    darkMode: true,
   });
 
   if (!isOpen) return null;
@@ -140,13 +139,10 @@ export default function WorkspaceSettingsModal({ isOpen, onClose, user }) {
                 <>
                   <div className="space-y-4">
                     <h4 className="text-sm font-medium text-zinc-300">Theme</h4>
-                    <SettingRow
-                      label="Dark mode"
-                      description="Use dark theme (always on)"
-                      checked={settings.darkMode}
-                      onChange={(v) => updateSetting('darkMode', v)}
-                      disabled
-                    />
+                    <div className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/50">
+                      <p className="text-sm font-medium text-white">Dark mode</p>
+                      <p className="text-xs text-zinc-500">Always-on dark theme</p>
+                    </div>
                   </div>
                 </>
               )}

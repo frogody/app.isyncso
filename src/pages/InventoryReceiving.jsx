@@ -705,7 +705,7 @@ function SessionTimer({ startedAt }) {
 
 export default function InventoryReceiving({ embedded = false }) {
   const { user } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const [scanResult, setScanResult] = useState(null);
   const [notFoundEan, setNotFoundEan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -985,16 +985,10 @@ export default function InventoryReceiving({ embedded = false }) {
                 <History className="w-4 h-4 mr-2" />
                 History
               </Button>
-              <button
-                onClick={toggleTheme}
                 className={`p-2 rounded-lg transition-colors ${t(
                   'bg-gray-100 hover:bg-gray-200 text-gray-600',
                   'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'
                 )}`}
-                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
             </div>
           </div>
 

@@ -21,7 +21,7 @@ const TABS = [
 ];
 
 export default function Warehouse() {
-  const { t, theme, toggleTheme } = useTheme();
+  const { t, theme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "receiving");
 
@@ -41,9 +41,6 @@ export default function Warehouse() {
                 <Boxes className={`w-7 h-7 ${t("text-cyan-600", "text-cyan-400")}`} />
                 <h1 className="text-2xl font-bold">Warehouse</h1>
               </div>
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </Button>
             </div>
 
             {/* Tab Bar */}

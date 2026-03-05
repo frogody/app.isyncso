@@ -21,7 +21,6 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
-import { Sun, Moon } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -158,7 +157,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
 }
 
 export default function GrowthCampaigns() {
-  const { theme, toggleTheme, gt } = useTheme();
+  const { theme, gt } = useTheme();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -401,9 +400,6 @@ export default function GrowthCampaigns() {
               </Button>
             }
           />
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className={`${gt('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')} rounded-full`}>
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
         </div>
 
         {/* Stats */}

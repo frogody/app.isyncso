@@ -4,9 +4,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useUser, useTeamAccess } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
-import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart, ShoppingCart, ClipboardList } from "lucide-react";
+import { LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart, ShoppingCart, ClipboardList } from "lucide-react";
 import TaskLog from "@/components/tasks/TaskLog";
-import BusinessPulse from "@/components/pulse/BusinessPulse";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +32,6 @@ import {
   RaiseInvestorsWidget, RaiseMeetingsWidget
 } from "@/components/dashboard/widgets/RaiseWidgets";
 import { RecentActionsWidget, QuickActionsWidget } from "@/components/dashboard/widgets/CoreWidgets";
-import SchedulingWidget from "@/components/dashboard/widgets/SchedulingWidget";
 import { useInvoiceSignals } from "@/hooks/useInvoiceSignals";
 import {
   CommerceBToBOverviewWidget, CommerceOrdersWidget, CommerceRevenueWidget,
@@ -696,14 +694,6 @@ export default function Dashboard() {
             </h1>
             <p className="text-xs text-zinc-400 line-clamp-2">{getPersonalizedSubtitle()}</p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <Link to={createPageUrl("Actions")}>
-              <Button className="h-10 sm:h-11 px-3 sm:px-4 bg-zinc-800/80 hover:bg-zinc-800 active:bg-zinc-700 text-zinc-300 border border-zinc-700/50 text-sm sm:text-base touch-target">
-                <Plus className="w-4 h-4 mr-1.5 sm:mr-2" />
-                <span className="hidden xs:inline">New </span>Action
-              </Button>
-            </Link>
-          </div>
         </div>
 
         {/* View Switcher for Managers */}
@@ -732,16 +722,6 @@ export default function Dashboard() {
               Team Dashboard
             </button>
           </div>
-        )}
-
-        {/* Business Pulse — Cross-module intelligence brief */}
-        {viewMode === 'personal' && (
-          <BusinessPulse compact />
-        )}
-
-        {/* Scheduling Insights — compact widget from behavioral data */}
-        {viewMode === 'personal' && (
-          <SchedulingWidget />
         )}
 
         {/* Team Dashboard View */}

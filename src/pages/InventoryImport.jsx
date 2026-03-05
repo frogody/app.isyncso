@@ -38,7 +38,7 @@ const generateSlug = (name) => {
 
 export default function InventoryImport() {
   const { user } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState(0);
@@ -630,15 +630,10 @@ export default function InventoryImport() {
             <p className={`text-xs ${t('text-zinc-500', 'text-zinc-400')}`}>Bulk import products from spreadsheets</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
               className={`p-2 rounded-lg border transition-colors ${t(
                 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-600',
                 'border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
               )}`}
-            >
-              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-            </button>
             {currentStep === STEPS.length - 1 && importResults && (
               <Button onClick={resetWizard} variant="outline">
                 Import Another File

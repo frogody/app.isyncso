@@ -23,7 +23,7 @@ import { useTheme } from '@/contexts/GlobalThemeContext';
 import { LearnPageTransition } from '@/components/learn/ui';
 
 export default function LearnAITools() {
-  const { theme, toggleTheme, lt } = useTheme();
+  const { theme, lt } = useTheme();
   const [activeTab, setActiveTab] = useState("generator");
   const [importStatus, setImportStatus] = useState("idle");
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0, currentCourse: "" });
@@ -109,9 +109,6 @@ export default function LearnAITools() {
           badge="Admin Tool"
           actions={
             <div className="flex items-center gap-3">
-              <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${lt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
               {importStatus !== "idle" && importStatus !== "done" ? (
                 <div className={`flex items-center gap-3 px-4 py-2 rounded-xl ${lt('bg-white border border-slate-200', 'bg-zinc-900/60 border border-white/10')}`}>
                   <Clock className="w-4 h-4 text-teal-400 animate-spin" />

@@ -116,7 +116,7 @@ function ContinueLearningCard({ course, progress, index }) {
 
 export default function LearnDashboard() {
   const { user } = useUser();
-  const { theme, toggleTheme, lt } = useTheme();
+  const { theme, lt } = useTheme();
   const [analytics, setAnalytics] = useState(null);
   const [gamification, setGamification] = useState(null);
   const [courses, setCourses] = useState([]);
@@ -249,9 +249,6 @@ export default function LearnDashboard() {
                 color="teal"
                 actions={
                   <div className="flex items-center gap-2">
-                    <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${lt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-                      {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    </button>
                     <Link to={createPageUrl('Learn')}>
                       <Button size="sm" className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30 h-8 text-xs">
                         <BookOpen className="w-3 h-3 mr-1.5" />

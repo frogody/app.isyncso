@@ -232,7 +232,7 @@ function BarcodeScanner({ onScan, isActive }) {
 // =============================================================================
 
 export default function PalletBuilder({ embedded = false }) {
-  const { t, theme, toggleTheme } = useTheme();
+  const { t, theme } = useTheme();
   const { user } = useUser();
   const companyId = user?.company_id;
 
@@ -645,12 +645,6 @@ export default function PalletBuilder({ embedded = false }) {
                 className={`p-2 rounded-lg ${t("text-gray-500 hover:bg-gray-100", "text-zinc-500 hover:bg-zinc-800")}`}
               >
                 <History className="w-5 h-5" />
-              </button>
-              <button
-                onClick={toggleTheme}
-                className={`p-2 rounded-lg ${t("text-gray-500 hover:bg-gray-100", "text-zinc-500 hover:bg-zinc-800")}`}
-              >
-                {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
             </div>
           </div>

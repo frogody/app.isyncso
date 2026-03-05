@@ -53,7 +53,7 @@ export default function FinanceProposalBuilder() {
   const [searchParams] = useSearchParams();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
 
   const proposalId = searchParams.get('id');
   const prospectIdParam = searchParams.get('prospect');
@@ -358,14 +358,6 @@ export default function FinanceProposalBuilder() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className={ft('text-slate-500 hover:text-slate-700', 'text-zinc-400 hover:text-zinc-200')}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
             <Button
               variant="outline"
               onClick={() => setShowPreview(true)}

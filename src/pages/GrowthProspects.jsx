@@ -22,7 +22,6 @@ import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { GrowthPageTransition } from '@/components/growth/ui';
-import { Sun, Moon } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import {
@@ -62,7 +61,7 @@ const COMPANY_SIZES = [
 ];
 
 export default function GrowthProspects() {
-  const { theme, toggleTheme, gt } = useTheme();
+  const { theme, gt } = useTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("lists");
@@ -487,9 +486,6 @@ export default function GrowthProspects() {
             color="indigo"
             badge={`${totalProspects} total`}
           />
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className={`${gt('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')} rounded-full`}>
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
         </div>
 
         {/* Stats */}

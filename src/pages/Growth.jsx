@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 
 export default function Growth() {
-  const { theme, toggleTheme, gt } = useTheme();
+  const { theme, gt } = useTheme();
   const { user } = useUser();
   const [opportunities, setOpportunities] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
@@ -217,9 +217,6 @@ export default function Growth() {
           color="indigo"
           actions={
             <div className="flex gap-2">
-              <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${gt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
               <Link to={createPageUrl('GrowthResearch')}>
                 <MotionButton variant="outline" className={`${gt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700')} hover:text-white`}>
                   <Search className="w-4 h-4 mr-2" />

@@ -897,8 +897,8 @@ export default function SyncProfile({ embedded = false, onRegisterControls } = {
 
   if (!biography) {
     return (
-      <div className="min-h-screen bg-black">
-        <div className="w-full px-6 py-8">
+      <div className={embedded ? '' : 'min-h-screen bg-black'}>
+        <div className={embedded ? '' : 'w-full px-6 py-8'}>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-24">
             <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-12 max-w-md text-center space-y-6">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
@@ -939,8 +939,8 @@ export default function SyncProfile({ embedded = false, onRegisterControls } = {
 
   return (
     <div className={embedded ? '' : 'min-h-screen bg-black'}>
-      <div className={embedded ? '' : 'w-full px-4 sm:px-6 py-8'}>
-        <div className="grid lg:grid-cols-[240px_1fr] gap-8">
+      <div className={embedded ? 'w-full' : 'w-full px-4 sm:px-6 py-8'}>
+        <div className="grid lg:grid-cols-[240px_1fr] gap-6 lg:gap-8">
           {/* ─── Sidebar ─────────────────────────────────────── */}
           <aside className="hidden lg:block">
             <div className="sticky top-8 space-y-6">
@@ -972,14 +972,14 @@ export default function SyncProfile({ embedded = false, onRegisterControls } = {
                     <button
                       key={ch.id}
                       onClick={() => setActiveChapter(ch.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all text-sm ${
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all text-sm ${
                         isActive
-                          ? 'bg-cyan-500/10 text-cyan-400 border-l-2 border-cyan-400'
-                          : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40 border-l-2 border-transparent'
+                          ? 'bg-cyan-500/10 text-cyan-400'
+                          : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40'
                       }`}
                     >
-                      <span className="text-[10px] text-zinc-600 w-4 text-right">{idx + 1}</span>
-                      <ChIcon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'text-zinc-600'}`} />
+                      <span className={`text-[10px] w-4 text-right ${isActive ? 'text-cyan-500' : 'text-zinc-600'}`}>{idx + 1}</span>
+                      <ChIcon className={`w-4 h-4 shrink-0 ${isActive ? 'text-cyan-400' : 'text-zinc-600'}`} />
                       <span className="truncate">{ch.label}</span>
                     </button>
                   );
@@ -997,32 +997,31 @@ export default function SyncProfile({ embedded = false, onRegisterControls } = {
             </div>
           </aside>
 
-          {/* ─── Mobile chapter bar ──────────────────────────── */}
-          <div className="lg:hidden mb-4 overflow-x-auto scrollbar-hide">
-            <div className="flex gap-2 pb-2">
-              {CHAPTERS.map(ch => {
-                const isActive = activeChapter === ch.id;
-                const ChIcon = ch.icon;
-                return (
-                  <button
-                    key={ch.id}
-                    onClick={() => setActiveChapter(ch.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all border min-h-[36px] ${
-                      isActive
-                        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                        : 'text-zinc-500 border-zinc-800/50 hover:text-zinc-300'
-                    }`}
-                  >
-                    <ChIcon className="w-3 h-3" />
-                    {ch.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* ─── Content area ────────────────────────────────── */}
           <main>
+            {/* ─── Mobile chapter bar ──────────────────────────── */}
+            <div className="lg:hidden mb-4 -mx-1 overflow-x-auto scrollbar-hide">
+              <div className="flex gap-2 px-1 pb-2">
+                {CHAPTERS.map(ch => {
+                  const isActive = activeChapter === ch.id;
+                  const ChIcon = ch.icon;
+                  return (
+                    <button
+                      key={ch.id}
+                      onClick={() => setActiveChapter(ch.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all border min-h-[36px] ${
+                        isActive
+                          ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                          : 'text-zinc-500 border-zinc-800/50 hover:text-zinc-300'
+                      }`}
+                    >
+                      <ChIcon className="w-3 h-3" />
+                      {ch.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {/* Chapter header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">

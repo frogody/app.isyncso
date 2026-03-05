@@ -68,7 +68,7 @@ export default function ContactsImport() {
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('users.create');
   const navigate = useNavigate();
-  const { theme, toggleTheme, crt } = useTheme();
+  const { theme, crt } = useTheme();
 
   // All hooks must be called unconditionally at the top
   // Wizard state
@@ -650,14 +650,6 @@ export default function ContactsImport() {
               <h1 className={cn("text-lg font-bold", crt('text-slate-900', 'text-white'))}>Import Contacts</h1>
               <p className={cn("text-sm", crt('text-slate-500', 'text-zinc-400'))}>Import contacts from CSV or Excel files</p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className={crt('text-slate-500 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')}
-            >
-              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-            </Button>
           </div>
 
           {/* Progress Steps */}

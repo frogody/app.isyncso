@@ -103,7 +103,7 @@ function RecommendedCourseCard({ course, lt }) {
 
 export default function Learn() {
   const { user, isLoading: userLoading } = useUser();
-  const { theme, toggleTheme, lt } = useTheme();
+  const { theme, lt } = useTheme();
   const [courses, setCourses] = useState([]);
   const [userProgress, setUserProgress] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -504,9 +504,6 @@ export default function Learn() {
             color="teal"
             actions={
               <div className="flex gap-2">
-                <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${lt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
                 {['dashboard', 'my-courses', 'library'].map((section) => (
                   <Button
                     key={section}

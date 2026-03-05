@@ -205,7 +205,7 @@ export default function FinanceBillPayments({ embedded = false }) {
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
   const { user } = useUser();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
 
   const canView = useMemo(() => !permLoading && hasPermission('finance.view'), [hasPermission, permLoading]);
   const canCreate = useMemo(() => !permLoading && hasPermission('finance.create'), [hasPermission, permLoading]);
@@ -491,9 +491,6 @@ export default function FinanceBillPayments({ embedded = false }) {
             color="blue"
             actions={
               <div className="flex gap-3">
-                <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
                 <Button variant="outline" className={ft('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}
                   onClick={exportCSV} disabled={filteredPayments.length === 0}>
                   <Download className="w-4 h-4 mr-2" />Export

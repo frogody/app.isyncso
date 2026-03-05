@@ -5,7 +5,6 @@ import {
   Package, Cloud, Box, Briefcase, Plus,
   Settings, Loader2, Layers, Link2, ChevronDown
 } from "lucide-react";
-import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { ProductsPageTransition } from '@/components/products/ui';
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,7 @@ const TABS = [
 
 export default function Products() {
   const { user, companyId } = useUser();
-  const { theme, toggleTheme, t } = useTheme();
+  const { theme, t } = useTheme();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "all");
@@ -234,15 +233,6 @@ export default function Products() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleTheme}
-              className={cn("border", t('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700'))}
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-
             <Popover>
               <PopoverTrigger asChild>
                 <Button

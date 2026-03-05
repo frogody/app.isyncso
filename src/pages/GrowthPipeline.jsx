@@ -261,7 +261,7 @@ function StageColumn({ stage, opportunities, onEdit, onDelete, onAddDeal }) {
 }
 
 export default function GrowthPipeline() {
-  const { theme, toggleTheme, gt } = useTheme();
+  const { theme, gt } = useTheme();
   const { user } = useUser();
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -539,9 +539,6 @@ export default function GrowthPipeline() {
             color="indigo"
             actions={
               <div className="flex gap-2">
-                <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${gt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
                 <Button
                   onClick={() => openNewModal()}
                   className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"

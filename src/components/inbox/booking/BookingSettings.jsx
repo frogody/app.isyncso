@@ -367,10 +367,10 @@ export default function BookingSettings({ userId, username }) {
           <select
             value={defaultDuration}
             onChange={(e) => setDefaultDuration(Number(e.target.value))}
-            className="w-full px-4 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-white appearance-none focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
+            className="w-full px-4 py-2.5 bg-zinc-800 border border-zinc-700/50 rounded-xl text-white focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
           >
             {durations.map((dur) => (
-              <option key={dur} value={dur}>
+              <option key={dur} value={dur} className="bg-zinc-800 text-white">
                 {dur} minutes
               </option>
             ))}
@@ -458,10 +458,10 @@ export default function BookingSettings({ userId, username }) {
                       onChange={(e) =>
                         updateDayHours(key, 'start', e.target.value)
                       }
-                      className="px-2 py-1.5 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-sm text-zinc-300 appearance-none focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
+                      className="px-2 py-1.5 bg-zinc-800 border border-zinc-700/50 rounded-lg text-sm text-zinc-300 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
                     >
                       {TIME_OPTIONS.map((t) => (
-                        <option key={t} value={t}>
+                        <option key={t} value={t} className="bg-zinc-800 text-zinc-300">
                           {t}
                         </option>
                       ))}
@@ -472,10 +472,10 @@ export default function BookingSettings({ userId, username }) {
                       onChange={(e) =>
                         updateDayHours(key, 'end', e.target.value)
                       }
-                      className="px-2 py-1.5 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-sm text-zinc-300 appearance-none focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
+                      className="px-2 py-1.5 bg-zinc-800 border border-zinc-700/50 rounded-lg text-sm text-zinc-300 focus:border-cyan-500 focus:outline-none transition-colors cursor-pointer"
                     >
                       {TIME_OPTIONS.map((t) => (
-                        <option key={t} value={t}>
+                        <option key={t} value={t} className="bg-zinc-800 text-zinc-300">
                           {t}
                         </option>
                       ))}

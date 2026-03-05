@@ -815,7 +815,7 @@ function CRMAnalytics({ contacts, crt: crtProp }) {
 
 // Main CRM Component
 export default function CRMContacts() {
-  const { theme, toggleTheme, crt } = useTheme();
+  const { theme, crt } = useTheme();
   const { user } = useUser();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
@@ -1445,10 +1445,6 @@ export default function CRMContacts() {
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Theme Toggle */}
-          <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${crt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
-            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
           {/* View Mode Toggle */}
           <div className={`flex items-center ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg p-1 flex-shrink-0`}>
             <button

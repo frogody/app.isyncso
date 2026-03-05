@@ -38,7 +38,7 @@ import { determineTaxRulesForSale } from '@/lib/btwRules';
 
 export default function FinanceInvoices({ embedded }) {
   const { user, company: userCompany } = useUser();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1650,13 +1650,6 @@ export default function FinanceInvoices({ embedded }) {
               color="blue"
               actions={
                 <div className="flex gap-3">
-                  <button
-                    onClick={toggleTheme}
-                    className={`p-2 rounded-lg border transition-colors ${ft('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}
-                    title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                  >
-                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                  </button>
                   <Button
                     variant="outline"
                     onClick={() => setShowBrandingModal(true)}

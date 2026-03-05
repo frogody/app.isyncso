@@ -339,7 +339,7 @@ const HISTORY_ACTION_COLORS = {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function RaiseEnrich() {
-  const { theme, toggleTheme, rt } = useTheme();
+  const { theme, rt } = useTheme();
   const { user } = useUser();
   const { hasPermission } = usePermissions();
 

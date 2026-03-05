@@ -30,7 +30,7 @@ export default function FinanceOverview() {
   const [subscriptions, setSubscriptions] = useState([]);
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
-  const { theme, toggleTheme, ft } = useTheme();
+  const { theme, ft } = useTheme();
 
   // Refs for anime.js animations
   const statsGridRef = useRef(null);
@@ -309,13 +309,6 @@ export default function FinanceOverview() {
                 }
               />
             </div>
-            <button
-              onClick={toggleTheme}
-              className={`ml-4 p-2 rounded-lg transition-colors ${ft('bg-slate-200 hover:bg-slate-300 text-slate-700', 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300')}`}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
           </div>
 
           {/* Key Metrics Grid */}
