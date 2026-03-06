@@ -168,7 +168,7 @@ export async function listShippingTasks(
     .select(`
       *,
       sales_orders (
-        id, order_number, customer_id,
+        id, order_number, customer_id, source, shopify_order_id, shopify_order_number,
         customers (id, name, email)
       ),
       b2b_orders (

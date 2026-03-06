@@ -37,9 +37,13 @@ async function verifyShopifyHmac(
   bodyText: string,
   hmacHeader: string | null
 ): Promise<boolean> {
-  if (!SHOPIFY_API_SECRET || !hmacHeader) {
-    console.warn("[shopify-webhooks] HMAC verification skipped — no secret or header");
-    return !!SHOPIFY_API_SECRET === false; // Only skip if no secret configured
+  if (!SHOPIFY_API_SECRET) {
+    console.error("[shopify-webhooks] SHOPIFY_API_SECRET not configured — rejecting request");
+    return false;
+  }
+  if (!hmacHeader) {
+    console.error("[shopify-webhooks] Missing X-Shopify-Hmac-Sha256 header");
+    return false;
   }
 
   const key = await crypto.subtle.importKey(

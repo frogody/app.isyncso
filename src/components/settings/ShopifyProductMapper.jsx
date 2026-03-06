@@ -1,42 +1,36 @@
 /**
- * ShopifyProductMapper — Manual resolution UI for unmapped Shopify products (SH-16)
+ * ShopifyProductMapper — Modal UI for mapping unmapped Shopify products to local products (SH-16)
  *
- * Shown after a "Sync Products" call returns unmapped items.
- * Side-by-side display: Shopify product info | Search local products
- * Actions per unmapped product: "Map to product", "Create product", "Skip"
+ * Shown after "Sync Products" returns unmapped items.
+ * Each Shopify variant gets its own row with search + map/create/skip actions.
+ *
+ * Props:
+ * - unmappedProducts: array from syncProducts result.data.unmappedProducts
+ *   Each item: { shopifyProductId, shopifyVariantId, shopifyInventoryItemId,
+ *                title, variantTitle, barcode, sku, price }
+ * - companyId: the company_id
+ * - onClose: callback to dismiss the modal
+ * - onMapped / onComplete: callback when all items resolved (accepts either name)
  */
 
 import React, { useState, useCallback } from "react";
 import { useTheme } from "@/contexts/GlobalThemeContext";
-import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import {
   Search, Link2, Plus, SkipForward, Loader2, X,
-  Package, ArrowRight, Check, ChevronDown, ChevronUp,
+  Package, Check, ChevronDown, ChevronUp, Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/api/supabaseClient";
-import { sanitizeSearchInput } from '@/utils/validation';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-async function callShopifyApi(action, params) {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/shopify-api`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({ action, ...params }),
-  });
-  return response.json();
-}
+import { sanitizeSearchInput } from "@/utils/validation";
 
 /**
- * Single unmapped product row with search + actions
+ * Single unmapped product/variant row
  */
 function UnmappedProductRow({ item, companyId, t, onResolved }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -81,19 +75,22 @@ function UnmappedProductRow({ item, companyId, t, onResolved }) {
   const handleMap = useCallback(async (localProduct) => {
     setMapping(true);
     try {
-      const { error } = await supabase.from("shopify_product_mappings").insert({
-        company_id: companyId,
-        product_id: localProduct.id,
-        shopify_product_id: item.shopifyProductId,
-        shopify_variant_id: item.shopifyVariantId,
-        shopify_inventory_item_id: item.shopifyInventoryItemId,
-        matched_by: "manual",
-        shopify_product_title: item.title,
-        shopify_variant_title: item.variantTitle,
-        shopify_sku: item.sku,
-        is_active: true,
-        sync_inventory: true,
-      });
+      const { error } = await supabase
+        .from("shopify_product_mappings")
+        .upsert({
+          company_id: companyId,
+          product_id: localProduct.id,
+          shopify_product_id: item.shopifyProductId,
+          shopify_variant_id: item.shopifyVariantId,
+          shopify_inventory_item_id: item.shopifyInventoryItemId,
+          shopify_product_title: item.title,
+          shopify_variant_title: item.variantTitle,
+          shopify_sku: item.sku,
+          matched_by: "manual",
+          is_active: true,
+          sync_inventory: true,
+        }, { onConflict: "company_id,shopify_variant_id" });
+
       if (error) throw error;
       setResolved(true);
       setResolvedAction(`Mapped to ${localProduct.name}`);
@@ -109,12 +106,14 @@ function UnmappedProductRow({ item, companyId, t, onResolved }) {
   const handleCreate = useCallback(async () => {
     setCreating(true);
     try {
-      // Create local product from Shopify data
+      const productName = item.title +
+        (item.variantTitle && item.variantTitle !== "Default Title" ? ` - ${item.variantTitle}` : "");
+
       const { data: newProduct, error } = await supabase
         .from("products")
         .insert({
           company_id: companyId,
-          name: item.title + (item.variantTitle && item.variantTitle !== "Default Title" ? ` - ${item.variantTitle}` : ""),
+          name: productName,
           sku: item.sku || null,
           ean: item.barcode || null,
           price: item.price ? parseFloat(item.price) : null,
@@ -126,20 +125,22 @@ function UnmappedProductRow({ item, companyId, t, onResolved }) {
 
       if (error) throw error;
 
-      // Create the mapping
-      const { error: mapError } = await supabase.from("shopify_product_mappings").insert({
-        company_id: companyId,
-        product_id: newProduct.id,
-        shopify_product_id: item.shopifyProductId,
-        shopify_variant_id: item.shopifyVariantId,
-        shopify_inventory_item_id: item.shopifyInventoryItemId,
-        matched_by: "created",
-        shopify_product_title: item.title,
-        shopify_variant_title: item.variantTitle,
-        shopify_sku: item.sku,
-        is_active: true,
-        sync_inventory: true,
-      });
+      const { error: mapError } = await supabase
+        .from("shopify_product_mappings")
+        .upsert({
+          company_id: companyId,
+          product_id: newProduct.id,
+          shopify_product_id: item.shopifyProductId,
+          shopify_variant_id: item.shopifyVariantId,
+          shopify_inventory_item_id: item.shopifyInventoryItemId,
+          shopify_product_title: item.title,
+          shopify_variant_title: item.variantTitle,
+          shopify_sku: item.sku,
+          matched_by: "auto_created",
+          is_active: true,
+          sync_inventory: true,
+        }, { onConflict: "company_id,shopify_variant_id" });
+
       if (mapError) throw mapError;
 
       setResolved(true);
@@ -163,19 +164,37 @@ function UnmappedProductRow({ item, companyId, t, onResolved }) {
     return (
       <div className={`flex items-center gap-3 px-4 py-3 rounded-lg ${t("bg-gray-50", "bg-zinc-800/30")}`}>
         <Check className="w-4 h-4 text-green-400 shrink-0" />
-        <span className={`text-sm ${t("text-gray-700", "text-zinc-300")}`}>{item.title}</span>
-        <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">{resolvedAction}</Badge>
+        <span className={`text-sm truncate ${t("text-gray-700", "text-zinc-300")}`}>{item.title}</span>
+        {item.variantTitle && item.variantTitle !== "Default Title" && (
+          <span className={`text-xs ${mutedClass}`}>({item.variantTitle})</span>
+        )}
+        <Badge variant="outline" className="text-xs border-green-500/30 text-green-400 shrink-0">
+          {resolvedAction}
+        </Badge>
       </div>
     );
   }
 
   return (
     <div className={`rounded-lg border ${t("border-gray-200 bg-white", "border-zinc-800 bg-zinc-900/40")} overflow-hidden`}>
-      {/* Shopify product info header */}
-      <div className="flex items-start justify-between px-4 py-3">
+      {/* Product info header */}
+      <div className="flex items-start gap-3 px-4 py-3">
+        {/* Shopify product thumbnail */}
+        {item.imageSrc ? (
+          <img
+            src={item.imageSrc}
+            alt={item.title}
+            className="w-10 h-10 rounded-md object-cover shrink-0 border border-zinc-700"
+          />
+        ) : (
+          <div className={`w-10 h-10 rounded-md shrink-0 flex items-center justify-center ${t("bg-gray-100", "bg-zinc-800")}`}>
+            <ImageIcon className={`w-4 h-4 ${mutedClass}`} />
+          </div>
+        )}
+
+        {/* Title + meta */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <Package className="w-4 h-4 text-cyan-400 shrink-0" />
             <span className={`text-sm font-medium truncate ${t("text-gray-900", "text-white")}`}>
               {item.title}
             </span>
@@ -185,15 +204,15 @@ function UnmappedProductRow({ item, companyId, t, onResolved }) {
               </Badge>
             )}
           </div>
-          <div className={`flex items-center gap-3 mt-1 text-xs ${mutedClass}`}>
+          <div className={`flex items-center gap-3 mt-0.5 text-xs ${mutedClass}`}>
             {item.sku && <span>SKU: {item.sku}</span>}
             {item.barcode && <span>EAN: {item.barcode}</span>}
-            {item.price && <span>Price: €{item.price}</span>}
+            {item.price && <span>Price: &euro;{item.price}</span>}
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="flex items-center gap-1.5 shrink-0 ml-3">
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <Button
             onClick={handleCreate}
             disabled={creating || mapping}
@@ -276,7 +295,9 @@ function UnmappedProductRow({ item, companyId, t, onResolved }) {
               ))}
             </div>
           ) : searchQuery && !searching ? (
-            <p className={`text-xs ${mutedClass}`}>No matching products found. Try a different search or click "Create" to add a new product.</p>
+            <p className={`text-xs ${mutedClass}`}>
+              No matching products found. Try a different search or click "Create" to add a new product.
+            </p>
           ) : null}
         </div>
       )}
@@ -285,109 +306,134 @@ function UnmappedProductRow({ item, companyId, t, onResolved }) {
 }
 
 /**
- * Main ShopifyProductMapper component
- *
- * Props:
- * - unmappedProducts: array from syncProducts result.data.unmappedProducts
- * - companyId: the company_id
- * - onClose: callback to dismiss the mapper
- * - onComplete: callback when all items resolved
+ * Main ShopifyProductMapper modal
  */
-export default function ShopifyProductMapper({ unmappedProducts = [], companyId, onClose, onComplete }) {
+export default function ShopifyProductMapper({
+  unmappedProducts = [],
+  companyId,
+  onClose,
+  onMapped,
+  onComplete,
+}) {
   const { t } = useTheme();
   const [resolvedIds, setResolvedIds] = useState(new Set());
 
   const mutedClass = t("text-gray-500", "text-zinc-500");
   const remaining = unmappedProducts.length - resolvedIds.size;
 
+  // Accept either onMapped or onComplete as the completion callback
+  const completionCallback = onMapped || onComplete;
+
   const handleResolved = useCallback((variantId) => {
     setResolvedIds((prev) => {
       const next = new Set(prev);
       next.add(variantId);
       if (next.size === unmappedProducts.length) {
-        onComplete?.();
+        completionCallback?.();
       }
       return next;
     });
-  }, [unmappedProducts.length, onComplete]);
+  }, [unmappedProducts.length, completionCallback]);
 
   const handleSkipAll = useCallback(() => {
     const allIds = new Set(unmappedProducts.map((p) => p.shopifyVariantId));
     setResolvedIds(allIds);
-    onComplete?.();
+    completionCallback?.();
     toast.info("All unmapped products skipped");
-  }, [unmappedProducts, onComplete]);
+  }, [unmappedProducts, completionCallback]);
 
   if (unmappedProducts.length === 0) return null;
 
   return (
-    <div className={`rounded-xl border p-5 ${t("bg-white border-gray-200", "bg-zinc-900/60 border-zinc-800")}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className={`text-sm font-semibold flex items-center gap-2 ${t("text-gray-900", "text-white")}`}>
-            <ArrowRight className="w-4 h-4 text-cyan-400" />
-            Unmapped Shopify Products
-            <Badge variant="secondary" className="text-xs">
-              {remaining} remaining
-            </Badge>
-          </h3>
+    <Dialog open={true} onOpenChange={(open) => { if (!open) onClose?.(); }}>
+      <DialogContent
+        className={`sm:max-w-2xl max-h-[85vh] flex flex-col ${t("bg-white", "bg-zinc-950 border-zinc-800")}`}
+        hideClose
+      >
+        {/* Header */}
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className={`text-sm font-semibold flex items-center gap-2 ${t("text-gray-900", "text-white")}`}>
+              <Package className="w-4 h-4 text-cyan-400" />
+              Map Unmapped Products
+              <Badge variant="secondary" className="text-xs">
+                {remaining} remaining
+              </Badge>
+            </DialogTitle>
+            <div className="flex items-center gap-2">
+              {remaining > 0 && (
+                <Button
+                  onClick={handleSkipAll}
+                  variant="ghost"
+                  size="sm"
+                  className={`gap-1 text-xs ${mutedClass}`}
+                >
+                  <SkipForward className="w-3 h-3" />
+                  Skip All
+                </Button>
+              )}
+              <Button
+                onClick={onClose}
+                variant="ghost"
+                size="sm"
+                className={mutedClass}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
           <p className={`text-xs mt-1 ${mutedClass}`}>
-            These Shopify products couldn't be matched by EAN or SKU. Map them to local products, create new ones, or skip.
+            These Shopify products couldn't be matched by EAN or SKU. Search and map them to local products, create new ones, or skip.
           </p>
+        </DialogHeader>
+
+        {/* Product list — scrollable */}
+        <div className="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1">
+          {unmappedProducts.map((item) => (
+            <UnmappedProductRow
+              key={item.shopifyVariantId}
+              item={item}
+              companyId={companyId}
+              t={t}
+              onResolved={handleResolved}
+            />
+          ))}
         </div>
-        <div className="flex items-center gap-2">
-          {remaining > 0 && (
+
+        {/* Completion state */}
+        {remaining === 0 && (
+          <div className={`p-3 rounded-lg text-center ${t("bg-green-50", "bg-green-500/10")}`}>
+            <Check className="w-5 h-5 text-green-400 mx-auto mb-1" />
+            <p className={`text-sm font-medium ${t("text-green-700", "text-green-400")}`}>
+              All products resolved
+            </p>
             <Button
-              onClick={handleSkipAll}
-              variant="ghost"
+              onClick={onClose}
               size="sm"
-              className={`gap-1 text-xs ${mutedClass}`}
+              className="mt-2 bg-cyan-600 hover:bg-cyan-700 text-white"
             >
-              <SkipForward className="w-3 h-3" />
-              Skip All
+              Done
             </Button>
-          )}
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="sm"
-            className={mutedClass}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Product list */}
-      <div className="space-y-2">
-        {unmappedProducts.map((item) => (
-          <UnmappedProductRow
-            key={item.shopifyVariantId}
-            item={item}
-            companyId={companyId}
-            t={t}
-            onResolved={handleResolved}
-          />
-        ))}
-      </div>
-
-      {/* Completion message */}
-      {remaining === 0 && (
-        <div className={`mt-4 p-3 rounded-lg text-center ${t("bg-green-50", "bg-green-500/10")}`}>
-          <Check className="w-5 h-5 text-green-400 mx-auto mb-1" />
-          <p className={`text-sm font-medium ${t("text-green-700", "text-green-400")}`}>
-            All products resolved
-          </p>
-          <Button
-            onClick={onClose}
-            size="sm"
-            className="mt-2 bg-cyan-600 hover:bg-cyan-700 text-white"
-          >
-            Done
-          </Button>
-        </div>
-      )}
-    </div>
+        {/* Footer with Save Mappings hint */}
+        {remaining > 0 && (
+          <div className={`flex items-center justify-between pt-3 border-t ${t("border-gray-200", "border-zinc-800")}`}>
+            <p className={`text-xs ${mutedClass}`}>
+              Expand each row to search and map, or use Create to add a new local product.
+            </p>
+            <Button
+              onClick={onClose}
+              variant="outline"
+              size="sm"
+              className={`gap-1 text-xs ${t("border-gray-200 text-gray-700", "border-zinc-700 text-zinc-300")}`}
+            >
+              Close
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

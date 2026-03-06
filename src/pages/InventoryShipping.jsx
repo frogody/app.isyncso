@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import {
   Truck, Package, Search, Filter, Clock, Check, AlertTriangle,
   Send, Barcode, MapPin, User, Calendar, ChevronRight, X,
-  ExternalLink, Copy, RefreshCw, AlertCircle, Sun, Moon
+  ExternalLink, Copy, RefreshCw, AlertCircle, Sun, Moon, Store
 } from "lucide-react";
 import { useTheme } from '@/contexts/GlobalThemeContext';
 import { ProductsPageTransition } from '@/components/products/ui';
@@ -38,7 +38,7 @@ import {
   getPendingShipments,
   listTrackingJobs,
 } from "@/lib/db/queries";
-import { completeShipping } from "@/lib/services/inventory-service";
+import { completeShipping, createShopifyFulfillment } from "@/lib/services/inventory-service";
 import TrackingMapDrawer from "@/components/shipping/TrackingMapDrawer";
 
 const STATUS_STYLES = {
@@ -140,6 +140,12 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
               <span className={`ml-2 ${t ? t('text-slate-900', 'text-white') : 'text-white'} font-medium`}>
                 {task?.sales_orders?.order_number || task?.b2b_orders?.order_number || task?.task_number}
               </span>
+              {task?.sales_orders?.source === 'shopify' && (
+                <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-500/10 text-green-400 border border-green-500/20 inline-flex items-center gap-1">
+                  <Store className="w-3 h-3" />
+                  Shopify
+                </span>
+              )}
               {task?.b2b_orders && !task?.sales_orders && (
                 <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">B2B</span>
               )}
@@ -153,6 +159,19 @@ function ShipModal({ task, isOpen, onClose, onShip, t }) {
               </div>
             )}
           </div>
+
+          {/* Shopify fulfillment notice */}
+          {task?.sales_orders?.source === 'shopify' && task?.sales_orders?.shopify_order_id && (
+            <div className={`p-3 rounded-lg bg-green-500/10 border border-green-500/30`}>
+              <div className="flex items-center gap-2 text-green-400">
+                <Store className="w-4 h-4" />
+                <span className="text-sm font-medium">Shopify fulfillment will be pushed automatically</span>
+              </div>
+              <p className={`text-xs ${t ? t('text-slate-500', 'text-zinc-500') : 'text-zinc-500'} mt-1 ml-6`}>
+                The tracking info will be sent to Shopify and the customer will be notified.
+              </p>
+            </div>
+          )}
 
           {/* Track & trace input - REQUIRED */}
           <div>
@@ -259,6 +278,9 @@ function getOrderInfo(task) {
       orderNumber: task.sales_orders.order_number || task.task_number,
       customerName: task.sales_orders.customers?.name || 'Unknown customer',
       source: 'sales',
+      isShopify: task.sales_orders.source === 'shopify',
+      shopifyOrderId: task.sales_orders.shopify_order_id,
+      shopifyOrderNumber: task.sales_orders.shopify_order_number,
     };
   }
   if (task.b2b_orders) {
@@ -266,12 +288,18 @@ function getOrderInfo(task) {
       orderNumber: task.b2b_orders.order_number || task.task_number,
       customerName: task.b2b_orders.portal_clients?.company_name || task.b2b_orders.portal_clients?.full_name || 'B2B Client',
       source: 'b2b',
+      isShopify: false,
+      shopifyOrderId: null,
+      shopifyOrderNumber: null,
     };
   }
   return {
     orderNumber: task.task_number || 'No order',
     customerName: 'Unknown',
     source: null,
+    isShopify: false,
+    shopifyOrderId: null,
+    shopifyOrderNumber: null,
   };
 }
 
@@ -297,6 +325,12 @@ function ShippingTaskCard({ task, onShip, onTrack, t }) {
               <h3 className={`font-medium ${t('text-slate-900', 'text-white')}`}>
                 {orderInfo.orderNumber}
               </h3>
+              {orderInfo.isShopify && (
+                <Badge className="bg-green-500/10 text-green-400 border-green-500/20 flex items-center gap-1">
+                  <Store className="w-3 h-3" />
+                  Shopify
+                </Badge>
+              )}
               {orderInfo.source === 'b2b' && (
                 <Badge className="bg-cyan-500/10 text-cyan-400 border-cyan-500/20">B2B</Badge>
               )}
@@ -476,6 +510,7 @@ export default function InventoryShipping({ embedded = false }) {
         task.task_number?.toLowerCase().includes(searchLower) ||
         task.sales_orders?.order_number?.toLowerCase().includes(searchLower) ||
         task.sales_orders?.customers?.name?.toLowerCase().includes(searchLower) ||
+        task.sales_orders?.shopify_order_number?.toLowerCase().includes(searchLower) ||
         task.b2b_orders?.order_number?.toLowerCase().includes(searchLower) ||
         task.b2b_orders?.portal_clients?.full_name?.toLowerCase().includes(searchLower) ||
         task.b2b_orders?.portal_clients?.company_name?.toLowerCase().includes(searchLower) ||
@@ -497,10 +532,35 @@ export default function InventoryShipping({ embedded = false }) {
   // Handle ship action
   const handleShip = async (taskId, trackTraceCode, carrier) => {
     try {
-      await completeShipping(taskId, trackTraceCode, {
+      const result = await completeShipping(taskId, trackTraceCode, {
         carrier,
         userId: user?.id,
       });
+
+      // Push fulfillment to Shopify if this is a Shopify order
+      const task = selectedTask;
+      const salesOrder = task?.sales_orders;
+      if (salesOrder?.source === 'shopify' && salesOrder?.shopify_order_id) {
+        try {
+          const detectedCarrier = carrier || result.shippingTask?.carrier || undefined;
+          const trackingUrl = result.shippingTask?.tracking_url || undefined;
+          await createShopifyFulfillment(
+            companyId,
+            salesOrder.shopify_order_id,
+            trackTraceCode,
+            detectedCarrier,
+            trackingUrl
+          );
+          toast.success("Fulfillment pushed to Shopify", {
+            description: `Order ${salesOrder.shopify_order_number || salesOrder.order_number} fulfilled`,
+          });
+        } catch (shopifyErr) {
+          console.error("Shopify fulfillment push failed:", shopifyErr);
+          toast.error("Shopify fulfillment failed", {
+            description: shopifyErr?.message || "Could not push fulfillment to Shopify. You can retry from the Shopify admin.",
+          });
+        }
+      }
 
       const taskData = await listShippingTasks(companyId);
       setTasks(taskData);
