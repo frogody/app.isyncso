@@ -81,6 +81,11 @@ type BolcomAction =
   | "getOffer"
   | "createOffer"
   | "updateOffer"
+  | "deleteOffer"
+  | "updatePrice"
+  | "createShipment"
+  | "getCommission"
+  | "getInsights"
   | "getReturns"
   | "handleReturn"
   | "enrichProduct"
@@ -292,7 +297,8 @@ async function queueProcessStatus(
   companyId: string,
   processStatusId: string,
   entityType: string,
-  entityId?: string
+  entityId?: string,
+  metadata?: Record<string, unknown>
 ): Promise<void> {
   await supabase.from("bolcom_pending_process_statuses").upsert(
     {
@@ -302,15 +308,73 @@ async function queueProcessStatus(
       entity_id: entityId || null,
       status: "pending",
       poll_count: 0,
+      ...(metadata ? { metadata } : {}),
     },
     { onConflict: "company_id,process_status_id" }
   );
 }
 
+// ============================================
+// Upsert product_listings for bol.com channel
+// ============================================
+
+async function upsertListingFromBolcom(
+  supabase: SupabaseClient,
+  companyId: string,
+  productId: string,
+  offerData: {
+    title?: string;
+    description?: string;
+    ean?: string;
+    offerId?: string;
+    price?: number;
+    stock?: number;
+    condition?: string;
+    fulfilmentMethod?: string;
+    deliveryCode?: string;
+    images?: string[];
+    fullOfferData?: Record<string, unknown>;
+  }
+): Promise<void> {
+  try {
+    const listingRecord: Record<string, unknown> = {
+      product_id: productId,
+      channel: "bolcom",
+      listing_title: offerData.title || "",
+      listing_description: offerData.description || "",
+      hero_image_url: offerData.images?.[0] || null,
+      gallery_urls: offerData.images?.slice(1) || [],
+      external_id: offerData.offerId || "",
+      external_url: offerData.ean ? `https://www.bol.com/nl/nl/p/-/${offerData.ean}/` : "",
+      publish_status: "published",
+      channel_data: {
+        ean: offerData.ean || null,
+        condition: offerData.condition || "NEW",
+        fulfilment_method: offerData.fulfilmentMethod || null,
+        delivery_code: offerData.deliveryCode || null,
+        price: offerData.price || null,
+        stock: offerData.stock || null,
+        full_offer: offerData.fullOfferData || {},
+      },
+      company_id: companyId,
+    };
+
+    const { error } = await supabase
+      .from("product_listings")
+      .upsert(listingRecord, { onConflict: "product_id,channel" });
+
+    if (error) {
+      console.warn(`[bolcom-api] upsertListingFromBolcom error for product ${productId}: ${error.message}`);
+    }
+  } catch (err) {
+    console.warn(`[bolcom-api] upsertListingFromBolcom exception: ${err}`);
+  }
+}
+
 async function onProcessResolved(
   supabase: SupabaseClient,
   companyId: string,
-  ps: { entity_type: string; entity_id: string | null },
+  ps: { entity_type: string; entity_id: string | null; metadata?: Record<string, unknown> },
   result: ProcessStatusResponse
 ): Promise<void> {
   // Side-effects when a process status resolves
@@ -325,6 +389,66 @@ async function onProcessResolved(
       })
       .eq("id", ps.entity_id);
     console.log(`[bolcom-api] Replenishment ${replenishmentId} created for shipment ${ps.entity_id}`);
+  }
+
+  // Handle offer process status — save the resulting offerId
+  if (ps.entity_type === "offer" && result.status === "SUCCESS" && result.entityId) {
+    const offerId = result.entityId;
+    console.log(`[bolcom-api] Offer process resolved: offerId=${offerId}`);
+
+    // Find the mapping by company + metadata (ean or product_id stored in pending record)
+    const meta = ps.metadata || {};
+    const ean = meta.ean as string | undefined;
+    const productId = meta.product_id as string | undefined;
+
+    if (ean) {
+      // Update offer mapping with the resolved offerId
+      const { error: mapErr } = await supabase
+        .from("bolcom_offer_mappings")
+        .update({
+          bolcom_offer_id: offerId,
+          is_active: true,
+          last_full_sync_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("company_id", companyId)
+        .eq("ean", ean);
+
+      if (mapErr) {
+        console.warn(`[bolcom-api] Failed to update offer mapping for EAN ${ean}: ${mapErr.message}`);
+      }
+
+      // Also upsert product_listings if we have a product_id
+      if (productId) {
+        await upsertListingFromBolcom(supabase, companyId, productId, {
+          ean,
+          offerId,
+        });
+      }
+    } else if (ps.entity_id) {
+      // Fallback: entity_id might be the offerId for updateOffer
+      await supabase
+        .from("bolcom_offer_mappings")
+        .update({
+          bolcom_offer_id: offerId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("company_id", companyId)
+        .eq("bolcom_offer_id", ps.entity_id);
+    }
+  }
+
+  // Handle offer deletion
+  if (ps.entity_type === "offer_delete" && result.status === "SUCCESS") {
+    const offerId = ps.entity_id;
+    if (offerId) {
+      await supabase
+        .from("bolcom_offer_mappings")
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq("company_id", companyId)
+        .eq("bolcom_offer_id", offerId);
+      console.log(`[bolcom-api] Offer ${offerId} marked inactive after deletion`);
+    }
   }
 }
 
@@ -363,7 +487,7 @@ async function pollAllPending(
           })
           .eq("id", ps.id);
 
-        await onProcessResolved(supabase, companyId, ps, result);
+        await onProcessResolved(supabase, companyId, { ...ps, metadata: ps.metadata || undefined }, result);
         resolved++;
       } else {
         // Still pending — increment poll count
@@ -879,7 +1003,7 @@ serve(async (req) => {
         const tokenResult = await getBolToken(supabase, companyId);
         if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
 
-        const createOfferPayload = {
+        const createOfferPayload: Record<string, unknown> = {
           ean: body.ean,
           condition: body.condition || { name: "NEW" },
           reference: body.reference,
@@ -889,13 +1013,33 @@ serve(async (req) => {
           stock: body.stock,
           fulfilment: body.fulfilment || { method: "FBB", deliveryCode: "1-2d" },
         };
+        // Clean undefined values
+        for (const key of Object.keys(createOfferPayload)) {
+          if (createOfferPayload[key] === undefined) delete createOfferPayload[key];
+        }
 
         const createOfferResult = await bolFetch<{ processStatusId: string }>(
           tokenResult.token, "/offers", "POST", createOfferPayload
         );
 
         if (createOfferResult.processStatusId) {
-          await queueProcessStatus(supabase, companyId, createOfferResult.processStatusId, "offer");
+          // Store EAN + productId as metadata so onProcessResolved can link the offerId
+          await queueProcessStatus(
+            supabase, companyId, createOfferResult.processStatusId, "offer",
+            undefined,
+            { ean: body.ean, product_id: body.productId || null }
+          );
+        }
+
+        // If we know the product_id, ensure an offer mapping exists
+        if (body.productId && body.ean) {
+          await supabase.from("bolcom_offer_mappings").upsert({
+            company_id: companyId,
+            ean: body.ean as string,
+            product_id: body.productId as string,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "company_id,ean" });
         }
 
         result = { success: true, data: createOfferResult };
@@ -918,6 +1062,372 @@ serve(async (req) => {
         }
 
         result = { success: true, data: updateOfferResult };
+        break;
+      }
+
+      // ==================================================
+      // DELETE OFFER
+      // ==================================================
+
+      case "deleteOffer": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        let delOfferId = body.offerId as string;
+        const delProductId = body.productId as string;
+
+        // Resolve offerId from product if not provided
+        if (!delOfferId && delProductId) {
+          const { data: mapping } = await supabase
+            .from("bolcom_offer_mappings")
+            .select("bolcom_offer_id, ean")
+            .eq("company_id", companyId)
+            .eq("product_id", delProductId)
+            .eq("is_active", true)
+            .maybeSingle();
+          if (mapping?.bolcom_offer_id) {
+            delOfferId = mapping.bolcom_offer_id;
+          }
+        }
+
+        if (!delOfferId) {
+          result = { success: false, error: "Missing offerId or no active offer found for product" };
+          break;
+        }
+
+        const delResult = await bolFetch<{ processStatusId: string }>(
+          tokenResult.token, `/offers/${delOfferId}`, "DELETE"
+        );
+
+        if (delResult.processStatusId) {
+          await queueProcessStatus(supabase, companyId, delResult.processStatusId, "offer_delete", delOfferId);
+        }
+
+        // Immediately mark mapping as inactive
+        await supabase
+          .from("bolcom_offer_mappings")
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq("company_id", companyId)
+          .eq("bolcom_offer_id", delOfferId);
+
+        // Update product_listings to unpublished
+        if (delProductId) {
+          await supabase
+            .from("product_listings")
+            .update({ publish_status: "unpublished", updated_at: new Date().toISOString() })
+            .eq("product_id", delProductId)
+            .eq("channel", "bolcom");
+        }
+
+        result = { success: true, data: { deleted: true, offerId: delOfferId, processStatusId: delResult.processStatusId } };
+        break;
+      }
+
+      // ==================================================
+      // UPDATE PRICE (dedicated endpoint)
+      // ==================================================
+
+      case "updatePrice": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        let priceOfferId = body.offerId as string;
+        const priceProductId = body.productId as string;
+
+        // Resolve offerId from product if not provided
+        if (!priceOfferId && priceProductId) {
+          const { data: mapping } = await supabase
+            .from("bolcom_offer_mappings")
+            .select("bolcom_offer_id")
+            .eq("company_id", companyId)
+            .eq("product_id", priceProductId)
+            .eq("is_active", true)
+            .maybeSingle();
+          if (mapping?.bolcom_offer_id) priceOfferId = mapping.bolcom_offer_id;
+        }
+
+        if (!priceOfferId) {
+          result = { success: false, error: "Missing offerId or no active offer found" };
+          break;
+        }
+
+        const newPrice = body.price as number;
+        if (!newPrice || newPrice <= 0) {
+          result = { success: false, error: "Invalid price" };
+          break;
+        }
+
+        const pricePayload = {
+          pricing: {
+            bundlePrices: [{ quantity: 1, unitPrice: newPrice }],
+          },
+        };
+
+        const priceResult = await bolFetch<{ processStatusId: string }>(
+          tokenResult.token, `/offers/${priceOfferId}/price`, "PUT", pricePayload
+        );
+
+        if (priceResult.processStatusId) {
+          await queueProcessStatus(supabase, companyId, priceResult.processStatusId, "offer", priceOfferId);
+        }
+
+        result = { success: true, data: { updated: true, offerId: priceOfferId, newPrice, processStatusId: priceResult.processStatusId } };
+        break;
+      }
+
+      // ==================================================
+      // CREATE SHIPMENT (FBR fulfillment)
+      // ==================================================
+
+      case "createShipment": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        const shipOrderId = body.orderId as string;
+        const shipOrderItemIds = body.orderItemIds as string[] | undefined;
+        const transporterCode = body.transporterCode as string;
+        const trackAndTrace = body.trackAndTrace as string;
+
+        if (!transporterCode || !trackAndTrace) {
+          result = { success: false, error: "Missing transporterCode or trackAndTrace" };
+          break;
+        }
+
+        // Build orderItems — either from explicit list or from order lookup
+        let orderItems: Array<{ orderItemId: string; quantity: number }> = [];
+
+        if (shipOrderItemIds?.length) {
+          // Explicit order item IDs provided
+          orderItems = shipOrderItemIds.map(id => ({ orderItemId: id, quantity: 1 }));
+        } else if (shipOrderId) {
+          // Look up order items from our DB
+          const { data: soData } = await supabase
+            .from("sales_orders")
+            .select("id")
+            .eq("company_id", companyId)
+            .eq("external_reference", shipOrderId)
+            .eq("source", "bolcom")
+            .maybeSingle();
+
+          if (soData) {
+            const { data: items } = await supabase
+              .from("sales_order_items")
+              .select("ean, quantity, metadata")
+              .eq("sales_order_id", soData.id);
+
+            // Try to extract orderItemId from metadata or use the bol.com order items
+            for (const item of (items || [])) {
+              const oiId = (item.metadata as any)?.orderItemId;
+              if (oiId) {
+                orderItems.push({ orderItemId: oiId, quantity: item.quantity || 1 });
+              }
+            }
+          }
+
+          // If no items found in DB, fetch from bol.com API
+          if (orderItems.length === 0) {
+            try {
+              const bolOrder = await bolFetch<{ orderId: string; orderItems: Array<{ orderItemId: string; quantity: number }> }>(
+                tokenResult.token, `/orders/${shipOrderId}`, "GET"
+              );
+              if (bolOrder?.orderItems) {
+                orderItems = bolOrder.orderItems.map(oi => ({
+                  orderItemId: oi.orderItemId,
+                  quantity: oi.quantity || 1,
+                }));
+              }
+            } catch (e) {
+              console.warn(`[bolcom-api] createShipment: failed to fetch order ${shipOrderId}: ${e}`);
+            }
+          }
+        }
+
+        if (orderItems.length === 0) {
+          result = { success: false, error: "No order items found. Provide orderId or orderItemIds." };
+          break;
+        }
+
+        const shipmentPayload = {
+          orderItems,
+          transport: {
+            transporterCode,
+            trackAndTrace,
+          },
+        };
+
+        const shipResult = await bolFetch<{ processStatusId: string }>(
+          tokenResult.token, "/shipments", "POST", shipmentPayload
+        );
+
+        if (shipResult.processStatusId) {
+          await queueProcessStatus(supabase, companyId, shipResult.processStatusId, "shipment");
+        }
+
+        // Update sales_order status
+        if (shipOrderId) {
+          await supabase
+            .from("sales_orders")
+            .update({
+              status: "shipped",
+              shipped_at: new Date().toISOString(),
+              metadata: { bolcom_order_id: shipOrderId, transporterCode, trackAndTrace },
+            })
+            .eq("company_id", companyId)
+            .eq("external_reference", shipOrderId)
+            .eq("source", "bolcom");
+        }
+
+        result = { success: true, data: { shipped: true, orderItems: orderItems.length, processStatusId: shipResult.processStatusId } };
+        break;
+      }
+
+      // ==================================================
+      // GET COMMISSION
+      // ==================================================
+
+      case "getCommission": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        const commEan = body.ean as string;
+        const commEans = body.eans as string[] | undefined;
+        const commPrice = (body.unitPrice as number) || 10;
+        const commCondition = (body.condition as string) || "NEW";
+
+        if (!commEan && !commEans?.length) {
+          result = { success: false, error: "Missing ean or eans" };
+          break;
+        }
+
+        interface CommissionResult {
+          ean: string;
+          condition: string;
+          unitPrice: number;
+          fixedAmount: number;
+          percentage: number;
+          totalCost: number;
+          totalCostWithoutReduction: number;
+          reductions: Array<{ maximumPrice: number; costReduction: number; startDate: string; endDate: string }>;
+        }
+
+        const eansToFetch = commEans?.length ? commEans : [commEan];
+        const commResults: CommissionResult[] = [];
+        let commErrors = 0;
+
+        // Fetch in parallel batches of 10
+        for (let i = 0; i < eansToFetch.length; i += 10) {
+          const batch = eansToFetch.slice(i, i + 10);
+          const batchResults = await Promise.allSettled(
+            batch.map(ean =>
+              bolFetch<CommissionResult>(
+                tokenResult.token,
+                `/commission/${ean}?unitPrice=${commPrice}&condition=${commCondition}`,
+                "GET"
+              )
+            )
+          );
+
+          for (let j = 0; j < batchResults.length; j++) {
+            const r = batchResults[j];
+            if (r.status === "fulfilled" && r.value) {
+              commResults.push({ ...r.value, ean: batch[j] });
+            } else {
+              commErrors++;
+            }
+          }
+
+          if (i + 10 < eansToFetch.length) await new Promise(r => setTimeout(r, 500));
+        }
+
+        // Store commission data in bolcom_data on offer mappings
+        const now = new Date().toISOString();
+        for (const comm of commResults) {
+          const { data: mapping } = await supabase
+            .from("bolcom_offer_mappings")
+            .select("id, bolcom_data")
+            .eq("company_id", companyId)
+            .eq("ean", comm.ean)
+            .maybeSingle();
+
+          if (mapping) {
+            const existingData = (mapping.bolcom_data || {}) as Record<string, unknown>;
+            await supabase
+              .from("bolcom_offer_mappings")
+              .update({
+                bolcom_data: { ...existingData, commission: comm, commission_fetched_at: now },
+                updated_at: now,
+              })
+              .eq("id", mapping.id);
+          }
+        }
+
+        result = { success: true, data: { commissions: commResults, errors: commErrors } };
+        break;
+      }
+
+      // ==================================================
+      // GET INSIGHTS (search terms + product performance)
+      // ==================================================
+
+      case "getInsights": {
+        const tokenResult = await getBolToken(supabase, companyId);
+        if ("error" in tokenResult) { result = { success: false, error: tokenResult.error }; break; }
+
+        const insightType = (body.type as string) || "search-terms"; // 'search-terms' or 'products'
+        const insightEan = body.ean as string;
+        const insightName = body.name as string;
+
+        if (insightType === "search-terms") {
+          // GET /insights/search-terms
+          let endpoint = `/insights/search-terms?`;
+          if (insightName) endpoint += `name=${encodeURIComponent(insightName)}&`;
+          endpoint += `period=MONTH&number-of-periods=12&related-search-terms=true`;
+
+          try {
+            const data = await bolFetch(tokenResult.token, endpoint, "GET");
+            result = { success: true, data };
+          } catch (e) {
+            result = { success: false, error: `Failed to fetch search terms: ${e}` };
+          }
+        } else if (insightType === "products") {
+          // GET /insights/performance/products
+          if (!insightEan) {
+            result = { success: false, error: "Missing ean for product insights" };
+            break;
+          }
+
+          let endpoint = `/insights/performance/products?ean=${insightEan}`;
+          endpoint += `&period=MONTH&number-of-periods=3`;
+
+          try {
+            const data = await bolFetch(tokenResult.token, endpoint, "GET");
+
+            // Store insights in bolcom_data
+            const { data: mapping } = await supabase
+              .from("bolcom_offer_mappings")
+              .select("id, bolcom_data")
+              .eq("company_id", companyId)
+              .eq("ean", insightEan)
+              .maybeSingle();
+
+            if (mapping) {
+              const existingData = (mapping.bolcom_data || {}) as Record<string, unknown>;
+              await supabase
+                .from("bolcom_offer_mappings")
+                .update({
+                  bolcom_data: { ...existingData, insights: data, insights_fetched_at: new Date().toISOString() },
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", mapping.id);
+            }
+
+            result = { success: true, data };
+          } catch (e) {
+            result = { success: false, error: `Failed to fetch product insights: ${e}` };
+          }
+        } else {
+          result = { success: false, error: `Unknown insight type: ${insightType}` };
+        }
         break;
       }
 
@@ -1576,6 +2086,18 @@ serve(async (req) => {
             await Promise.all(insertPromises);
           }
 
+          // Upsert product_listings for newly imported products
+          const listingPromises = batch
+            .filter(item => insertedMap.has(item.ean))
+            .map(item => upsertListingFromBolcom(supabase, companyId, insertedMap.get(item.ean)!, {
+              title: item.title,
+              ean: item.ean,
+              stock: item.regularStock + item.gradedStock,
+            }));
+          if (listingPromises.length > 0) {
+            await Promise.allSettled(listingPromises);
+          }
+
           imported += insertedProducts.length;
         }
 
@@ -1712,7 +2234,23 @@ serve(async (req) => {
         }
         console.log(`[bolcom-api] fetchPricing: ${pricesUpdated} prices stored`);
 
-        console.log(`[bolcom-api] fetchPricing complete: ${pricesUpdated} prices updated, ${offersLinked} offers linked`);
+        // Upsert product_listings with updated pricing/offer data
+        let listingsUpserted = 0;
+        for (let i = 0; i < offerResults.length; i += 50) {
+          const batch = offerResults.slice(i, i + 50);
+          await Promise.allSettled(
+            batch.map(o => upsertListingFromBolcom(supabase, companyId, o.productId, {
+              ean: o.ean,
+              offerId: o.offerId,
+              price: o.price,
+              condition: o.condition,
+              fulfilmentMethod: o.fulfilment,
+            }))
+          );
+          listingsUpserted += batch.length;
+        }
+
+        console.log(`[bolcom-api] fetchPricing complete: ${pricesUpdated} prices updated, ${offersLinked} offers linked, ${listingsUpserted} listings upserted`);
 
         result = {
           success: true,
@@ -1720,6 +2258,7 @@ serve(async (req) => {
             offersFound: offerResults.length,
             pricesUpdated,
             offersLinked,
+            listingsUpserted,
             totalProducts: allProducts.length,
             fetchErrors,
             ...(pricingError ? { pricingError } : {}),
@@ -1885,6 +2424,22 @@ serve(async (req) => {
           }
 
           await Promise.all(promises);
+
+          // Upsert product_listings with stock data
+          const listingPromises = batch
+            .filter(item => stkProductMap.has(item.ean))
+            .map(item => {
+              const prod = stkProductMap.get(item.ean)!;
+              const fm = fulfilmentMap.get(prod.id) || "UNKNOWN";
+              return upsertListingFromBolcom(supabase, companyId, prod.id, {
+                ean: item.ean,
+                stock: item.regularStock + item.gradedStock,
+                fulfilmentMethod: fm,
+                title: item.title,
+              });
+            });
+          await Promise.allSettled(listingPromises);
+
           synced += batch.filter(item => stkProductMap.has(item.ean)).length;
         }
 

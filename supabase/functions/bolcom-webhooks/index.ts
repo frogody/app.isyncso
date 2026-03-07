@@ -155,26 +155,84 @@ serve(async (req) => {
         if (returnId) {
           console.log(`[bolcom-webhooks] Return created: ${returnId}`);
 
-          // Find the company by looking up bolcom_credentials
-          const { data: creds } = await supabase
-            .from("bolcom_credentials")
-            .select("company_id")
-            .limit(10);
+          // Try to identify the correct company from the return's order data
+          // The webhook payload may contain orderItemId or orderId
+          const orderItemId = payload.orderItemId || payload.returnItems?.[0]?.orderItemId;
+          const orderId = payload.orderId || payload.returnItems?.[0]?.orderId;
+          let targetCompanyId: string | null = null;
 
-          // Try each company — the webhook doesn't tell us which company it belongs to,
-          // so we create the return for all companies that have bol.com credentials.
-          // Duplicates are prevented by the return_code check.
-          for (const cred of (creds || [])) {
+          // Strategy 1: Look up company via the orderId in sales_orders
+          if (orderId && !targetCompanyId) {
+            const { data: orderMatch } = await supabase
+              .from("sales_orders")
+              .select("company_id")
+              .eq("source", "bolcom")
+              .eq("external_reference", orderId)
+              .maybeSingle();
+            if (orderMatch) targetCompanyId = orderMatch.company_id;
+          }
+
+          // Strategy 2: Look up via EAN in return items → offer mappings
+          if (!targetCompanyId && payload.returnItems?.[0]?.ean) {
+            const ean = payload.returnItems[0].ean;
+            const { data: mappingMatch } = await supabase
+              .from("bolcom_offer_mappings")
+              .select("company_id")
+              .eq("ean", ean)
+              .eq("is_active", true)
+              .maybeSingle();
+            if (mappingMatch) targetCompanyId = mappingMatch.company_id;
+          }
+
+          // Strategy 3: If only one company has bol.com credentials, it must be them
+          if (!targetCompanyId) {
+            const { data: creds } = await supabase
+              .from("bolcom_credentials")
+              .select("company_id")
+              .eq("is_active", true)
+              .limit(2);
+
+            if (creds?.length === 1) {
+              targetCompanyId = creds[0].company_id;
+            } else if (creds && creds.length > 1) {
+              // Multiple companies — last resort: create for all (old behavior)
+              // But log a warning so we can improve later
+              console.warn(`[bolcom-webhooks] RETURN_CREATED: could not determine company for return ${returnId}, creating for all ${creds.length} companies`);
+              for (const cred of creds) {
+                const { data: existing } = await supabase
+                  .from("returns")
+                  .select("id")
+                  .eq("company_id", cred.company_id)
+                  .eq("bol_return_id", returnId)
+                  .maybeSingle();
+
+                if (!existing) {
+                  await supabase.from("returns").insert({
+                    company_id: cred.company_id,
+                    return_code: `RET-BOL-${returnId}`,
+                    source: "bolcom",
+                    bol_return_id: returnId,
+                    status: "registered",
+                    registered_at: new Date().toISOString(),
+                  });
+                }
+              }
+              break;
+            }
+          }
+
+          // Create return for the identified company
+          if (targetCompanyId) {
             const { data: existing } = await supabase
               .from("returns")
               .select("id")
-              .eq("company_id", cred.company_id)
+              .eq("company_id", targetCompanyId)
               .eq("bol_return_id", returnId)
               .maybeSingle();
 
             if (!existing) {
               const { error: insertErr } = await supabase.from("returns").insert({
-                company_id: cred.company_id,
+                company_id: targetCompanyId,
                 return_code: `RET-BOL-${returnId}`,
                 source: "bolcom",
                 bol_return_id: returnId,
@@ -183,11 +241,13 @@ serve(async (req) => {
               });
 
               if (insertErr) {
-                console.error(`[bolcom-webhooks] Failed to create return for company ${cred.company_id}:`, insertErr.message);
+                console.error(`[bolcom-webhooks] Failed to create return for company ${targetCompanyId}:`, insertErr.message);
               } else {
-                console.log(`[bolcom-webhooks] Created return RET-BOL-${returnId} for company ${cred.company_id}`);
+                console.log(`[bolcom-webhooks] Created return RET-BOL-${returnId} for company ${targetCompanyId}`);
               }
             }
+          } else {
+            console.warn(`[bolcom-webhooks] RETURN_CREATED: no company found for return ${returnId}`);
           }
         }
         break;

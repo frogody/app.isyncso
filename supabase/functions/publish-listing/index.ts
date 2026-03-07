@@ -222,14 +222,46 @@ serve(async (req) => {
         );
       }
 
+      // Check if already published (update vs create)
+      const { data: existingBolListing } = await supabase
+        .from('product_listings')
+        .select('external_id, publish_status')
+        .eq('product_id', product_id)
+        .eq('channel', 'bolcom')
+        .maybeSingle();
+
+      // Also check offer mappings for an existing offerId
+      const { data: existingMapping } = await supabase
+        .from('bolcom_offer_mappings')
+        .select('bolcom_offer_id')
+        .eq('company_id', company_id)
+        .eq('ean', ean)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      const existingOfferId = existingMapping?.bolcom_offer_id || existingBolListing?.external_id;
+      const isUpdate = !!existingOfferId;
+
+      // Fetch physical_products for extra data (weight, sku)
+      const { data: physProd } = await supabase
+        .from('physical_products')
+        .select('sku, barcode, pricing, shipping')
+        .eq('product_id', product_id)
+        .maybeSingle();
+
+      // Build reference (internal SKU for tracking)
+      const reference = product_data?.sku || physProd?.sku || listing_data?.sku || ean;
+
       // Build bol.com offer
       const bolcomOffer: Record<string, any> = {
         ean,
-        condition: { name: 'NEW' },
+        condition: { name: product_data?.condition || 'NEW' },
+        reference,
+        onHoldByRetailer: false,
         pricing: {
           bundlePrices: [{
             quantity: 1,
-            unitPrice: product_data?.price || 0,
+            unitPrice: product_data?.price || physProd?.pricing?.base_price || 0,
           }],
         },
         stock: {
@@ -237,24 +269,55 @@ serve(async (req) => {
           managedByRetailer: true,
         },
         fulfilment: {
-          method: 'FBR',
-          deliveryCode: '1-2d',
+          method: product_data?.fulfilment_method || 'FBR',
+          deliveryCode: product_data?.delivery_code || '1-2d',
         },
       };
 
-      // Call bol.com API to create offer
+      // Add unknownProductTitle if product has a listing title (for new products not in bol.com catalog)
+      const title = listing_data?.listing_title || listing_data?.title || product_data?.name;
+      if (title) {
+        bolcomOffer.unknownProductTitle = title;
+      }
+
+      // Determine action: update existing or create new
+      const bolAction = isUpdate ? 'updateOffer' : 'createOffer';
       const bolApiUrl = `${SUPABASE_URL}/functions/v1/bolcom-api`;
+      const bolBody: Record<string, any> = {
+        action: bolAction,
+        companyId: company_id,
+        productId: product_id,
+      };
+
+      if (isUpdate) {
+        bolBody.offerId = existingOfferId;
+        bolBody.updates = {
+          reference: bolcomOffer.reference,
+          onHoldByRetailer: bolcomOffer.onHoldByRetailer,
+          pricing: bolcomOffer.pricing,
+          stock: bolcomOffer.stock,
+          fulfilment: bolcomOffer.fulfilment,
+        };
+        if (title) bolBody.updates.unknownProductTitle = title;
+      } else {
+        // Pass offer fields directly for createOffer action
+        bolBody.ean = bolcomOffer.ean;
+        bolBody.condition = bolcomOffer.condition;
+        bolBody.reference = bolcomOffer.reference;
+        bolBody.onHoldByRetailer = bolcomOffer.onHoldByRetailer;
+        bolBody.unknownProductTitle = bolcomOffer.unknownProductTitle;
+        bolBody.pricing = bolcomOffer.pricing;
+        bolBody.stock = bolcomOffer.stock;
+        bolBody.fulfilment = bolcomOffer.fulfilment;
+      }
+
       const bolResp = await fetch(bolApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
-        body: JSON.stringify({
-          action: 'createOffer',
-          company_id,
-          offer: bolcomOffer,
-        }),
+        body: JSON.stringify(bolBody),
       });
 
       const bolResult = await bolResp.json();
@@ -263,7 +326,7 @@ serve(async (req) => {
         console.error('[publish-listing] bol.com error:', bolResult);
         return new Response(
           JSON.stringify({
-            error: 'Failed to publish to bol.com',
+            error: `Failed to ${isUpdate ? 'update' : 'publish'} on bol.com`,
             details: bolResult?.error || bolResult?.details || 'Unknown error',
           }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -319,21 +382,35 @@ serve(async (req) => {
         }
       }
 
-      const offerId = bolResult?.offerId || bolResult?.processStatusId || '';
+      const offerId = existingOfferId || bolResult?.data?.processStatusId || bolResult?.processStatusId || '';
       const externalUrl = `https://www.bol.com/nl/nl/p/-/${ean}/`;
 
       // Update listing record
       await supabase
         .from('product_listings')
-        .update({
+        .upsert({
+          product_id,
+          channel: 'bolcom',
           published_at: new Date().toISOString(),
           external_id: String(offerId),
           external_url: externalUrl,
           publish_status: 'published',
           publish_error: null,
-        })
-        .eq('product_id', product_id)
-        .eq('channel', 'bolcom');
+          listing_title: title || '',
+          listing_description: listing_data?.listing_description || listing_data?.description || '',
+          hero_image_url: listing_data?.hero_image_url || null,
+          gallery_urls: listing_data?.gallery_urls || [],
+          company_id,
+          channel_data: {
+            ean,
+            reference,
+            condition: bolcomOffer.condition?.name || 'NEW',
+            fulfilment_method: bolcomOffer.fulfilment?.method || 'FBR',
+            delivery_code: bolcomOffer.fulfilment?.deliveryCode || '1-2d',
+            price: bolcomOffer.pricing?.bundlePrices?.[0]?.unitPrice || 0,
+            stock: bolcomOffer.stock?.amount || 0,
+          },
+        }, { onConflict: 'product_id,channel' });
 
       return new Response(
         JSON.stringify({
@@ -342,7 +419,10 @@ serve(async (req) => {
           external_id: offerId,
           external_url: externalUrl,
           images_pushed: imagesPushed,
-          message: `Published to bol.com${imagesPushed > 0 ? ` with ${imagesPushed} images` : ''}`,
+          updated: isUpdate,
+          message: isUpdate
+            ? `Updated on bol.com${imagesPushed > 0 ? ` with ${imagesPushed} images` : ''}`
+            : `Published to bol.com${imagesPushed > 0 ? ` with ${imagesPushed} images` : ''}`,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
