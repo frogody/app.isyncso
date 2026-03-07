@@ -87,6 +87,7 @@ export default function ShopifySettings() {
 
   // Webhooks
   const [showWebhooks, setShowWebhooks] = useState(false);
+  const [registeringWebhooks, setRegisteringWebhooks] = useState(false);
 
   // Check if credentials exist
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function ShopifySettings() {
     (async () => {
       const { data } = await supabase
         .from("shopify_credentials")
-        .select("id, shop_domain, is_active, auto_sync_orders, auto_fulfill, webhook_ids, last_sync_at, last_error")
+        .select("id, shop_domain, shop_name, is_active, auto_sync_orders, auto_fulfill, webhook_ids, last_sync_at, last_error")
         .eq("company_id", companyId)
         .eq("is_active", true)
         .maybeSingle();
@@ -156,14 +157,23 @@ export default function ShopifySettings() {
         `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
       );
 
-      // Poll for popup close / callback completion
+      // Poll for popup close / callback completion (2-minute timeout)
+      let pollCount = 0;
+      const maxPolls = 120;
       const pollInterval = setInterval(async () => {
+        pollCount++;
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval);
+          setConnecting(false);
+          toast.error("Connection timed out. Please try again.");
+          return;
+        }
         if (!popup || popup.closed) {
           clearInterval(pollInterval);
           // Check if credentials were saved
           const { data } = await supabase
             .from("shopify_credentials")
-            .select("id, shop_domain, is_active, auto_sync_orders, auto_fulfill, webhook_ids, last_error")
+            .select("id, shop_domain, shop_name, is_active, auto_sync_orders, auto_fulfill, webhook_ids, last_error")
             .eq("company_id", companyId)
             .eq("is_active", true)
             .maybeSingle();
@@ -172,7 +182,12 @@ export default function ShopifySettings() {
             setConnectionStatus("connected");
             setAutoSyncOrders(data.auto_sync_orders || false);
             setAutoFulfill(data.auto_fulfill || false);
-            toast.success("Connected to Shopify successfully!");
+            const webhookCount = Array.isArray(data.webhook_ids) ? data.webhook_ids.length : 0;
+            toast.success(
+              webhookCount > 0
+                ? `Connected to Shopify! ${webhookCount} webhooks registered.`
+                : "Connected to Shopify successfully!"
+            );
           }
           setConnecting(false);
         }
@@ -191,6 +206,10 @@ export default function ShopifySettings() {
       const result = await callShopifyApi("testConnection", { companyId });
       if (!result.success) throw new Error(result.error);
       setConnectionStatus("connected");
+      setConnectionError("");
+      if (credentials?.id) {
+        await supabase.from("shopify_credentials").update({ last_error: null }).eq("id", credentials.id);
+      }
       toast.success("Shopify connection is active");
     } catch (err) {
       setConnectionStatus("error");
@@ -258,6 +277,19 @@ export default function ShopifySettings() {
       const shopifyOnly = [];
       const localOnly = [];
 
+      // Batch fetch all inventory at once (avoids N+1 per-mapping queries)
+      const productIds = mappings.map((m) => m.product_id).filter(Boolean);
+      const { data: inventories } = productIds.length > 0
+        ? await supabase
+            .from("inventory")
+            .select("product_id, quantity")
+            .eq("company_id", companyId)
+            .in("product_id", productIds)
+        : { data: [] };
+      const invMap = Object.fromEntries(
+        (inventories || []).map((i) => [i.product_id, i.quantity || 0])
+      );
+
       for (const m of mappings) {
         const shopifyLevel = result.data?.levels?.find(
           (l) => l.inventory_item_id === m.shopify_inventory_item_id
@@ -267,14 +299,7 @@ export default function ShopifySettings() {
           continue;
         }
 
-        const { data: inv } = await supabase
-          .from("inventory")
-          .select("quantity")
-          .eq("product_id", m.product_id)
-          .eq("company_id", companyId)
-          .maybeSingle();
-
-        const localQty = inv?.quantity || 0;
+        const localQty = invMap[m.product_id] ?? 0;
         const shopifyQty = shopifyLevel.available || 0;
 
         if (localQty === shopifyQty) {
@@ -314,12 +339,38 @@ export default function ShopifySettings() {
     }
   };
 
+  // Re-register webhooks
+  const handleReRegisterWebhooks = async () => {
+    setRegisteringWebhooks(true);
+    try {
+      const result = await callShopifyApi("registerWebhooks", { companyId });
+      if (!result.success) throw new Error(result.error);
+      const count = result.data?.registered || 0;
+      toast.success(`${count} webhooks registered`);
+      // Reload credentials to get updated webhook_ids
+      const { data } = await supabase
+        .from("shopify_credentials")
+        .select("id, shop_domain, shop_name, is_active, auto_sync_orders, auto_fulfill, webhook_ids, last_error")
+        .eq("company_id", companyId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (data) setCredentials(data);
+    } catch (err) {
+      toast.error(err.message || "Failed to register webhooks");
+    } finally {
+      setRegisteringWebhooks(false);
+    }
+  };
+
   const cardClass = `rounded-xl p-5 ${t("bg-white border border-gray-200", "bg-zinc-900/60 border border-zinc-800")}`;
   const labelClass = `block text-sm font-medium mb-1 ${t("text-gray-700", "text-zinc-300")}`;
   const mutedClass = t("text-gray-500", "text-zinc-500");
 
-  const webhookIds = credentials?.webhook_ids || {};
-  const registeredTopics = Object.keys(webhookIds);
+  // webhook_ids is stored as number[] (Shopify webhook IDs), not topic-keyed
+  const webhookIds = credentials?.webhook_ids || [];
+  const webhookCount = Array.isArray(webhookIds) ? webhookIds.length : 0;
+  // If we have N registered webhooks and N expected topics, all are active
+  const allWebhooksRegistered = webhookCount >= WEBHOOK_TOPICS.length;
 
   return (
     <div className="space-y-6">
@@ -357,7 +408,7 @@ export default function ShopifySettings() {
               connectionStatus === "connected" ? "text-green-400" : connectionStatus === "error" ? "text-red-400" : mutedClass
             }`}>
               {connectionStatus === "connected"
-                ? `Connected to ${credentials.shop_domain}`
+                ? `Connected to ${credentials.shop_name || credentials.shop_domain}`
                 : connectionStatus === "error"
                   ? "Connection error"
                   : "Checking connection..."}
@@ -687,8 +738,9 @@ export default function ShopifySettings() {
 
             {showWebhooks && (
               <div className="space-y-2">
-                {WEBHOOK_TOPICS.map((topic) => {
-                  const isRegistered = registeredTopics.includes(topic);
+                {WEBHOOK_TOPICS.map((topic, i) => {
+                  // Webhooks are registered in order; if we have N IDs, the first N topics are active
+                  const isRegistered = i < webhookCount;
                   return (
                     <div
                       key={topic}
@@ -713,6 +765,18 @@ export default function ShopifySettings() {
                     </div>
                   );
                 })}
+
+                {!allWebhooksRegistered && (
+                  <Button
+                    onClick={handleReRegisterWebhooks}
+                    disabled={registeringWebhooks}
+                    size="sm"
+                    className="w-full mt-2 gap-1 bg-cyan-600 hover:bg-cyan-700 text-white"
+                  >
+                    {registeringWebhooks ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                    Re-register Webhooks
+                  </Button>
+                )}
               </div>
             )}
           </div>

@@ -235,6 +235,9 @@ verify_jwt = false
 [functions.shopify-webhooks]
 verify_jwt = false
 
+[functions.shopify-gdpr]
+verify_jwt = false
+
 [functions.publish-listing]
 verify_jwt = false
 

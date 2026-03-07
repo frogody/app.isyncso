@@ -37,8 +37,14 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SHOPIFY_API_KEY = Deno.env.get("SHOPIFY_API_KEY") || "";
-const SHOPIFY_API_SECRET = Deno.env.get("SHOPIFY_API_SECRET") || "";
+const SHOPIFY_API_KEY = Deno.env.get("SHOPIFY_API_KEY");
+if (!SHOPIFY_API_KEY) {
+  throw new Error("SHOPIFY_API_KEY not configured");
+}
+const SHOPIFY_API_SECRET = Deno.env.get("SHOPIFY_API_SECRET");
+if (!SHOPIFY_API_SECRET) {
+  throw new Error("SHOPIFY_API_SECRET not configured");
+}
 const SHOPIFY_ENCRYPTION_KEY = Deno.env.get("SHOPIFY_ENCRYPTION_KEY");
 if (!SHOPIFY_ENCRYPTION_KEY) {
   throw new Error("SHOPIFY_ENCRYPTION_KEY not configured");
@@ -256,13 +262,36 @@ async function getShopifyToken(
 // HMAC verification for OAuth callback
 // ============================================
 
-function verifyOAuthHmac(params: Record<string, string>): boolean {
-  // Not using crypto.subtle here — this runs in the edge fn
-  // For OAuth callback, Shopify sends hmac as hex-encoded HMAC-SHA256
-  // of the query string (excluding hmac param) signed with API secret
-  // We'll validate on the server side
-  // For now, basic validation (full HMAC in webhook handler)
-  return !!params.code && !!params.shop;
+async function verifyOAuthHmac(params: Record<string, string>): Promise<boolean> {
+  const hmac = params.hmac;
+  if (!hmac || !params.code || !params.shop) return false;
+
+  // Build message: sorted query params excluding "hmac", joined by "&"
+  const message = Object.keys(params)
+    .filter((k) => k !== "hmac")
+    .sort()
+    .map((k) => `${k}=${params[k]}`)
+    .join("&");
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(SHOPIFY_API_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  const computed = Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  // Timing-safe comparison
+  if (computed.length !== hmac.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < computed.length; i++) {
+    mismatch |= computed.charCodeAt(i) ^ hmac.charCodeAt(i);
+  }
+  return mismatch === 0;
 }
 
 // ============================================
@@ -350,16 +379,33 @@ serve(async (req) => {
       }
 
       case "handleOAuthCallback": {
-        const { code, shop, state } = body as {
+        const { code, shop, state, hmac, host, timestamp } = body as {
           code: string;
           shop: string;
           state: string;
+          hmac?: string;
+          host?: string;
+          timestamp?: string;
           [key: string]: unknown;
         };
 
         if (!code || !shop || !state) {
           result = { success: false, error: "Missing code, shop, or state" };
           break;
+        }
+
+        // Verify OAuth HMAC if present (Shopify sends it on the redirect)
+        if (hmac) {
+          const oauthParams: Record<string, string> = { code, shop, state };
+          if (host) oauthParams.host = host;
+          if (timestamp) oauthParams.timestamp = timestamp;
+          oauthParams.hmac = hmac;
+          const hmacValid = await verifyOAuthHmac(oauthParams);
+          if (!hmacValid) {
+            console.error("[shopify-api] OAuth HMAC verification failed");
+            result = { success: false, error: "OAuth signature verification failed" };
+            break;
+          }
         }
 
         // Verify state matches stored value
@@ -587,21 +633,25 @@ serve(async (req) => {
           if (p.sku) skuMap.set(p.sku, { id: p.id, name: p.name });
         }
 
+        // Fetch all existing mappings upfront (avoids N+1 per-variant queries)
+        const { data: existingMappings } = await supabase
+          .from("shopify_product_mappings")
+          .select("id, shopify_variant_id")
+          .eq("company_id", companyId);
+        const existingMap = new Map(
+          (existingMappings || []).map((m: { id: string; shopify_variant_id: number }) => [m.shopify_variant_id, m.id])
+        );
+
         const mapped: unknown[] = [];
         const unmapped: unknown[] = [];
         let newMappings = 0;
 
         for (const product of products) {
           for (const variant of product.variants || []) {
-            // Check existing mapping
-            const { data: existing } = await supabase
-              .from("shopify_product_mappings")
-              .select("id")
-              .eq("company_id", companyId)
-              .eq("shopify_variant_id", variant.id)
-              .maybeSingle();
+            // Check existing mapping via in-memory map
+            const existingId = existingMap.get(variant.id);
 
-            if (existing) {
+            if (existingId) {
               // Update cached info
               await supabase
                 .from("shopify_product_mappings")
@@ -611,7 +661,7 @@ serve(async (req) => {
                   shopify_sku: variant.sku,
                   last_synced_at: new Date().toISOString(),
                 })
-                .eq("id", existing.id);
+                .eq("id", existingId);
               mapped.push({ shopifyProductId: product.id, variantId: variant.id, title: product.title });
               continue;
             }
@@ -1058,7 +1108,7 @@ serve(async (req) => {
       }
 
       case "pollNewOrders": {
-        // Called by pg_cron — iterate all active Shopify connections
+        // Called by pg_cron — iterate all active Shopify connections and import missed orders
         const { data: allCreds } = await supabase
           .from("shopify_credentials")
           .select("*")
@@ -1083,7 +1133,8 @@ serve(async (req) => {
               endpoint += `&created_at_min=${creds.last_order_sync_at}`;
             }
 
-            const data = await shopifyFetch<{ orders: Array<{ id: number; name: string }> }>(
+            // deno-lint-ignore no-explicit-any
+            const data = await shopifyFetch<{ orders: any[] }>(
               creds.shop_domain, token, endpoint
             );
 
@@ -1099,11 +1150,117 @@ serve(async (req) => {
                 .eq("shopify_order_id", order.id)
                 .maybeSingle();
 
-              if (!existing) {
-                // Will be handled by webhook handler in detail
-                // Here we just count new orders for logging
-                imported++;
+              if (existing) continue;
+
+              // Import the order (same logic as shopify-webhooks orders/create)
+              let customerId: string | null = null;
+              if (order.email) {
+                const { data: customer } = await supabase
+                  .from("customers")
+                  .select("id")
+                  .eq("company_id", creds.company_id)
+                  .eq("email", order.email)
+                  .maybeSingle();
+
+                if (customer) {
+                  customerId = customer.id;
+                } else {
+                  const { data: newCustomer } = await supabase
+                    .from("customers")
+                    .insert({
+                      company_id: creds.company_id,
+                      name: `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim() || order.email,
+                      email: order.email,
+                      phone: order.phone || null,
+                    })
+                    .select("id")
+                    .single();
+                  customerId = newCustomer?.id || null;
+                }
               }
+
+              const shipping = order.shipping_address || {};
+              const orderNumber = order.name || `#${order.order_number}`;
+
+              const { data: salesOrder, error: orderErr } = await supabase
+                .from("sales_orders")
+                .insert({
+                  company_id: creds.company_id,
+                  customer_id: customerId,
+                  source: "shopify",
+                  shopify_order_id: order.id,
+                  shopify_order_number: orderNumber,
+                  order_date: order.created_at || new Date().toISOString(),
+                  status: "confirmed",
+                  shipping_name: shipping.name || "",
+                  shipping_address_line1: shipping.address1 || "",
+                  shipping_address_line2: shipping.address2 || "",
+                  shipping_city: shipping.city || "",
+                  shipping_state: shipping.province || "",
+                  shipping_postal_code: shipping.zip || "",
+                  shipping_country: shipping.country_code || "NL",
+                  billing_same_as_shipping: true,
+                  subtotal: parseFloat(order.subtotal_price || "0"),
+                  discount_amount: parseFloat(order.total_discounts || "0"),
+                  tax_amount: parseFloat(order.total_tax || "0"),
+                  shipping_cost: parseFloat(order.total_shipping_price_set?.shop_money?.amount || "0"),
+                  total: parseFloat(order.total_price || "0"),
+                  currency: order.currency || "EUR",
+                  payment_status: order.financial_status === "paid" ? "paid" : "pending",
+                  metadata: { shopify_raw: { id: order.id, name: orderNumber }, source: "poll_import" },
+                })
+                .select("id")
+                .single();
+
+              if (orderErr) {
+                console.error(`[shopify-api] pollNewOrders: Failed to import ${order.id}: ${orderErr.message}`);
+                continue;
+              }
+
+              // Create line items
+              for (const item of order.line_items || []) {
+                let productId: string | null = null;
+                if (item.variant_id) {
+                  const { data: mapping } = await supabase
+                    .from("shopify_product_mappings")
+                    .select("product_id")
+                    .eq("company_id", creds.company_id)
+                    .eq("shopify_variant_id", item.variant_id)
+                    .eq("is_active", true)
+                    .maybeSingle();
+                  productId = mapping?.product_id || null;
+                }
+
+                await supabase.from("sales_order_items").insert({
+                  sales_order_id: salesOrder.id,
+                  product_id: productId,
+                  product_name: item.title || item.name || "",
+                  sku: item.sku || "",
+                  quantity: item.quantity || 1,
+                  unit_price: parseFloat(item.price || "0"),
+                  discount_amount: parseFloat(item.total_discount || "0"),
+                  total: parseFloat(item.price || "0") * (item.quantity || 1),
+                });
+
+                // Reserve inventory
+                if (productId) {
+                  const { data: inv } = await supabase
+                    .from("inventory")
+                    .select("id, quantity_reserved")
+                    .eq("product_id", productId)
+                    .eq("company_id", creds.company_id)
+                    .maybeSingle();
+
+                  if (inv) {
+                    await supabase
+                      .from("inventory")
+                      .update({ quantity_reserved: (inv.quantity_reserved || 0) + (item.quantity || 1) })
+                      .eq("id", inv.id);
+                  }
+                }
+              }
+
+              imported++;
             }
 
             await supabase

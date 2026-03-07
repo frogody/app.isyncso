@@ -22,7 +22,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SHOPIFY_API_SECRET = Deno.env.get("SHOPIFY_API_SECRET") || "";
+const SHOPIFY_API_SECRET = Deno.env.get("SHOPIFY_API_SECRET");
+if (!SHOPIFY_API_SECRET) {
+  throw new Error("SHOPIFY_API_SECRET not configured — webhooks cannot verify signatures");
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -247,21 +250,23 @@ serve(async (req) => {
             total: parseFloat(item.price || "0") * (item.quantity || 1),
           });
 
-          // Reserve inventory for mapped products
+          // Reserve inventory for mapped products (direct update)
           if (productId) {
-            await supabase.rpc("reserve_inventory", {
-              p_product_id: productId,
-              p_quantity: item.quantity || 1,
-            }).catch(() => {
-              // RPC may not exist yet; fallback to direct update
-              supabase
+            const { data: inv } = await supabase
+              .from("inventory")
+              .select("id, quantity_reserved")
+              .eq("product_id", productId)
+              .eq("company_id", companyId)
+              .maybeSingle();
+
+            if (inv) {
+              await supabase
                 .from("inventory")
                 .update({
-                  quantity_reserved: supabase.rpc ? undefined : 0, // placeholder
+                  quantity_reserved: (inv.quantity_reserved || 0) + (item.quantity || 1),
                 })
-                .eq("product_id", productId)
-                .eq("company_id", companyId);
-            });
+                .eq("id", inv.id);
+            }
           }
         }
 

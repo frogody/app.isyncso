@@ -22,12 +22,17 @@ export default function ShopifyCallback() {
     const shop = params.get("shop");
     const state = params.get("state");
     const hmac = params.get("hmac");
+    const host = params.get("host");
+    const timestamp = params.get("timestamp");
 
     if (!code || !shop || !state) {
       setStatus("error");
       setMessage("Missing required OAuth parameters. Please try connecting again.");
       return;
     }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     (async () => {
       try {
@@ -37,12 +42,15 @@ export default function ShopifyCallback() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
           },
+          signal: controller.signal,
           body: JSON.stringify({
             action: "handleOAuthCallback",
             code,
             shop,
             state,
             hmac,
+            host,
+            timestamp,
           }),
         });
 
@@ -55,6 +63,8 @@ export default function ShopifyCallback() {
           setTimeout(() => {
             if (window.opener) {
               window.close();
+            } else {
+              window.location.href = "/settings";
             }
           }, 2000);
         } else {
@@ -62,8 +72,15 @@ export default function ShopifyCallback() {
           setMessage(result.error || "Failed to complete Shopify authorization.");
         }
       } catch (err) {
-        setStatus("error");
-        setMessage(err.message || "An unexpected error occurred.");
+        if (err.name === "AbortError") {
+          setStatus("error");
+          setMessage("Connection timed out. Please close this window and try again.");
+        } else {
+          setStatus("error");
+          setMessage(err.message || "An unexpected error occurred.");
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
     })();
   }, []);
