@@ -312,6 +312,127 @@ const WEBHOOK_TOPICS = [
 ];
 
 // ============================================
+// Sync Inventory Item data (cost, country, HS code)
+// ============================================
+
+async function syncInventoryItemToShopify(
+  shopDomain: string,
+  token: string,
+  inventoryItemId: number,
+  data: { cost?: string | number | null; country_code_of_origin?: string | null; harmonized_system_code?: string | null }
+): Promise<void> {
+  const updatePayload: Record<string, unknown> = {};
+  if (data.cost != null) updatePayload.cost = String(data.cost);
+  if (data.country_code_of_origin) updatePayload.country_code_of_origin = data.country_code_of_origin;
+  if (data.harmonized_system_code) updatePayload.harmonized_system_code = data.harmonized_system_code;
+
+  if (Object.keys(updatePayload).length === 0) return;
+
+  try {
+    await shopifyFetch(
+      shopDomain, token,
+      `/inventory_items/${inventoryItemId}.json`, "PUT",
+      { inventory_item: updatePayload }
+    );
+  } catch (e) {
+    console.warn(`[shopify-api] Failed to update inventory item ${inventoryItemId}:`, e);
+  }
+}
+
+async function fetchInventoryItemFromShopify(
+  shopDomain: string,
+  token: string,
+  inventoryItemId: number
+): Promise<{ cost?: string; country_code_of_origin?: string; harmonized_system_code?: string; tracked?: boolean } | null> {
+  try {
+    const data = await shopifyFetch<{
+      inventory_item: {
+        cost?: string;
+        country_code_of_origin?: string;
+        harmonized_system_code?: string;
+        tracked?: boolean;
+      };
+    }>(shopDomain, token, `/inventory_items/${inventoryItemId}.json`);
+    return data.inventory_item || null;
+  } catch (e) {
+    console.warn(`[shopify-api] Failed to fetch inventory item ${inventoryItemId}:`, e);
+    return null;
+  }
+}
+
+// ============================================
+// Sync SEO metafields separately (for updates)
+// ============================================
+
+async function syncSeoMetafields(
+  shopDomain: string,
+  token: string,
+  shopifyProductId: number,
+  seoTitle?: string | null,
+  seoDescription?: string | null
+): Promise<void> {
+  if (!seoTitle && !seoDescription) return;
+
+  try {
+    // Fetch existing metafields to check if we need to create or update
+    const existing = await shopifyFetch<{
+      metafields: Array<{ id: number; namespace: string; key: string; value: string }>;
+    }>(shopDomain, token, `/products/${shopifyProductId}/metafields.json`);
+
+    const metafields = existing.metafields || [];
+    const titleMf = metafields.find((m) => m.namespace === "global" && m.key === "title_tag");
+    const descMf = metafields.find((m) => m.namespace === "global" && m.key === "description_tag");
+
+    if (seoTitle) {
+      if (titleMf) {
+        await shopifyFetch(shopDomain, token, `/metafields/${titleMf.id}.json`, "PUT", {
+          metafield: { id: titleMf.id, value: seoTitle, type: "single_line_text_field" },
+        });
+      } else {
+        await shopifyFetch(shopDomain, token, `/products/${shopifyProductId}/metafields.json`, "POST", {
+          metafield: { namespace: "global", key: "title_tag", value: seoTitle, type: "single_line_text_field" },
+        });
+      }
+    }
+
+    if (seoDescription) {
+      if (descMf) {
+        await shopifyFetch(shopDomain, token, `/metafields/${descMf.id}.json`, "PUT", {
+          metafield: { id: descMf.id, value: seoDescription, type: "single_line_text_field" },
+        });
+      } else {
+        await shopifyFetch(shopDomain, token, `/products/${shopifyProductId}/metafields.json`, "POST", {
+          metafield: { namespace: "global", key: "description_tag", value: seoDescription, type: "single_line_text_field" },
+        });
+      }
+    }
+  } catch (e) {
+    console.warn(`[shopify-api] Failed to sync SEO metafields for product ${shopifyProductId}:`, e);
+  }
+}
+
+async function fetchSeoMetafields(
+  shopDomain: string,
+  token: string,
+  shopifyProductId: number
+): Promise<{ seo_title?: string; seo_description?: string }> {
+  try {
+    const data = await shopifyFetch<{
+      metafields: Array<{ namespace: string; key: string; value: string }>;
+    }>(shopDomain, token, `/products/${shopifyProductId}/metafields.json`);
+
+    const result: { seo_title?: string; seo_description?: string } = {};
+    for (const mf of data.metafields || []) {
+      if (mf.namespace === "global" && mf.key === "title_tag") result.seo_title = mf.value;
+      if (mf.namespace === "global" && mf.key === "description_tag") result.seo_description = mf.value;
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+// ============================================
 // Build full Shopify product payload from DB
 // ============================================
 
@@ -417,7 +538,10 @@ async function buildFullShopifyProduct(
     });
   }
 
-  return {
+  // Handle (URL slug) — use product slug if available
+  const handle = product.slug || null;
+
+  const result: Record<string, unknown> = {
     title,
     body_html: bodyHtml,
     vendor: product.brand || "",
@@ -428,6 +552,9 @@ async function buildFullShopifyProduct(
     variants,
     metafields,
   };
+  if (handle) result.handle = handle;
+
+  return result;
 }
 
 // ============================================
@@ -446,11 +573,13 @@ async function upsertListingFromShopify(
     product_type?: string;
     tags?: string;
     status?: string;
+    handle?: string;
     images?: Array<{ id?: number; src: string; alt?: string; position: number; variant_ids?: number[] }>;
     variants?: Array<Record<string, unknown>>;
     options?: Array<{ name: string; values: string[] }>;
   },
-  shopDomain: string
+  shopDomain: string,
+  seoData?: { seo_title?: string; seo_description?: string }
 ): Promise<void> {
   const heroImage = shopProduct.images?.find((i) => i.position === 1)?.src || shopProduct.images?.[0]?.src || null;
   const galleryUrls = (shopProduct.images || [])
@@ -459,46 +588,51 @@ async function upsertListingFromShopify(
     .map((i) => i.src);
   const tags = shopProduct.tags?.split(",").map((t: string) => t.trim()).filter(Boolean) || [];
 
+  const listingData: Record<string, unknown> = {
+    company_id: companyId,
+    product_id: productId,
+    channel: "shopify",
+    listing_title: shopProduct.title || "",
+    listing_description: shopProduct.body_html || "",
+    hero_image_url: heroImage,
+    gallery_urls: galleryUrls,
+    search_keywords: tags,
+    external_id: String(shopProduct.id),
+    external_url: `https://${shopDomain}/admin/products/${shopProduct.id}`,
+    publish_status: shopProduct.status === "active" ? "published" : shopProduct.status || "draft",
+    channel_data: {
+      vendor: shopProduct.vendor,
+      product_type: shopProduct.product_type,
+      tags: shopProduct.tags,
+      status: shopProduct.status,
+      handle: shopProduct.handle || null,
+      options: shopProduct.options,
+      variants: (shopProduct.variants || []).map((v: Record<string, unknown>) => ({
+        id: v.id,
+        title: v.title,
+        price: v.price,
+        compare_at_price: v.compare_at_price,
+        sku: v.sku,
+        barcode: v.barcode,
+        weight: v.weight,
+        weight_unit: v.weight_unit,
+        option1: v.option1,
+        option2: v.option2,
+        option3: v.option3,
+        image_id: v.image_id || null,
+      })),
+      images: shopProduct.images,
+    },
+    updated_at: new Date().toISOString(),
+  };
+
+  // Add SEO data if available
+  if (seoData?.seo_title) listingData.seo_title = seoData.seo_title;
+  if (seoData?.seo_description) listingData.seo_description = seoData.seo_description;
+
   await supabase
     .from("product_listings")
-    .upsert(
-      {
-        company_id: companyId,
-        product_id: productId,
-        channel: "shopify",
-        listing_title: shopProduct.title || "",
-        listing_description: shopProduct.body_html || "",
-        hero_image_url: heroImage,
-        gallery_urls: galleryUrls,
-        search_keywords: tags,
-        external_id: String(shopProduct.id),
-        external_url: `https://${shopDomain}/admin/products/${shopProduct.id}`,
-        publish_status: shopProduct.status === "active" ? "published" : shopProduct.status || "draft",
-        channel_data: {
-          vendor: shopProduct.vendor,
-          product_type: shopProduct.product_type,
-          tags: shopProduct.tags,
-          status: shopProduct.status,
-          options: shopProduct.options,
-          variants: (shopProduct.variants || []).map((v: Record<string, unknown>) => ({
-            id: v.id,
-            title: v.title,
-            price: v.price,
-            compare_at_price: v.compare_at_price,
-            sku: v.sku,
-            barcode: v.barcode,
-            weight: v.weight,
-            weight_unit: v.weight_unit,
-            option1: v.option1,
-            option2: v.option2,
-            option3: v.option3,
-          })),
-          images: shopProduct.images,
-        },
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "product_id,channel" }
-    );
+    .upsert(listingData, { onConflict: "product_id,channel" });
 }
 
 // ============================================
@@ -797,6 +931,7 @@ serve(async (req) => {
         const products = await shopifyFetchAll<{
           id: number;
           title: string;
+          handle: string;
           body_html: string;
           vendor: string;
           product_type: string;
@@ -818,6 +953,7 @@ serve(async (req) => {
             option2: string | null;
             option3: string | null;
             requires_shipping: boolean;
+            image_id: number | null;
           }>;
         }>(
           tokenResult.shopDomain,
@@ -858,7 +994,7 @@ serve(async (req) => {
             const existingId = existingMap.get(variant.id);
 
             if (existingId) {
-              // Update cached info
+              // Update cached info + store full shopify_data
               await supabase
                 .from("shopify_product_mappings")
                 .update({
@@ -866,6 +1002,8 @@ serve(async (req) => {
                   shopify_variant_title: variant.title,
                   shopify_sku: variant.sku,
                   last_synced_at: new Date().toISOString(),
+                  last_full_sync_at: new Date().toISOString(),
+                  shopify_data: product,
                 })
                 .eq("id", existingId);
               mapped.push({ shopifyProductId: product.id, variantId: variant.id, title: product.title });
@@ -887,6 +1025,7 @@ serve(async (req) => {
                 shopify_sku: variant.sku,
                 is_active: true,
                 sync_inventory: true,
+                shopify_data: product,
               });
               mapped.push({ shopifyProductId: product.id, variantId: variant.id, title: product.title, matchedBy: "ean" });
               newMappings++;
@@ -908,6 +1047,7 @@ serve(async (req) => {
                 shopify_sku: variant.sku,
                 is_active: true,
                 sync_inventory: true,
+                shopify_data: product,
               });
               mapped.push({ shopifyProductId: product.id, variantId: variant.id, title: product.title, matchedBy: "sku" });
               newMappings++;
@@ -957,6 +1097,48 @@ serve(async (req) => {
           } catch (e) {
             console.warn(`[shopify-api] Failed to upsert listing for product ${product.id}: ${e}`);
           }
+        }
+
+        // Fetch inventory levels for all mapped variants and update shopify_stock_level
+        const { data: syncMappings } = await supabase
+          .from("shopify_product_mappings")
+          .select("id, shopify_inventory_item_id")
+          .eq("company_id", companyId)
+          .eq("is_active", true)
+          .not("shopify_inventory_item_id", "is", null);
+
+        if (syncMappings?.length) {
+          const invItemIds = syncMappings.map((m: { shopify_inventory_item_id: number }) => m.shopify_inventory_item_id);
+          let stockUpdated = 0;
+
+          // Batch fetch inventory levels (max 50 per request)
+          for (let i = 0; i < invItemIds.length; i += 50) {
+            const batch = invItemIds.slice(i, i + 50);
+            try {
+              const levelData = await shopifyFetch<{
+                inventory_levels: Array<{ inventory_item_id: number; available: number | null }>;
+              }>(
+                tokenResult.shopDomain, tokenResult.token,
+                `/inventory_levels.json?inventory_item_ids=${batch.join(",")}`
+              );
+
+              for (const level of levelData.inventory_levels || []) {
+                const mapping = syncMappings.find(
+                  (m: { shopify_inventory_item_id: number }) => m.shopify_inventory_item_id === level.inventory_item_id
+                );
+                if (mapping && level.available != null) {
+                  await supabase
+                    .from("shopify_product_mappings")
+                    .update({ shopify_stock_level: level.available })
+                    .eq("id", mapping.id);
+                  stockUpdated++;
+                }
+              }
+            } catch (e) {
+              console.warn(`[shopify-api] Failed to fetch inventory levels batch:`, e);
+            }
+          }
+          console.log(`[shopify-api] Updated stock levels for ${stockUpdated} mappings`);
         }
 
         // Update sync timestamp
@@ -1050,7 +1232,29 @@ serve(async (req) => {
 
         const resolvedProductId = productId || (passedProduct as Record<string, unknown>)?.productId as string;
 
-        // Create mappings for ALL returned variants
+        // Sync Inventory Item data (cost, country, HS code) for each variant
+        if (resolvedProductId) {
+          const { data: physical } = await supabase
+            .from("physical_products")
+            .select("pricing, country_of_origin, hs_code")
+            .eq("product_id", resolvedProductId)
+            .maybeSingle();
+
+          if (physical) {
+            for (const v of created.product.variants) {
+              await syncInventoryItemToShopify(
+                tokenResult.shopDomain, tokenResult.token, v.inventory_item_id,
+                {
+                  cost: physical.pricing?.cost_price || physical.pricing?.wholesale_price || null,
+                  country_code_of_origin: physical.country_of_origin || null,
+                  harmonized_system_code: physical.hs_code || null,
+                }
+              );
+            }
+          }
+        }
+
+        // Create mappings for ALL returned variants + store shopify_data
         for (const v of created.product.variants) {
           await supabase.from("shopify_product_mappings").upsert(
             {
@@ -1066,6 +1270,7 @@ serve(async (req) => {
               is_active: true,
               sync_inventory: true,
               last_full_sync_at: new Date().toISOString(),
+              shopify_data: created.product,
             },
             { onConflict: "company_id,shopify_variant_id" }
           );
@@ -1151,13 +1356,19 @@ serve(async (req) => {
           break;
         }
 
-        // Remove metafields from update — Shopify doesn't support metafield updates via product PUT
+        // Extract SEO metafields before removing from payload (will sync separately)
+        const seoMfs = (updatePayload.metafields || []) as Array<Record<string, unknown>>;
+        const updateSeoTitle = seoMfs.find((m) => m.namespace === "global" && m.key === "title_tag")?.value as string | undefined;
+        const updateSeoDesc = seoMfs.find((m) => m.namespace === "global" && m.key === "description_tag")?.value as string | undefined;
+
+        // Remove metafields from product PUT — Shopify doesn't support metafield updates via product PUT
         delete updatePayload.metafields;
 
         const updated = await shopifyFetch<{
           product: {
             id: number;
             title: string;
+            handle: string;
             variants: Array<{ id: number; title: string; sku: string; inventory_item_id: number }>;
           };
         }>(
@@ -1166,7 +1377,51 @@ serve(async (req) => {
           { product: { ...updatePayload, id: targetShopifyId } }
         );
 
-        // Upsert variant mappings
+        // Sync SEO metafields via separate endpoint
+        if (updateSeoTitle || updateSeoDesc) {
+          await syncSeoMetafields(
+            tokenResult.shopDomain, tokenResult.token, targetShopifyId,
+            updateSeoTitle, updateSeoDesc
+          );
+        } else if (upProductId) {
+          // Fall back to DB SEO data
+          const { data: listing } = await supabase
+            .from("product_listings")
+            .select("seo_title, seo_description")
+            .eq("product_id", upProductId)
+            .eq("channel", "shopify")
+            .maybeSingle();
+          if (listing?.seo_title || listing?.seo_description) {
+            await syncSeoMetafields(
+              tokenResult.shopDomain, tokenResult.token, targetShopifyId,
+              listing?.seo_title, listing?.seo_description
+            );
+          }
+        }
+
+        // Sync Inventory Item data for each variant
+        if (upProductId) {
+          const { data: physical } = await supabase
+            .from("physical_products")
+            .select("pricing, country_of_origin, hs_code")
+            .eq("product_id", upProductId)
+            .maybeSingle();
+
+          if (physical) {
+            for (const v of updated.product.variants) {
+              await syncInventoryItemToShopify(
+                tokenResult.shopDomain, tokenResult.token, v.inventory_item_id,
+                {
+                  cost: physical.pricing?.cost_price || physical.pricing?.wholesale_price || null,
+                  country_code_of_origin: physical.country_of_origin || null,
+                  harmonized_system_code: physical.hs_code || null,
+                }
+              );
+            }
+          }
+        }
+
+        // Upsert variant mappings + store shopify_data
         for (const v of updated.product.variants) {
           await supabase.from("shopify_product_mappings").upsert(
             {
@@ -1181,6 +1436,7 @@ serve(async (req) => {
               is_active: true,
               sync_inventory: true,
               last_full_sync_at: new Date().toISOString(),
+              shopify_data: updated.product,
             },
             { onConflict: "company_id,shopify_variant_id" }
           );
@@ -1206,11 +1462,30 @@ serve(async (req) => {
           break;
         }
 
+        // Dedup check — prevent importing a Shopify product that's already mapped
+        const { data: existingImport } = await supabase
+          .from("shopify_product_mappings")
+          .select("id, product_id")
+          .eq("company_id", companyId)
+          .eq("shopify_product_id", importShopifyId)
+          .eq("is_active", true)
+          .limit(1)
+          .maybeSingle();
+
+        if (existingImport) {
+          result = {
+            success: false,
+            error: `Shopify product ${importShopifyId} is already imported (mapped to product ${existingImport.product_id})`,
+          };
+          break;
+        }
+
         // Fetch full product from Shopify
         const fetched = await shopifyFetch<{
           product: {
             id: number;
             title: string;
+            handle: string;
             body_html: string;
             vendor: string;
             product_type: string;
@@ -1224,7 +1499,7 @@ serve(async (req) => {
               inventory_item_id: number;
               option1: string | null; option2: string | null; option3: string | null;
               requires_shipping: boolean; taxable: boolean;
-              inventory_management: string;
+              inventory_management: string; image_id: number | null;
             }>;
             options: Array<{ name: string; values: string[] }>;
           };
@@ -1234,13 +1509,29 @@ serve(async (req) => {
         const firstVariant = sp.variants[0];
         const tagArray = sp.tags?.split(",").map((t: string) => t.trim()).filter(Boolean) || [];
 
+        // Fetch SEO metafields (not included in product endpoint)
+        const importSeoData = await fetchSeoMetafields(
+          tokenResult.shopDomain, tokenResult.token, importShopifyId
+        );
+
+        // Fetch Inventory Item data for first variant (cost, country, HS code)
+        let inventoryItemData: { cost?: string; country_code_of_origin?: string; harmonized_system_code?: string } | null = null;
+        if (firstVariant?.inventory_item_id) {
+          inventoryItemData = await fetchInventoryItemFromShopify(
+            tokenResult.shopDomain, tokenResult.token, firstVariant.inventory_item_id
+          );
+        }
+
+        // Use Shopify handle as slug (fallback to generated slug)
+        const importSlug = sp.handle || sp.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
         // Create product
         const { data: newProduct, error: newProdErr } = await supabase
           .from("products")
           .insert({
             company_id: companyId,
             name: sp.title,
-            slug: sp.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+            slug: importSlug,
             type: "physical",
             status: sp.status === "active" ? "published" : sp.status === "archived" ? "archived" : "draft",
             description: sp.body_html || "",
@@ -1249,6 +1540,8 @@ serve(async (req) => {
             featured_image: sp.images?.[0] ? { url: sp.images[0].src, alt: sp.images[0].alt || "" } : null,
             gallery: sp.images?.map((i) => ({ url: i.src, alt: i.alt || "", position: i.position })) || [],
             shopify_listed: true,
+            seo_meta_title: importSeoData.seo_title || null,
+            seo_meta_description: importSeoData.seo_description || null,
           })
           .select("id")
           .single();
@@ -1258,7 +1551,7 @@ serve(async (req) => {
           break;
         }
 
-        // Create physical_products
+        // Create physical_products with inventory item data
         await supabase.from("physical_products").insert({
           product_id: newProduct.id,
           sku: firstVariant?.sku || `SHP-${importShopifyId}`,
@@ -1266,12 +1559,15 @@ serve(async (req) => {
           pricing: {
             base_price: parseFloat(firstVariant?.price || "0"),
             compare_at_price: firstVariant?.compare_at_price ? parseFloat(firstVariant.compare_at_price) : null,
+            cost_price: inventoryItemData?.cost ? parseFloat(inventoryItemData.cost) : null,
           },
           shipping: {
             weight: firstVariant?.weight || null,
             weight_unit: firstVariant?.weight_unit || "kg",
             requires_shipping: firstVariant?.requires_shipping ?? true,
           },
+          country_of_origin: inventoryItemData?.country_code_of_origin || null,
+          hs_code: inventoryItemData?.harmonized_system_code || null,
           variants: sp.variants.length > 1
             ? sp.variants.map((v) => ({
                 shopify_variant_id: v.id,
@@ -1285,29 +1581,36 @@ serve(async (req) => {
                 option1: v.option1,
                 option2: v.option2,
                 option3: v.option3,
+                image_id: v.image_id || null,
               }))
             : [],
         });
 
-        // Upsert product_listings
-        await upsertListingFromShopify(supabase, companyId, newProduct.id, sp, tokenResult.shopDomain);
+        // Upsert product_listings with SEO data
+        await upsertListingFromShopify(
+          supabase, companyId, newProduct.id, sp, tokenResult.shopDomain, importSeoData
+        );
 
-        // Create mappings for all variants
+        // Create mappings for all variants + store shopify_data
         for (const v of sp.variants) {
-          await supabase.from("shopify_product_mappings").insert({
-            company_id: companyId,
-            product_id: newProduct.id,
-            shopify_product_id: sp.id,
-            shopify_variant_id: v.id,
-            shopify_inventory_item_id: v.inventory_item_id,
-            matched_by: "auto_created",
-            shopify_product_title: sp.title,
-            shopify_variant_title: v.title,
-            shopify_sku: v.sku,
-            is_active: true,
-            sync_inventory: true,
-            last_full_sync_at: new Date().toISOString(),
-          });
+          await supabase.from("shopify_product_mappings").upsert(
+            {
+              company_id: companyId,
+              product_id: newProduct.id,
+              shopify_product_id: sp.id,
+              shopify_variant_id: v.id,
+              shopify_inventory_item_id: v.inventory_item_id,
+              matched_by: "auto_created",
+              shopify_product_title: sp.title,
+              shopify_variant_title: v.title,
+              shopify_sku: v.sku,
+              is_active: true,
+              sync_inventory: true,
+              last_full_sync_at: new Date().toISOString(),
+              shopify_data: sp,
+            },
+            { onConflict: "company_id,shopify_variant_id" }
+          );
         }
 
         result = {
@@ -1316,6 +1619,8 @@ serve(async (req) => {
             productId: newProduct.id,
             shopifyProductId: sp.id,
             variantsMapped: sp.variants.length,
+            seoImported: !!(importSeoData.seo_title || importSeoData.seo_description),
+            inventoryItemSynced: !!inventoryItemData,
           },
         };
         break;
