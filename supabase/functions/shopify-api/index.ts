@@ -1065,6 +1065,21 @@ serve(async (req) => {
           await new Promise((r) => setTimeout(r, 300));
         }
 
+        // If some webhooks already existed (422), fetch all current webhooks to get their IDs
+        if (webhookIds.length < WEBHOOK_TOPICS.length) {
+          try {
+            const existing = await shopifyFetch<{ webhooks: { id: number; topic: string }[] }>(
+              tokenResult.shopDomain, tokenResult.token,
+              "/webhooks.json", "GET"
+            );
+            if (existing.webhooks?.length) {
+              for (const wh of existing.webhooks) {
+                if (!webhookIds.includes(wh.id)) webhookIds.push(wh.id);
+              }
+            }
+          } catch { /* best effort — at least store what we created */ }
+        }
+
         await supabase
           .from("shopify_credentials")
           .update({ webhook_ids: webhookIds })
