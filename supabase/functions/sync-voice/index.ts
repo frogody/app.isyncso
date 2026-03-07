@@ -16,7 +16,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
+const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY") || '';
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || '';
@@ -143,6 +143,9 @@ function saveToSession(sessionId: string, allMessages: Array<{ role: string; con
     .eq('session_id', sessionId)
     .then(({ error }) => {
       if (error) console.error('[sync-voice] Session save error:', error.message);
+    })
+    .catch((err: Error) => {
+      console.error('[sync-voice] Session save exception:', err.message);
     });
 }
 
@@ -854,6 +857,14 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Message is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    if (!TOGETHER_API_KEY) {
+      console.error('[sync-voice] TOGETHER_API_KEY is not set');
+      return new Response(
+        JSON.stringify({ error: 'Voice service is not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 

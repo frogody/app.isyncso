@@ -165,7 +165,20 @@ async function analyzeWithGroq(messages: Message[]): Promise<DigestResult> {
     throw new Error("Empty response from Groq");
   }
 
-  const parsed = JSON.parse(content);
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    console.error("[digest-channel] Failed to parse LLM JSON response, attempting cleanup");
+    // Try stripping markdown fences
+    const cleaned = content.replace(/^```json?\s*/i, '').replace(/```\s*$/i, '').trim();
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      console.error("[digest-channel] LLM returned non-JSON content:", content.slice(0, 200));
+      parsed = {};
+    }
+  }
 
   // Validate required fields
   return {

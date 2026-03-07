@@ -1084,7 +1084,7 @@ export default function FinanceInvoices({ embedded }) {
                       item.product_id || item.name ? (
                         // Product line item (from ProductSelector)
                         <div
-                          key={idx}
+                          key={item.product_id || item.id || `item-${idx}`}
                           className={`flex items-center gap-3 p-3 rounded-lg border ${ft('bg-slate-100 border-slate-200', 'bg-zinc-800/50 border-white/5')}`}
                         >
                           <div className={`w-8 h-8 rounded flex items-center justify-center ${ft('bg-slate-200', 'bg-zinc-700/50')}`}>
@@ -1131,7 +1131,7 @@ export default function FinanceInvoices({ embedded }) {
                       ) : (
                         // Manual line item (editable inline)
                         <div
-                          key={idx}
+                          key={item.id || `manual-${idx}`}
                           className={`flex items-center gap-2 p-3 rounded-lg border ${ft('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-white/5')}`}
                         >
                           <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${ft('bg-slate-200', 'bg-zinc-700/50')}`}>

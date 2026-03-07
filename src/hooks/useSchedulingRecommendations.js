@@ -101,9 +101,13 @@ export function useSchedulingRecommendations() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await triggerRefresh(user.id);
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        await triggerRefresh(data.user.id);
+      }
+    } catch (err) {
+      console.warn('[useSchedulingRecommendations] Refresh failed:', err.message);
     }
   }, [triggerRefresh]);
 

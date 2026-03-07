@@ -1153,6 +1153,15 @@ serve(async (req) => {
       }
     }
 
+    // Guard: skip user-level processing if no user could be identified
+    if (!payload.user_id) {
+      console.warn(`[composio-webhooks] No user_id resolved for trigger=${payload.trigger_slug}, skipping user-level processing`);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Could not identify user for this webhook event' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Store raw event for audit trail
     const { data: eventRecord, error: storeError } = await supabase
       .from("composio_webhook_events")
