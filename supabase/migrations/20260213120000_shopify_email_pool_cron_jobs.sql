@@ -13,7 +13,7 @@ SELECT cron.schedule(
     url := 'https://sfxpmzicgpaxfntqleig.supabase.co/functions/v1/shopify-api',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
+      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key')
     ),
     body := '{"action": "pollNewOrders"}'::jsonb
   );
@@ -32,7 +32,7 @@ SELECT cron.schedule(
     url := 'https://sfxpmzicgpaxfntqleig.supabase.co/functions/v1/shopify-api',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
+      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key')
     ),
     body := '{"action": "batchInventoryUpdate"}'::jsonb
   );
@@ -51,7 +51,7 @@ SELECT cron.schedule(
     url := 'https://sfxpmzicgpaxfntqleig.supabase.co/functions/v1/process-order-email',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key')
+      'Authorization', 'Bearer ' || current_setting('supabase.service_role_key')
     ),
     body := '{"action": "healthCheck"}'::jsonb
   );
