@@ -49,15 +49,34 @@ serve(async (req) => {
         );
       }
 
+      // Check if already published (update vs create)
+      const { data: existingListing } = await supabase
+        .from('product_listings')
+        .select('external_id, publish_status')
+        .eq('product_id', product_id)
+        .eq('channel', 'shopify')
+        .maybeSingle();
+
+      const isUpdate = !!existingListing?.external_id;
+
       // Build Shopify product payload
       const title = listing_data?.listing_title || listing_data?.title || product_data?.name || 'Untitled';
       const bodyHtml = listing_data?.listing_description || listing_data?.description || product_data?.description || '';
       const seoTitle = listing_data?.seo_title || '';
       const seoDescription = listing_data?.seo_description || '';
-      const tags = listing_data?.search_keywords?.join(', ') || '';
+
+      // Tags: merge listing keywords + product tags
+      const tagParts: string[] = [];
+      if (listing_data?.search_keywords?.length) tagParts.push(...listing_data.search_keywords);
+      if (product_data?.tags?.length) {
+        for (const t of product_data.tags) {
+          if (!tagParts.includes(t)) tagParts.push(t);
+        }
+      }
+      const tags = tagParts.join(', ');
 
       // Collect images
-      const images: { src: string; position?: number }[] = [];
+      const images: { src: string; alt?: string; position?: number }[] = [];
       if (listing_data?.hero_image_url) {
         images.push({ src: listing_data.hero_image_url, position: 1 });
       }
@@ -71,39 +90,54 @@ serve(async (req) => {
       const shopifyProduct: Record<string, any> = {
         title,
         body_html: bodyHtml,
+        vendor: product_data?.brand || '',
+        product_type: product_data?.category || '',
+        status: product_data?.status === 'archived' ? 'archived' : product_data?.status === 'draft' ? 'draft' : 'active',
         tags,
         images,
         metafields: [],
       };
 
-      // Add SEO metafields
-      if (seoTitle) {
-        shopifyProduct.metafields.push({
-          namespace: 'global',
-          key: 'title_tag',
-          value: seoTitle,
-          type: 'single_line_text_field',
-        });
-      }
-      if (seoDescription) {
-        shopifyProduct.metafields.push({
-          namespace: 'global',
-          key: 'description_tag',
-          value: seoDescription,
-          type: 'single_line_text_field',
-        });
-      }
-
-      // Add price if available
-      if (product_data?.price) {
-        shopifyProduct.variants = [{
-          price: String(product_data.price),
-          sku: product_data?.sku || '',
-          inventory_management: 'shopify',
-        }];
+      // Add SEO metafields (only for create — Shopify doesn't support metafield updates via product PUT)
+      if (!isUpdate) {
+        if (seoTitle) {
+          shopifyProduct.metafields.push({
+            namespace: 'global',
+            key: 'title_tag',
+            value: seoTitle,
+            type: 'single_line_text_field',
+          });
+        }
+        if (seoDescription) {
+          shopifyProduct.metafields.push({
+            namespace: 'global',
+            key: 'description_tag',
+            value: seoDescription,
+            type: 'single_line_text_field',
+          });
+        }
+      } else {
+        // Remove empty metafields array for updates
+        delete shopifyProduct.metafields;
       }
 
-      // Call Shopify API
+      // Build variant(s) with full data
+      const variant: Record<string, any> = {
+        price: String(product_data?.price || '0.00'),
+        sku: product_data?.sku || '',
+        barcode: product_data?.barcode || product_data?.ean || '',
+        inventory_management: 'shopify',
+        inventory_policy: 'deny',
+        requires_shipping: true,
+      };
+      if (product_data?.compare_at_price) variant.compare_at_price = String(product_data.compare_at_price);
+      if (product_data?.weight) variant.weight = product_data.weight;
+      if (product_data?.weight_unit) variant.weight_unit = product_data.weight_unit;
+
+      shopifyProduct.variants = [variant];
+
+      // Determine action: update existing or create new
+      const action = isUpdate ? 'updateProduct' : 'createProduct';
       const shopifyApiUrl = `${SUPABASE_URL}/functions/v1/shopify-api`;
       const shopifyResp = await fetch(shopifyApiUrl, {
         method: 'POST',
@@ -112,9 +146,11 @@ serve(async (req) => {
           'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
         body: JSON.stringify({
-          action: 'createProduct',
+          action,
           company_id,
           product: shopifyProduct,
+          productId: product_id,
+          ...(isUpdate ? { shopifyProductId: Number(existingListing.external_id) } : {}),
         }),
       });
 
@@ -124,14 +160,14 @@ serve(async (req) => {
         console.error('[publish-listing] Shopify error:', shopifyResult);
         return new Response(
           JSON.stringify({
-            error: 'Failed to publish to Shopify',
+            error: `Failed to ${isUpdate ? 'update' : 'publish'} on Shopify`,
             details: shopifyResult?.error || shopifyResult?.details || 'Unknown error',
           }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      const externalId = shopifyResult?.product?.id || shopifyResult?.id;
+      const externalId = shopifyResult?.data?.shopifyProductId || shopifyResult?.product?.id || shopifyResult?.id || existingListing?.external_id;
       const externalUrl = creds.shop_domain
         ? `https://${creds.shop_domain}/admin/products/${externalId}`
         : null;
@@ -155,7 +191,8 @@ serve(async (req) => {
           channel: 'shopify',
           external_id: externalId,
           external_url: externalUrl,
-          message: 'Successfully published to Shopify',
+          message: isUpdate ? 'Successfully updated on Shopify' : 'Successfully published to Shopify',
+          updated: isUpdate,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

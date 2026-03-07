@@ -427,6 +427,70 @@ serve(async (req) => {
             .eq("shopify_variant_id", variant.id);
         }
 
+        // Upsert product_listings with full Shopify data for all mapped products
+        const { data: mappings } = await supabase
+          .from("shopify_product_mappings")
+          .select("product_id")
+          .eq("company_id", companyId)
+          .eq("shopify_product_id", shopifyProductId)
+          .eq("is_active", true);
+
+        const productIds = [...new Set((mappings || []).map((m: { product_id: string }) => m.product_id))];
+
+        // Get shop domain from credentials
+        const { data: creds } = await supabase
+          .from("shopify_credentials")
+          .select("shop_domain")
+          .eq("company_id", companyId)
+          .maybeSingle();
+
+        const shopDomain = creds?.shop_domain || "";
+
+        for (const productId of productIds) {
+          const heroImage = payload.images?.find((i: { position: number }) => i.position === 1)?.src
+            || payload.images?.[0]?.src || null;
+          const galleryUrls = (payload.images || [])
+            .filter((i: { position: number }) => i.position > 1)
+            .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
+            .map((i: { src: string }) => i.src);
+          const tags = payload.tags?.split(",").map((t: string) => t.trim()).filter(Boolean) || [];
+
+          await supabase
+            .from("product_listings")
+            .upsert(
+              {
+                company_id: companyId,
+                product_id: productId,
+                channel: "shopify",
+                listing_title: payload.title || "",
+                listing_description: payload.body_html || "",
+                hero_image_url: heroImage,
+                gallery_urls: galleryUrls,
+                search_keywords: tags,
+                external_id: String(shopifyProductId),
+                external_url: shopDomain ? `https://${shopDomain}/admin/products/${shopifyProductId}` : null,
+                publish_status: payload.status === "active" ? "published" : payload.status || "draft",
+                channel_data: {
+                  vendor: payload.vendor,
+                  product_type: payload.product_type,
+                  tags: payload.tags,
+                  status: payload.status,
+                  variants: (payload.variants || []).map((v: Record<string, unknown>) => ({
+                    id: v.id, title: v.title, price: v.price,
+                    compare_at_price: v.compare_at_price,
+                    sku: v.sku, barcode: v.barcode,
+                    weight: v.weight, weight_unit: v.weight_unit,
+                    option1: v.option1, option2: v.option2, option3: v.option3,
+                  })),
+                  images: payload.images,
+                },
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "product_id,channel" }
+            );
+        }
+
+        console.log(`[shopify-webhooks] Updated listings for ${productIds.length} product(s) from Shopify product ${shopifyProductId}`);
         break;
       }
 

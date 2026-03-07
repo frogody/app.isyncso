@@ -862,11 +862,21 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
           listing_data: listing,
           product_data: {
             name: product?.name,
-            price: product?.price || product?.selling_price,
-            sku: product?.sku,
-            ean: details?.ean || details?.barcode || product?.barcode,
+            price: details?.pricing?.base_price || product?.price || product?.selling_price,
+            compare_at_price: details?.pricing?.compare_at_price || null,
+            sku: details?.sku || product?.sku,
+            ean: details?.barcode || details?.ean || product?.barcode || product?.ean,
+            barcode: details?.barcode || details?.ean || product?.barcode || product?.ean,
             description: product?.description,
             stock_quantity: product?.stock_quantity || product?.quantity,
+            brand: product?.brand || '',
+            category: product?.category || '',
+            status: product?.status || 'published',
+            tags: product?.tags || [],
+            weight: details?.shipping?.weight || null,
+            weight_unit: details?.shipping?.weight_unit || 'kg',
+            dimensions: details?.shipping?.dimensions || null,
+            variants: details?.variants || [],
           },
         },
       });
@@ -874,8 +884,9 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
       if (error) throw error;
       if (data?.error) throw new Error(data.details || data.error);
 
+      const isUpdate = data?.updated;
       setPublishResult({ success: true, channel: 'shopify', external_url: data.external_url, message: data.message });
-      toast.success(data.message || 'Published to Shopify!', {
+      toast.success(data.message || (isUpdate ? 'Updated on Shopify!' : 'Published to Shopify!'), {
         id: toastId,
         description: data.external_url ? 'View in Shopify Admin' : undefined,
         action: data.external_url ? {
@@ -915,11 +926,16 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
           listing_data: listing,
           product_data: {
             name: product?.name,
-            price: product?.price || product?.selling_price,
-            sku: product?.sku,
-            ean: details?.ean || details?.barcode || product?.barcode,
+            price: details?.pricing?.base_price || product?.price || product?.selling_price,
+            sku: details?.sku || product?.sku,
+            ean: details?.barcode || details?.ean || product?.barcode || product?.ean,
+            barcode: details?.barcode || details?.ean || product?.barcode || product?.ean,
             description: product?.description,
             stock_quantity: product?.stock_quantity || product?.quantity,
+            brand: product?.brand || '',
+            category: product?.category || '',
+            weight: details?.shipping?.weight || null,
+            weight_unit: details?.shipping?.weight_unit || 'kg',
           },
         },
       });
@@ -1248,9 +1264,12 @@ export default function ListingPublish({ product, details, listing, onUpdate, ch
         open={confirmDialog === 'shopify'}
         onClose={() => setConfirmDialog(null)}
         onConfirm={handlePublishShopify}
-        title="Push to Shopify"
-        description="This will sync your listing title, description, images, and SEO metadata to your Shopify store."
-        confirmLabel={publishing ? 'Publishing...' : 'Push to Shopify'}
+        title={listing?.external_id ? "Update on Shopify" : "Push to Shopify"}
+        description={listing?.external_id
+          ? "This will update the existing Shopify product with your latest listing title, description, images, tags, and SEO metadata."
+          : "This will create a new product on Shopify with your listing title, description, images, tags, and SEO metadata."
+        }
+        confirmLabel={publishing ? (listing?.external_id ? 'Updating...' : 'Publishing...') : (listing?.external_id ? 'Update on Shopify' : 'Push to Shopify')}
         loading={publishing}
         icon={ShoppingBag}
         color="text-green-400"
