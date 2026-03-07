@@ -13,19 +13,21 @@ import { Moon, Sun, AlertTriangle } from 'lucide-react';
 export default function ColorFineTune({ colorSystem, onChange, competitors = [], originalPalette }) {
   const [darkPreview, setDarkPreview] = useState(false);
   const palette = colorSystem?.palette;
-  if (!palette) return null;
 
   // CVD check
-  const cvdResults = useMemo(() => checkCVDSafety({
-    primary: palette.primary.base,
-    secondary: palette.secondary.base,
-    accent: palette.accent.base,
-  }), [palette.primary.base, palette.secondary.base, palette.accent.base]);
+  const cvdResults = useMemo(() => {
+    if (!palette) return null;
+    return checkCVDSafety({
+      primary: palette.primary.base,
+      secondary: palette.secondary.base,
+      accent: palette.accent.base,
+    });
+  }, [palette?.primary?.base, palette?.secondary?.base, palette?.accent?.base]);
 
   // Competitor check
   const competitorFlags = useMemo(
-    () => checkCompetitorDiff(palette.primary.base, competitors),
-    [palette.primary.base, competitors]
+    () => palette ? checkCompetitorDiff(palette.primary.base, competitors) : [],
+    [palette?.primary?.base, competitors]
   );
 
   // When a color changes, rebuild that color's ramp + neutrals + dark mode

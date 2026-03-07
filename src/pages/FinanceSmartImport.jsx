@@ -864,12 +864,12 @@ export default function FinanceSmartImport() {
 
       // Create recurring template if detected
       if (formData.is_recurring && formData.vendor_name) {
+        const nextDate = recurring?.suggested_next_date || (() => {
+          const d = new Date(formData.invoice_date);
+          d.setMonth(d.getMonth() + 1);
+          return d.toISOString().split('T')[0];
+        })();
         try {
-          const nextDate = recurring?.suggested_next_date || (() => {
-            const d = new Date(formData.invoice_date);
-            d.setMonth(d.getMonth() + 1);
-            return d.toISOString().split('T')[0];
-          })();
 
           const { error: recErr } = await supabase.from('recurring_invoices').insert({
             company_id: companyId,

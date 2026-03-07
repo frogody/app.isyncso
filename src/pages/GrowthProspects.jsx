@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
@@ -102,43 +102,37 @@ export default function GrowthProspects() {
     jobTitle: '', keywords: '', revenue: '', techStack: ''
   });
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadLists = async () => {
-      try {
-        const data = await db.entities.ProspectList.list({ limit: 100 }).catch(() => []);
-        if (isMounted) setLists(data || []);
-      } catch (error) {
-        console.error("Failed to load lists:", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadLists();
-    return () => { isMounted = false; };
+  const loadLists = useCallback(async () => {
+    try {
+      const data = await db.entities.ProspectList.list({ limit: 100 }).catch(() => []);
+      setLists(data || []);
+    } catch (error) {
+      console.error("Failed to load lists:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    loadLists();
+  }, [loadLists]);
 
-    const loadTemplates = async () => {
-      if (activeTab !== 'templates' || templates.length > 0) return;
-      setTemplatesLoading(true);
-      try {
-        const response = await db.functions.invoke('getICPTemplates').catch(() => ({ data: null }));
-        if (isMounted) setTemplates(response?.data?.templates || []);
-      } catch (error) {
-        console.error("Failed to load templates:", error);
-      } finally {
-        if (isMounted) setTemplatesLoading(false);
-      }
-    };
-
-    loadTemplates();
-    return () => { isMounted = false; };
+  const loadTemplates = useCallback(async () => {
+    if (activeTab !== 'templates' || templates.length > 0) return;
+    setTemplatesLoading(true);
+    try {
+      const response = await db.functions.invoke('getICPTemplates').catch(() => ({ data: null }));
+      setTemplates(response?.data?.templates || []);
+    } catch (error) {
+      console.error("Failed to load templates:", error);
+    } finally {
+      setTemplatesLoading(false);
+    }
   }, [activeTab, templates.length]);
+
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
 
   useEffect(() => {
     const listId = searchParams.get('list');

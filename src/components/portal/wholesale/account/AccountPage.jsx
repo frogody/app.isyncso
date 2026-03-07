@@ -353,7 +353,7 @@ function OrderStatistics({ orgId }) {
         const { data: orders, error } = await supabase
           .from('b2b_orders')
           .select('id, total, items, items_count, created_at')
-          .eq('organization_id', resolvedOrgId);
+          .eq('organization_id', orgId);
 
         if (error) throw error;
 

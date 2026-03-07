@@ -1141,6 +1141,22 @@ export default function PreviewAccountPage({ config, nav }) {
   const { client, isAuthenticated } = useWholesale();
   const [activeTab, setActiveTab] = useState('overview');
 
+  const renderTab = useMemo(() => {
+    if (!isAuthenticated || !client) return null;
+    switch (activeTab) {
+      case 'overview':
+        return <OverviewTab client={client} />;
+      case 'profile':
+        return <CompanyProfileTab client={client} />;
+      case 'addresses':
+        return <AddressesTab client={client} />;
+      case 'preferences':
+        return <OrderPreferencesTab />;
+      default:
+        return <OverviewTab client={client} />;
+    }
+  }, [activeTab, client, isAuthenticated]);
+
   // Not authenticated -- show sign-in prompt
   if (!isAuthenticated || !client) {
     return (
@@ -1185,21 +1201,6 @@ export default function PreviewAccountPage({ config, nav }) {
       </div>
     );
   }
-
-  const renderTab = useMemo(() => {
-    switch (activeTab) {
-      case 'overview':
-        return <OverviewTab client={client} />;
-      case 'profile':
-        return <CompanyProfileTab client={client} />;
-      case 'addresses':
-        return <AddressesTab client={client} />;
-      case 'preferences':
-        return <OrderPreferencesTab />;
-      default:
-        return <OverviewTab client={client} />;
-    }
-  }, [activeTab, client]);
 
   return (
     <div className="min-h-full px-6 sm:px-10 lg:px-16 py-8">

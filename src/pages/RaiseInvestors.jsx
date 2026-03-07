@@ -143,7 +143,6 @@ export default function RaiseInvestors() {
           color="orange"
           actions={
             <div className="flex gap-2">
-              />
               <RaiseButton
                 variant="primary"
                 size="sm"

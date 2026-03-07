@@ -86,7 +86,7 @@ export function FileUploader({ onFileProcessed, isProcessing }) {
           const str = String(v);
           if (/^[\d.,\s€$£¥]+$/i.test(str) && str.match(/[€$£¥]|eur|usd/i)) return 'currency';
           if (/^\d{8,13}$/.test(str)) return 'barcode';
-          if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(str)) return 'date';
+          if (/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(str)) return 'date';
           return 'text';
         });
 

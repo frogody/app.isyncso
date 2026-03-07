@@ -123,7 +123,7 @@ const transformers = {
     const str = String(value).trim();
 
     // Try DD/MM/YYYY or DD-MM-YYYY
-    const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    const dmyMatch = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
     if (dmyMatch) {
       const [, day, month, year] = dmyMatch;
       return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;

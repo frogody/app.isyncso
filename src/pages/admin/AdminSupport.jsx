@@ -299,7 +299,7 @@ export default function AdminSupport() {
     }
   };
 
-  const useCannedResponse = (response) => {
+  const applyCannedResponse = (response) => {
     setReplyMessage(response.content);
     toast.success('Canned response loaded');
   };
@@ -629,7 +629,7 @@ export default function AdminSupport() {
                                     key={response.id}
                                     className="text-xs"
                                     onClick={() => {
-                                      useCannedResponse(response);
+                                      applyCannedResponse(response);
                                       setShowReplyModal(true);
                                     }}
                                   >

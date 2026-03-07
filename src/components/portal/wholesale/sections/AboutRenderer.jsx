@@ -176,7 +176,7 @@ export default function AboutRenderer({ section, theme }) {
   /* Build the text column */
   const textColumn = (
     <motion.div
-      className={`w-full ${hasImage || true ? 'lg:w-1/2' : 'lg:max-w-3xl lg:mx-auto'}`}
+      className={`w-full ${hasImage ? 'lg:w-1/2' : 'lg:max-w-3xl lg:mx-auto'}`}
       variants={textVariants}
       initial="hidden"
       whileInView="visible"

@@ -2095,10 +2095,10 @@ function parseEmailFromResponse(response) {
   let text = response;
 
   // 1. Handle "Subject Line Options: 1. ... 2. ... 3. ..." - pick first option
-  const subjectOptionsMatch = text.match(/(?:Subject\s*Line\s*Options?|Subject\s*Options?)\s*:?\s*\n?\s*(?:1[\.\)]\s*)(.+?)(?:\n\s*(?:2[\.\)]|$))/is);
+  const subjectOptionsMatch = text.match(/(?:Subject\s*Line\s*Options?|Subject\s*Options?)\s*:?\s*\n?\s*(?:1[.)]\s*)(.+?)(?:\n\s*(?:2[.)]|$))/is);
   if (subjectOptionsMatch) {
     // Remove the entire subject options block
-    text = text.replace(/(?:Subject\s*Line\s*Options?|Subject\s*Options?)\s*:?\s*\n?\s*(?:\d[\.\)]\s*.+\n?)+/i, '').trim();
+    text = text.replace(/(?:Subject\s*Line\s*Options?|Subject\s*Options?)\s*:?\s*\n?\s*(?:\d[.)]\s*.+\n?)+/i, '').trim();
   }
 
   // 2. Extract subject line (standard format)

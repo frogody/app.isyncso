@@ -1847,6 +1847,11 @@ export default function ListingPreview({
     }
   }, [onExecuteFixPlan, fixPlan]);
 
+  const handleCloseFixModal = useCallback(() => {
+    setFixing(null);
+    setFixPlan(null);
+  }, []);
+
   // Show generation view
   if (generatingProgress) {
     return (
@@ -1867,11 +1872,6 @@ export default function ListingPreview({
   if (!hasListingContent) {
     return <EmptyState onGenerateAll={onGenerateAll} loading={loading} t={t} />;
   }
-
-  const handleCloseFixModal = useCallback(() => {
-    setFixing(null);
-    setFixPlan(null);
-  }, []);
 
   return (
     <>

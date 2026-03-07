@@ -2106,6 +2106,7 @@ function ShootStage({ state, dispatch, user, callEdge, pollRef }) {
 
 // Completion sub-component (fires confetti on mount)
 function CompletionView({ elapsed, formatTime, state, loadAllResults }) {
+  const { ct } = useTheme();
   useEffect(() => {
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
   }, []);

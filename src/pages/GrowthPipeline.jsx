@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
@@ -274,45 +274,41 @@ export default function GrowthPipeline() {
   const statsGridRef = useRef(null);
   const pipelineRef = useRef(null);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadOpportunities = async () => {
-      if (!user?.id) {
-        if (isMounted) setLoading(false);
-        return;
-      }
-      try {
-        // Use Prospect entity - RLS handles access control
-        const prospects = await db.entities.Prospect.list({ limit: 100 }).catch(() => []);
-        if (!isMounted) return;
-        // Map Prospect fields to opportunity format for display
-        const opps = (prospects || []).map(p => ({
-          id: p.id,
-          company_name: p.company_name,
-          contact_name: p.contact_name,
-          contact_email: p.contact_email,
-          stage: p.stage || 'new',
-          deal_value: p.deal_value || p.estimated_value || 0,
-          probability: p.score || 50,
-          expected_close_date: p.next_follow_up,
-          source: p.source,
-          notes: p.notes,
-          next_action: null,
-          created_date: p.created_date,
-          updated_date: p.updated_date,
-        }));
-        setOpportunities(opps);
-      } catch (error) {
-        console.error('Failed to load opportunities:', error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadOpportunities();
-    return () => { isMounted = false; };
+  const loadOpportunities = useCallback(async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    try {
+      // Use Prospect entity - RLS handles access control
+      const prospects = await db.entities.Prospect.list({ limit: 100 }).catch(() => []);
+      // Map Prospect fields to opportunity format for display
+      const opps = (prospects || []).map(p => ({
+        id: p.id,
+        company_name: p.company_name,
+        contact_name: p.contact_name,
+        contact_email: p.contact_email,
+        stage: p.stage || 'new',
+        deal_value: p.deal_value || p.estimated_value || 0,
+        probability: p.score || 50,
+        expected_close_date: p.next_follow_up,
+        source: p.source,
+        notes: p.notes,
+        next_action: null,
+        created_date: p.created_date,
+        updated_date: p.updated_date,
+      }));
+      setOpportunities(opps);
+    } catch (error) {
+      console.error('Failed to load opportunities:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    loadOpportunities();
+  }, [loadOpportunities]);
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;

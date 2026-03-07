@@ -18,7 +18,7 @@ import {
   Download, Globe, Lock, Unlock, LinkIcon, QrCode, Bell, History, Hash,
   AtSign, Quote, Bold, Italic, ListOrdered, ListChecks, Code, CheckSquare,
   Heading1, Heading2, AlignLeft, Table, User, Building2,
-  Sun, Moon
+  Sun, Moon, FolderKanban, Rocket, Inbox
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1372,6 +1372,8 @@ function FolderDetailSheet({
   const [showSharePreview, setShowSharePreview] = useState(false);
   const [showAddProjects, setShowAddProjects] = useState(false);
   const [selectedProjectIds, setSelectedProjectIds] = useState([]);
+  // Open actual portal in new tab for preview
+  const { user: portalUser } = useUser();
 
   if (!folder) return null;
 
@@ -1402,9 +1404,6 @@ function FolderDetailSheet({
       toast.success(`${selectedProjectIds.length} project(s) added to folder`);
     }
   };
-
-  // Open actual portal in new tab for preview
-  const { user: portalUser } = useUser();
   const handlePreviewPortal = async () => {
     try {
       const orgId = folder?.organization_id || portalUser?.organization_id;
@@ -1618,7 +1617,7 @@ function FolderDetailSheet({
                   {FOLDER_COLORS.map((color) => (
                     <button
                       key={color.id}
-                      onClick={() => onUpdateFolder?.(folder.id, { cover_color: color.id })}
+                      onClick={() => onUpdateSettings?.({ cover_color: color.id })}
                       className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color.gradient} ${
                         folder.cover_color === color.id ? `ring-2 ring-white ring-offset-2 ${pt('ring-offset-white','ring-offset-zinc-900')}` : ''
                       } transition-all`}
@@ -2382,6 +2381,7 @@ function ProjectDetailSheet({
 }) {
   const { pt } = useTheme();
   const [showSharePreview, setShowSharePreview] = useState(false);
+  const { user: projPortalUser } = useUser();
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project?.status) || PROJECT_STATUSES[0];
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === project?.priority) || PRIORITY_LEVELS[1];
 
@@ -2433,7 +2433,6 @@ function ProjectDetailSheet({
   };
 
   // Open actual portal in new tab for preview
-  const { user: projPortalUser } = useUser();
   const handlePreviewPortal = async () => {
     try {
       const orgId = project?.organization_id || projPortalUser?.organization_id;

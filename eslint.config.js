@@ -5,7 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist', '.migration'] },
+  { ignores: ['dist', '.migration', 'src/lib/anime.es.js'] },
   // Node.js config files
   {
     files: ['*.config.js', '*.config.cjs', '*.config.mjs'],

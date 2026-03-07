@@ -235,6 +235,7 @@ export default function SyncAvatarMini({ size = 48, className = '' }) {
             height={avatarSize}
             clipPath={`url(#avatarClip-${size})`}
             preserveAspectRatio="xMidYMid slice"
+            /* eslint-disable-next-line react/no-unknown-property */
             onError={() => setImgError(true)}
           />
         ) : (

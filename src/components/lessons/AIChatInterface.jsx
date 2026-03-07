@@ -513,7 +513,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
         .replace(/`([^`]+)`/g, '$1')
         .replace(/#{1,6}\s/g, '')
         .replace(/[-*]\s/g, '')
-        .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
         .replace(/```[\s\S]*?```/g, 'code example')
         .replace(/\s+/g, ' ')
         .trim();
@@ -1082,17 +1082,6 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
                 {isLoading && messages.filter((m) => m?.role !== "system").length > 1 && (
                 <TypingIndicator />
                 )}
-                {false && isLoading && (
-                  <div className="mr-8">
-              <div className="bg-gray-800/50 rounded-2xl px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-100" />
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-200" />
-                </div>
-              </div>
-            </div>
-            )}
             </>
             )}
             </div>

@@ -64,8 +64,10 @@ describe('Sync Studio page imports', () => {
 //    entries. We read the file as text and check for the expected keys.
 // ---------------------------------------------------------------------------
 
+const testDir = path.dirname(new URL(import.meta.url).pathname);
+
 describe('Sync Studio route registration in PAGES map', () => {
-  const indexPath = path.resolve(__dirname, '../pages/index.jsx');
+  const indexPath = path.resolve(testDir, '../pages/index.jsx');
   let indexContent;
 
   // Read once before tests
@@ -135,7 +137,7 @@ describe('Sync Studio route registration in PAGES map', () => {
 // ---------------------------------------------------------------------------
 
 describe('Sync Studio edge function directories', () => {
-  const functionsRoot = path.resolve(__dirname, '../../supabase/functions');
+  const functionsRoot = path.resolve(testDir, '../../supabase/functions');
 
   const edgeFunctions = [
     'sync-studio-import-catalog',

@@ -768,8 +768,6 @@ function ProductCard({
 // ========================================================================
 
 function ConfirmationModal({ open, onClose, stats, plans, onConfirm, isStarting }) {
-  if (!open) return null;
-
   // Build shot type breakdown from plans
   const shotBreakdown = useMemo(() => {
     const counts = {};

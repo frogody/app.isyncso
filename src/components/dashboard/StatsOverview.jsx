@@ -2,7 +2,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { BookOpen, Clock, TrendingUp, Award } from "lucide-react";
 
-const StatsOverview = React.memo(({ courses = [], userProgress = [] }) => {
+const StatsOverview = React.memo(function StatsOverview({ courses = [], userProgress = [] }) {
   const totalCourses = courses.length;
   const enrolledCourses = [...new Set(userProgress.map(p => p.course_id))].length;
   const completedCourses = userProgress.filter(p => p.status === 'completed').length;

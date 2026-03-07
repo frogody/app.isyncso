@@ -183,7 +183,7 @@ export default function PreviewInvoiceDetailPage({ config, nav, pageData }) {
 
   const total = Number(invoice.total) || 0;
   const amountPaid = Number(invoice.amount_paid) || 0;
-  const balanceDue = Number(invoice.balance_due) ?? (total - amountPaid);
+  const balanceDue = invoice.balance_due != null ? Number(invoice.balance_due) : (total - amountPaid);
 
   const daysUntilDue = invoice.due_date
     ? Math.ceil((new Date(invoice.due_date) - new Date()) / (1000 * 60 * 60 * 24))

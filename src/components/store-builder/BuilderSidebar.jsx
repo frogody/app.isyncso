@@ -481,6 +481,10 @@ function ThemePanel({ config, onUpdateTheme }) {
                   : 'bg-zinc-900 text-zinc-500 border border-zinc-800 hover:text-zinc-300'
               }
             `}
+          >
+            <Moon className="w-3.5 h-3.5" />
+            Dark
+          </button>
           <button
             onClick={() => update('mode', 'light')}
             className={`

@@ -499,8 +499,6 @@ function ProductCard({ product, cart, nav, index }) {
 // ---------------------------------------------------------------------------
 
 function Pagination({ currentPage, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-
   const pages = useMemo(() => {
     const result = [];
     const maxVisible = 5;
@@ -518,6 +516,8 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
     }
     return result;
   }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
 
   return (
     <motion.div

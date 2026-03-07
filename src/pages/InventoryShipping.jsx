@@ -531,42 +531,38 @@ export default function InventoryShipping({ embedded = false }) {
 
   // Handle ship action
   const handleShip = async (taskId, trackTraceCode, carrier) => {
-    try {
-      const result = await completeShipping(taskId, trackTraceCode, {
-        carrier,
-        userId: user?.id,
-      });
+    const result = await completeShipping(taskId, trackTraceCode, {
+      carrier,
+      userId: user?.id,
+    });
 
-      // Push fulfillment to Shopify if this is a Shopify order
-      const task = selectedTask;
-      const salesOrder = task?.sales_orders;
-      if (salesOrder?.source === 'shopify' && salesOrder?.shopify_order_id) {
-        try {
-          const detectedCarrier = carrier || result.shippingTask?.carrier || undefined;
-          const trackingUrl = result.shippingTask?.tracking_url || undefined;
-          await createShopifyFulfillment(
-            companyId,
-            salesOrder.shopify_order_id,
-            trackTraceCode,
-            detectedCarrier,
-            trackingUrl
-          );
-          toast.success("Fulfillment pushed to Shopify", {
-            description: `Order ${salesOrder.shopify_order_number || salesOrder.order_number} fulfilled`,
-          });
-        } catch (shopifyErr) {
-          console.error("Shopify fulfillment push failed:", shopifyErr);
-          toast.error("Shopify fulfillment failed", {
-            description: shopifyErr?.message || "Could not push fulfillment to Shopify. You can retry from the Shopify admin.",
-          });
-        }
+    // Push fulfillment to Shopify if this is a Shopify order
+    const task = selectedTask;
+    const salesOrder = task?.sales_orders;
+    if (salesOrder?.source === 'shopify' && salesOrder?.shopify_order_id) {
+      try {
+        const detectedCarrier = carrier || result.shippingTask?.carrier || undefined;
+        const trackingUrl = result.shippingTask?.tracking_url || undefined;
+        await createShopifyFulfillment(
+          companyId,
+          salesOrder.shopify_order_id,
+          trackTraceCode,
+          detectedCarrier,
+          trackingUrl
+        );
+        toast.success("Fulfillment pushed to Shopify", {
+          description: `Order ${salesOrder.shopify_order_number || salesOrder.order_number} fulfilled`,
+        });
+      } catch (shopifyErr) {
+        console.error("Shopify fulfillment push failed:", shopifyErr);
+        toast.error("Shopify fulfillment failed", {
+          description: shopifyErr?.message || "Could not push fulfillment to Shopify. You can retry from the Shopify admin.",
+        });
       }
-
-      const taskData = await listShippingTasks(companyId);
-      setTasks(taskData);
-    } catch (error) {
-      throw error;
     }
+
+    const taskData = await listShippingTasks(companyId);
+    setTasks(taskData);
   };
 
   const openShipModal = (task) => {

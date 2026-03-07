@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
@@ -172,23 +172,20 @@ export default function GrowthCampaigns() {
   const statsGridRef = useRef(null);
   const campaignsGridRef = useRef(null);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadCampaigns = async () => {
-      try {
-        const camps = await db.entities.GrowthCampaign.list({ limit: 100 }).catch(() => []);
-        if (isMounted) setCampaigns(camps || []);
-      } catch (error) {
-        console.error('Failed to load:', error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadCampaigns();
-    return () => { isMounted = false; };
+  const loadCampaigns = useCallback(async () => {
+    try {
+      const camps = await db.entities.GrowthCampaign.list({ limit: 100 }).catch(() => []);
+      setCampaigns(camps || []);
+    } catch (error) {
+      console.error('Failed to load:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadCampaigns();
+  }, [loadCampaigns]);
 
   const handleSave = async () => {
     if (!formData.name) {

@@ -17,11 +17,13 @@ const TryItBlock = lazy(() => import('./renderers/TryItBlock'));
 const MermaidBlock = lazy(() => import('./renderers/MermaidBlock'));
 
 // Memoized Mermaid wrapper to prevent re-renders
-const StableMermaidBlock = memo(({ content }) => (
-  <Suspense fallback={<div className="animate-pulse h-48 bg-zinc-800 rounded-xl my-6" />}>
-    <MermaidBlock content={content} />
-  </Suspense>
-));
+const StableMermaidBlock = memo(function StableMermaidBlock({ content }) {
+  return (
+    <Suspense fallback={<div className="animate-pulse h-48 bg-zinc-800 rounded-xl my-6" />}>
+      <MermaidBlock content={content} />
+    </Suspense>
+  );
+});
 
 // Code Block Component
 function CodeBlock({ children, language }) {
@@ -278,9 +280,8 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
     <article className="prose prose-invert prose-lg max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        children={contentString}
         components={components}
-      />
+      >{contentString}</ReactMarkdown>
     </article>
   );
 });

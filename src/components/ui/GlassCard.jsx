@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { AnimatedNumber } from './AnimatedNumber';
-import { useTheme } from '@/contexts/GlobalThemeContext';
+import { useThemeSafe } from '@/contexts/GlobalThemeContext';
 
 export function GlassCard({
   children,
@@ -37,16 +37,13 @@ export function GlassCard({
 
   const glowConfig = glow ? glowColors[glow] : null;
 
-  let themeClasses;
-  try {
-    const { t } = useTheme();
-    themeClasses = t(
-      'bg-white/90 border border-zinc-200/80 shadow-sm',
-      'bg-zinc-900/60 backdrop-blur-xl border border-white/10'
-    );
-  } catch {
-    themeClasses = 'bg-zinc-900/60 backdrop-blur-xl border border-white/10';
-  }
+  const themeCtx = useThemeSafe();
+  const themeClasses = themeCtx?.t
+    ? themeCtx.t(
+        'bg-white/90 border border-zinc-200/80 shadow-sm',
+        'bg-zinc-900/60 backdrop-blur-xl border border-white/10'
+      )
+    : 'bg-zinc-900/60 backdrop-blur-xl border border-white/10';
 
   const baseClasses = cn(
     themeClasses,
@@ -141,13 +138,9 @@ export function StatCard({
 
   const s = sizeConfig[size] || sizeConfig.md;
 
-  let valueTextClass = 'text-white';
-  let labelTextClass = 'text-zinc-400';
-  try {
-    const { t } = useTheme();
-    valueTextClass = t('text-zinc-900', 'text-white');
-    labelTextClass = t('text-zinc-500', 'text-zinc-400');
-  } catch {}
+  const statThemeCtx = useThemeSafe();
+  const valueTextClass = statThemeCtx?.t ? statThemeCtx.t('text-zinc-900', 'text-white') : 'text-white';
+  const labelTextClass = statThemeCtx?.t ? statThemeCtx.t('text-zinc-500', 'text-zinc-400') : 'text-zinc-400';
 
   return (
     <GlassCard glow={color} delay={delay} className={s.card} size={size}>
@@ -197,13 +190,9 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8, color = 'cyan
     emerald: 'stroke-emerald-500',
   };
 
-  let trackClass = 'stroke-zinc-800';
-  let valueTextClass = 'text-white';
-  try {
-    const { t } = useTheme();
-    trackClass = t('stroke-zinc-200', 'stroke-zinc-800');
-    valueTextClass = t('text-zinc-900', 'text-white');
-  } catch {}
+  const ringThemeCtx = useThemeSafe();
+  const trackClass = ringThemeCtx?.t ? ringThemeCtx.t('stroke-zinc-200', 'stroke-zinc-800') : 'stroke-zinc-800';
+  const valueTextClass = ringThemeCtx?.t ? ringThemeCtx.t('text-zinc-900', 'text-white') : 'text-white';
 
   return (
     <div className="relative" style={{ width: size, height: size }}>

@@ -129,8 +129,6 @@ function EmptyState({ hasFilters, onClearFilters }) {
 // ---------------------------------------------------------------------------
 
 function Pagination({ currentPage, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-
   // Build page number array with ellipsis
   const pages = useMemo(() => {
     const result = [];
@@ -155,6 +153,8 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 
     return result;
   }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
 
   return (
     <div className="flex items-center justify-center gap-1.5 mt-8">

@@ -183,14 +183,14 @@ function PathCard({ path, stepsForPath, progressMap, onOpenDetail, index, lt }) 
 
 // --- Path Detail Modal ---
 function PathDetailDialog({ path, steps, courses, progressMap, open, onClose, onEnroll, enrolling, lt }) {
-  if (!path) return null;
-
-  const sortedSteps = [...steps].sort((a, b) => (a.order || 0) - (b.order || 0));
+  const sortedSteps = path ? [...steps].sort((a, b) => (a.order || 0) - (b.order || 0)) : [];
   const courseLookup = useMemo(() => {
     const map = {};
     courses.forEach((c) => { map[c.id] = c; });
     return map;
   }, [courses]);
+
+  if (!path) return null;
 
   const { completed, total, percentage } = getPathProgress(sortedSteps, progressMap);
   const diffConf = getDifficultyConfig(path.difficulty);

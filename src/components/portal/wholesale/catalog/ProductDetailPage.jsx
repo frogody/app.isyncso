@@ -660,9 +660,8 @@ function SpecificationsTable({ specs }) {
 // ---------------------------------------------------------------------------
 
 function EnhancedPricingTiersTable({ tiers, currentQuantity, currency, basePrice }) {
-  if (!tiers || tiers.length <= 1) return null;
-
   const activeTierIndex = useMemo(() => {
+    if (!tiers || tiers.length <= 1) return -1;
     for (let i = 0; i < tiers.length; i++) {
       const min = tiers[i].min_quantity ?? 0;
       const max = tiers[i].max_quantity ?? Infinity;
@@ -670,6 +669,8 @@ function EnhancedPricingTiersTable({ tiers, currentQuantity, currency, basePrice
     }
     return -1;
   }, [tiers, currentQuantity]);
+
+  if (!tiers || tiers.length <= 1) return null;
 
   return (
     <div

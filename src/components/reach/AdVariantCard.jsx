@@ -99,15 +99,6 @@ export default function AdVariantCard({
   platform,
   className,
 }) {
-  if (!variant) return null;
-
-  const { headline, primary_text, cta_label, image_url, status } = variant;
-  const statusConfig = VARIANT_STATUSES[status];
-  const statusColor = statusConfig
-    ? STATUS_COLOR_MAP[statusConfig.color] || STATUS_COLOR_MAP.zinc
-    : STATUS_COLOR_MAP.zinc;
-  const platformData = platform ? PLATFORMS[platform] : null;
-
   const handleFieldUpdate = useCallback(
     (field, value) => {
       if (onUpdate) {
@@ -116,6 +107,15 @@ export default function AdVariantCard({
     },
     [variant, onUpdate]
   );
+
+  if (!variant) return null;
+
+  const { headline, primary_text, cta_label, image_url, status } = variant;
+  const statusConfig = VARIANT_STATUSES[status];
+  const statusColor = statusConfig
+    ? STATUS_COLOR_MAP[statusConfig.color] || STATUS_COLOR_MAP.zinc
+    : STATUS_COLOR_MAP.zinc;
+  const platformData = platform ? PLATFORMS[platform] : null;
 
   return (
     <motion.div

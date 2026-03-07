@@ -88,7 +88,7 @@ function applyMappingAndRules(sampleRows, fieldMapping, rules) {
                 const val = parseFloat(mapped[field] || row[reverseMapping[field] || field] || "0");
                 return isNaN(val) ? "0" : val;
               });
-              if (/^[\d\s\+\-\*\/\.\(\)]+$/.test(expr)) {
+              if (/^[\d\s+\-*/.()]+$/.test(expr)) {
                 mapped[section.target_field] = new Function(`return ${expr}`)().toFixed(2);
               }
             } catch { /* skip invalid expressions */ }

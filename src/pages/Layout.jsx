@@ -839,18 +839,20 @@ function isSubmenuItemActive(item, location) {
 
 // Mobile Sub-Nav Strip — persistent bar below mobile header showing current section's pages
 function MobileSubNavStrip({ config, location }) {
-  if (!config) return null;
-  const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
   const scrollRef = React.useRef(null);
 
   // Auto-scroll active item into view
   React.useEffect(() => {
+    if (!config) return;
     if (!scrollRef.current) return;
     const active = scrollRef.current.querySelector('[data-active="true"]');
     if (active) {
       active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
-  }, [location.pathname, location.search]);
+  }, [config, location.pathname, location.search]);
+
+  if (!config) return null;
+  const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
 
   return (
     <div className="md:hidden fixed top-14 sm:top-16 left-0 right-0 z-40 bg-black/90 backdrop-blur-md border-b border-white/5">

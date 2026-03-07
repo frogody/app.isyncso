@@ -40,7 +40,7 @@ export function isValidEmail(email) {
  */
 export function isValidDomain(domain) {
   if (!domain || typeof domain !== 'string') return false;
-  const domainRegex = /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,}$/;
+  const domainRegex = /^[a-z0-9]+([-.]{1}[a-z0-9]+)*\.[a-z]{2,}$/;
   return domainRegex.test(domain.trim().toLowerCase());
 }
 

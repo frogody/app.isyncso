@@ -684,6 +684,8 @@ const PageLoadingFallback = () => (
 
 // Create a wrapper component that uses useLocation inside the Router context
 function PagesContent() {
+    const location = useLocation();
+
     // Public B2B Store — subdomain routing (MUST be first, before all other routes)
     if (_storeSubdomain) {
         return (
@@ -692,8 +694,6 @@ function PagesContent() {
             </Suspense>
         );
     }
-
-    const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
     const isAdminRoute = location.pathname.startsWith('/admin');
     const isShareRoute = location.pathname.startsWith('/share');

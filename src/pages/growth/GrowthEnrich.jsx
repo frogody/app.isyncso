@@ -3736,7 +3736,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                         </div>
                         {ws.nest_id && (
                           <div className="mt-2">
-                            <RaiseBadge variant="outline" className="text-[10px]">Linked to Nest</RaiseBadge>
+                            <Badge variant="outline" className="text-[10px]">Linked to Nest</Badge>
                           </div>
                         )}
                       </div>
@@ -3845,7 +3845,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                 </div>
               )}
               {nestName && (
-                <RaiseBadge variant="outline" className="text-[10px]">{nestName}</RaiseBadge>
+                <Badge variant="outline" className="text-[10px]">{nestName}</Badge>
               )}
               {sandboxMode && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse">
@@ -4630,7 +4630,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   <Filter className="w-4 h-4 text-indigo-400" />
                   <span className={rt('text-sm font-semibold text-gray-900', 'text-sm font-semibold text-white')}>Filters</span>
                   {activeFilterCount > 0 && (
-                    <RaiseBadge className="text-[10px]">{activeFilterCount} active</RaiseBadge>
+                    <Badge className="text-[10px]">{activeFilterCount} active</Badge>
                   )}
                 </div>
                 <button onClick={() => setFilterPanelOpen(false)} className={rt('p-1 rounded-lg hover:bg-gray-100 text-gray-500', 'p-1 rounded-lg hover:bg-zinc-800 text-zinc-400')}>
@@ -4788,7 +4788,7 @@ Keep responses concise and practical. Focus on actionable suggestions.`;
                   <ArrowUpDown className="w-4 h-4 text-indigo-400" />
                   <span className={rt('text-sm font-semibold text-gray-900', 'text-sm font-semibold text-white')}>Sort</span>
                   {activeSortCount > 0 && (
-                    <RaiseBadge className="text-[10px]">{activeSortCount} active</RaiseBadge>
+                    <Badge className="text-[10px]">{activeSortCount} active</Badge>
                   )}
                 </div>
                 <button onClick={() => setSortPanelOpen(false)} className={rt('p-1 rounded-lg hover:bg-gray-100 text-gray-500', 'p-1 rounded-lg hover:bg-zinc-800 text-zinc-400')}>

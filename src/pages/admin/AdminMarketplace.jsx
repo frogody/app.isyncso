@@ -117,7 +117,7 @@ async function adminApi(endpoint, options = {}) {
     throw new Error('Not authenticated. Please log in again.');
   }
 
-  const url = `${SUPABASE_URL}/functions/v1/admin-api${endpoint}`;
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api${endpoint}`;
   const response = await fetch(url, {
     ...options,
     headers: {

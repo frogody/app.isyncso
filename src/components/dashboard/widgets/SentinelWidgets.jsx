@@ -4,7 +4,7 @@ import { createPageUrl } from '@/utils';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { StatCard, GlassCard, ProgressRing } from '@/components/ui/GlassCard';
-import { useTheme } from '@/contexts/GlobalThemeContext';
+import { useThemeSafe } from '@/contexts/GlobalThemeContext';
 import {
   Shield, Cpu, AlertTriangle, FileText, Clock,
   Layers
@@ -20,16 +20,12 @@ export const SENTINEL_WIDGETS = [
 ];
 
 export function SentinelComplianceWidget({ complianceProgress = 0, systemsCount = 0, highRiskCount = 0 }) {
-  let titleClass = 'text-white';
-  let subtitleClass = 'text-zinc-400';
-  let statBg = 'bg-zinc-800/40';
+  const themeCtx = useThemeSafe();
+  const t = themeCtx?.t;
 
-  try {
-    const { t } = useTheme();
-    titleClass = t('text-zinc-900', 'text-white');
-    subtitleClass = t('text-zinc-500', 'text-zinc-400');
-    statBg = t('bg-zinc-100', 'bg-zinc-800/40');
-  } catch {}
+  const titleClass = t ? t('text-zinc-900', 'text-white') : 'text-white';
+  const subtitleClass = t ? t('text-zinc-500', 'text-zinc-400') : 'text-zinc-400';
+  const statBg = t ? t('bg-zinc-100', 'bg-zinc-800/40') : 'bg-zinc-800/40';
 
   return (
     <GlassCard glow="sage" className="p-5 h-full">
@@ -96,16 +92,12 @@ export function SentinelRiskWidget({ riskBreakdown = {} }) {
 
   const total = Object.values(riskBreakdown).reduce((sum, val) => sum + val, 0);
 
-  let titleClass = 'text-white';
-  let subtitleClass = 'text-zinc-400';
-  let emptyTextClass = 'text-zinc-500';
+  const themeCtx2 = useThemeSafe();
+  const t2 = themeCtx2?.t;
 
-  try {
-    const { t } = useTheme();
-    titleClass = t('text-zinc-900', 'text-white');
-    subtitleClass = t('text-zinc-500', 'text-zinc-400');
-    emptyTextClass = t('text-zinc-400', 'text-zinc-500');
-  } catch {}
+  const titleClass = t2 ? t2('text-zinc-900', 'text-white') : 'text-white';
+  const subtitleClass = t2 ? t2('text-zinc-500', 'text-zinc-400') : 'text-zinc-400';
+  const emptyTextClass = t2 ? t2('text-zinc-400', 'text-zinc-500') : 'text-zinc-500';
 
   return (
     <GlassCard glow="sage" className="p-5 h-full">

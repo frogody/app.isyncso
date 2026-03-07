@@ -1,3 +1,4 @@
+/* global importScripts, loadPyodide */
 // Pyodide Web Worker for safe Python execution
 let pyodide = null;
 

@@ -5,7 +5,7 @@ import { Sparkles, Brain, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-const WelcomeSection = React.memo(({ user }) => {
+const WelcomeSection = React.memo(function WelcomeSection({ user }) {
   const currentHour = new Date().getHours();
   let greeting = "Good morning";
   if (currentHour >= 12 && currentHour < 17) greeting = "Good afternoon";

@@ -87,3 +87,8 @@ export function useTheme(): ThemeContextType {
   }
   return context;
 }
+
+/** Safe version that returns null instead of throwing when outside GlobalThemeProvider */
+export function useThemeSafe(): ThemeContextType | null {
+  return useContext(ThemeContext) ?? null;
+}
